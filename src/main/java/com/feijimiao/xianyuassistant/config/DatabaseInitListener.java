@@ -4,10 +4,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
 import java.io.File;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -26,6 +29,9 @@ public class DatabaseInitListener implements ApplicationListener<ApplicationRead
     
     @Autowired
     private SqlSchemaParser schemaParser;
+    
+    @Autowired
+    private Environment environment;
     
     private static final String SCHEMA_FILE = "sql/schema.sql";
 
@@ -74,6 +80,9 @@ public class DatabaseInitListener implements ApplicationListener<ApplicationRead
             log.info("=".repeat(60));
             log.info("✅ 数据库完整性检查完成，系统就绪！");
             log.info("=".repeat(60));
+            
+            // 打印访问地址
+            printAccessUrl();
             
         } catch (Exception e) {
             log.error("数据库初始化失败", e);
@@ -312,5 +321,78 @@ public class DatabaseInitListener implements ApplicationListener<ApplicationRead
         }
         rs.close();
         return columns;
+    }
+    
+    /**
+     * 打印访问地址
+     */
+    private void printAccessUrl() {
+        try {
+            // 获取端口
+            Integer port = environment.getProperty("server.port", Integer.class, 8080);
+            
+            // 获取所有可用的IP地址
+            List<String> ipAddresses = getAvailableIpAddresses();
+            
+            log.info("=".repeat(60));
+            log.info("🚀 程序已经启动，可以通过以下地址访问：");
+            log.info("=".repeat(60));
+            
+            // 打印localhost
+            log.info("  🌐 http://localhost:{}", port);
+            log.info("  🌐 http://127.0.0.1:{}", port);
+            
+            // 打印所有可用的IP地址
+            for (String ip : ipAddresses) {
+                log.info("  🌐 http://{}:{}", ip, port);
+            }
+            
+            log.info("=".repeat(60));
+            
+        } catch (Exception e) {
+            log.warn("获取访问地址失败: {}", e.getMessage());
+            // 使用默认端口
+            log.info("🚀 程序已经启动，可以访问：http://localhost:8080");
+        }
+    }
+    
+    /**
+     * 获取所有可用的IP地址
+     */
+    private List<String> getAvailableIpAddresses() {
+        List<String> ipAddresses = new ArrayList<>();
+        
+        try {
+            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+            
+            while (networkInterfaces.hasMoreElements()) {
+                NetworkInterface networkInterface = networkInterfaces.nextElement();
+                
+                // 跳过回环接口和未启用的接口
+                if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+                    continue;
+                }
+                
+                Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
+                
+                while (inetAddresses.hasMoreElements()) {
+                    InetAddress inetAddress = inetAddresses.nextElement();
+                    
+                    // 只处理IPv4地址
+                    if (inetAddress instanceof java.net.Inet4Address) {
+                        String ip = inetAddress.getHostAddress();
+                        
+                        // 跳过127.0.0.1
+                        if (!"127.0.0.1".equals(ip)) {
+                            ipAddresses.add(ip);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.debug("获取网络接口失败: {}", e.getMessage());
+        }
+        
+        return ipAddresses;
     }
 }

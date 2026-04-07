@@ -1,0 +1,143 @@
+package com.feijimiao.xianyuassistant.event.chatMessageEvent;
+
+import com.feijimiao.xianyuassistant.config.WebSocketConfig;
+import com.feijimiao.xianyuassistant.service.ManualModeService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+
+/**
+ * 增强的聊天消息监听器
+ * 实现消息时效性验证和人工接管检查
+ * 
+ * <p>功能：</p>
+ * <ul>
+ *   <li>消息时效性验证：过滤过期消息</li>
+ *   <li>人工接管检查：人工模式下跳过自动处理</li>
+ *   <li>人工接管切换：检测切换关键词</li>
+ * </ul>
+ */
+@Slf4j
+@Component
+public class EnhancedChatMessageListener {
+
+    @Autowired
+    private ManualModeService manualModeService;
+    
+    @Autowired
+    private WebSocketConfig config;
+
+    /**
+     * 处理聊天消息事件
+     * 在其他监听器之前执行，进行前置检查
+     * 
+     * @param event 聊天消息事件
+     */
+    @Async
+    @EventListener
+    public void onChatMessageReceived(ChatMessageReceivedEvent event) {
+        try {
+            ChatMessageData data = event.getMessageData();
+            
+            // 1. 消息时效性验证
+            if (!validateMessageTime(data)) {
+                log.debug("消息已过期，丢弃: pnmId={}, chatId={}", data.getPnmId(), data.getSId());
+                return;
+            }
+            
+            // 2. 检查是否是人工接管切换关键词
+            if (isToggleKeyword(data)) {
+                handleToggleKeyword(data);
+                return;
+            }
+            
+            // 3. 人工接管检查
+            if (isManualMode(data)) {
+                log.info("会话处于人工接管模式，跳过自动处理: chatId={}", data.getSId());
+                return;
+            }
+            
+            // 4. 消息通过验证，继续处理（由其他监听器处理）
+            log.debug("消息通过验证: pnmId={}, chatId={}", data.getPnmId(), data.getSId());
+            
+        } catch (Exception e) {
+            log.error("处理聊天消息事件失败", e);
+        }
+    }
+    
+    /**
+     * 验证消息时效性
+     * 
+     * @param data 消息数据
+     * @return true=消息有效，false=消息过期
+     */
+    private boolean validateMessageTime(ChatMessageData data) {
+        if (data.getMessageTime() == null) {
+            // 没有时间戳，默认有效
+            return true;
+        }
+        
+        long currentTime = System.currentTimeMillis();
+        long messageTime = data.getMessageTime();
+        long messageExpireTime = config.getMessageExpireTime();
+        
+        if (currentTime - messageTime > messageExpireTime) {
+            log.debug("消息已过期: messageTime={}, currentTime={}, diff={}ms, threshold={}ms", 
+                    messageTime, currentTime, currentTime - messageTime, messageExpireTime);
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /**
+     * 检查是否是人工接管切换关键词
+     * 
+     * @param data 消息数据
+     * @return true=是切换关键词，false=不是
+     */
+    private boolean isToggleKeyword(ChatMessageData data) {
+        String messageContent = data.getMsgContent();
+        if (messageContent == null || messageContent.isEmpty()) {
+            return false;
+        }
+        
+        String toggleKeywords = config.getToggleKeywords();
+        return messageContent.trim().equals(toggleKeywords);
+    }
+    
+    /**
+     * 处理人工接管切换关键词
+     * 
+     * @param data 消息数据
+     */
+    private void handleToggleKeyword(ChatMessageData data) {
+        String chatId = data.getSId();
+        if (chatId == null || chatId.isEmpty()) {
+            log.warn("无法切换人工接管模式：chatId为空");
+            return;
+        }
+        
+        // 切换人工接管模式
+        String mode = manualModeService.toggleManualMode(chatId);
+        log.info("检测到人工接管切换关键词，切换模式: chatId={}, mode={}, keyword={}", 
+                chatId, mode, config.getToggleKeywords());
+    }
+    
+    /**
+     * 检查是否处于人工接管模式
+     * 
+     * @param data 消息数据
+     * @return true=人工模式，false=自动模式
+     */
+    private boolean isManualMode(ChatMessageData data) {
+        String chatId = data.getSId();
+        if (chatId == null || chatId.isEmpty()) {
+            return false;
+        }
+        
+        return manualModeService.isManualMode(chatId);
+    }
+}

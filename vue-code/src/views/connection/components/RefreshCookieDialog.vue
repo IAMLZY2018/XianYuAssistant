@@ -89,57 +89,60 @@ const stopPolling = () => {
 
 const handleLoginSuccess = async () => {
   try {
+    // 1. 获取Cookie
     const cookieRes = await getQRCodeCookies(sessionId.value)
-    if (cookieRes.code === 200) {
-      // 后端返回的cookies是字符串，unb是单独的字段
-      const cookieData = cookieRes.data as any
-      const cookieText = typeof cookieData?.cookies === 'string' ? cookieData.cookies : JSON.stringify(cookieData?.cookies || {})
-      const scannedUnb = cookieData?.unb || ''
-      
-      console.log('扫码UNB:', scannedUnb, '当前UNB:', props.currentUnb)
-      
-      // 判断扫码账号是否与当前账号匹配
-      if (scannedUnb === props.currentUnb) {
-        // 匹配，更新Cookie
-        try {
-          const updateRes = await updateCookie({
-            xianyuAccountId: props.accountId,
-            cookieText
-          })
-          
-          // request拦截器会自动处理错误，这里只处理成功的情况
-          if (updateRes.code === 200) {
-            showSuccess('Cookie刷新成功')
-            emit('success')
-          }
-        } catch (error) {
-          // 更新失败，request拦截器已经显示了错误
-          console.error('Cookie更新失败:', error)
-        } finally {
-          // 无论成功还是失败，都关闭弹窗
-          handleClose()
-        }
-      } else {
-        // 不匹配，弹窗提示
-        await ElMessageBox.alert(
-          `扫码登录账号(${scannedUnb})与当前账号(${props.currentUnb})不匹配，已刷新或新增账号`,
-          '账号不匹配',
-          {
-            confirmButtonText: '确定',
-            type: 'warning'
-          }
-        )
-        handleClose()
-        emit('success')
-      }
+    if (cookieRes.code !== 200) {
+      showError(cookieRes.msg || '获取Cookie失败')
+      handleClose()
+      return
     }
+    
+    // 2. 解析Cookie数据
+    const cookieData = cookieRes.data as any
+    const cookieText = typeof cookieData?.cookies === 'string' ? cookieData.cookies : JSON.stringify(cookieData?.cookies || {})
+    const scannedUnb = cookieData?.unb || ''
+    
+    console.log('扫码UNB:', scannedUnb, '当前UNB:', props.currentUnb)
+    
+    if (!cookieText) {
+      showError('Cookie为空，请重试')
+      handleClose()
+      return
+    }
+    
+    // 3. 判断扫码账号是否与当前账号匹配
+    if (scannedUnb === props.currentUnb) {
+      // 匹配，更新Cookie
+      const updateRes = await updateCookie({
+        xianyuAccountId: props.accountId,
+        cookieText
+      })
+      
+      if (updateRes.code === 200) {
+        showSuccess('Cookie刷新成功')
+        emit('success')
+      } else {
+        showError(updateRes.msg || 'Cookie刷新失败')
+      }
+      handleClose()
+    } else {
+      // 不匹配，弹窗提示
+      await ElMessageBox.alert(
+        `扫码登录账号(${scannedUnb})与当前账号(${props.currentUnb})不匹配，已刷新或新增账号`,
+        '账号不匹配',
+        {
+          confirmButtonText: '确定',
+          type: 'warning'
+        }
+      )
+      handleClose()
+      emit('success')
+    }
+    
   } catch (error: any) {
-    // request拦截器已经显示了错误消息
     console.error('处理登录失败:', error)
-    // 发生错误也要关闭弹窗
+    showError(error.message || '处理登录失败')
     handleClose()
-  } finally {
-    stopPolling()
   }
 }
 

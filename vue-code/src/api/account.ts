@@ -40,7 +40,7 @@ export function deleteAccount(data: { id: number }) {
 }
 
 // 手动添加账号
-export function manualAddAccount(data: { accountNote: string; unb: string; cookieText: string }) {
+export function manualAddAccount(data: { accountNote: string; cookie: string }) {
   return request({
     url: '/account/manualAdd',
     method: 'POST',
