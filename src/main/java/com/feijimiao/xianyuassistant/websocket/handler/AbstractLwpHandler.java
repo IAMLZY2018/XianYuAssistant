@@ -1,7 +1,9 @@
 package com.feijimiao.xianyuassistant.websocket.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.feijimiao.xianyuassistant.utils.AccountDisplayNameUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Map;
 
@@ -14,10 +16,27 @@ public abstract class AbstractLwpHandler {
     
     protected final ObjectMapper objectMapper = new ObjectMapper();
     
+    @Autowired
+    protected AccountDisplayNameUtils displayNameUtils;
+    
     /**
      * 获取该处理器对应的lwp路径
      */
     public abstract String getLwpPath();
+    
+    /**
+     * 获取账号显示名称
+     */
+    protected String getDisplayName(String accountId) {
+        return displayNameUtils.getDisplayName(accountId);
+    }
+    
+    /**
+     * 格式化日志前缀
+     */
+    protected String logPrefix(String accountId) {
+        return "【" + getDisplayName(accountId) + "】";
+    }
     
     /**
      * 模板方法：处理消息的标准流程
@@ -59,7 +78,7 @@ public abstract class AbstractLwpHandler {
      * @return true继续处理，false跳过
      */
     protected boolean preHandle(String accountId, Map<String, Object> messageData) {
-        log.debug("【账号{}】开始处理消息: lwp={}", accountId, getLwpPath());
+        log.debug("{}开始处理消息: lwp={}", logPrefix(accountId), getLwpPath());
         return true;
     }
     
@@ -85,14 +104,14 @@ public abstract class AbstractLwpHandler {
      * 可以进行结果保存、事件通知等
      */
     protected void postHandle(String accountId, Object result, Map<String, Object> messageData) {
-        log.debug("【账号{}】消息处理完成: lwp={}", accountId, getLwpPath());
+        log.debug("{}消息处理完成: lwp={}", logPrefix(accountId), getLwpPath());
     }
     
     /**
      * 异常处理（钩子方法）
      */
     protected void handleException(String accountId, Map<String, Object> messageData, Exception e) {
-        log.error("【账号{}】处理消息异常: lwp={}", accountId, getLwpPath(), e);
+        log.error("{}处理消息异常: lwp={}", logPrefix(accountId), getLwpPath(), e);
     }
     
     /**

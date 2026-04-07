@@ -190,12 +190,23 @@ public class SyncMessageHandler extends AbstractLwpHandler {
                             // 解析JSON字符串获取contentType
                             @SuppressWarnings("unchecked")
                             Map<String, Object> contentMap = objectMapper.readValue(field635, Map.class);
-                            message.setContentType(extractInteger(contentMap, "contentType"));
+                            Integer contentType = extractInteger(contentMap, "contentType");
+                            message.setContentType(contentType);
+                            
+                            log.info("【账号{}】提取contentType: contentType={}, field635={}", 
+                                    accountId, contentType, field635.length() > 200 ? field635.substring(0, 200) + "..." : field635);
                         } catch (Exception e) {
-                            log.debug("解析contentType失败: {}", e.getMessage());
+                            log.warn("【账号{}】解析contentType失败: field635={}, error={}", 
+                                    accountId, field635.length() > 100 ? field635.substring(0, 100) + "..." : field635, e.getMessage());
                         }
+                    } else {
+                        log.debug("【账号{}】字段1.6.3.5为空，无法提取contentType", accountId);
                     }
+                } else {
+                    log.debug("【账号{}】字段1.6.3不存在或不是Map类型", accountId);
                 }
+            } else {
+                log.debug("【账号{}】字段1.6不存在或不是Map类型", accountId);
             }
             
             // 提取字段1.10的内容
@@ -309,68 +320,171 @@ public class SyncMessageHandler extends AbstractLwpHandler {
                         Object level5 = ((Map<?, ?>) level3).get("5");
                         if (level5 instanceof String) {
                             String jsonStr = (String) level5;
-                            log.info("📋 提取订单ID: 找到字段1.6.3.5={}", jsonStr);
+                            log.debug("📋 提取订单ID: 找到字段1.6.3.5={}", jsonStr.length() > 200 ? jsonStr.substring(0, 200) + "..." : jsonStr);
                             
                             try {
                                 // 解析嵌套的JSON字符串
                                 @SuppressWarnings("unchecked")
                                 Map<String, Object> contentMap = objectMapper.readValue(jsonStr, Map.class);
                                 
-                                // 从 dynamicOperation.changeContent.dxCard.item.main.exContent.button.targetUrl 中提取
-                                Object dynamicOp = contentMap.get("dynamicOperation");
-                                if (dynamicOp instanceof Map) {
-                                    Object changeContent = ((Map<?, ?>) dynamicOp).get("changeContent");
-                                    if (changeContent instanceof Map) {
-                                        Object dxCard = ((Map<?, ?>) changeContent).get("dxCard");
-                                        if (dxCard instanceof Map) {
-                                            Object item = ((Map<?, ?>) dxCard).get("item");
-                                            if (item instanceof Map) {
-                                                Object main = ((Map<?, ?>) item).get("main");
-                                                if (main instanceof Map) {
-                                                    Object exContent = ((Map<?, ?>) main).get("exContent");
-                                                    if (exContent instanceof Map) {
-                                                        Object button = ((Map<?, ?>) exContent).get("button");
-                                                        if (button instanceof Map) {
-                                                            String targetUrl = (String) ((Map<?, ?>) button).get("targetUrl");
-                                                            log.info("📋 提取订单ID: targetUrl={}", targetUrl);
-                                                            
-                                                            if (targetUrl != null && targetUrl.contains("id=")) {
-                                                                // 提取 id 参数
-                                                                String[] parts = targetUrl.split("[?&]");
-                                                                for (String part : parts) {
-                                                                    if (part.startsWith("id=")) {
-                                                                        String orderId = part.substring(3);
-                                                                        log.info("✅ 成功提取订单ID: orderId={}", orderId);
-                                                                        return orderId;
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
+                                // 方法1: 从 dxCard.item.main.exContent.button.targetUrl 中提取
+                                String orderId = extractOrderIdFromDxCard(contentMap);
+                                if (orderId != null) {
+                                    return orderId;
                                 }
+                                
+                                // 方法2: 从 dynamicOperation.changeContent.dxCard.item.main.exContent.button.targetUrl 中提取（旧方法）
+                                orderId = extractOrderIdFromDynamicOperation(contentMap);
+                                if (orderId != null) {
+                                    return orderId;
+                                }
+                                
                             } catch (Exception e) {
                                 log.warn("⚠️ 解析字段1.6.3.5的JSON失败", e);
                             }
                         } else {
-                            log.warn("⚠️ 字段1.6.3.5不是字符串类型");
+                            log.debug("⚠️ 字段1.6.3.5不是字符串类型");
                         }
                     } else {
-                        log.warn("⚠️ 字段1.6.3不存在或不是Map类型");
+                        log.debug("⚠️ 字段1.6.3不存在或不是Map类型");
                     }
                 } else {
-                    log.warn("⚠️ 字段1.6不存在或不是Map类型");
+                    log.debug("⚠️ 字段1.6不存在或不是Map类型");
                 }
             } else {
-                log.warn("⚠️ 字段1不存在或不是Map类型");
+                log.debug("⚠️ 字段1不存在或不是Map类型");
             }
             
             return null;
         } catch (Exception e) {
             log.error("❌ 提取订单ID失败", e);
+            return null;
+        }
+    }
+    
+    /**
+     * 从 dxCard.item.main.exContent.button.targetUrl 中提取订单ID
+     * 新方法：适用于 contentType=26 的消息
+     */
+    private String extractOrderIdFromDxCard(Map<String, Object> contentMap) {
+        try {
+            Object dxCard = contentMap.get("dxCard");
+            if (dxCard instanceof Map) {
+                Object item = ((Map<?, ?>) dxCard).get("item");
+                if (item instanceof Map) {
+                    Object main = ((Map<?, ?>) item).get("main");
+                    if (main instanceof Map) {
+                        Object exContent = ((Map<?, ?>) main).get("exContent");
+                        if (exContent instanceof Map) {
+                            Object button = ((Map<?, ?>) exContent).get("button");
+                            if (button instanceof Map) {
+                                String targetUrl = (String) ((Map<?, ?>) button).get("targetUrl");
+                                log.info("📋 提取订单ID: targetUrl={}", targetUrl);
+                                
+                                if (targetUrl != null) {
+                                    return extractOrderIdFromUrl(targetUrl);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.debug("从dxCard提取订单ID失败: {}", e.getMessage());
+        }
+        return null;
+    }
+    
+    /**
+     * 从 dynamicOperation.changeContent.dxCard.item.main.exContent.button.targetUrl 中提取订单ID
+     * 旧方法：适用于 contentType=32 的消息
+     */
+    private String extractOrderIdFromDynamicOperation(Map<String, Object> contentMap) {
+        try {
+            Object dynamicOp = contentMap.get("dynamicOperation");
+            if (dynamicOp instanceof Map) {
+                Object changeContent = ((Map<?, ?>) dynamicOp).get("changeContent");
+                if (changeContent instanceof Map) {
+                    Object dxCard = ((Map<?, ?>) changeContent).get("dxCard");
+                    if (dxCard instanceof Map) {
+                        Object item = ((Map<?, ?>) dxCard).get("item");
+                        if (item instanceof Map) {
+                            Object main = ((Map<?, ?>) item).get("main");
+                            if (main instanceof Map) {
+                                Object exContent = ((Map<?, ?>) main).get("exContent");
+                                if (exContent instanceof Map) {
+                                    Object button = ((Map<?, ?>) exContent).get("button");
+                                    if (button instanceof Map) {
+                                        String targetUrl = (String) ((Map<?, ?>) button).get("targetUrl");
+                                        log.info("📋 提取订单ID: targetUrl={}", targetUrl);
+                                        
+                                        if (targetUrl != null) {
+                                            return extractOrderIdFromUrl(targetUrl);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.debug("从dynamicOperation提取订单ID失败: {}", e.getMessage());
+        }
+        return null;
+    }
+    
+    /**
+     * 从URL中提取订单ID
+     * 支持两种格式：
+     * 1. orderId=4502258607179022847
+     * 2. id=4502258607179022847
+     */
+    private String extractOrderIdFromUrl(String url) {
+        if (url == null || url.isEmpty()) {
+            return null;
+        }
+        
+        try {
+            // 优先尝试提取 orderId 参数
+            int orderIdIndex = url.indexOf("orderId=");
+            if (orderIdIndex != -1) {
+                int startIndex = orderIdIndex + 8;
+                int endIndex = url.indexOf("&", startIndex);
+                
+                String orderId;
+                if (endIndex == -1) {
+                    orderId = url.substring(startIndex);
+                } else {
+                    orderId = url.substring(startIndex, endIndex);
+                }
+                
+                log.info("✅ 成功提取订单ID: orderId={}", orderId);
+                return orderId;
+            }
+            
+            // 尝试提取 id 参数
+            int idIndex = url.indexOf("id=");
+            if (idIndex != -1) {
+                int startIndex = idIndex + 3;
+                int endIndex = url.indexOf("&", startIndex);
+                
+                String orderId;
+                if (endIndex == -1) {
+                    orderId = url.substring(startIndex);
+                } else {
+                    orderId = url.substring(startIndex, endIndex);
+                }
+                
+                log.info("✅ 成功提取订单ID: id={}", orderId);
+                return orderId;
+            }
+            
+            log.warn("⚠️ URL中未找到orderId或id参数: {}", url);
+            return null;
+            
+        } catch (Exception e) {
+            log.error("❌ 从URL提取订单ID失败: {}", url, e);
             return null;
         }
     }

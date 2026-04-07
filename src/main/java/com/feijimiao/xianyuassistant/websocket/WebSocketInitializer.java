@@ -1,7 +1,9 @@
 package com.feijimiao.xianyuassistant.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.feijimiao.xianyuassistant.utils.AccountDisplayNameUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -19,6 +21,9 @@ public class WebSocketInitializer {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     
+    @Autowired
+    private AccountDisplayNameUtils displayNameUtils;
+    
     /**
      * 生成消息ID
      * 参考Python的generate_mid方法
@@ -26,6 +31,20 @@ public class WebSocketInitializer {
      */
     private String generateMid() {
         return com.feijimiao.xianyuassistant.utils.XianyuDeviceUtils.generateMid();
+    }
+    
+    /**
+     * 获取账号显示名称
+     */
+    private String getDisplayName(String accountId) {
+        return displayNameUtils.getDisplayName(accountId);
+    }
+    
+    /**
+     * 格式化日志前缀
+     */
+    private String logPrefix(String accountId) {
+        return "【" + getDisplayName(accountId) + "】";
     }
     
     /**
@@ -58,11 +77,11 @@ public class WebSocketInitializer {
             String jsonMessage = objectMapper.writeValueAsString(message);
             client.send(jsonMessage);
             
-            log.info("【账号{}】已发送注册消息", accountId);
-            log.info("【账号{}】注册消息内容: {}", accountId, jsonMessage);
+            log.info("{}已发送注册消息", logPrefix(accountId));
+            log.info("{}注册消息内容: {}", logPrefix(accountId), jsonMessage);
             
         } catch (Exception e) {
-            log.error("【账号{}】发送注册消息失败", accountId, e);
+            log.error("{}发送注册消息失败", logPrefix(accountId), e);
         }
     }
     
@@ -101,12 +120,12 @@ public class WebSocketInitializer {
             String jsonMessage = objectMapper.writeValueAsString(message);
             client.send(jsonMessage);
             
-            log.info("【账号{}】已发送同步状态消息", accountId);
-            log.info("【账号{}】同步状态消息内容: {}", accountId, jsonMessage);
-            log.info("【账号{}】pts设置为{} (currentTime * 1000)", accountId, currentTime * 1000);
+            log.info("{}已发送同步状态消息", logPrefix(accountId));
+            log.info("{}同步状态消息内容: {}", logPrefix(accountId), jsonMessage);
+            log.info("{}pts设置为{} (currentTime * 1000)", logPrefix(accountId), currentTime * 1000);
             
         } catch (Exception e) {
-            log.error("【账号{}】发送同步状态消息失败", accountId, e);
+            log.error("{}发送同步状态消息失败", logPrefix(accountId), e);
         }
     }
     
@@ -119,9 +138,9 @@ public class WebSocketInitializer {
      * @param accountId 账号ID
      */
     public void initialize(XianyuWebSocketClient client, String token, String deviceId, String accountId) {
-        log.info("【账号{}】开始WebSocket初始化流程...", accountId);
-        log.info("【账号{}】设备ID: {}", accountId, deviceId);
-        log.info("【账号{}】Token长度: {}", accountId, token != null ? token.length() : 0);
+        log.info("{}开始WebSocket初始化流程...", logPrefix(accountId));
+        log.info("{}设备ID: {}", logPrefix(accountId), deviceId);
+        log.info("{}Token长度: {}", logPrefix(accountId), token != null ? token.length() : 0);
         
         // 1. 发送注册消息
         sendRegistrationMessage(client, token, deviceId, accountId);
@@ -136,6 +155,6 @@ public class WebSocketInitializer {
         // 3. 发送同步状态消息
         sendSyncStatusMessage(client, accountId);
         
-        log.info("【账号{}】WebSocket初始化流程完成", accountId);
+        log.info("{}WebSocket初始化流程完成", logPrefix(accountId));
     }
 }

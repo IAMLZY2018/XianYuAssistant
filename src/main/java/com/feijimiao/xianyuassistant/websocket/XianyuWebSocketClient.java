@@ -1,6 +1,7 @@
 package com.feijimiao.xianyuassistant.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.feijimiao.xianyuassistant.utils.AccountDisplayNameUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
@@ -22,6 +23,7 @@ public class XianyuWebSocketClient extends WebSocketClient {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final String accountId;
+    private final AccountDisplayNameUtils displayNameUtils;
     private boolean isConnected = false;
     
     // 当前用户ID（从Cookie的unb字段获取）
@@ -46,10 +48,28 @@ public class XianyuWebSocketClient extends WebSocketClient {
     
     // Token失效回调
     private Runnable onTokenExpired;
+    
+    // 心跳响应回调
+    private Runnable onHeartbeatResponse;
 
-    public XianyuWebSocketClient(URI serverUri, Map<String, String> headers, String accountId) {
+    public XianyuWebSocketClient(URI serverUri, Map<String, String> headers, String accountId, AccountDisplayNameUtils displayNameUtils) {
         super(serverUri, headers);
         this.accountId = accountId;
+        this.displayNameUtils = displayNameUtils;
+    }
+    
+    /**
+     * 获取账号显示名称
+     */
+    private String getDisplayName() {
+        return displayNameUtils != null ? displayNameUtils.getDisplayName(accountId) : "账号" + accountId;
+    }
+    
+    /**
+     * 格式化日志前缀
+     */
+    private String logPrefix() {
+        return "【" + getDisplayName() + "】";
     }
     
     /**
@@ -79,17 +99,25 @@ public class XianyuWebSocketClient extends WebSocketClient {
     public void setOnTokenExpired(Runnable callback) {
         this.onTokenExpired = callback;
     }
+    
+    /**
+     * 设置心跳响应回调
+     */
+    public void setOnHeartbeatResponse(Runnable callback) {
+        this.onHeartbeatResponse = callback;
+    }
 
     @Override
     public void onOpen(ServerHandshake handshakedata) {
         isConnected = true;
-        log.info("【账号{}】==================== WebSocket连接建立成功 ====================", accountId);
-        log.info("【账号{}】服务器握手状态: {}", accountId, handshakedata.getHttpStatus());
-        log.info("【账号{}】服务器握手消息: {}", accountId, handshakedata.getHttpStatusMessage());
-        log.info("【账号{}】连接已就绪，等待初始化和接收消息...", accountId);
-        log.info("【账号{}】WebSocket连接状态正常，等待服务器消息...", accountId);
-        log.info("【账号{}】准备进入消息接收循环...", accountId);
-        log.info("【账号{}】================================================================", accountId);
+        String displayName = getDisplayName();
+        log.info("【{}】==================== WebSocket连接建立成功 ====================", displayName);
+        log.info("【{}】服务器握手状态: {}", displayName, handshakedata.getHttpStatus());
+        log.info("【{}】服务器握手消息: {}", displayName, handshakedata.getHttpStatusMessage());
+        log.info("【{}】连接已就绪，等待初始化和接收消息...", displayName);
+        log.info("【{}】WebSocket连接状态正常，等待服务器消息...", displayName);
+        log.info("【{}】准备进入消息接收循环...", displayName);
+        log.info("【{}】================================================================", displayName);
     }
 
     @Override
@@ -234,15 +262,17 @@ public class XianyuWebSocketClient extends WebSocketClient {
                     return; // 不再继续处理
                 }
                 
-                if (code != null && (code.equals(200) || "200".equals(code.toString()))) {
-                    handleHeartbeatResponse();
-                    // 心跳响应也要继续处理，不要return
-                }
-
-                // 检查是否是注册响应，保存sid
+                // 检查是否是心跳响应（参考Python的handle_heartbeat_response）
+                // 心跳响应的特征：code=200 且 headers中有mid
                 if (code != null && (code.equals(200) || "200".equals(code.toString()))) {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> headers = (Map<String, Object>) messageData.get("headers");
+                    if (headers != null && headers.containsKey("mid")) {
+                        // 这是心跳响应
+                        handleHeartbeatResponse();
+                    }
+                    
+                    // 检查是否是注册响应，保存sid
                     if (headers != null && headers.containsKey("sid")) {
                         sessionId = headers.get("sid").toString();
                         log.info("【账号{}】已保存会话ID: {}", accountId, sessionId);
@@ -394,6 +424,18 @@ public class XianyuWebSocketClient extends WebSocketClient {
      * 参考Python的handle_heartbeat_response方法
      */
     private void handleHeartbeatResponse() {
+        log.debug("【账号{}】收到心跳响应", accountId);
+        
+        // 触发心跳响应回调（更新心跳响应时间）
+        if (onHeartbeatResponse != null) {
+            try {
+                onHeartbeatResponse.run();
+            } catch (Exception e) {
+                log.error("【账号{}】心跳响应回调执行失败", accountId, e);
+            }
+        }
+        
+        // 调用消息处理器
         if (messageHandler != null) {
             messageHandler.handleHeartbeat(accountId);
         }
@@ -405,19 +447,19 @@ public class XianyuWebSocketClient extends WebSocketClient {
     public void onClose(int code, String reason, boolean remote) {
         isConnected = false;
         String closeType = remote ? "服务器" : "客户端";
-        log.info("【账号{}】WebSocket连接关闭 - 关闭方: {}, 代码: {}, 原因: {}", 
-                accountId, closeType, code, reason);
+        log.info("{}WebSocket连接关闭 - 关闭方: {}, 代码: {}, 原因: {}", 
+                logPrefix(), closeType, code, reason);
         
         // 关闭消息处理线程池
         if (messageExecutor != null && !messageExecutor.isShutdown()) {
             messageExecutor.shutdown();
-            log.debug("【账号{}】消息处理线程池已关闭", accountId);
+            log.debug("{}消息处理线程池已关闭", logPrefix());
         }
     }
 
     @Override
     public void onError(Exception ex) {
-        log.error("【账号{}】WebSocket发生错误", accountId, ex);
+        log.error("{}WebSocket发生错误", logPrefix(), ex);
         if (messageHandler != null) {
             messageHandler.handleError(accountId, ex);
         }

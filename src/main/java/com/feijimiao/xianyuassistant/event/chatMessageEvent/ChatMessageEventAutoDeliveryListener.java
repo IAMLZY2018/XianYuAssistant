@@ -82,10 +82,10 @@ public class ChatMessageEventAutoDeliveryListener {
         
         try {
             // 判断是否需要触发自动发货
-            // 条件1：contentType = 32（已付款待发货）
+            // 条件1：contentType = 26（已付款待发货）
             // 条件2：msgContent 包含 "[已付款，待发货]"
-            if (message.getContentType() == null || message.getContentType() != 32) {
-                log.info("【账号{}】[AutoDeliveryListener]contentType不符合条件: contentType={}, 需要32", 
+            if (message.getContentType() == null || message.getContentType() != 26) {
+                log.info("【账号{}】[AutoDeliveryListener]contentType不符合条件: contentType={}, 需要26", 
                         message.getXianyuAccountId(), message.getContentType());
                 return; // 不是已付款待发货消息
             }

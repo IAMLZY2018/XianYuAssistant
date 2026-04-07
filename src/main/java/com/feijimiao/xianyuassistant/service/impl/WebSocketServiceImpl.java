@@ -44,6 +44,9 @@ public class WebSocketServiceImpl implements WebSocketService {
     
     @Autowired
     private WebSocketConfig config;
+    
+    @Autowired
+    private com.feijimiao.xianyuassistant.utils.AccountDisplayNameUtils displayNameUtils;
 
     // 存储WebSocket客户端
     private final Map<Long, XianyuWebSocketClient> webSocketClients = new ConcurrentHashMap<>();
@@ -222,7 +225,7 @@ public class WebSocketServiceImpl implements WebSocketService {
 
             // 创建WebSocket客户端（参考Python的_create_websocket_connection）
             URI serverUri = new URI(WEBSOCKET_URL);
-            XianyuWebSocketClient client = new XianyuWebSocketClient(serverUri, headers, String.valueOf(accountId));
+            XianyuWebSocketClient client = new XianyuWebSocketClient(serverUri, headers, String.valueOf(accountId), displayNameUtils);
             
             // 设置当前用户ID（从Cookie的unb字段获取）
             client.setMyUserId(unb);
@@ -264,6 +267,11 @@ public class WebSocketServiceImpl implements WebSocketService {
                 } catch (Exception e) {
                     log.error("【账号{}】自动重连异常", accountId, e);
                 }
+            });
+            
+            // 设置心跳响应回调（更新心跳响应时间）
+            client.setOnHeartbeatResponse(() -> {
+                updateHeartbeatResponseTime(accountId);
             });
 
             // 连接WebSocket（参考Python的connect方法）

@@ -41,55 +41,24 @@ public class EnhancedChatMessageListener {
         try {
             ChatMessageData data = event.getMessageData();
             
-            // 1. 消息时效性验证
-            if (!validateMessageTime(data)) {
-                log.debug("消息已过期，丢弃: pnmId={}, chatId={}", data.getPnmId(), data.getSId());
-                return;
-            }
-            
-            // 2. 检查是否是人工接管切换关键词
+            // 1. 检查是否是人工接管切换关键词
             if (isToggleKeyword(data)) {
                 handleToggleKeyword(data);
                 return;
             }
             
-            // 3. 人工接管检查
+            // 2. 人工接管检查
             if (isManualMode(data)) {
                 log.info("会话处于人工接管模式，跳过自动处理: chatId={}", data.getSId());
                 return;
             }
             
-            // 4. 消息通过验证，继续处理（由其他监听器处理）
+            // 3. 消息通过验证，继续处理（由其他监听器处理）
             log.debug("消息通过验证: pnmId={}, chatId={}", data.getPnmId(), data.getSId());
             
         } catch (Exception e) {
             log.error("处理聊天消息事件失败", e);
         }
-    }
-    
-    /**
-     * 验证消息时效性
-     * 
-     * @param data 消息数据
-     * @return true=消息有效，false=消息过期
-     */
-    private boolean validateMessageTime(ChatMessageData data) {
-        if (data.getMessageTime() == null) {
-            // 没有时间戳，默认有效
-            return true;
-        }
-        
-        long currentTime = System.currentTimeMillis();
-        long messageTime = data.getMessageTime();
-        long messageExpireTime = config.getMessageExpireTime();
-        
-        if (currentTime - messageTime > messageExpireTime) {
-            log.debug("消息已过期: messageTime={}, currentTime={}, diff={}ms, threshold={}ms", 
-                    messageTime, currentTime, currentTime - messageTime, messageExpireTime);
-            return false;
-        }
-        
-        return true;
     }
     
     /**

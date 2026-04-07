@@ -260,11 +260,33 @@ public class WebSocketController {
                 respDTO.setCookieText(cookie.getCookieText());
                 respDTO.setWebsocketToken(cookie.getWebsocketToken());
                 respDTO.setTokenExpireTime(cookie.getTokenExpireTime());
+                
+                // 构建简洁的状态信息
+                StringBuilder statusInfo = new StringBuilder();
+                statusInfo.append("账号ID=").append(reqDTO.getXianyuAccountId());
+                statusInfo.append(", 连接=").append(connected ? "✅" : "❌");
+                statusInfo.append(", Cookie=").append(getCookieStatusText(cookie.getCookieStatus()));
+                statusInfo.append(", Token=").append(cookie.getWebsocketToken() != null ? "✅" : "❌");
+                
+                if (cookie.getTokenExpireTime() != null) {
+                    long now = System.currentTimeMillis();
+                    long remaining = cookie.getTokenExpireTime() - now;
+                    if (remaining > 0) {
+                        statusInfo.append(", 剩余").append(remaining / 1000).append("秒");
+                    } else {
+                        statusInfo.append(", Token已过期");
+                    }
+                }
+                
+                log.info("✅ WebSocket状态: {}", statusInfo);
             } else {
                 respDTO.setCookieStatus(null);
                 respDTO.setCookieText(null);
                 respDTO.setWebsocketToken(null);
                 respDTO.setTokenExpireTime(null);
+                
+                log.warn("⚠️ WebSocket状态: 账号ID={}, 连接={}, Cookie=未找到", 
+                        reqDTO.getXianyuAccountId(), connected ? "✅" : "❌");
             }
             
             return ResultObject.success(respDTO);
@@ -272,6 +294,25 @@ public class WebSocketController {
         } catch (Exception e) {
             log.error("查询WebSocket状态失败", e);
             return ResultObject.failed("查询WebSocket状态失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取Cookie状态文本描述
+     */
+    private String getCookieStatusText(Integer cookieStatus) {
+        if (cookieStatus == null) {
+            return "未知";
+        }
+        switch (cookieStatus) {
+            case 1:
+                return "✅ 有效";
+            case 2:
+                return "⚠️ 已过期";
+            case 3:
+                return "❌ 已失效";
+            default:
+                return "未知状态(" + cookieStatus + ")";
         }
     }
     
