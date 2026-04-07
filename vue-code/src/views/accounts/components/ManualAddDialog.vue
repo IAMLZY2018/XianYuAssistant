@@ -17,16 +17,14 @@ const emit = defineEmits<Emits>();
 
 const formData = ref({
   accountNote: '',
-  unb: '',
-  cookieText: ''
+  cookie: ''
 });
 
 const handleClose = () => {
   emit('update:modelValue', false);
   formData.value = {
     accountNote: '',
-    unb: '',
-    cookieText: ''
+    cookie: ''
   };
 };
 
@@ -36,7 +34,7 @@ const handleSubmit = async () => {
     return;
   }
   
-  if (!formData.value.cookieText.trim()) {
+  if (!formData.value.cookie.trim()) {
     showError('请输入 Cookie');
     return;
   }
@@ -70,7 +68,7 @@ const handleSubmit = async () => {
       
       <el-form-item label="Cookie">
         <el-input
-          v-model="formData.cookieText"
+          v-model="formData.cookie"
           type="textarea"
           :rows="6"
           placeholder="请输入完整的 Cookie 字符串"

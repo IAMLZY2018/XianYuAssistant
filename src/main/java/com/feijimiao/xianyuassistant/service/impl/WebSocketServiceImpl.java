@@ -1,5 +1,6 @@
 package com.feijimiao.xianyuassistant.service.impl;
 
+import com.feijimiao.xianyuassistant.config.WebSocketConfig;
 import com.feijimiao.xianyuassistant.service.AccountService;
 import com.feijimiao.xianyuassistant.service.WebSocketService;
 import com.feijimiao.xianyuassistant.service.WebSocketTokenService;
@@ -20,6 +21,10 @@ import java.util.concurrent.*;
 /**
  * WebSocket服务实现类
  * 参考Python代码的XianyuAutoAsync类
+ * 增强功能：
+ * 1. Token自动刷新机制
+ * 2. 心跳超时检测
+ * 3. 连接重连机制
  */
 @Slf4j
 @Service
@@ -36,15 +41,33 @@ public class WebSocketServiceImpl implements WebSocketService {
     
     @Autowired
     private WebSocketInitializer initializer;
+    
+    @Autowired
+    private WebSocketConfig config;
 
     // 存储WebSocket客户端
     private final Map<Long, XianyuWebSocketClient> webSocketClients = new ConcurrentHashMap<>();
     
     // 心跳定时器
-    private final ScheduledExecutorService heartbeatScheduler = Executors.newScheduledThreadPool(1);
+    private final ScheduledExecutorService heartbeatScheduler = Executors.newScheduledThreadPool(2);
     
     // 心跳任务
     private final Map<Long, ScheduledFuture<?>> heartbeatTasks = new ConcurrentHashMap<>();
+    
+    // Token刷新定时器
+    private final ScheduledExecutorService tokenRefreshScheduler = Executors.newScheduledThreadPool(1);
+    
+    // Token刷新任务
+    private final Map<Long, ScheduledFuture<?>> tokenRefreshTasks = new ConcurrentHashMap<>();
+    
+    // 心跳响应时间记录
+    private final Map<Long, Long> lastHeartbeatResponseTimes = new ConcurrentHashMap<>();
+    
+    // Token刷新时间记录
+    private final Map<Long, Long> lastTokenRefreshTimes = new ConcurrentHashMap<>();
+    
+    // 连接重启标志
+    private final Map<Long, Boolean> connectionRestartFlags = new ConcurrentHashMap<>();
 
     /**
      * 闲鱼WebSocket URL
@@ -320,38 +343,189 @@ public class WebSocketServiceImpl implements WebSocketService {
 
     /**
      * 启动心跳任务
+     * 增强功能：心跳超时检测
      */
     private void startHeartbeat(Long accountId, XianyuWebSocketClient client) {
-        // 每15秒发送一次心跳（参考Python的HEARTBEAT_INTERVAL=15）
-        ScheduledFuture<?> task = heartbeatScheduler.scheduleAtFixedRate(
+        // 初始化心跳响应时间
+        long currentTime = System.currentTimeMillis() / 1000;
+        lastHeartbeatResponseTimes.put(accountId, currentTime);
+        
+        // 心跳发送任务（参考Python的heartbeat_loop）
+        ScheduledFuture<?> heartbeatTask = heartbeatScheduler.scheduleAtFixedRate(
             () -> {
                 try {
                     if (client.isConnected()) {
                         client.sendHeartbeat();
+                        
+                        // 检查心跳响应超时（参考Python的心跳超时检测）
+                        Long lastResponseTime = lastHeartbeatResponseTimes.get(accountId);
+                        if (lastResponseTime != null) {
+                            long now = System.currentTimeMillis() / 1000;
+                            long timeout = config.getHeartbeatInterval() + config.getHeartbeatTimeout();
+                            
+                            if (now - lastResponseTime > timeout) {
+                                log.warn("【账号{}】心跳响应超时，可能连接已断开", accountId);
+                                // 触发重连
+                                handleConnectionLost(accountId);
+                            }
+                        }
                     } else {
-                        log.warn("WebSocket未连接，停止心跳: accountId={}", accountId);
-                        stopHeartbeat(accountId);
+                        log.debug("WebSocket连接断开: accountId={}", accountId);
                     }
                 } catch (Exception e) {
                     log.error("发送心跳失败: accountId={}", accountId, e);
                 }
             },
-            15, 15, TimeUnit.SECONDS
+            config.getHeartbeatInterval(), config.getHeartbeatInterval(), TimeUnit.SECONDS
         );
         
-        heartbeatTasks.put(accountId, task);
-        log.info("心跳任务已启动: accountId={}, 间隔15秒", accountId);
+        heartbeatTasks.put(accountId, heartbeatTask);
+        log.info("心跳任务已启动: accountId={}, 间隔{}秒", accountId, config.getHeartbeatInterval());
+        
+        // 启动Token自动刷新任务（参考Python的token_refresh_loop）
+        startTokenRefresh(accountId);
+    }
+    
+    /**
+     * 启动Token自动刷新任务
+     * 参考Python的token_refresh_loop方法
+     */
+    private void startTokenRefresh(Long accountId) {
+        // 初始化Token刷新时间
+        long currentTime = System.currentTimeMillis() / 1000;
+        lastTokenRefreshTimes.put(accountId, currentTime);
+        
+        // Token刷新任务（每分钟检查一次）
+        ScheduledFuture<?> tokenRefreshTask = tokenRefreshScheduler.scheduleAtFixedRate(
+            () -> {
+                try {
+                    Long lastRefreshTime = lastTokenRefreshTimes.get(accountId);
+                    if (lastRefreshTime == null) {
+                        return;
+                    }
+                    
+                    long now = System.currentTimeMillis() / 1000;
+                    
+                    // 检查是否需要刷新Token（参考Python的token_refresh_interval）
+                    if (now - lastRefreshTime >= config.getTokenRefreshInterval()) {
+                        log.info("【账号{}】Token即将过期，准备刷新...", accountId);
+                        
+                        // 设置连接重启标志
+                        connectionRestartFlags.put(accountId, true);
+                        
+                        // 刷新Token并重连
+                        refreshTokenAndReconnect(accountId);
+                    }
+                } catch (Exception e) {
+                    log.error("【账号{}】Token刷新检查失败", accountId, e);
+                }
+            },
+            60, 60, TimeUnit.SECONDS  // 每分钟检查一次
+        );
+        
+        tokenRefreshTasks.put(accountId, tokenRefreshTask);
+        log.info("Token刷新任务已启动: accountId={}, 刷新间隔{}秒", accountId, config.getTokenRefreshInterval());
+    }
+    
+    /**
+     * 刷新Token并重连
+     * 参考Python的refresh_token和重连逻辑
+     */
+    private void refreshTokenAndReconnect(Long accountId) {
+        try {
+            log.info("【账号{}】开始刷新Token并重连...", accountId);
+            
+            // 停止当前连接
+            stopWebSocket(accountId);
+            
+            // 等待1秒
+            Thread.sleep(1000);
+            
+            // 清除旧Token
+            tokenService.clearToken(accountId);
+            
+            // 重新启动连接（会自动获取新Token）
+            boolean success = startWebSocket(accountId);
+            
+            if (success) {
+                // 更新Token刷新时间
+                lastTokenRefreshTimes.put(accountId, System.currentTimeMillis() / 1000);
+                log.info("【账号{}】✅ Token刷新并重连成功", accountId);
+            } else {
+                log.error("【账号{}】❌ Token刷新并重连失败，将在{}分钟后重试", 
+                        accountId, config.getTokenRetryInterval() / 60);
+            }
+        } catch (Exception e) {
+            log.error("【账号{}】Token刷新并重连异常", accountId, e);
+        }
+    }
+    
+    /**
+     * 处理连接丢失
+     * 参考Python的连接重连逻辑
+     */
+    private void handleConnectionLost(Long accountId) {
+        try {
+            log.warn("【账号{}】检测到连接丢失，准备重连...", accountId);
+            
+            // 检查是否是主动重启
+            Boolean restartFlag = connectionRestartFlags.get(accountId);
+            if (restartFlag != null && restartFlag) {
+                log.info("【账号{}】主动重启连接，立即重连...", accountId);
+            } else {
+                log.info("【账号{}】等待{}秒后重连...", accountId, config.getReconnectDelay());
+                Thread.sleep(config.getReconnectDelay() * 1000L);
+            }
+            
+            // 重置重启标志
+            connectionRestartFlags.put(accountId, false);
+            
+            // 停止当前连接
+            stopWebSocket(accountId);
+            
+            // 重新启动连接
+            boolean success = startWebSocket(accountId);
+            
+            if (success) {
+                log.info("【账号{}】✅ 重连成功", accountId);
+            } else {
+                log.error("【账号{}】❌ 重连失败", accountId);
+            }
+        } catch (Exception e) {
+            log.error("【账号{}】重连异常", accountId, e);
+        }
+    }
+    
+    /**
+     * 更新心跳响应时间
+     * 由消息处理器调用
+     */
+    public void updateHeartbeatResponseTime(Long accountId) {
+        lastHeartbeatResponseTimes.put(accountId, System.currentTimeMillis() / 1000);
     }
 
     /**
      * 停止心跳任务
      */
     private void stopHeartbeat(Long accountId) {
-        ScheduledFuture<?> task = heartbeatTasks.remove(accountId);
-        if (task != null) {
-            task.cancel(false);
+        // 停止心跳任务
+        ScheduledFuture<?> heartbeatTask = heartbeatTasks.remove(accountId);
+        if (heartbeatTask != null) {
+            heartbeatTask.cancel(false);
             log.info("心跳任务已停止: accountId={}", accountId);
         }
+        
+        // 停止Token刷新任务
+        ScheduledFuture<?> tokenRefreshTask = tokenRefreshTasks.remove(accountId);
+        if (tokenRefreshTask != null) {
+            tokenRefreshTask.cancel(false);
+            log.info("Token刷新任务已停止: accountId={}", accountId);
+        }
+        
+        // 清理状态
+        lastHeartbeatResponseTimes.remove(accountId);
+        lastTokenRefreshTimes.remove(accountId);
+        connectionRestartFlags.remove(accountId);
     }
 
     @Override
@@ -388,5 +562,8 @@ public class WebSocketServiceImpl implements WebSocketService {
     public void cleanup() {
         log.info("应用关闭，清理WebSocket资源");
         stopAllWebSockets();
+        
+        // 关闭Token刷新调度器
+        tokenRefreshScheduler.shutdown();
     }
 }

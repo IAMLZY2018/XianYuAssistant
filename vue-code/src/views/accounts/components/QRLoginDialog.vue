@@ -86,32 +86,50 @@ const stopPolling = () => {
 
 const handleLoginSuccess = async () => {
   try {
+    // 1. 获取Cookie
     const cookieRes = await getQRCodeCookies(sessionId.value)
-    if (cookieRes.code === 0 || cookieRes.code === 200) {
-      const cookies = cookieRes.data?.cookies || {}
-      const unb = cookies.unb || ''
-      const cookieText = Object.entries(cookies)
-        .map(([key, value]) => `${key}=${value}`)
-        .join('; ')
-      
-      const accountNote = `账号_${unb || Date.now()}`
-      
-      const addRes = await addAccount({
-        accountNote,
-        unb,
-        cookieText
-      } as any)
-      
-      if (addRes.code === 0 || addRes.code === 200) {
-        showSuccess('账号添加成功')
-        handleClose()
-        emit('success')
-      }
+    if (cookieRes.code !== 0 && cookieRes.code !== 200) {
+      showError(cookieRes.msg || '获取Cookie失败')
+      handleClose()
+      return
     }
+    
+    // 2. 构建Cookie字符串
+    const cookies = cookieRes.data?.cookies || {}
+    const unb = cookies.unb || ''
+    const cookieText = Object.entries(cookies)
+      .map(([key, value]) => `${key}=${value}`)
+      .join('; ')
+    
+    if (!cookieText) {
+      showError('Cookie为空，请重试')
+      handleClose()
+      return
+    }
+    
+    // 3. 添加账号
+    const accountNote = `账号_${unb || Date.now()}`
+    const addRes = await addAccount({
+      accountNote,
+      unb,
+      cookie: cookieText
+    } as any)
+    
+    // 4. 处理结果
+    if (addRes.code === 0 || addRes.code === 200) {
+      showSuccess('账号添加成功')
+      emit('success')
+    } else {
+      showError(addRes.msg || '添加账号失败')
+    }
+    
+    // 5. 关闭弹窗（无论成功失败都关闭）
+    handleClose()
+    
   } catch (error: any) {
     console.error('处理登录失败:', error)
-  } finally {
-    stopPolling()
+    showError(error.message || '处理登录失败')
+    handleClose()
   }
 }
 

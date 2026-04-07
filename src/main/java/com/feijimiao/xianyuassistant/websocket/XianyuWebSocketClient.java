@@ -442,9 +442,11 @@ public class XianyuWebSocketClient extends WebSocketClient {
 
     /**
      * 检查连接状态
+     * 使用底层的连接状态，而不是标志位
      */
     public boolean isConnected() {
-        return isConnected && !isClosed();
+        // 使用底层WebSocket的连接状态
+        return !isClosed() && isOpen();
     }
     
     /**
