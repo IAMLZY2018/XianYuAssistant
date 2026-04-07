@@ -93,20 +93,17 @@ const handleLoginSuccess = async () => {
       handleClose()
       return
     }
-    
-    // 2. 构建Cookie字符串
-    const cookies = cookieRes.data?.cookies || {}
-    const unb = cookies.unb || ''
-    const cookieText = Object.entries(cookies)
-      .map(([key, value]) => `${key}=${value}`)
-      .join('; ')
-    
+
+    // 2. 直接使用返回的Cookie字符串和UNB
+    const cookieText = cookieRes.data?.cookies || ''
+    const unb = cookieRes.data?.unb || ''
+
     if (!cookieText) {
       showError('Cookie为空，请重试')
       handleClose()
       return
     }
-    
+
     // 3. 添加账号
     const accountNote = `账号_${unb || Date.now()}`
     const addRes = await addAccount({
@@ -114,7 +111,7 @@ const handleLoginSuccess = async () => {
       unb,
       cookie: cookieText
     } as any)
-    
+
     // 4. 处理结果
     if (addRes.code === 0 || addRes.code === 200) {
       showSuccess('账号添加成功')
@@ -122,10 +119,10 @@ const handleLoginSuccess = async () => {
     } else {
       showError(addRes.msg || '添加账号失败')
     }
-    
+
     // 5. 关闭弹窗（无论成功失败都关闭）
     handleClose()
-    
+
   } catch (error: any) {
     console.error('处理登录失败:', error)
     showError(error.message || '处理登录失败')

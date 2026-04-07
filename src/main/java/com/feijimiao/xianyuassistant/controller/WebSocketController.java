@@ -4,6 +4,7 @@ import com.feijimiao.xianyuassistant.common.ResultObject;
 import com.feijimiao.xianyuassistant.entity.XianyuAccount;
 import com.feijimiao.xianyuassistant.controller.dto.UpdateCookieReqDTO;
 import com.feijimiao.xianyuassistant.controller.dto.UpdateCookieRespDTO;
+import com.feijimiao.xianyuassistant.service.CookieRefreshService;
 import com.feijimiao.xianyuassistant.service.WebSocketService;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,9 @@ public class WebSocketController {
     
     @Autowired
     private com.feijimiao.xianyuassistant.service.TokenRefreshService tokenRefreshService;
+    
+    @Autowired
+    private CookieRefreshService cookieRefreshService;
 
     /**
      * 启动WebSocket连接
@@ -467,6 +471,65 @@ public class WebSocketController {
             return ResultObject.failed("更新Token异常: " + e.getMessage());
         }
     }
+    
+    /**
+     * 刷新Cookie
+     * 参考Python: 通过hasLogin接口刷新Cookie
+     */
+    @PostMapping("/refreshCookie")
+    public ResultObject<String> refreshCookie(@RequestBody RefreshCookieReqDTO reqDTO) {
+        try {
+            log.info("手动刷新Cookie请求: xianyuAccountId={}", reqDTO.getXianyuAccountId());
+            
+            if (reqDTO.getXianyuAccountId() == null) {
+                return ResultObject.failed("账号ID不能为空");
+            }
+            
+            // 调用Cookie刷新服务
+            boolean success = cookieRefreshService.refreshCookie(reqDTO.getXianyuAccountId());
+            
+            if (success) {
+                log.info("【账号{}】✅ Cookie刷新成功", reqDTO.getXianyuAccountId());
+                return ResultObject.success("Cookie刷新成功");
+            } else {
+                log.error("【账号{}】❌ Cookie刷新失败，请手动更新Cookie", reqDTO.getXianyuAccountId());
+                return ResultObject.failed("Cookie刷新失败，请手动更新Cookie");
+            }
+            
+        } catch (Exception e) {
+            log.error("手动刷新Cookie异常: xianyuAccountId={}", reqDTO.getXianyuAccountId(), e);
+            return ResultObject.failed("刷新Cookie异常: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 检查登录状态
+     */
+    @PostMapping("/checkLogin")
+    public ResultObject<String> checkLogin(@RequestBody CheckLoginReqDTO reqDTO) {
+        try {
+            log.info("检查登录状态请求: xianyuAccountId={}", reqDTO.getXianyuAccountId());
+            
+            if (reqDTO.getXianyuAccountId() == null) {
+                return ResultObject.failed("账号ID不能为空");
+            }
+            
+            // 调用Cookie刷新服务检查登录状态
+            boolean valid = cookieRefreshService.checkLoginStatus(reqDTO.getXianyuAccountId());
+            
+            if (valid) {
+                log.info("【账号{}】✅ 登录状态有效", reqDTO.getXianyuAccountId());
+                return ResultObject.success("登录状态有效");
+            } else {
+                log.warn("【账号{}】⚠️ 登录状态无效，请更新Cookie", reqDTO.getXianyuAccountId());
+                return ResultObject.failed("登录状态无效，请更新Cookie");
+            }
+            
+        } catch (Exception e) {
+            log.error("检查登录状态异常: xianyuAccountId={}", reqDTO.getXianyuAccountId(), e);
+            return ResultObject.failed("检查登录状态异常: " + e.getMessage());
+        }
+    }
 
     private String extractUnbFromCookie(String cookie) {
         if (cookie == null || cookie.isEmpty()) {
@@ -577,5 +640,21 @@ public class WebSocketController {
         private String cid;            // 会话ID（不带@goofish后缀）
         private String toId;           // 接收方用户ID（不带@goofish后缀）
         private String text;           // 消息文本内容
+    }
+    
+    /**
+     * 刷新Cookie请求DTO
+     */
+    @Data
+    public static class RefreshCookieReqDTO {
+        private Long xianyuAccountId;  // 账号ID
+    }
+    
+    /**
+     * 检查登录状态请求DTO
+     */
+    @Data
+    public static class CheckLoginReqDTO {
+        private Long xianyuAccountId;  // 账号ID
     }
 }
