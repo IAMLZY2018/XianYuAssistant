@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { getAccountList } from '@/api/account';
 import { getGoodsList, refreshGoods, getGoodsDetail, updateAutoDeliveryStatus, updateAutoReplyStatus, deleteItem } from '@/api/goods';
 import { showSuccess, showError, showInfo, showConfirm } from '@/utils';
 import type { Account } from '@/types';
 import type { GoodsItemWithConfig } from '@/api/goods';
 import GoodsDetailDialog from './components/GoodsDetailDialog.vue';
+
+const router = useRouter();
 
 const loading = ref(false);
 const refreshing = ref(false);
@@ -149,6 +152,17 @@ const handleDelete = async (xyGoodId: string, title: string) => {
     }
     console.error('删除失败:', error);
   }
+};
+
+// 配置自动发货
+const handleConfigAutoDelivery = (item: GoodsItemWithConfig) => {
+  router.push({
+    path: '/auto-delivery',
+    query: {
+      accountId: selectedAccountId.value?.toString(),
+      goodsId: item.item.xyGoodId
+    }
+  });
 };
 
 // 切换自动发货
@@ -337,7 +351,7 @@ onMounted(() => {
           </template>
         </el-table-column>
         
-        <el-table-column label="操作" width="150" align="center" fixed="right">
+        <el-table-column label="操作" width="220" align="center" fixed="right">
           <template #default="{ row }">
             <el-button
               type="primary"
@@ -346,6 +360,14 @@ onMounted(() => {
               @click="handleViewDetail(row.item.xyGoodId)"
             >
               查看详情
+            </el-button>
+            <el-button
+              type="success"
+              link
+              size="small"
+              @click="handleConfigAutoDelivery(row)"
+            >
+              配置自动发货
             </el-button>
             <el-button
               type="danger"

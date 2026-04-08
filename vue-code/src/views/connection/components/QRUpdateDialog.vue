@@ -118,17 +118,8 @@ const handleLoginSuccess = async () => {
       return
     }
 
-    // 4. 更新Token（从Cookie中提取或使用返回的token）
-    const token = cookieRes.data?.token || ''
-    if (token) {
-      await updateToken({
-        xianyuAccountId: props.accountId,
-        websocketToken: token
-      })
-    }
-
-    // 5. 处理结果
-    showSuccess('Cookie和Token更新成功')
+    // 4. 处理结果
+    showSuccess('Cookie更新成功')
     emit('success')
     handleClose()
 
