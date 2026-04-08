@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
+  import { useRoute } from 'vue-router';
 import { ElMessageBox } from 'element-plus';
 import { getAccountList } from '@/api/account';
 import { getGoodsList, getGoodsDetail, updateAutoDeliveryStatus } from '@/api/goods';
@@ -16,6 +17,7 @@ import type { GoodsItemWithConfig } from '@/api/goods';
 import GoodsDetailDialog from '../goods/components/GoodsDetailDialog.vue';
 import { getAutoDeliveryRecords, type AutoDeliveryRecordReq, type AutoDeliveryRecordResp, confirmShipment, type ConfirmShipmentReq } from '@/api/auto-delivery-record';
 
+const route = useRoute();
 const loading = ref(false);
 const saving = ref(false);
 const accounts = ref<Account[]>([]);
@@ -56,6 +58,18 @@ const loadAccounts = async () => {
     const response = await getAccountList();
     if (response.code === 0 || response.code === 200) {
       accounts.value = response.data?.accounts || [];
+
+      // 检查路由参数,如果有则使用路由参数中的账号ID
+      const accountIdFromQuery = route.query.accountId;
+      if (accountIdFromQuery) {
+        const accountId = parseInt(accountIdFromQuery as string);
+        if (accounts.value.some(acc => acc.id === accountId)) {
+          selectedAccountId.value = accountId;
+          await loadGoods();
+          return;
+        }
+      }
+
       // 默认选择第一个账号
       if (accounts.value.length > 0 && !selectedAccountId.value) {
         selectedAccountId.value = accounts.value[0]?.id || null;
@@ -85,6 +99,17 @@ const loadGoods = async () => {
     const response = await getGoodsList(params);
     if (response.code === 0 || response.code === 200) {
       goodsList.value = response.data?.itemsWithConfig || [];
+
+      // 检查路由参数,如果有则使用路由参数中的商品ID
+      const goodsIdFromQuery = route.query.goodsId;
+      if (goodsIdFromQuery) {
+        const targetGoods = goodsList.value.find(g => g.item.xyGoodId === goodsIdFromQuery);
+        if (targetGoods) {
+          await selectGoods(targetGoods);
+          return;
+        }
+      }
+
       // 默认选择第一个商品
       if (goodsList.value.length > 0 && !selectedGoods.value) {
         if (goodsList.value.length > 0) {

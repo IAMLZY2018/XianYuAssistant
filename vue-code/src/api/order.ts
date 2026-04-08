@@ -36,7 +36,7 @@ export function queryOrderList(data: OrderQueryReq) {
     url: '/order/list',
     method: 'POST',
     data
-  }) as Promise<ApiResponse<PageResult<OrderVO>>>
+  })
 }
 
 export function confirmShipment(data: { xianyuAccountId: number; orderId: string }) {
