@@ -40,6 +40,9 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private AccountService accountService;
     
+    @Autowired
+    private com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoDeliveryRecordMapper autoDeliveryRecordMapper;
+    
     private final ObjectMapper objectMapper = new ObjectMapper();
     
     private final HttpClient httpClient = HttpClient.newBuilder()
@@ -248,6 +251,7 @@ public class OrderServiceImpl implements OrderService {
     
     /**
      * 更新订单状态为已发货
+     * 同时同步自动发货记录的状态
      */
     private String updateOrderStatusToShipped(Long accountId, String orderId, String successMessage) {
         try {
@@ -266,16 +270,55 @@ public class OrderServiceImpl implements OrderService {
             
             int result = orderMapper.updateById(order);
             if (result > 0) {
-                log.info("【账号{}】更新本地数据库成功: orderId={}", accountId, orderId);
+                log.info("【账号{}】更新订单状态成功: orderId={}, orderStatus=3(已发货)", accountId, orderId);
+                
+                // 同步自动发货记录的状态
+                syncAutoDeliveryRecordStatus(accountId, orderId);
+                
                 return successMessage;
             } else {
-                log.error("【账号{}】更新本地数据库失败: orderId={}", accountId, orderId);
+                log.error("【账号{}】更新订单状态失败: orderId={}", accountId, orderId);
                 return null;
             }
             
         } catch (Exception e) {
-            log.error("【账号{}】更新本地数据库异常: orderId={}", accountId, orderId, e);
+            log.error("【账号{}】更新订单状态异常: orderId={}", accountId, orderId, e);
             return null;
+        }
+    }
+    
+    /**
+     * 同步自动发货记录的状态
+     * 当订单状态更新为"已发货"(order_status=3)时,自动发货记录的状态也应该同步
+     * 
+     * @param accountId 账号ID
+     * @param orderId 订单ID
+     */
+    private void syncAutoDeliveryRecordStatus(Long accountId, String orderId) {
+        try {
+            // 查询自动发货记录
+            com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoDeliveryRecord record = 
+                autoDeliveryRecordMapper.selectByOrderId(accountId, orderId);
+            
+            if (record != null) {
+                log.info("【账号{}】找到自动发货记录: recordId={}, orderId={}, 当前state={}", 
+                        accountId, record.getId(), orderId, record.getState());
+                
+                // 如果自动发货记录存在,且发货成功(state=1),则记录日志
+                // 订单状态已通过xianyu_order.order_status=3表示已确认发货
+                if (record.getState() == 1) {
+                    log.info("【账号{}】✅ 订单已确认发货: orderId={}, 自动发货记录ID={}, 发货状态=成功", 
+                            accountId, orderId, record.getId());
+                } else {
+                    log.warn("【账号{}】⚠️ 订单已确认发货,但自动发货记录显示失败: orderId={}, recordId={}, state={}", 
+                            accountId, orderId, record.getId(), record.getState());
+                }
+            } else {
+                log.debug("【账号{}】未找到对应的自动发货记录: orderId={}", accountId, orderId);
+            }
+            
+        } catch (Exception e) {
+            log.error("【账号{}】同步自动发货记录状态失败: orderId={}", accountId, orderId, e);
         }
     }
     

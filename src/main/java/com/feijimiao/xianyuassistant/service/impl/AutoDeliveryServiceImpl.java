@@ -311,16 +311,12 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             com.feijimiao.xianyuassistant.controller.dto.AutoDeliveryRecordDTO dto = 
                     new com.feijimiao.xianyuassistant.controller.dto.AutoDeliveryRecordDTO();
             dto.setId(record.getId());
-            dto.setXianyuAccountId(record.getXianyuAccountId());
-            dto.setXianyuGoodsId(record.getXianyuGoodsId());
             dto.setXyGoodsId(record.getXyGoodsId());
             dto.setGoodsTitle(record.getGoodsTitle());
-            dto.setBuyerUserId(record.getBuyerUserId());
             dto.setBuyerUserName(record.getBuyerUserName());
             dto.setContent(record.getContent());
             dto.setState(record.getState());
             dto.setOrderId(record.getOrderId());
-            dto.setOrderState(record.getOrderState());
             dto.setCreateTime(record.getCreateTime());
             recordDTOs.add(dto);
         }

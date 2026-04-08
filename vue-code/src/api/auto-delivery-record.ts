@@ -1,19 +1,15 @@
 import { request } from '@/utils/request';
 import type { ApiResponse } from '@/types';
 
-// 自动发货记录
+// 自动发货记录 (简化版)
 export interface AutoDeliveryRecord {
   id: number;
-  xianyuAccountId: number;
-  xianyuGoodsId?: number;
   xyGoodsId: string;
   goodsTitle?: string;
-  buyerUserId?: string;
   buyerUserName?: string;
   content?: string;
   state: number; // 1-成功，0-失败
-  orderId?: string; // 订单ID
-  orderState?: number; // 确认发货状态：0-未确认发货，1-已确认发货
+  orderId?: string;
   createTime: string;
 }
 

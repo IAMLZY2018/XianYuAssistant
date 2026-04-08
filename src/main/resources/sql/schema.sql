@@ -5,8 +5,8 @@ CREATE TABLE IF NOT EXISTS xianyu_account (
     unb VARCHAR(100),                             -- UNB标识
     device_id VARCHAR(100),                       -- 设备ID（UUID格式-用户ID，用于WebSocket连接）
     status TINYINT DEFAULT 1,                     -- 账号状态 1:正常 -1:需要手机号验证
-    created_time DATETIME DEFAULT CURRENT_TIMESTAMP,  -- 创建时间
-    updated_time DATETIME DEFAULT CURRENT_TIMESTAMP   -- 更新时间
+    created_time DATETIME DEFAULT (datetime('now', 'localtime')),  -- 创建时间
+    updated_time DATETIME DEFAULT (datetime('now', 'localtime'))   -- 更新时间
 );
 
 -- 闲鱼Cookie表
@@ -19,8 +19,8 @@ CREATE TABLE IF NOT EXISTS xianyu_cookie (
     expire_time DATETIME,                         -- 过期时间
     websocket_token TEXT,                         -- WebSocket accessToken
     token_expire_time INTEGER,                    -- Token过期时间戳（毫秒）
-    created_time DATETIME DEFAULT CURRENT_TIMESTAMP,  -- 创建时间
-    updated_time DATETIME DEFAULT CURRENT_TIMESTAMP,  -- 更新时间
+    created_time DATETIME DEFAULT (datetime('now', 'localtime')),  -- 创建时间
+    updated_time DATETIME DEFAULT (datetime('now', 'localtime')),  -- 更新时间
     FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
 );
 
@@ -58,8 +58,8 @@ CREATE TABLE IF NOT EXISTS xianyu_goods (
     detail_url TEXT,                              -- 商品详情页URL
     sold_price VARCHAR(50),                       -- 商品价格
     status TINYINT DEFAULT 0,                     -- 商品状态 0:在售 1:已下架 2:已售出
-    created_time DATETIME DEFAULT CURRENT_TIMESTAMP,  -- 创建时间
-    updated_time DATETIME DEFAULT CURRENT_TIMESTAMP,  -- 更新时间
+    created_time DATETIME DEFAULT (datetime('now', 'localtime')),  -- 创建时间
+    updated_time DATETIME DEFAULT (datetime('now', 'localtime')),  -- 更新时间
     FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
 );
 
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS xianyu_chat_message (
     
     -- 时间信息
     message_time BIGINT,                          -- 消息时间戳（毫秒，字段1.5）
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,  -- 创建时间
+    create_time DATETIME DEFAULT (datetime('now', 'localtime')),  -- 创建时间
     
     -- 外键约束
     FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
@@ -134,8 +134,8 @@ CREATE TABLE IF NOT EXISTS xianyu_goods_config (
     xy_goods_id VARCHAR(100) NOT NULL,                -- 闲鱼的商品ID
     xianyu_auto_delivery_on TINYINT DEFAULT 0,        -- 自动发货开关：1-开启，0-关闭，默认关闭
     xianyu_auto_reply_on TINYINT DEFAULT 0,           -- 自动回复开关：1-开启，0-关闭，默认关闭
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,   -- 创建时间
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP,   -- 更新时间
+    create_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 创建时间
+    update_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 更新时间
     FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
 );
 
@@ -161,8 +161,8 @@ CREATE TABLE IF NOT EXISTS xianyu_goods_auto_delivery_config (
     type TINYINT DEFAULT 1,                           -- 发货类型（1-文本，2-自定义）
     auto_delivery_content TEXT,                       -- 自动发货的文本内容
     auto_confirm_shipment TINYINT DEFAULT 0,          -- 自动确认发货开关：0-关闭，1-开启
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,   -- 创建时间
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP,   -- 更新时间
+    create_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 创建时间
+    update_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 更新时间
     FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
 );
 
@@ -179,20 +179,17 @@ BEGIN
 END
 $
 
--- 商品自动发货记录表
+-- 商品自动发货记录表 (优化版: 移除重复字段,通过关联xianyu_order表获取订单信息)
 CREATE TABLE IF NOT EXISTS xianyu_goods_auto_delivery_record (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     xianyu_account_id BIGINT NOT NULL,                -- 闲鱼账号ID
     xianyu_goods_id BIGINT,                           -- 本地闲鱼商品ID
     xy_goods_id VARCHAR(100) NOT NULL,                -- 闲鱼的商品ID
     pnm_id VARCHAR(100) NOT NULL,                     -- 消息pnmid，用于防止重复发货
-    buyer_user_id VARCHAR(100),                       -- 买家用户ID
-    buyer_user_name VARCHAR(100),                     -- 买家用户名称
+    order_id VARCHAR(100),                            -- 订单ID (关联xianyu_order表)
     content TEXT,                                     -- 发货消息内容
-    state TINYINT DEFAULT 0,                          -- 状态是否成功1-成功，0-失败
-    order_id VARCHAR(100),                            -- 订单ID
-    order_state TINYINT DEFAULT 0,                    -- 确认发货状态：0-未确认发货，1-已确认发货
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,   -- 创建时间
+    state TINYINT DEFAULT 0,                          -- 发货是否成功: 1-成功, 0-失败
+    create_time DATETIME DEFAULT (datetime('now', 'localtime')),  -- 创建时间(本地时间)
     FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
 );
 
@@ -203,7 +200,6 @@ CREATE INDEX IF NOT EXISTS idx_auto_delivery_record_state ON xianyu_goods_auto_d
 CREATE INDEX IF NOT EXISTS idx_auto_delivery_record_create_time ON xianyu_goods_auto_delivery_record(create_time);
 CREATE INDEX IF NOT EXISTS idx_auto_delivery_record_pnm_id ON xianyu_goods_auto_delivery_record(pnm_id);
 CREATE INDEX IF NOT EXISTS idx_auto_delivery_record_order_id ON xianyu_goods_auto_delivery_record(order_id);
-CREATE INDEX IF NOT EXISTS idx_auto_delivery_record_order_state ON xianyu_goods_auto_delivery_record(order_state);
 
 -- 创建唯一索引，防止同一消息重复发货
 CREATE UNIQUE INDEX IF NOT EXISTS idx_auto_delivery_record_unique 
@@ -218,8 +214,8 @@ CREATE TABLE IF NOT EXISTS xianyu_goods_auto_reply_config (
     keyword TEXT,                                     -- 关键词（支持多个，用逗号分隔）
     reply_content TEXT,                               -- 回复内容
     match_type TINYINT DEFAULT 1,                     -- 匹配类型（1-包含，2-完全匹配，3-正则）
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,   -- 创建时间
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP,   -- 更新时间
+    create_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 创建时间
+    update_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 更新时间
     FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
 );
 
@@ -245,7 +241,7 @@ CREATE TABLE IF NOT EXISTS xianyu_goods_auto_reply_record (
     reply_content TEXT,                               -- 回复消息内容
     matched_keyword VARCHAR(200),                     -- 匹配的关键词
     state TINYINT DEFAULT 0,                          -- 状态是否成功1-成功，0-失败
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,   -- 创建时间
+    create_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 创建时间
     FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
 );
 
@@ -291,8 +287,8 @@ CREATE TABLE IF NOT EXISTS xianyu_order (
     order_pay_time BIGINT,                        -- 订单支付时间戳（毫秒）
     order_delivery_time BIGINT,                   -- 订单发货时间戳（毫秒）
     order_complete_time BIGINT,                   -- 订单完成时间戳（毫秒）
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,  -- 记录创建时间
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP,  -- 记录更新时间
+    create_time DATETIME DEFAULT (datetime('now', 'localtime')),  -- 记录创建时间
+    update_time DATETIME DEFAULT (datetime('now', 'localtime')),  -- 记录更新时间
     
     -- 扩展信息
     complete_msg TEXT,                            -- 完整的消息体JSON
