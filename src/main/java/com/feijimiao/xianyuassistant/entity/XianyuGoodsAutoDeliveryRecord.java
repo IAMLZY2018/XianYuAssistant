@@ -4,6 +4,7 @@ import lombok.Data;
 
 /**
  * 商品自动发货记录实体类
+ * 优化后: 移除重复字段,通过关联xianyu_order表获取订单信息
  */
 @Data
 public class XianyuGoodsAutoDeliveryRecord {
@@ -34,14 +35,9 @@ public class XianyuGoodsAutoDeliveryRecord {
     private String pnmId;
     
     /**
-     * 买家用户ID
+     * 订单ID (关联xianyu_order表)
      */
-    private String buyerUserId;
-    
-    /**
-     * 买家用户名称
-     */
-    private String buyerUserName;
+    private String orderId;
     
     /**
      * 发货消息内容
@@ -49,27 +45,40 @@ public class XianyuGoodsAutoDeliveryRecord {
     private String content;
     
     /**
-     * 状态是否成功1-成功，0-失败
+     * 发货是否成功: 1-成功, 0-失败
      */
     private Integer state;
-    
-    /**
-     * 订单ID
-     */
-    private String orderId;
-    
-    /**
-     * 确认发货状态：0-未确认发货，1-已确认发货
-     */
-    private Integer orderState;
     
     /**
      * 创建时间
      */
     private String createTime;
     
+    // ========== 以下为关联查询字段 (非数据库字段) ==========
+    
     /**
-     * 商品标题（关联查询字段）
+     * 买家用户ID (关联查询字段)
+     */
+    private String buyerUserId;
+    
+    /**
+     * 买家用户名称 (关联查询字段)
+     */
+    private String buyerUserName;
+    
+    /**
+     * 商品标题 (关联查询字段)
      */
     private String goodsTitle;
+    
+    /**
+     * 订单状态 (关联查询字段, 来自xianyu_order.order_status)
+     * 1-待付款, 2-待发货, 3-已发货, 4-已完成, 5-已取消
+     */
+    private Integer orderStatus;
+    
+    /**
+     * 订单状态文本 (关联查询字段)
+     */
+    private String orderStatusText;
 }

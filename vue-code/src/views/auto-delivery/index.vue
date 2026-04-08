@@ -614,28 +614,9 @@ onMounted(() => {
                       </el-tag>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="orderState" label="确认发货" width="100" align="center">
-                    <template #default="{ row }">
-                      <el-tag :type="row.orderState === 1 ? 'success' : 'info'" size="small">
-                        {{ row.orderState === 1 ? '已确认' : '未确认' }}
-                      </el-tag>
-                    </template>
-                  </el-table-column>
                   <el-table-column prop="createTime" label="发货时间" width="180">
                     <template #default="{ row }">
                       {{ formatTime(row.createTime) }}
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="操作" width="120" align="center" fixed="right">
-                    <template #default="{ row }">
-                      <el-button
-                        type="primary"
-                        size="small"
-                        :disabled="!row.orderId || row.orderState === 1"
-                        @click="handleConfirmShipment(row)"
-                      >
-                        确认已发货
-                      </el-button>
                     </template>
                   </el-table-column>
                   <template #empty>

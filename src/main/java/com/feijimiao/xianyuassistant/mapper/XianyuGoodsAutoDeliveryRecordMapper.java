@@ -7,6 +7,7 @@ import java.util.List;
 
 /**
  * 商品自动发货记录Mapper
+ * 优化后: 移除重复字段,通过关联xianyu_order表获取订单信息
  */
 @Mapper
 public interface XianyuGoodsAutoDeliveryRecordMapper {
@@ -14,8 +15,8 @@ public interface XianyuGoodsAutoDeliveryRecordMapper {
     /**
      * 插入记录
      */
-    @Insert("INSERT INTO xianyu_goods_auto_delivery_record (xianyu_account_id, xianyu_goods_id, xy_goods_id, pnm_id, buyer_user_id, buyer_user_name, content, state, order_id) " +
-            "VALUES (#{xianyuAccountId}, #{xianyuGoodsId}, #{xyGoodsId}, #{pnmId}, #{buyerUserId}, #{buyerUserName}, #{content}, #{state}, #{orderId})")
+    @Insert("INSERT INTO xianyu_goods_auto_delivery_record (xianyu_account_id, xianyu_goods_id, xy_goods_id, pnm_id, order_id, content, state) " +
+            "VALUES (#{xianyuAccountId}, #{xianyuGoodsId}, #{xyGoodsId}, #{pnmId}, #{orderId}, #{content}, #{state})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(XianyuGoodsAutoDeliveryRecord record);
     
@@ -33,11 +34,18 @@ public interface XianyuGoodsAutoDeliveryRecordMapper {
     
     /**
      * 根据账号ID和商品ID查询记录（分页）
+     * 关联查询xianyu_order表获取订单信息和买家信息
      */
     @Select("<script>" +
-            "SELECT r.*, g.title as goods_title " +
+            "SELECT r.*, " +
+            "g.title as goods_title, " +
+            "o.buyer_user_id, " +
+            "o.buyer_user_name, " +
+            "o.order_status, " +
+            "o.order_status_text " +
             "FROM xianyu_goods_auto_delivery_record r " +
             "LEFT JOIN xianyu_goods g ON r.xy_goods_id = g.xy_good_id " +
+            "LEFT JOIN xianyu_order o ON r.order_id = o.order_id " +
             "WHERE r.xianyu_account_id = #{accountId} " +
             "<if test='xyGoodsId != null and xyGoodsId != \"\"'>" +
             "AND r.xy_goods_id = #{xyGoodsId} " +
@@ -50,14 +58,17 @@ public interface XianyuGoodsAutoDeliveryRecordMapper {
         @Result(property = "xianyuAccountId", column = "xianyu_account_id"),
         @Result(property = "xianyuGoodsId", column = "xianyu_goods_id"),
         @Result(property = "xyGoodsId", column = "xy_goods_id"),
-        @Result(property = "buyerUserId", column = "buyer_user_id"),
-        @Result(property = "buyerUserName", column = "buyer_user_name"),
+        @Result(property = "pnmId", column = "pnm_id"),
+        @Result(property = "orderId", column = "order_id"),
         @Result(property = "content", column = "content"),
         @Result(property = "state", column = "state"),
-        @Result(property = "orderId", column = "order_id"),
-        @Result(property = "orderState", column = "order_state"),
         @Result(property = "createTime", column = "create_time"),
-        @Result(property = "goodsTitle", column = "goods_title")
+        // 关联查询字段
+        @Result(property = "goodsTitle", column = "goods_title"),
+        @Result(property = "buyerUserId", column = "buyer_user_id"),
+        @Result(property = "buyerUserName", column = "buyer_user_name"),
+        @Result(property = "orderStatus", column = "order_status"),
+        @Result(property = "orderStatusText", column = "order_status_text")
     })
     List<XianyuGoodsAutoDeliveryRecord> selectByAccountIdWithPage(
             @Param("accountId") Long accountId,
@@ -90,8 +101,8 @@ public interface XianyuGoodsAutoDeliveryRecordMapper {
     int updateStateAndContent(@Param("id") Long id, @Param("state") Integer state, @Param("content") String content);
     
     /**
-     * 更新确认发货状态
+     * 根据订单ID查询记录
      */
-    @Update("UPDATE xianyu_goods_auto_delivery_record SET order_state = #{orderState} WHERE xianyu_account_id = #{accountId} AND order_id = #{orderId}")
-    int updateOrderState(@Param("accountId") Long accountId, @Param("orderId") String orderId, @Param("orderState") Integer orderState);
+    @Select("SELECT * FROM xianyu_goods_auto_delivery_record WHERE xianyu_account_id = #{accountId} AND order_id = #{orderId}")
+    XianyuGoodsAutoDeliveryRecord selectByOrderId(@Param("accountId") Long accountId, @Param("orderId") String orderId);
 }
