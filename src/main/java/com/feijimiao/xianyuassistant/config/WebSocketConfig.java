@@ -81,4 +81,10 @@ public class WebSocketConfig {
      * 消息发送重试延迟（毫秒）
      */
     private long messageRetryDelay = 1000L;
+    
+    /**
+     * 打印原始消息开关（解密后的消息）
+     * 用于调试，打印WebSocket接收到的原始消息内容
+     */
+    private boolean printRawMessage = false;
 }

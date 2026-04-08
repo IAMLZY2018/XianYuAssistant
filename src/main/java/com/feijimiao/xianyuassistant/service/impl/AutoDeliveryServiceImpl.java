@@ -123,16 +123,15 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             
             String content = deliveryConfig.getAutoDeliveryContent();
             log.info("【账号{}】准备发送自动发货消息: content={}", accountId, content);
-            
+
             // 3. 模拟人工操作：阅读消息 + 思考 + 打字延迟
-            log.info("【账号{}】模拟人工操作延迟...", accountId);
-            
+
             // 3.1 阅读买家消息的延迟（1-3秒）
             com.feijimiao.xianyuassistant.utils.HumanLikeDelayUtils.mediumDelay();
-            
+
             // 3.2 思考延迟（1-4秒）
             com.feijimiao.xianyuassistant.utils.HumanLikeDelayUtils.thinkingDelay();
-            
+
             // 3.3 打字延迟（根据内容长度）
             com.feijimiao.xianyuassistant.utils.HumanLikeDelayUtils.typingDelay(content.length());
             
@@ -235,14 +234,13 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             log.info("【账号{}】准备发送自动回复: content={}", accountId, replyContent);
             
             // 5. 模拟人工操作：阅读消息 + 思考 + 打字延迟
-            log.info("【账号{}】模拟人工操作延迟...", accountId);
-            
+
             // 5.1 阅读买家消息的延迟
             com.feijimiao.xianyuassistant.utils.HumanLikeDelayUtils.readingDelay(buyerMessage.length());
-            
+
             // 5.2 思考延迟（1-4秒）
             com.feijimiao.xianyuassistant.utils.HumanLikeDelayUtils.thinkingDelay();
-            
+
             // 5.3 打字延迟（根据回复内容长度）
             com.feijimiao.xianyuassistant.utils.HumanLikeDelayUtils.typingDelay(replyContent.length());
             

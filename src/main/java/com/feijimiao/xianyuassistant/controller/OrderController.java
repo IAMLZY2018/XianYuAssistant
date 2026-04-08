@@ -1,6 +1,9 @@
 package com.feijimiao.xianyuassistant.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.feijimiao.xianyuassistant.common.ResultObject;
+import com.feijimiao.xianyuassistant.controller.dto.OrderQueryReqDTO;
+import com.feijimiao.xianyuassistant.controller.vo.OrderVO;
 import com.feijimiao.xianyuassistant.service.OrderService;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -61,5 +64,24 @@ public class OrderController {
     public static class ConfirmShipmentReqDTO {
         private Long xianyuAccountId;  // 账号ID
         private String orderId;         // 订单ID
+    }
+    
+    /**
+     * 分页查询订单列表
+     */
+    @PostMapping("/list")
+    public ResultObject<Page<OrderVO>> queryOrderList(@RequestBody OrderQueryReqDTO reqDTO) {
+        try {
+            log.info("查询订单列表请求: xianyuAccountId={}, xyGoodsId={}, orderStatus={}, pageNum={}, pageSize={}", 
+                    reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId(), reqDTO.getOrderStatus(),
+                    reqDTO.getPageNum(), reqDTO.getPageSize());
+            
+            Page<OrderVO> result = orderService.queryOrderList(reqDTO);
+            return ResultObject.success(result);
+            
+        } catch (Exception e) {
+            log.error("查询订单列表失败", e);
+            return ResultObject.failed("查询订单列表失败: " + e.getMessage());
+        }
     }
 }

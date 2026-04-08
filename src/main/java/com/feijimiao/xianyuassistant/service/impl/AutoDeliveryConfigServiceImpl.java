@@ -40,6 +40,7 @@ public class AutoDeliveryConfigServiceImpl implements AutoDeliveryConfigService 
                 config.setType(reqDTO.getType());
                 config.setAutoDeliveryContent(reqDTO.getAutoDeliveryContent());
                 config.setXianyuGoodsId(reqDTO.getXianyuGoodsId());
+                config.setAutoConfirmShipment(reqDTO.getAutoConfirmShipment());
                 
                 autoDeliveryConfigMapper.updateById(config);
                 log.info("更新自动发货配置成功，ID: {}", config.getId());

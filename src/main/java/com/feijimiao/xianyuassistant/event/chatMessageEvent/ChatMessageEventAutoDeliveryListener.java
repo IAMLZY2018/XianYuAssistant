@@ -90,7 +90,9 @@ public class ChatMessageEventAutoDeliveryListener {
                 return; // 不是已付款待发货消息
             }
             
-            if (message.getMsgContent() == null || !message.getMsgContent().contains("[已付款，待发货]")) {
+            if (message.getMsgContent() == null || 
+                (!message.getMsgContent().contains("[已付款，待发货]") && 
+                 !message.getMsgContent().contains("[我已付款，等待你发货]"))) {
                 log.info("【账号{}】[AutoDeliveryListener]msgContent不符合条件: msgContent={}", 
                         message.getXianyuAccountId(), message.getMsgContent());
                 return; // 消息内容不符合条件
@@ -261,11 +263,10 @@ public class ChatMessageEventAutoDeliveryListener {
             }
             
             log.info("【账号{}】开始自动确认发货: orderId={}", accountId, orderId);
-            
+
             // 模拟人工操作延迟（等待一段时间再确认发货）
-            log.info("【账号{}】模拟人工操作延迟（等待后确认发货）...", accountId);
-            HumanLikeDelayUtils.longDelay(); // 较长延迟，模拟真实操作
-            
+            HumanLikeDelayUtils.longDelay(); // 较长延迟，模拟真实操作（2-5秒）
+
             // 调用确认发货服务
             String result = orderService.confirmShipment(accountId, orderId);
             

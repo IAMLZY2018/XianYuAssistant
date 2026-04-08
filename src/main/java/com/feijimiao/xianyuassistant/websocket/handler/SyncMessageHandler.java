@@ -1,9 +1,14 @@
 package com.feijimiao.xianyuassistant.websocket.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.feijimiao.xianyuassistant.config.WebSocketConfig;
 import com.feijimiao.xianyuassistant.entity.XianyuChatMessage;
+import com.feijimiao.xianyuassistant.entity.XianyuOrder;
 import com.feijimiao.xianyuassistant.event.chatMessageEvent.ChatMessageData;
 import com.feijimiao.xianyuassistant.event.chatMessageEvent.ChatMessageReceivedEvent;
+import com.feijimiao.xianyuassistant.service.OrderService;
+import com.feijimiao.xianyuassistant.service.GoodsInfoService;
+import com.feijimiao.xianyuassistant.entity.XianyuGoodsInfo;
 import com.feijimiao.xianyuassistant.utils.MessageDecryptUtils;
 import org.springframework.beans.BeanUtils;
 import lombok.Data;
@@ -33,6 +38,15 @@ public class SyncMessageHandler extends AbstractLwpHandler {
     
     @Autowired
     private ApplicationEventPublisher eventPublisher;
+    
+    @Autowired
+    private OrderService orderService;
+    
+    @Autowired
+    private GoodsInfoService goodsInfoService;
+    
+    @Autowired
+    private WebSocketConfig webSocketConfig;
     
     private final ObjectMapper objectMapper = new ObjectMapper();
     
@@ -107,6 +121,12 @@ public class SyncMessageHandler extends AbstractLwpHandler {
             if (decryptedData != null) {
                 log.info("【账号{}】解密消息[{}]: {}", accountId, i, decryptedData);
                 decryptedMessages.add(decryptedData);
+                
+                // 打印解密后的原始消息（根据配置开关）
+                if (webSocketConfig.isPrintRawMessage()) {
+                    log.info("【账号{}】📝 解密后的原始消息[{}]:\n{}", 
+                            accountId, i, formatJson(decryptedData));
+                }
                 
                 // 解析并发布事件
                 parseAndPublishEvent(accountId, decryptedData, lwp);
@@ -287,6 +307,11 @@ public class SyncMessageHandler extends AbstractLwpHandler {
             
             ChatMessageReceivedEvent event = new ChatMessageReceivedEvent(this, messageData);
             eventPublisher.publishEvent(event);
+            
+            // 如果有订单ID，保存订单信息
+            if (orderId != null && !orderId.isEmpty()) {
+                saveOrderInfo(message, orderId);
+            }
             
             log.info("【账号{}】ChatMessageReceivedEvent事件已发布: pnmId={}, orderId={}", 
                     message.getXianyuAccountId(), message.getPnmId(), orderId);
@@ -486,6 +511,84 @@ public class SyncMessageHandler extends AbstractLwpHandler {
         } catch (Exception e) {
             log.error("❌ 从URL提取订单ID失败: {}", url, e);
             return null;
+        }
+    }
+    
+    /**
+     * 格式化JSON字符串（美化输出）
+     */
+    private String formatJson(String json) {
+        try {
+            Object obj = objectMapper.readValue(json, Object.class);
+            return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(obj);
+        } catch (Exception e) {
+            // 如果格式化失败，返回原始字符串
+            return json;
+        }
+    }
+    
+    /**
+     * 保存订单信息
+     */
+    private void saveOrderInfo(XianyuChatMessage message, String orderId) {
+        try {
+            XianyuOrder order = new XianyuOrder();
+            order.setXianyuAccountId(message.getXianyuAccountId());
+            order.setOrderId(orderId);
+            order.setXyGoodsId(message.getXyGoodsId());
+            order.setBuyerUserId(message.getSenderUserId());
+            order.setBuyerUserName(message.getSenderUserName());
+            order.setPnmId(message.getPnmId());
+            order.setSId(message.getSId());
+            order.setReminderUrl(message.getReminderUrl());
+            order.setOrderCreateTime(message.getMessageTime());
+            order.setCompleteMsg(message.getCompleteMsg());
+            
+            // 查询商品信息并设置商品标题
+            if (message.getXyGoodsId() != null && !message.getXyGoodsId().isEmpty()) {
+                try {
+                    XianyuGoodsInfo goodsInfo = goodsInfoService.getByXyGoodId(message.getXyGoodsId());
+                    if (goodsInfo != null && goodsInfo.getTitle() != null) {
+                        order.setGoodsTitle(goodsInfo.getTitle());
+                    }
+                } catch (Exception e) {
+                    log.warn("查询商品标题失败: xyGoodsId={}", message.getXyGoodsId(), e);
+                }
+            }
+            
+            // 根据消息内容判断订单状态
+            String msgContent = message.getMsgContent();
+            if (msgContent != null) {
+                if (msgContent.contains("等待买家付款")) {
+                    order.setOrderStatus(1);
+                    order.setOrderStatusText("等待买家付款");
+                } else if (msgContent.contains("等待卖家发货")) {
+                    order.setOrderStatus(2);
+                    order.setOrderStatusText("等待卖家发货");
+                    order.setOrderPayTime(message.getMessageTime());
+                } else if (msgContent.contains("已发货")) {
+                    order.setOrderStatus(3);
+                    order.setOrderStatusText("已发货");
+                    order.setOrderDeliveryTime(message.getMessageTime());
+                } else if (msgContent.contains("交易成功") || msgContent.contains("已完成")) {
+                    order.setOrderStatus(4);
+                    order.setOrderStatusText("交易成功");
+                    order.setOrderCompleteTime(message.getMessageTime());
+                } else if (msgContent.contains("交易关闭") || msgContent.contains("已取消")) {
+                    order.setOrderStatus(5);
+                    order.setOrderStatusText("交易关闭");
+                }
+            }
+            
+            // 保存或更新订单
+            orderService.saveOrUpdateOrder(order);
+            
+            log.info("✅ 订单信息已保存: accountId={}, orderId={}, status={}", 
+                    order.getXianyuAccountId(), orderId, order.getOrderStatusText());
+            
+        } catch (Exception e) {
+            log.error("❌ 保存订单信息失败: accountId={}, orderId={}", 
+                    message.getXianyuAccountId(), orderId, e);
         }
     }
     
