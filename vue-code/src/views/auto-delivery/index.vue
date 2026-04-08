@@ -315,7 +315,7 @@ const getRecordStatusText = (state: number) => {
   return state === 1 ? '成功' : '失败';
 };
 
-// 确认收货
+// 确认已发货
 const handleConfirmShipment = async (record: any) => {
   if (!selectedAccountId.value) {
     showInfo('请先选择账号');
@@ -323,14 +323,14 @@ const handleConfirmShipment = async (record: any) => {
   }
 
   if (!record.orderId) {
-    showError('该记录没有订单ID，无法确认收货');
+    showError('该记录没有订单ID，无法确认已发货');
     return;
   }
 
   try {
     await ElMessageBox.confirm(
-      `确定要确认收货吗？订单ID: ${record.orderId}`,
-      '确认收货',
+      `确定要确认已发货吗？订单ID: ${record.orderId}`,
+      '确认已发货',
       {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -345,7 +345,7 @@ const handleConfirmShipment = async (record: any) => {
 
     const response = await confirmShipment(req);
     if (response.code === 0 || response.code === 200) {
-      showSuccess(response.data || '确认收货成功');
+      showSuccess(response.data || '确认已发货成功');
       // 刷新记录列表
       await loadDeliveryRecords();
     } else {
@@ -353,15 +353,15 @@ const handleConfirmShipment = async (record: any) => {
       if (response.msg && (response.msg.includes('Token') || response.msg.includes('令牌'))) {
         throw new Error('Cookie已过期，请重新扫码登录获取新的Cookie');
       }
-      throw new Error(response.msg || '确认收货失败');
+      throw new Error(response.msg || '确认已发货失败');
     }
   } catch (error: any) {
     if (error === 'cancel') {
       // 用户取消操作
       return;
     }
-    console.error('确认收货失败:', error);
-    showError(error.message || '确认收货失败');
+    console.error('确认已发货失败:', error);
+    showError(error.message || '确认已发货失败');
   }
 };
 
@@ -531,7 +531,7 @@ onMounted(() => {
                   </span>
                   <div class="form-tip">
                     {{ selectedGoods.xianyuAutoDeliveryOn === 1 
-                      ? '开启后，自动发货成功将自动确认收货' 
+                      ? '开启后，自动发货成功将自动确认已发货' 
                       : '需要先开启自动发货' }}
                   </div>
                 </el-form-item>
@@ -634,7 +634,7 @@ onMounted(() => {
                         :disabled="!row.orderId || row.orderState === 1"
                         @click="handleConfirmShipment(row)"
                       >
-                        确认收货
+                        确认已发货
                       </el-button>
                     </template>
                   </el-table-column>

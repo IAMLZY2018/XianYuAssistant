@@ -254,3 +254,96 @@ CREATE INDEX IF NOT EXISTS idx_auto_reply_record_account_id ON xianyu_goods_auto
 CREATE INDEX IF NOT EXISTS idx_auto_reply_record_xy_goods_id ON xianyu_goods_auto_reply_record(xy_goods_id);
 CREATE INDEX IF NOT EXISTS idx_auto_reply_record_state ON xianyu_goods_auto_reply_record(state);
 CREATE INDEX IF NOT EXISTS idx_auto_reply_record_create_time ON xianyu_goods_auto_reply_record(create_time);
+
+-- 闲鱼订单表
+CREATE TABLE IF NOT EXISTS xianyu_order (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    
+    -- 关联信息
+    xianyu_account_id BIGINT NOT NULL,            -- 关联的闲鱼账号ID
+    
+    -- 订单基本信息
+    order_id VARCHAR(64) NOT NULL,                -- 订单ID
+    xy_goods_id VARCHAR(64),                      -- 闲鱼商品ID
+    goods_title VARCHAR(512),                     -- 商品标题
+    
+    -- 交易双方信息
+    buyer_user_id VARCHAR(64),                    -- 买家用户ID
+    buyer_user_name VARCHAR(256),                 -- 买家用户名
+    seller_user_id VARCHAR(64),                   -- 卖家用户ID
+    seller_user_name VARCHAR(256),                -- 危家用户名
+    
+    -- 订单状态信息
+    order_status INTEGER,                         -- 订单状态：1-待付款，2-待发货，3-已发货，4-已完成，5-已取消
+    order_status_text VARCHAR(128),               -- 订单状态文本
+    
+    -- 订单金额信息
+    order_amount BIGINT,                          -- 订单金额（单位：分）
+    order_amount_text VARCHAR(64),                -- 订单金额文本
+    
+    -- 关联消息信息
+    pnm_id VARCHAR(128),                          -- 关联的消息pnmid
+    s_id VARCHAR(128),                            -- 关联的会话ID
+    reminder_url TEXT,                            -- 消息链接
+    
+    -- 时间信息
+    order_create_time BIGINT,                     -- 订单创建时间戳（毫秒）
+    order_pay_time BIGINT,                        -- 订单支付时间戳（毫秒）
+    order_delivery_time BIGINT,                   -- 订单发货时间戳（毫秒）
+    order_complete_time BIGINT,                   -- 订单完成时间戳（毫秒）
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,  -- 记录创建时间
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP,  -- 记录更新时间
+    
+    -- 扩展信息
+    complete_msg TEXT,                            -- 完整的消息体JSON
+    
+    -- 外键约束
+    FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
+);
+
+-- 创建订单表索引
+CREATE INDEX IF NOT EXISTS idx_order_id ON xianyu_order(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_account_id ON xianyu_order(xianyu_account_id);
+CREATE INDEX IF NOT EXISTS idx_order_xy_goods_id ON xianyu_order(xy_goods_id);
+CREATE INDEX IF NOT EXISTS idx_order_buyer_user_id ON xianyu_order(buyer_user_id);
+CREATE INDEX IF NOT EXISTS idx_order_status ON xianyu_order(order_status);
+CREATE INDEX IF NOT EXISTS idx_order_create_time ON xianyu_order(create_time);
+CREATE INDEX IF NOT EXISTS idx_order_order_create_time ON xianyu_order(order_create_time);
+
+-- 创建唯一索引（同一订单ID在同一账号下唯一）
+CREATE UNIQUE INDEX IF NOT EXISTS uk_account_order ON xianyu_order(xianyu_account_id, order_id);
+
+-- 创建订单表更新时间触发器
+CREATE TRIGGER IF NOT EXISTS update_xianyu_order_time
+AFTER UPDATE ON xianyu_order
+BEGIN
+    UPDATE xianyu_order SET update_time = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END
+$
+
+-- 操作日志表
+CREATE TABLE IF NOT EXISTS xianyu_operation_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    xianyu_account_id BIGINT,                        -- 账号ID
+    operation_type VARCHAR(50),                      -- 操作类型
+    operation_module VARCHAR(100),                   -- 操作模块
+    operation_desc VARCHAR(500),                     -- 操作描述
+    operation_status TINYINT,                        -- 操作状态：1-成功，0-失败，2-部分成功
+    target_type VARCHAR(50),                         -- 目标类型
+    target_id VARCHAR(100),                          -- 目标ID
+    request_params TEXT,                             -- 请求参数（JSON格式）
+    response_result TEXT,                            -- 响应结果（JSON格式）
+    error_message TEXT,                              -- 错误信息
+    ip_address VARCHAR(50),                          -- IP地址
+    user_agent VARCHAR(500),                         -- 浏览器UA
+    duration_ms INTEGER,                             -- 操作耗时（毫秒）
+    create_time BIGINT,                              -- 创建时间（时间戳，毫秒）
+    FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
+);
+
+-- 创建操作日志表索引
+CREATE INDEX IF NOT EXISTS idx_operation_log_account_id ON xianyu_operation_log(xianyu_account_id);
+CREATE INDEX IF NOT EXISTS idx_operation_log_type ON xianyu_operation_log(operation_type);
+CREATE INDEX IF NOT EXISTS idx_operation_log_status ON xianyu_operation_log(operation_status);
+CREATE INDEX IF NOT EXISTS idx_operation_log_create_time ON xianyu_operation_log(create_time);
+
