@@ -8,6 +8,7 @@ import { showSuccess, showError, showInfo } from '@/utils';
 import type { Account, WebSocketStatus } from '@/types';
 import ManualUpdateCookieDialog from './components/ManualUpdateCookieDialog.vue';
 import ManualUpdateTokenDialog from './components/ManualUpdateTokenDialog.vue';
+import QRUpdateDialog from './components/QRUpdateDialog.vue';
 
 interface ConnectionStatus {
   xianyuAccountId: number;
@@ -32,6 +33,8 @@ let statusInterval: number | null = null;
 const showManualUpdateCookieDialog = ref(false);
 // 手动更新Token对话框
 const showManualUpdateTokenDialog = ref(false);
+// 扫码更新对话框
+const showQRUpdateDialog = ref(false);
 
 // 当前选中的账号信息
 const currentAccount = computed(() => {
@@ -405,6 +408,14 @@ const handleManualUpdateTokenSuccess = async () => {
   }
 };
 
+// 扫码更新成功回调
+const handleQRUpdateSuccess = async () => {
+  addLog('Cookie和Token已通过扫码更新');
+  if (selectedAccountId.value) {
+    await loadConnectionStatus(selectedAccountId.value);
+  }
+};
+
 onMounted(async () => {
   await loadAccounts();
   // 默认选择第一个账号
@@ -593,9 +604,10 @@ onUnmounted(() => {
                   </div>
                   <div class="section-actions">
                     <el-button
-                      type="default"
+                      type="primary"
                       size="small"
                       @click="handleManualUpdateToken"
+                      class="manual-update-btn"
                     >
                       ✏️ 手动更新
                     </el-button>
@@ -614,26 +626,39 @@ onUnmounted(() => {
             <!-- 操作区域 -->
             <div class="main-actions">
               <div class="action-wrapper">
-                <el-button
-                  v-if="connectionStatus.connected"
-                  type="danger"
-                  size="default"
-                  @click="handleStopConnection"
-                  class="main-action-btn"
-                >
-                  ⏸ 断开连接
-                </el-button>
-                <el-button
-                  v-else
-                  type="success"
-                  size="default"
-                  @click="handleStartConnection"
-                  class="main-action-btn start-connection-btn"
-                >
-                  ▶ 启动连接
-                </el-button>
+                <div class="action-buttons">
+                  <el-button
+                    v-if="connectionStatus.connected"
+                    type="danger"
+                    size="default"
+                    @click="handleStopConnection"
+                    class="main-action-btn"
+                  >
+                    ⏸ 断开连接
+                  </el-button>
+                  <el-button
+                    v-else
+                    type="success"
+                    size="default"
+                    @click="handleStartConnection"
+                    class="main-action-btn start-connection-btn"
+                  >
+                    ▶ 启动连接
+                  </el-button>
+                  <el-button
+                    type="primary"
+                    size="default"
+                    @click="showQRUpdateDialog = true"
+                    class="main-action-btn qr-update-btn"
+                  >
+                    📱 扫码更新
+                  </el-button>
+                </div>
                 <div class="action-tip">
                   ⚠️ 请勿频繁启用连接和断开连接，否则容易触发滑动窗口人机校验，导致账号暂时不可用
+                </div>
+                <div class="action-tip qr-update-tip">
+                  💡 扫码更新：通过扫码登录完成更新Cookie与Token
                 </div>
               </div>
             </div>
@@ -678,6 +703,14 @@ onUnmounted(() => {
       :current-token="connectionStatus.websocketToken || ''"
       @success="handleManualUpdateTokenSuccess"
     />
+
+    <!-- 扫码更新对话框 -->
+    <QRUpdateDialog
+      v-if="currentAccount"
+      v-model="showQRUpdateDialog"
+      :account-id="currentAccount.id"
+      @success="handleQRUpdateSuccess"
+    />
   </div>
 </template>
 
@@ -687,6 +720,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   padding: 15px;
+  overflow: hidden; /* 防止最外层出现滚动条 */
 }
 
 .page-header {
@@ -694,6 +728,7 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
+  flex-shrink: 0; /* 防止被压缩 */
 }
 
 .page-title {
@@ -708,6 +743,7 @@ onUnmounted(() => {
   display: flex;
   gap: 15px;
   min-height: 0;
+  overflow: hidden; /* 防止容器出现滚动条 */
 }
 
 .account-panel,
@@ -715,6 +751,7 @@ onUnmounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden; /* 防止卡片出现滚动条 */
 }
 
 .account-panel {
@@ -814,9 +851,12 @@ onUnmounted(() => {
 }
 
 .status-content {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  overflow-y: auto; /* 允许内容区域滚动 */
+  min-height: 0; /* 允许flex子项收缩 */
 }
 
 /* 连接状态主卡片 */
@@ -826,6 +866,7 @@ onUnmounted(() => {
   border: 2px solid #409eff;
   box-shadow: 0 4px 12px rgba(64, 158, 255, 0.12);
   overflow: hidden;
+  flex-shrink: 0; /* 防止被压缩 */
 }
 
 /* 主标题区域 */
@@ -1050,6 +1091,23 @@ onUnmounted(() => {
 
 .manual-update-btn {
   color: white !important;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%) !important;
+  border-color: #409eff !important;
+  transition: all 0.3s ease !important;
+}
+
+.manual-update-btn:hover {
+  background: linear-gradient(135deg, #66b1ff 0%, #409eff 100%) !important;
+  border-color: #66b1ff !important;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.4) !important;
+  transform: translateY(-1px);
+}
+
+.manual-update-btn:active {
+  background: linear-gradient(135deg, #3a8ee6 0%, #409eff 100%) !important;
+  border-color: #3a8ee6 !important;
+  box-shadow: 0 1px 4px rgba(64, 158, 255, 0.3) !important;
+  transform: translateY(0);
 }
 
 /* 主操作区域 */
@@ -1069,8 +1127,16 @@ onUnmounted(() => {
   gap: 10px;
 }
 
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+}
+
 .main-action-btn {
-  width: 50%;
+  flex: 1;
+  max-width: 200px;
   height: 40px;
   font-size: 14px;
   font-weight: 600;
@@ -1082,6 +1148,11 @@ onUnmounted(() => {
   text-align: center;
   line-height: 1.5;
   max-width: 80%;
+}
+
+.qr-update-tip {
+  color: #409eff;
+  font-weight: 500;
 }
 
 .start-connection-btn {
@@ -1096,8 +1167,21 @@ onUnmounted(() => {
   transform: translateY(-1px);
 }
 
+.qr-update-btn {
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%) !important;
+  border-color: #409eff !important;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3) !important;
+}
+
+.qr-update-btn:hover {
+  background: linear-gradient(135deg, #66b1ff 0%, #409eff 100%) !important;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4) !important;
+  transform: translateY(-1px);
+}
+
 .logs-section {
   margin-top: 16px;
+  flex-shrink: 0; /* 防止被压缩 */
 }
 
 .logs-header {
@@ -1150,18 +1234,28 @@ onUnmounted(() => {
 
 /* 滚动条样式 */
 .account-list::-webkit-scrollbar,
-.logs-container::-webkit-scrollbar {
+.logs-container::-webkit-scrollbar,
+.status-content::-webkit-scrollbar {
   width: 6px;
 }
 
 .account-list::-webkit-scrollbar-thumb,
-.logs-container::-webkit-scrollbar-thumb {
+.logs-container::-webkit-scrollbar-thumb,
+.status-content::-webkit-scrollbar-thumb {
   background: #dcdfe6;
   border-radius: 3px;
 }
 
 .logs-container::-webkit-scrollbar-thumb {
   background: #34495e;
+}
+
+.status-content::-webkit-scrollbar-thumb {
+  background: #c0c4cc;
+}
+
+.status-content::-webkit-scrollbar-thumb:hover {
+  background: #909399;
 }
 
 /* 响应式布局 */

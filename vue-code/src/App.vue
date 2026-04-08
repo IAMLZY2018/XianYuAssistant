@@ -131,7 +131,7 @@ import { RouterView } from 'vue-router'
 
 .el-main {
   padding: 32px 40px;
-  overflow-y: auto;
+  overflow: hidden; /* 禁用滚动条，由各页面内部处理 */
   background: #e8e8e8;
 }
 

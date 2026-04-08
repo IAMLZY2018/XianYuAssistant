@@ -81,7 +81,6 @@ const handleClose = () => {
         style="margin-bottom: 20px;"
       >
         <p>WebSocket Token用于WebSocket连接认证，有效期约20小时。</p>
-        <p>建议使用"刷新Token"按钮自动刷新，手动输入仅用于特殊情况。</p>
       </el-alert>
       
       <el-form label-width="120px">
