@@ -408,6 +408,16 @@ public class WebSocketServiceImpl implements WebSocketService {
         lastHeartbeatResponseTimes.put(accountId, currentTime);
         
         // 心跳发送任务（参考Python的heartbeat_loop）
+        // 立即发送第一次心跳,防止连接空闲被关闭
+        try {
+            if (client.isConnected()) {
+                client.sendHeartbeat();
+                log.info("【账号{}】已发送初始心跳", accountId);
+            }
+        } catch (Exception e) {
+            log.error("发送初始心跳失败: accountId={}", accountId, e);
+        }
+        
         ScheduledFuture<?> heartbeatTask = heartbeatScheduler.scheduleAtFixedRate(
             () -> {
                 try {
