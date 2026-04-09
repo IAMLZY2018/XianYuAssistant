@@ -7,6 +7,8 @@ import com.feijimiao.xianyuassistant.entity.XianyuCookie;
 import com.feijimiao.xianyuassistant.exception.CaptchaRequiredException;
 import com.feijimiao.xianyuassistant.mapper.XianyuCookieMapper;
 
+import com.feijimiao.xianyuassistant.service.AccountService;
+import com.feijimiao.xianyuassistant.service.CookieRefreshService;
 import com.feijimiao.xianyuassistant.service.WebSocketTokenService;
 import com.feijimiao.xianyuassistant.utils.HttpClientUtils;
 import com.feijimiao.xianyuassistant.utils.XianyuSignUtils;
@@ -30,6 +32,12 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
     
     @Autowired
     private com.feijimiao.xianyuassistant.mapper.XianyuAccountMapper xianyuAccountMapper;
+    
+    @Autowired
+    private CookieRefreshService cookieRefreshService;
+    
+    @Autowired
+    private AccountService accountService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     
@@ -60,8 +68,32 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
      */
     private static final long CAPTCHA_TIMEOUT = 5 * 60 * 1000;
     
+    /**
+     * Cookie过期重试最大次数（参考Python的retry_count >= 2）
+     */
+    private static final int MAX_COOKIE_RETRY_COUNT = 2;
+    
+    /**
+     * Cookie过期重试间隔（毫秒）
+     */
+    private static final long COOKIE_RETRY_INTERVAL = 500;
+    
     @Override
     public String getAccessToken(Long accountId, String cookiesStr, String deviceId) {
+        return getAccessTokenWithRetry(accountId, cookiesStr, deviceId, 0);
+    }
+    
+    /**
+     * 获取AccessToken（带重试机制）
+     * 参考Python的get_access_token方法
+     * 
+     * @param accountId 账号ID
+     * @param cookiesStr Cookie字符串
+     * @param deviceId 设备ID
+     * @param retryCount 当前重试次数
+     * @return accessToken
+     */
+    private String getAccessTokenWithRetry(Long accountId, String cookiesStr, String deviceId, int retryCount) {
         try {
             // 0. 检查是否正在等待验证
             if (pendingCaptchaAccounts.containsKey(accountId)) {
@@ -256,11 +288,52 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
             
             log.error("【账号{}】获取accessToken失败：{}", accountId, response);
             
-            // 检查是否是Cookie过期导致的失败
-            if (response.contains("FAIL_SYS_SESSION_EXPIRED") || response.contains("令牌过期")) {
-                // 更新Cookie状态为过期
+            // 检查是否是Cookie过期导致的失败（支持多种错误码格式）
+            if (response.contains("FAIL_SYS_SESSION_EXPIRED") || 
+                response.contains("FAIL_SYS_TOKEN_EXOIRED") ||  // 注意：API返回的拼写错误
+                response.contains("FAIL_SYS_TOKEN_EXPIRED") || 
+                response.contains("令牌过期")) {
+                
+                log.warn("【账号{}】检测到Cookie过期，尝试自动刷新... (重试次数: {}/{})", 
+                        accountId, retryCount, MAX_COOKIE_RETRY_COUNT);
+                
+                // 检查是否超过最大重试次数
+                if (retryCount >= MAX_COOKIE_RETRY_COUNT) {
+                    log.error("【账号{}】Cookie刷新重试次数已达上限，停止重试", accountId);
+                    updateCookieStatus(accountId, 2);
+                    throw new com.feijimiao.xianyuassistant.exception.CookieExpiredException(
+                            "Cookie已过期且自动刷新失败，请手动更新Cookie后重试");
+                }
+                
+                // 尝试通过CookieRefreshService刷新Cookie（参考Python的hasLogin）
+                try {
+                    boolean refreshSuccess = cookieRefreshService.refreshCookie(accountId);
+                    
+                    if (refreshSuccess) {
+                        log.info("【账号{}】Cookie刷新成功，准备重新获取Token...", accountId);
+                        
+                        // 等待一小段时间，避免频繁请求
+                        Thread.sleep(COOKIE_RETRY_INTERVAL);
+                        
+                        // 获取新的Cookie
+                        String newCookieStr = accountService.getCookieByAccountId(accountId);
+                        if (newCookieStr != null && !newCookieStr.isEmpty()) {
+                            // 递归调用，重试获取Token
+                            return getAccessTokenWithRetry(accountId, newCookieStr, deviceId, retryCount + 1);
+                        } else {
+                            log.error("【账号{}】获取新Cookie失败", accountId);
+                        }
+                    } else {
+                        log.warn("【账号{}】Cookie自动刷新失败", accountId);
+                    }
+                } catch (Exception e) {
+                    log.error("【账号{}】Cookie刷新过程发生异常", accountId, e);
+                }
+                
+                // 刷新失败，更新状态并抛出异常
                 updateCookieStatus(accountId, 2);
-                throw new com.feijimiao.xianyuassistant.exception.CookieExpiredException("Cookie已过期，请更新Cookie后重试");
+                throw new com.feijimiao.xianyuassistant.exception.CookieExpiredException(
+                        "Cookie已过期，自动刷新失败，请更新Cookie后重试");
             }
             
             // 检查是否是Cookie失效

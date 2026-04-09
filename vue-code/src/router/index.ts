@@ -56,12 +56,6 @@ const router = createRouter({
       meta: { title: '自动回复', icon: '💭' }
     },
     {
-      path: '/records',
-      name: 'records',
-      component: () => import('@/views/records/index.vue'),
-      meta: { title: '操作记录', icon: '📝' }
-    },
-    {
       path: '/operation-log',
       name: 'operation-log',
       component: () => import('@/views/operation-log/index.vue'),
