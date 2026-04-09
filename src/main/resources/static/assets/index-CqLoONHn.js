@@ -1,1 +1,0 @@
-import{d as o,c as t,i as s,o as n,_ as a}from"./index-C8jXO_e5.js";const r={class:"records-page"},_=o({__name:"index",setup(c){return(d,e)=>(n(),t("div",r,[...e[0]||(e[0]=[s("h1",null,"操作记录",-1),s("p",null,"操作记录功能开发中...",-1)])]))}}),l=a(_,[["__scopeId","data-v-93b12d0f"]]);export{l as default};

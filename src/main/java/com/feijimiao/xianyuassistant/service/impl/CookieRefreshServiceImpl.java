@@ -137,8 +137,21 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
                         if (!newCookieStr.equals(cookie.getCookieText())) {
                             cookie.setCookieText(newCookieStr);
                             cookie.setCookieStatus(1); // 设置为有效
+                            
+                            // 提取并保存_m_h5_tk
+                            Map<String, String> cookieMap = XianyuSignUtils.parseCookies(newCookieStr);
+                            String mH5Tk = cookieMap.get("_m_h5_tk");
+                            if (mH5Tk != null && !mH5Tk.isEmpty()) {
+                                cookie.setMH5Tk(mH5Tk);
+                                log.info("【账号{}】✅ _m_h5_tk已更新: {}", accountId, 
+                                        mH5Tk.substring(0, Math.min(20, mH5Tk.length())) + "...");
+                            }
+                            
+                            // 更新时间戳
+                            cookie.setUpdatedTime(java.time.LocalDateTime.now().toString());
+                            
                             cookieMapper.updateById(cookie);
-                            log.info("【账号{}】✅ Cookie已更新", accountId);
+                            log.info("【账号{}】✅ Cookie已更新并保存到数据库", accountId);
                             
                             // 记录操作日志
                             operationLogService.log(accountId,
@@ -149,6 +162,14 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
                                 OperationConstants.TargetType.COOKIE,
                                 String.valueOf(accountId),
                                 null, null, null, null);
+                        }
+                    } else {
+                        // 即使没有Set-Cookie，也要确保Cookie状态为有效
+                        if (cookie.getCookieStatus() != 1) {
+                            cookie.setCookieStatus(1);
+                            cookie.setUpdatedTime(java.time.LocalDateTime.now().toString());
+                            cookieMapper.updateById(cookie);
+                            log.info("【账号{}】✅ Cookie状态已更新为有效", accountId);
                         }
                     }
                     

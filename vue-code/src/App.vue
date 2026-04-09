@@ -42,9 +42,6 @@ import { RouterView } from 'vue-router'
           <el-menu-item index="/auto-reply">
             <span>💭 自动回复</span>
           </el-menu-item>
-          <el-menu-item index="/records">
-            <span>📝 操作记录</span>
-          </el-menu-item>
           
           <el-divider content-position="left">系统</el-divider>
           

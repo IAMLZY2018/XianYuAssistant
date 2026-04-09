@@ -4,6 +4,7 @@ import com.feijimiao.xianyuassistant.entity.XianyuAccount;
 import com.feijimiao.xianyuassistant.entity.XianyuCookie;
 import com.feijimiao.xianyuassistant.mapper.XianyuAccountMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuCookieMapper;
+import com.feijimiao.xianyuassistant.service.OperationLogService;
 import com.feijimiao.xianyuassistant.service.TokenRefreshService;
 import com.feijimiao.xianyuassistant.service.WebSocketTokenService;
 import com.feijimiao.xianyuassistant.utils.XianyuSignUtils;
@@ -44,6 +45,9 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
     
     @Autowired
     private WebSocketTokenService webSocketTokenService;
+    
+    @Autowired
+    private OperationLogService operationLogService;
     
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
@@ -105,6 +109,17 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
                     
                     log.info("【账号{}】✅ _m_h5_tk token刷新成功: {}", accountId, 
                             newMh5tk.substring(0, Math.min(20, newMh5tk.length())));
+                    
+                    // 记录操作日志
+                    operationLogService.log(accountId,
+                        com.feijimiao.xianyuassistant.constants.OperationConstants.Type.REFRESH,
+                        com.feijimiao.xianyuassistant.constants.OperationConstants.Module.TOKEN,
+                        "_m_h5_tk Token刷新成功",
+                        com.feijimiao.xianyuassistant.constants.OperationConstants.Status.SUCCESS,
+                        com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.TOKEN,
+                        String.valueOf(accountId),
+                        null, null, null, null);
+                    
                     updated = true;
                     break;
                 }
@@ -112,12 +127,33 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
             
             if (!updated) {
                 log.warn("【账号{}】⚠️ 响应中未包含新的_m_h5_tk", accountId);
+                
+                // 记录操作日志
+                operationLogService.log(accountId,
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.Type.REFRESH,
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.Module.TOKEN,
+                    "_m_h5_tk Token刷新失败：响应中未包含新Token",
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.Status.FAIL,
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.TOKEN,
+                    String.valueOf(accountId),
+                    null, null, "响应中未包含新Token", null);
             }
             
             return updated;
             
         } catch (Exception e) {
             log.error("【账号{}】刷新_m_h5_tk token失败", accountId, e);
+            
+            // 记录操作日志
+            operationLogService.log(accountId,
+                com.feijimiao.xianyuassistant.constants.OperationConstants.Type.REFRESH,
+                com.feijimiao.xianyuassistant.constants.OperationConstants.Module.TOKEN,
+                "_m_h5_tk Token刷新异常: " + e.getMessage(),
+                com.feijimiao.xianyuassistant.constants.OperationConstants.Status.FAIL,
+                com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.TOKEN,
+                String.valueOf(accountId),
+                null, null, e.getMessage(), null);
+            
             return false;
         }
     }

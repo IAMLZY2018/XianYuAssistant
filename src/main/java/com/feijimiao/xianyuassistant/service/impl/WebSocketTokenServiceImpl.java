@@ -9,6 +9,7 @@ import com.feijimiao.xianyuassistant.mapper.XianyuCookieMapper;
 
 import com.feijimiao.xianyuassistant.service.AccountService;
 import com.feijimiao.xianyuassistant.service.CookieRefreshService;
+import com.feijimiao.xianyuassistant.service.OperationLogService;
 import com.feijimiao.xianyuassistant.service.WebSocketTokenService;
 import com.feijimiao.xianyuassistant.utils.HttpClientUtils;
 import com.feijimiao.xianyuassistant.utils.XianyuSignUtils;
@@ -38,6 +39,9 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
     
     @Autowired
     private AccountService accountService;
+    
+    @Autowired
+    private OperationLogService operationLogService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     
@@ -250,6 +254,17 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
                         log.info("【账号{}】accessToken获取成功并已保存到数据库", accountId);
                         log.debug("【账号{}】accessToken: {}...", accountId, 
                                 accessToken.substring(0, Math.min(20, accessToken.length())));
+                        
+                        // 记录操作日志
+                        operationLogService.log(accountId,
+                            com.feijimiao.xianyuassistant.constants.OperationConstants.Type.REFRESH,
+                            com.feijimiao.xianyuassistant.constants.OperationConstants.Module.TOKEN,
+                            "WebSocket Token获取成功",
+                            com.feijimiao.xianyuassistant.constants.OperationConstants.Status.SUCCESS,
+                            com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.TOKEN,
+                            String.valueOf(accountId),
+                            null, null, null, null);
+                        
                         return accessToken;
                     }
                 }
@@ -301,6 +316,17 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
                 if (retryCount >= MAX_COOKIE_RETRY_COUNT) {
                     log.error("【账号{}】Cookie刷新重试次数已达上限，停止重试", accountId);
                     updateCookieStatus(accountId, 2);
+                    
+                    // 记录操作日志
+                    operationLogService.log(accountId,
+                        com.feijimiao.xianyuassistant.constants.OperationConstants.Type.REFRESH,
+                        com.feijimiao.xianyuassistant.constants.OperationConstants.Module.TOKEN,
+                        "WebSocket Token获取失败：Cookie过期且自动刷新失败",
+                        com.feijimiao.xianyuassistant.constants.OperationConstants.Status.FAIL,
+                        com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.TOKEN,
+                        String.valueOf(accountId),
+                        null, null, "Cookie过期且自动刷新失败", null);
+                    
                     throw new com.feijimiao.xianyuassistant.exception.CookieExpiredException(
                             "Cookie已过期且自动刷新失败，请手动更新Cookie后重试");
                 }
