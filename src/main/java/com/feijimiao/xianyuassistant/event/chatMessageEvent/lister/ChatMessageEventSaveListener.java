@@ -1,6 +1,8 @@
-package com.feijimiao.xianyuassistant.event.chatMessageEvent;
+package com.feijimiao.xianyuassistant.event.chatMessageEvent.lister;
 
 import com.feijimiao.xianyuassistant.entity.XianyuChatMessage;
+import com.feijimiao.xianyuassistant.event.chatMessageEvent.ChatMessageData;
+import com.feijimiao.xianyuassistant.event.chatMessageEvent.ChatMessageReceivedEvent;
 import com.feijimiao.xianyuassistant.mapper.XianyuChatMessageMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +11,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 /**
+ * 会保存所有聊天消息
  * 聊天消息保存监听器
  * 
  * <p>监听 {@link ChatMessageReceivedEvent} 事件，负责将消息异步保存到数据库</p>

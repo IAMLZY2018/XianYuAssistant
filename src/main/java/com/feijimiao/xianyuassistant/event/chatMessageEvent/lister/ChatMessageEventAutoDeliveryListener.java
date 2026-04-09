@@ -1,11 +1,12 @@
-package com.feijimiao.xianyuassistant.event.chatMessageEvent;
+package com.feijimiao.xianyuassistant.event.chatMessageEvent.lister;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.feijimiao.xianyuassistant.entity.XianyuChatMessage;
 import com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoDeliveryConfig;
 import com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoDeliveryRecord;
 import com.feijimiao.xianyuassistant.entity.XianyuGoodsConfig;
 import com.feijimiao.xianyuassistant.entity.XianyuGoodsInfo;
+import com.feijimiao.xianyuassistant.event.chatMessageEvent.ChatMessageData;
+import com.feijimiao.xianyuassistant.event.chatMessageEvent.ChatMessageReceivedEvent;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoDeliveryConfigMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoDeliveryRecordMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsConfigMapper;
@@ -20,6 +21,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 /**
+ * 自动发货用
  * 聊天消息自动发货监听器
  * 
  * <p>监听 {@link ChatMessageReceivedEvent} 事件，判断是否需要触发自动发货</p>
