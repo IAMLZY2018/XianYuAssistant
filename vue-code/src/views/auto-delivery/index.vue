@@ -641,7 +641,7 @@ onMounted(() => {
                       :page-sizes="[10, 20, 50, 100]"
                       :total="recordsTotal"
                       layout="sizes, prev, pager, next"
-                      small
+                      size="small"
                       @size-change="handleRecordsSizeChange"
                       @current-change="handleRecordsPageChange"
                     />
@@ -719,7 +719,7 @@ onMounted(() => {
                     :page-sizes="[10, 20, 50, 100]"
                     :total="recordsTotal"
                     layout="total, sizes, prev, pager, next, jumper"
-                    small
+                    size="small"
                     @size-change="handleRecordsSizeChange"
                     @current-change="handleRecordsPageChange"
                   />

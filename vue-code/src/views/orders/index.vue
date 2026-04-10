@@ -61,7 +61,7 @@
           <template #default="{ row }">
             <div style="display: flex; flex-direction: column; gap: 8px; align-items: center;">
               <!-- 待发货状态：显示状态标签 + 确认发货按钮 -->
-              <template v-if="row.orderStatus === 2">
+              <template v-if="row.orderStatus === OrderStatus.WAITING_DELIVERY">
                 <el-tag :type="getStatusType(row.orderStatus)">
                   {{ row.orderStatusText }}
                 </el-tag>
@@ -75,7 +75,7 @@
                 </el-button>
               </template>
               <!-- 已发货状态：只显示已发货标签 -->
-              <template v-else-if="row.orderStatus === 3">
+              <template v-else-if="row.orderStatus === OrderStatus.DELIVERED">
                 <el-tag type="success">
                   已发货
                 </el-tag>
@@ -111,6 +111,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from 'axios'
+import { OrderStatus } from '@/constants/orderStatus'
 
 interface OrderItem {
   id: number
@@ -194,11 +195,11 @@ const formatTime = (timestamp: number | null) => {
 
 const getStatusType = (status: number | null) => {
   switch (status) {
-    case 1: return 'warning'
-    case 2: return 'primary'
-    case 3: return 'success'
-    case 4: return 'success'
-    case 5: return 'info'
+    case OrderStatus.WAITING_PAYMENT: return 'warning'
+    case OrderStatus.WAITING_DELIVERY: return 'primary'
+    case OrderStatus.DELIVERED: return 'success'
+    case OrderStatus.COMPLETED: return 'success'
+    case OrderStatus.CLOSED: return 'info'
     default: return 'info'
   }
 }
@@ -226,7 +227,7 @@ const handleConfirmShipment = async (row: OrderItem) => {
     if (res.code === 200 || res.code === 0) {
       ElMessage.success('确认发货成功')
       // 更新订单状态
-      row.orderStatus = 3
+      row.orderStatus = OrderStatus.DELIVERED
       row.orderStatusText = '已发货'
       // 刷新列表
       handleQuery()

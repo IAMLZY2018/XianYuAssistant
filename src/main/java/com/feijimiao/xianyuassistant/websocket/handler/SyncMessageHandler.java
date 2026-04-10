@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.feijimiao.xianyuassistant.config.WebSocketConfig;
 import com.feijimiao.xianyuassistant.entity.XianyuChatMessage;
 import com.feijimiao.xianyuassistant.entity.XianyuOrder;
+import com.feijimiao.xianyuassistant.enums.OrderStatusEnum;
 import com.feijimiao.xianyuassistant.event.chatMessageEvent.ChatMessageData;
 import com.feijimiao.xianyuassistant.event.chatMessageEvent.ChatMessageReceivedEvent;
 import com.feijimiao.xianyuassistant.service.OrderService;
@@ -568,8 +569,8 @@ public class SyncMessageHandler extends AbstractLwpHandler {
             }
             
             // 设置订单状态为"等待卖家发货"
-            order.setOrderStatus(2);
-            order.setOrderStatusText("等待卖家发货");
+            order.setOrderStatus(OrderStatusEnum.WAITING_DELIVERY.getCode());
+            order.setOrderStatusText(OrderStatusEnum.WAITING_DELIVERY.getDescription());
             order.setOrderPayTime(message.getMessageTime());
             
             // 保存或更新订单
