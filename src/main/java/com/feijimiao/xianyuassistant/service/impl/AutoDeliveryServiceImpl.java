@@ -85,6 +85,15 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
     
     @Override
     public void recordAutoDelivery(Long accountId, String xyGoodsId, String buyerUserId, String buyerUserName, String content, Integer state) {
+        // 使用新的重载方法，传入 null 作为 pnmId 和 orderId
+        recordAutoDelivery(accountId, xyGoodsId, buyerUserId, buyerUserName, content, state, null, null);
+    }
+    
+    /**
+     * 记录自动发货（带 pnmId 和 orderId）
+     */
+    public void recordAutoDelivery(Long accountId, String xyGoodsId, String buyerUserId, String buyerUserName, 
+                                   String content, Integer state, String pnmId, String orderId) {
         XianyuGoodsAutoDeliveryRecord record = new XianyuGoodsAutoDeliveryRecord();
         record.setXianyuAccountId(accountId);
         record.setXyGoodsId(xyGoodsId);
@@ -92,6 +101,8 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
         record.setBuyerUserName(buyerUserName);
         record.setContent(content);
         record.setState(state);
+        record.setPnmId(pnmId != null ? pnmId : "");  // 设置默认值，避免 null
+        record.setOrderId(orderId != null ? orderId : "");  // 设置默认值，避免 null
         
         autoDeliveryRecordMapper.insert(record);
     }
@@ -101,9 +112,17 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
      */
     @Override
     public void handleAutoDelivery(Long accountId, String xyGoodsId, String sId, String buyerUserId, String buyerUserName) {
+        // 调用重载方法，传入 null 作为 orderId
+        handleAutoDelivery(accountId, xyGoodsId, sId, buyerUserId, buyerUserName, null);
+    }
+    
+    /**
+     * 处理自动发货（带订单ID）
+     */
+    public void handleAutoDelivery(Long accountId, String xyGoodsId, String sId, String buyerUserId, String buyerUserName, String orderId) {
         try {
-            log.info("【账号{}】处理自动发货: xyGoodsId={}, sId={}, buyerUserId={}, buyerUserName={}", 
-                    accountId, xyGoodsId, sId, buyerUserId, buyerUserName);
+            log.info("【账号{}】处理自动发货: xyGoodsId={}, sId={}, buyerUserId={}, buyerUserName={}, orderId={}", 
+                    accountId, xyGoodsId, sId, buyerUserId, buyerUserName, orderId);
             
             // 1. 检查商品是否开启自动发货
             XianyuGoodsConfig goodsConfig = getGoodsConfig(accountId, xyGoodsId);
@@ -117,7 +136,7 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             if (deliveryConfig == null || deliveryConfig.getAutoDeliveryContent() == null || 
                     deliveryConfig.getAutoDeliveryContent().isEmpty()) {
                 log.warn("【账号{}】商品未配置自动发货内容: xyGoodsId={}", accountId, xyGoodsId);
-                recordAutoDelivery(accountId, xyGoodsId, buyerUserId, buyerUserName, null, 0);
+                recordAutoDelivery(accountId, xyGoodsId, buyerUserId, buyerUserName, null, 0, null, orderId);
                 return;
             }
             
@@ -143,8 +162,8 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             // 5. 发送消息
             boolean success = webSocketService.sendMessage(accountId, cid, toId, content);
             
-            // 6. 记录发货结果（传递买家用户ID和用户名）
-            recordAutoDelivery(accountId, xyGoodsId, buyerUserId, buyerUserName, content, success ? 1 : 0);
+            // 6. 记录发货结果（传递买家用户ID和用户名、orderId）
+            recordAutoDelivery(accountId, xyGoodsId, buyerUserId, buyerUserName, content, success ? 1 : 0, null, orderId);
             
             if (success) {
                 log.info("【账号{}】自动发货成功: xyGoodsId={}, buyerUserName={}, content={}", 
@@ -155,7 +174,7 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             
         } catch (Exception e) {
             log.error("【账号{}】自动发货异常: xyGoodsId={}", accountId, xyGoodsId, e);
-            recordAutoDelivery(accountId, xyGoodsId, buyerUserId, buyerUserName, null, 0);
+            recordAutoDelivery(accountId, xyGoodsId, buyerUserId, buyerUserName, null, 0, null, orderId);
         }
     }
     
@@ -362,8 +381,8 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             String buyerUserId = order.getBuyerUserId();
             String buyerUserName = order.getBuyerUserName();
 
-            // 4. 调用handleAutoDelivery触发自动发货
-            handleAutoDelivery(accountId, xyGoodsId, sId, buyerUserId, buyerUserName);
+            // 4. 调用handleAutoDelivery触发自动发货（传入orderId）
+            handleAutoDelivery(accountId, xyGoodsId, sId, buyerUserId, buyerUserName, orderId);
 
             return com.feijimiao.xianyuassistant.common.ResultObject.success("触发自动发货成功");
 
