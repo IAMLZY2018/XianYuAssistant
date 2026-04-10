@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { Loading } from '@element-plus/icons-vue';
 import { getAccountList } from '@/api/account';
 import { getMessageList } from '@/api/message';
 import { getGoodsList } from '@/api/goods';
@@ -103,7 +104,7 @@ const loadGoodsList = async () => {
     const params: any = {
       xianyuAccountId: selectedAccountId.value,
       pageNum: goodsCurrentPage.value,
-      pageSize: 10
+      pageSize: 20  // 每次加载20条
     };
 
     const response = await getGoodsList(params);
@@ -115,6 +116,9 @@ const loadGoodsList = async () => {
         goodsList.value.push(...(response.data?.itemsWithConfig || []));
       }
       goodsTotal.value = response.data?.totalCount || 0;
+
+      // 检查是否需要继续加载（当内容不足以触发滚动时）
+      checkAndLoadMore();
     } else {
       throw new Error(response.msg || '获取商品列表失败');
     }
@@ -126,14 +130,49 @@ const loadGoodsList = async () => {
   }
 };
 
+// 检查是否需要继续加载更多数据
+const checkAndLoadMore = () => {
+  nextTick(() => {
+    if (!goodsListRef.value) return;
+
+    const { scrollHeight, clientHeight } = goodsListRef.value;
+    console.log('检查是否需要加载更多:', {
+      scrollHeight,
+      clientHeight,
+      hasScroll: scrollHeight > clientHeight,
+      currentCount: goodsList.value.length,
+      totalCount: goodsTotal.value
+    });
+
+    // 如果内容高度小于容器高度，且还有更多数据，则继续加载
+    if (scrollHeight <= clientHeight && goodsList.value.length < goodsTotal.value) {
+      console.log('内容不足以触发滚动，自动加载更多');
+      goodsCurrentPage.value++;
+      loadGoodsList();
+    }
+  });
+};
+
 // 处理商品列表滚动事件
 const handleGoodsScroll = () => {
-  if (!goodsListRef.value) return;
+  if (!goodsListRef.value || goodsLoading.value) return;  // 如果正在加载，则不触发
 
   const { scrollTop, scrollHeight, clientHeight } = goodsListRef.value;
-  // 当滚动到底部时加载更多
-  if (scrollTop + clientHeight >= scrollHeight - 10) {
+
+  // 调试日志
+  console.log('滚动事件触发:', {
+    scrollTop,
+    scrollHeight,
+    clientHeight,
+    currentCount: goodsList.value.length,
+    totalCount: goodsTotal.value,
+    isLoading: goodsLoading.value
+  });
+
+  // 当滚动到底部时加载更多（距离底部50px时触发）
+  if (scrollTop + clientHeight >= scrollHeight - 50) {
     if (goodsList.value.length < goodsTotal.value) {
+      console.log('触发加载更多');
       goodsCurrentPage.value++;
       loadGoodsList();
     }
@@ -142,14 +181,20 @@ const handleGoodsScroll = () => {
 
 // 监听滚动事件
 const addScrollListener = () => {
-  if (goodsListRef.value) {
-    goodsListRef.value.addEventListener('scroll', handleGoodsScroll);
-  }
+  nextTick(() => {
+    if (goodsListRef.value) {
+      console.log('添加滚动监听器');
+      goodsListRef.value.addEventListener('scroll', handleGoodsScroll);
+    } else {
+      console.error('goodsListRef.value 为空，无法添加滚动监听');
+    }
+  });
 };
 
 // 移除滚动监听
 const removeScrollListener = () => {
   if (goodsListRef.value) {
+    console.log('移除滚动监听器');
     goodsListRef.value.removeEventListener('scroll', handleGoodsScroll);
   }
 };
@@ -317,11 +362,19 @@ onMounted(() => {
   setTimeout(() => {
     addScrollListener();
   }, 0);
+  // 监听窗口大小变化
+  window.addEventListener('resize', handleResize);
 });
 
 onUnmounted(() => {
   removeScrollListener();
+  window.removeEventListener('resize', handleResize);
 });
+
+// 处理窗口大小变化
+const handleResize = () => {
+  checkAndLoadMore();
+};
 </script>
 
 <template>
@@ -356,7 +409,7 @@ onUnmounted(() => {
 
     <div class="content-container">
       <!-- 左侧商品列表 -->
-      <el-card class="goods-filter-panel">
+      <el-card class="goods-filter-panel" :body-style="{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }">
         <template #header>
           <div class="panel-header">
             <span class="panel-title">商品列表</span>
@@ -399,7 +452,16 @@ onUnmounted(() => {
           
           <!-- 加载更多提示 -->
           <div v-if="goodsLoading && goodsCurrentPage > 1" class="loading-more">
+            <el-icon class="is-loading"><Loading /></el-icon>
             加载中...
+          </div>
+          
+          <!-- 没有更多数据提示 -->
+          <div 
+            v-if="!goodsLoading && goodsList.length > 0 && goodsList.length >= goodsTotal" 
+            class="no-more-data"
+          >
+            已加载全部商品
           </div>
           
           <el-empty
@@ -541,9 +603,10 @@ onUnmounted(() => {
 
 <style scoped>
 .messages-page {
-  height: 100%;
+  height: calc(100vh - 40px);  /* 减去页面padding */
   display: flex;
   flex-direction: column;
+  padding: 20px;
 }
 
 .page-header {
@@ -597,6 +660,27 @@ onUnmounted(() => {
 .goods-list-container {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;  /* 确保flex子元素可以正确滚动 */
+  padding-right: 5px;  /* 为滚动条留出空间 */
+}
+
+/* 自定义滚动条样式 */
+.goods-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.goods-list-container::-webkit-scrollbar-thumb {
+  background-color: #c0c4cc;
+  border-radius: 3px;
+}
+
+.goods-list-container::-webkit-scrollbar-thumb:hover {
+  background-color: #909399;
+}
+
+.goods-list-container::-webkit-scrollbar-track {
+  background-color: #f5f7fa;
 }
 
 .goods-item {
@@ -660,6 +744,17 @@ onUnmounted(() => {
   padding: 12px;
   color: #909399;
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.no-more-data {
+  text-align: center;
+  padding: 12px;
+  color: #c0c4cc;
+  font-size: 13px;
 }
 
 .messages-container {

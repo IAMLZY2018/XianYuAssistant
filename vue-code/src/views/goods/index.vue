@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { getAccountList } from '@/api/account';
 import { getGoodsList, refreshGoods, getGoodsDetail, updateAutoDeliveryStatus, updateAutoReplyStatus, deleteItem } from '@/api/goods';
@@ -19,6 +19,9 @@ const goodsList = ref<GoodsItemWithConfig[]>([]);
 const currentPage = ref(1);
 const pageSize = ref(20);
 const total = ref(0);
+
+// 表格高度
+const tableHeight = ref<number>(500);
 
 // 商品详情对话框
 const detailDialogVisible = ref(false);
@@ -238,8 +241,21 @@ const formatPrice = (price: string) => {
   return price ? `¥${price}` : '-';
 };
 
+// 计算表格高度
+const calculateTableHeight = () => {
+  // 窗口高度 - 页面头部(约80px) - 卡片头部(约60px) - 分页(约60px) - 底部边距(约60px)
+  const height = window.innerHeight - 80 - 60 - 60 - 60;
+  tableHeight.value = Math.max(height, 400); // 最小高度400px
+};
+
 onMounted(() => {
   loadAccounts();
+  calculateTableHeight();
+  window.addEventListener('resize', calculateTableHeight);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', calculateTableHeight);
 });
 </script>
 
@@ -295,6 +311,7 @@ onMounted(() => {
         stripe
         style="width: 100%"
         size="small"
+        :height="tableHeight"
       >
         <el-table-column type="index" label="序号" width="60" align="center" />
         
@@ -404,7 +421,8 @@ onMounted(() => {
 
 <style scoped>
 .goods-page {
-  padding: 20px;
+  padding: 20px 20px 40px 20px;
+  min-height: 100vh;
 }
 
 .page-header {
@@ -429,6 +447,7 @@ onMounted(() => {
 
 .goods-card {
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
 }
 
 .card-header {
@@ -470,8 +489,9 @@ onMounted(() => {
 .pagination-container {
   display: flex;
   justify-content: center;
-  padding: 10px 0;
-  margin-top: 10px;
+  padding: 15px 0;
+  margin-top: 15px;
   border-top: 1px solid #ebeef5;
+  background-color: #fff;
 }
 </style>

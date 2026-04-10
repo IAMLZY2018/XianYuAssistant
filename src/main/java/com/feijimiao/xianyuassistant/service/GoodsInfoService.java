@@ -45,6 +45,15 @@ public interface GoodsInfoService {
     List<XianyuGoodsInfo> listByStatus(Integer status);
     
     /**
+     * 根据状态和账号ID查询商品列表
+     *
+     * @param status 商品状态
+     * @param xianyuAccountId 闲鱼账号ID
+     * @return 商品列表
+     */
+    List<XianyuGoodsInfo> listByStatusAndAccountId(Integer status, Long xianyuAccountId);
+    
+    /**
      * 根据状态查询商品列表（分页）
      *
      * @param status 商品状态
@@ -53,6 +62,26 @@ public interface GoodsInfoService {
      * @return 商品列表
      */
     List<XianyuGoodsInfo> listByStatus(Integer status, int pageNum, int pageSize);
+    
+    /**
+     * 根据状态和账号ID查询商品列表（分页）
+     *
+     * @param status 商品状态
+     * @param xianyuAccountId 闲鱼账号ID
+     * @param pageNum 页码
+     * @param pageSize 每页数量
+     * @return 商品列表
+     */
+    List<XianyuGoodsInfo> listByStatusAndAccountId(Integer status, Long xianyuAccountId, int pageNum, int pageSize);
+    
+    /**
+     * 根据状态和账号ID统计商品数量
+     *
+     * @param status 商品状态
+     * @param xianyuAccountId 闲鱼账号ID
+     * @return 商品数量
+     */
+    int countByStatusAndAccountId(Integer status, Long xianyuAccountId);
     
     /**
      * 更新商品详情信息
