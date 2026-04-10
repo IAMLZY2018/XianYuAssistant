@@ -156,6 +156,22 @@ public class GoodsInfoServiceImpl implements GoodsInfoService {
     }
     
     @Override
+    public List<XianyuGoodsInfo> listByStatusAndAccountId(Integer status, Long xianyuAccountId) {
+        try {
+            LambdaQueryWrapper<XianyuGoodsInfo> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(XianyuGoodsInfo::getStatus, status);
+            if (xianyuAccountId != null) {
+                queryWrapper.eq(XianyuGoodsInfo::getXianyuAccountId, xianyuAccountId);
+            }
+            queryWrapper.orderByDesc(XianyuGoodsInfo::getUpdatedTime);
+            return goodsInfoMapper.selectList(queryWrapper);
+        } catch (Exception e) {
+            log.error("根据状态和账号ID查询商品列表失败: status={}, accountId={}", status, xianyuAccountId, e);
+            return null;
+        }
+    }
+    
+    @Override
     public List<XianyuGoodsInfo> listByStatus(Integer status, int pageNum, int pageSize) {
         try {
             LambdaQueryWrapper<XianyuGoodsInfo> queryWrapper = new LambdaQueryWrapper<>();
@@ -170,6 +186,43 @@ public class GoodsInfoServiceImpl implements GoodsInfoService {
         } catch (Exception e) {
             log.error("根据状态查询商品列表失败: status={}, pageNum={}, pageSize={}", status, pageNum, pageSize, e);
             return new java.util.ArrayList<>(); // 返回空列表而不是null
+        }
+    }
+    
+    @Override
+    public List<XianyuGoodsInfo> listByStatusAndAccountId(Integer status, Long xianyuAccountId, int pageNum, int pageSize) {
+        try {
+            LambdaQueryWrapper<XianyuGoodsInfo> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(XianyuGoodsInfo::getStatus, status);
+            if (xianyuAccountId != null) {
+                queryWrapper.eq(XianyuGoodsInfo::getXianyuAccountId, xianyuAccountId);
+            }
+            queryWrapper.orderByDesc(XianyuGoodsInfo::getUpdatedTime);
+            
+            // 计算偏移量
+            int offset = (pageNum - 1) * pageSize;
+            
+            // 使用MyBatis Plus的分页查询
+            return goodsInfoMapper.selectList(queryWrapper.last("LIMIT " + offset + ", " + pageSize));
+        } catch (Exception e) {
+            log.error("根据状态和账号ID查询商品列表失败: status={}, accountId={}, pageNum={}, pageSize={}", 
+                    status, xianyuAccountId, pageNum, pageSize, e);
+            return new java.util.ArrayList<>(); // 返回空列表而不是null
+        }
+    }
+    
+    @Override
+    public int countByStatusAndAccountId(Integer status, Long xianyuAccountId) {
+        try {
+            LambdaQueryWrapper<XianyuGoodsInfo> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(XianyuGoodsInfo::getStatus, status);
+            if (xianyuAccountId != null) {
+                queryWrapper.eq(XianyuGoodsInfo::getXianyuAccountId, xianyuAccountId);
+            }
+            return Math.toIntExact(goodsInfoMapper.selectCount(queryWrapper));
+        } catch (Exception e) {
+            log.error("根据状态和账号ID统计商品数量失败: status={}, accountId={}", status, xianyuAccountId, e);
+            return 0;
         }
     }
     

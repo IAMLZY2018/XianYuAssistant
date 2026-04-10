@@ -259,11 +259,7 @@ public class ItemServiceImpl implements ItemService {
             log.info("从数据库获取商品列表: status={}, xianyuAccountId={}, pageNum={}, pageSize={}", 
                     reqDTO.getStatus(), reqDTO.getXianyuAccountId(), reqDTO.getPageNum(), reqDTO.getPageSize());
             
-            // 获取所有商品（用于计算总数）
-            List<XianyuGoodsInfo> allItems = goodsInfoService.listByStatus(reqDTO.getStatus());
-            
-            // 计算分页信息
-            int totalCount = allItems != null ? allItems.size() : 0;
+            // 获取分页参数
             int pageSize = reqDTO.getPageSize() != null ? reqDTO.getPageSize() : 20;
             int pageNum = reqDTO.getPageNum() != null ? reqDTO.getPageNum() : 1;
             
@@ -271,6 +267,9 @@ public class ItemServiceImpl implements ItemService {
             if (pageNum < 1) {
                 pageNum = 1;
             }
+            
+            // 统计总数（使用count查询，提高性能）
+            int totalCount = goodsInfoService.countByStatusAndAccountId(reqDTO.getStatus(), reqDTO.getXianyuAccountId());
             
             // 计算总页数
             int totalPage = (int) Math.ceil((double) totalCount / pageSize);
@@ -285,8 +284,9 @@ public class ItemServiceImpl implements ItemService {
                 pageNum = totalPage;
             }
             
-            // 获取当前页的商品列表
-            List<XianyuGoodsInfo> pagedItems = goodsInfoService.listByStatus(reqDTO.getStatus(), pageNum, pageSize);
+            // 获取当前页的商品列表（带账号ID筛选）
+            List<XianyuGoodsInfo> pagedItems = goodsInfoService.listByStatusAndAccountId(
+                    reqDTO.getStatus(), reqDTO.getXianyuAccountId(), pageNum, pageSize);
             
             // 如果分页查询结果为null，创建空列表
             if (pagedItems == null) {

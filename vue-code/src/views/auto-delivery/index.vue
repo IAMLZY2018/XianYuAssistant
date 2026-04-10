@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
   import { useRoute } from 'vue-router';
 import { ElMessageBox } from 'element-plus';
+import { Loading } from '@element-plus/icons-vue';
 import { getAccountList } from '@/api/account';
 import { getGoodsList, getGoodsDetail, updateAutoDeliveryStatus } from '@/api/goods';
 import {
@@ -25,6 +26,12 @@ const selectedAccountId = ref<number | null>(null);
 const goodsList = ref<GoodsItemWithConfig[]>([]);
 const selectedGoods = ref<GoodsItemWithConfig | null>(null);
 const currentConfig = ref<AutoDeliveryConfig | null>(null);
+
+// 商品列表滚动加载相关
+const goodsCurrentPage = ref(1);
+const goodsTotal = ref(0);
+const goodsLoading = ref(false);
+const goodsListRef = ref<HTMLElement | null>(null);
 
 // 商品详情对话框
 const detailDialogVisible = ref(false);
@@ -88,21 +95,27 @@ const loadGoods = async () => {
     return;
   }
 
-  loading.value = true;
+  goodsLoading.value = true;
   try {
     const params = {
       xianyuAccountId: selectedAccountId.value,
-      pageNum: 1,
-      pageSize: 100 // 获取所有商品
+      pageNum: goodsCurrentPage.value,
+      pageSize: 20 // 每次加载20条
     };
 
     const response = await getGoodsList(params);
     if (response.code === 0 || response.code === 200) {
-      goodsList.value = response.data?.itemsWithConfig || [];
+      // 如果是第一页，则替换列表，否则追加到列表末尾
+      if (goodsCurrentPage.value === 1) {
+        goodsList.value = response.data?.itemsWithConfig || [];
+      } else {
+        goodsList.value.push(...(response.data?.itemsWithConfig || []));
+      }
+      goodsTotal.value = response.data?.totalCount || 0;
 
       // 检查路由参数,如果有则使用路由参数中的商品ID
       const goodsIdFromQuery = route.query.goodsId;
-      if (goodsIdFromQuery) {
+      if (goodsIdFromQuery && goodsCurrentPage.value === 1) {
         const targetGoods = goodsList.value.find(g => g.item.xyGoodId === goodsIdFromQuery);
         if (targetGoods) {
           await selectGoods(targetGoods);
@@ -110,12 +123,15 @@ const loadGoods = async () => {
         }
       }
 
-      // 默认选择第一个商品
-      if (goodsList.value.length > 0 && !selectedGoods.value) {
+      // 默认选择第一个商品（仅第一页）
+      if (goodsCurrentPage.value === 1 && goodsList.value.length > 0 && !selectedGoods.value) {
         if (goodsList.value.length > 0) {
           selectGoods(goodsList.value[0]!);
         }
       }
+
+      // 检查是否需要继续加载（当内容不足以触发滚动时）
+      checkAndLoadMore();
     } else {
       throw new Error(response.msg || '获取商品列表失败');
     }
@@ -123,14 +139,66 @@ const loadGoods = async () => {
     console.error('加载商品列表失败:', error);
     goodsList.value = [];
   } finally {
-    loading.value = false;
+    goodsLoading.value = false;
   }
+};
+
+// 检查是否需要继续加载更多数据
+const checkAndLoadMore = () => {
+  nextTick(() => {
+    if (!goodsListRef.value) return;
+
+    const { scrollHeight, clientHeight } = goodsListRef.value;
+
+    // 如果内容高度小于容器高度，且还有更多数据，则继续加载
+    if (scrollHeight <= clientHeight && goodsList.value.length < goodsTotal.value) {
+      goodsCurrentPage.value++;
+      loadGoods();
+    }
+  });
+};
+
+// 处理商品列表滚动事件
+const handleGoodsScroll = () => {
+  if (!goodsListRef.value || goodsLoading.value) return;
+
+  const { scrollTop, scrollHeight, clientHeight } = goodsListRef.value;
+
+  // 当滚动到底部时加载更多（距离底部50px时触发）
+  if (scrollTop + clientHeight >= scrollHeight - 50) {
+    if (goodsList.value.length < goodsTotal.value) {
+      goodsCurrentPage.value++;
+      loadGoods();
+    }
+  }
+};
+
+// 监听滚动事件
+const addScrollListener = () => {
+  nextTick(() => {
+    if (goodsListRef.value) {
+      goodsListRef.value.addEventListener('scroll', handleGoodsScroll);
+    }
+  });
+};
+
+// 移除滚动监听
+const removeScrollListener = () => {
+  if (goodsListRef.value) {
+    goodsListRef.value.removeEventListener('scroll', handleGoodsScroll);
+  }
+};
+
+// 处理窗口大小变化
+const handleResize = () => {
+  checkAndLoadMore();
 };
 
 // 账号变更
 const handleAccountChange = () => {
   selectedGoods.value = null;
   currentConfig.value = null;
+  goodsCurrentPage.value = 1; // 重置页码
   loadGoods();
 };
 
@@ -472,6 +540,17 @@ const handleTriggerDelivery = async (record: any) => {
 
 onMounted(() => {
   loadAccounts();
+  // 等待DOM渲染完成后添加滚动监听
+  setTimeout(() => {
+    addScrollListener();
+  }, 0);
+  // 监听窗口大小变化
+  window.addEventListener('resize', handleResize);
+});
+
+onUnmounted(() => {
+  removeScrollListener();
+  window.removeEventListener('resize', handleResize);
 });
 </script>
 
@@ -500,15 +579,19 @@ onMounted(() => {
     <div class="content-container">
       <!-- 左侧商品列表 -->
       <div class="goods-panel">
-        <el-card class="goods-card">
+        <el-card class="goods-card" :body-style="{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }">
           <template #header>
             <div class="card-header">
               <span class="card-title">商品列表</span>
-              <span class="card-subtitle">共 {{ goodsList.length }} 件商品</span>
+              <span class="card-subtitle">共 {{ goodsTotal }} 件商品</span>
             </div>
           </template>
 
-          <div class="goods-list" v-loading="loading">
+          <div 
+            class="goods-list" 
+            v-loading="goodsLoading && goodsCurrentPage === 1"
+            ref="goodsListRef"
+          >
             <div
               v-for="goods in goodsList"
               :key="goods.item.xyGoodId"
@@ -533,7 +616,21 @@ onMounted(() => {
               </div>
             </div>
 
-            <div v-if="goodsList.length === 0 && !loading" class="empty-goods">
+            <!-- 加载更多提示 -->
+            <div v-if="goodsLoading && goodsCurrentPage > 1" class="loading-more">
+              <el-icon class="is-loading"><Loading /></el-icon>
+              加载中...
+            </div>
+
+            <!-- 没有更多数据提示 -->
+            <div 
+              v-if="!goodsLoading && goodsList.length > 0 && goodsList.length >= goodsTotal" 
+              class="no-more-data"
+            >
+              已加载全部商品
+            </div>
+
+            <div v-if="goodsList.length === 0 && !goodsLoading" class="empty-goods">
               <el-empty description="暂无商品" />
             </div>
           </div>
@@ -825,6 +922,27 @@ onMounted(() => {
 .goods-list {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  padding-right: 5px;
+}
+
+/* 自定义滚动条样式 */
+.goods-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.goods-list::-webkit-scrollbar-thumb {
+  background-color: #c0c4cc;
+  border-radius: 3px;
+}
+
+.goods-list::-webkit-scrollbar-thumb:hover {
+  background-color: #909399;
+}
+
+.goods-list::-webkit-scrollbar-track {
+  background-color: #f5f7fa;
 }
 
 .goods-item {
@@ -881,6 +999,24 @@ onMounted(() => {
   font-size: 15px;
   font-weight: 600;
   color: #f56c6c;
+}
+
+.loading-more {
+  text-align: center;
+  padding: 12px;
+  color: #909399;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.no-more-data {
+  text-align: center;
+  padding: 12px;
+  color: #c0c4cc;
+  font-size: 13px;
 }
 
 .empty-goods,
