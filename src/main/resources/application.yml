@@ -1,0 +1,60 @@
+server:
+  port: 12400
+
+spring:
+  datasource:
+    url: jdbc:sqlite:dbdata/xianyu_assistant.db
+  ai:
+    openai:
+      api-key: your-api-key
+      base-url: https://api.openai.com
+      chat:
+        options:
+          model: gpt-4o
+          temperature: 0.7
+      embedding:
+        options:
+          model: text-embedding-ada-002
+    vectorstore:
+      chroma:
+        client:
+          host: http://192.168.0.188
+          port: 8321
+        initialize-schema: false
+        tenant-name: default_tenant
+        database-name: default_database
+
+# MyBatis配置
+mybatis-plus:
+  type-handlers-package: com.feijimiao.xianyuassistant.config
+  configuration:
+    default-enum-type-handler: org.apache.ibatis.type.EnumOrdinalTypeHandler
+
+# WebSocket配置（参考Python代码）
+websocket:
+  # 心跳间隔（秒）
+  heartbeat-interval: 15
+  # 心跳超时（秒）
+  heartbeat-timeout: 5
+  # Token刷新间隔（秒，默认1小时）
+  token-refresh-interval: 3600
+  # Token重试间隔（秒，默认5分钟）
+  token-retry-interval: 300
+  # 消息过期时间（毫秒，默认5分钟）
+  message-expire-time: 300000
+  # 人工接管超时（秒，默认1小时）
+  manual-mode-timeout: 3600
+  # 人工接管切换关键词
+  toggle-keywords: 。
+  # 模拟人工输入延迟
+  simulate-human-typing: false
+  # 连接重连延迟（秒）
+  reconnect-delay: 5
+  # 最大重连次数
+  max-reconnect-attempts: 10
+  # 消息发送重试次数
+  message-retry-attempts: 3
+  # 消息发送重试延迟（毫秒）
+  message-retry-delay: 1000
+  # 打印原始消息开关（解密后的消息）
+  print-raw-message: true
