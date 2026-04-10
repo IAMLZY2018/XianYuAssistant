@@ -18,7 +18,7 @@ const pageSize = ref(20);
 // 筛选条件
 const filterType = ref('');
 const filterModule = ref('');
-const filterStatus = ref<number | null>(null);
+const filterStatus = ref<string | number>('');
 
 // 操作类型选项
 const operationTypes = [
@@ -49,7 +49,7 @@ const operationModules = [
 
 // 操作状态选项
 const operationStatuses = [
-  { label: '全部', value: null },
+  { label: '全部', value: '' },
   { label: '成功', value: 1 },
   { label: '失败', value: 0 },
   { label: '部分成功', value: 2 }
@@ -96,7 +96,7 @@ const loadLogs = async () => {
       accountId: selectedAccountId.value,
       operationType: filterType.value || undefined,
       operationModule: filterModule.value || undefined,
-      operationStatus: filterStatus.value !== null ? filterStatus.value : undefined,
+      operationStatus: filterStatus.value !== '' ? Number(filterStatus.value) : undefined,
       page: page.value,
       pageSize: pageSize.value
     });
@@ -125,7 +125,7 @@ const handleFilter = () => {
 const handleResetFilter = () => {
   filterType.value = '';
   filterModule.value = '';
-  filterStatus.value = null;
+  filterStatus.value = '';
   page.value = 1;
   loadLogs();
 };
@@ -206,7 +206,7 @@ const getOperationTypeTag = (type: string) => {
     'GOODS_SYNC': 'info',
     'MESSAGE_SYNC': 'info'
   };
-  return typeMap[type] || '';
+  return typeMap[type] || 'info';
 };
 
 // 获取操作状态文本

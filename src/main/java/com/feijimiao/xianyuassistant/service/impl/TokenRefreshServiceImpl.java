@@ -4,6 +4,7 @@ import com.feijimiao.xianyuassistant.entity.XianyuAccount;
 import com.feijimiao.xianyuassistant.entity.XianyuCookie;
 import com.feijimiao.xianyuassistant.mapper.XianyuAccountMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuCookieMapper;
+import com.feijimiao.xianyuassistant.service.CookieRefreshService;
 import com.feijimiao.xianyuassistant.service.OperationLogService;
 import com.feijimiao.xianyuassistant.service.TokenRefreshService;
 import com.feijimiao.xianyuassistant.service.WebSocketTokenService;
@@ -49,6 +50,9 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
     @Autowired
     private OperationLogService operationLogService;
     
+    @Autowired
+    private CookieRefreshService cookieRefreshService;
+    
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
@@ -61,11 +65,29 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
     /**
      * 刷新_m_h5_tk token
      * 通过调用闲鱼API，服务器会返回新的_m_h5_tk
+     * 
+     * 参考Python逻辑：
+     * 1. 调用H5 API获取新的_m_h5_tk
+     * 2. 如果失败，重试最多2次
+     * 3. 重试失败后，调用hasLogin刷新Cookie
+     * 4. hasLogin成功后，重新尝试获取_m_h5_tk
      */
     @Override
     public boolean refreshMh5tkToken(Long accountId) {
+        return refreshMh5tkTokenWithRetry(accountId, 0);
+    }
+    
+    /**
+     * 刷新_m_h5_tk token（带重试机制）
+     * 参考Python XianyuApis.get_token的重试逻辑
+     * 
+     * @param accountId 账号ID
+     * @param retryCount 当前重试次数
+     * @return 是否成功
+     */
+    private boolean refreshMh5tkTokenWithRetry(Long accountId, int retryCount) {
         try {
-            log.info("【账号{}】开始刷新_m_h5_tk token...", accountId);
+            log.info("【账号{}】开始刷新_m_h5_tk token... (重试次数: {})", accountId, retryCount);
             
             // 1. 获取当前Cookie
             XianyuCookie cookie = cookieMapper.selectOne(
@@ -80,11 +102,12 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
             String cookieStr = cookie.getCookieText();
             Map<String, String> cookies = XianyuSignUtils.parseCookies(cookieStr);
             
-            // 2. 第一次请求：获取新的_m_h5_tk
+            // 2. 构建请求：获取新的_m_h5_tk
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(API_H5_TK))
                     .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
                     .header("Referer", "https://market.m.goofish.com/")
+                    .header("Cookie", cookieStr)
                     .GET()
                     .timeout(Duration.ofSeconds(10))
                     .build();
@@ -125,37 +148,108 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
                 }
             }
             
-            if (!updated) {
-                log.warn("【账号{}】⚠️ 响应中未包含新的_m_h5_tk", accountId);
-                
-                // 记录操作日志
-                operationLogService.log(accountId,
-                    com.feijimiao.xianyuassistant.constants.OperationConstants.Type.REFRESH,
-                    com.feijimiao.xianyuassistant.constants.OperationConstants.Module.TOKEN,
-                    "_m_h5_tk Token刷新失败：响应中未包含新Token",
-                    com.feijimiao.xianyuassistant.constants.OperationConstants.Status.FAIL,
-                    com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.TOKEN,
-                    String.valueOf(accountId),
-                    null, null, "响应中未包含新Token", null);
+            if (updated) {
+                return true;
             }
             
-            return updated;
+            // 4. 响应中未包含新的_m_h5_tk，进入失败处理
+            log.warn("【账号{}】⚠️ 响应中未包含新的_m_h5_tk", accountId);
+            return handleMh5tkRefreshFailure(accountId, retryCount, "响应中未包含新Token");
             
         } catch (Exception e) {
             log.error("【账号{}】刷新_m_h5_tk token失败", accountId, e);
+            return handleMh5tkRefreshFailure(accountId, retryCount, "异常: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 处理_m_h5_tk刷新失败的情况
+     * 参考Python XianyuApis.get_token的失败处理逻辑
+     * 
+     * @param accountId 账号ID
+     * @param retryCount 当前重试次数
+     * @param reason 失败原因
+     * @return 是否成功
+     */
+    private boolean handleMh5tkRefreshFailure(Long accountId, int retryCount, String reason) {
+        // 参考Python: retry_count < 2 时直接重试
+        if (retryCount < 2) {
+            log.warn("【账号{}】_m_h5_tk刷新失败({})，准备重试... (重试次数: {}/2)", 
+                    accountId, reason, retryCount + 1);
+            
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            
+            return refreshMh5tkTokenWithRetry(accountId, retryCount + 1);
+        }
+        
+        // 参考Python: retry_count >= 2 时，调用hasLogin刷新Cookie后重试
+        log.warn("【账号{}】_m_h5_tk刷新重试已达上限，尝试通过hasLogin刷新Cookie...", accountId);
+        return refreshMh5tkViaHasLogin(accountId, 0);
+    }
+    
+    /**
+     * 通过hasLogin刷新Cookie后重新获取_m_h5_tk
+     * 参考Python: get_token中retry_count >= 2时的逻辑
+     * 
+     * @param accountId 账号ID
+     * @param hasLoginRetryCount hasLogin重试次数
+     * @return 是否成功
+     */
+    private boolean refreshMh5tkViaHasLogin(Long accountId, int hasLoginRetryCount) {
+        if (hasLoginRetryCount >= 2) {
+            log.error("【账号{}】hasLogin刷新重试次数已达上限，Cookie已彻底过期", accountId);
+            
+            // 更新Cookie状态为过期
+            cookieMapper.update(null,
+                    new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<XianyuCookie>()
+                            .eq(XianyuCookie::getXianyuAccountId, accountId)
+                            .set(XianyuCookie::getCookieStatus, 2)
+            );
             
             // 记录操作日志
             operationLogService.log(accountId,
                 com.feijimiao.xianyuassistant.constants.OperationConstants.Type.REFRESH,
                 com.feijimiao.xianyuassistant.constants.OperationConstants.Module.TOKEN,
-                "_m_h5_tk Token刷新异常: " + e.getMessage(),
+                "_m_h5_tk Token刷新失败：Cookie过期且自动刷新失败",
                 com.feijimiao.xianyuassistant.constants.OperationConstants.Status.FAIL,
                 com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.TOKEN,
                 String.valueOf(accountId),
-                null, null, e.getMessage(), null);
+                null, null, "Cookie过期且自动刷新失败", null);
             
             return false;
         }
+        
+        log.info("【账号{}】开始通过hasLogin刷新Cookie... (重试次数: {}/2)", 
+                accountId, hasLoginRetryCount);
+        
+        try {
+            // 调用CookieRefreshService的checkLoginStatus方法（即hasLogin）
+            boolean refreshSuccess = cookieRefreshService.checkLoginStatus(accountId);
+            
+            if (refreshSuccess) {
+                log.info("【账号{}】hasLogin成功，Cookie已刷新，重新获取_m_h5_tk（重置重试计数）", accountId);
+                
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                
+                // 重置retryCount为0，重新开始获取_m_h5_tk流程
+                return refreshMh5tkTokenWithRetry(accountId, 0);
+            } else {
+                log.warn("【账号{}】hasLogin失败", accountId);
+            }
+        } catch (Exception e) {
+            log.error("【账号{}】hasLogin刷新过程发生异常", accountId, e);
+        }
+        
+        // hasLogin失败，重试
+        return refreshMh5tkViaHasLogin(accountId, hasLoginRetryCount + 1);
     }
     
     /**

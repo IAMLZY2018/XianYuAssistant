@@ -22,7 +22,6 @@ import org.springframework.stereotype.Component;
 
 /**
  * 自动发货用
- * 聊天消息自动发货监听器
  * 
  * <p>监听 {@link ChatMessageReceivedEvent} 事件，判断是否需要触发自动发货</p>
  * 

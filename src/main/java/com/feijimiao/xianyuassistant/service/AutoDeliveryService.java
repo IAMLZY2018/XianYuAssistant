@@ -1,5 +1,7 @@
 package com.feijimiao.xianyuassistant.service;
 
+import com.feijimiao.xianyuassistant.common.ResultObject;
+import com.feijimiao.xianyuassistant.controller.dto.TriggerAutoDeliveryReqDTO;
 import com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoDeliveryConfig;
 import com.feijimiao.xianyuassistant.entity.XianyuGoodsConfig;
 
@@ -50,4 +52,12 @@ public interface AutoDeliveryService {
      */
     com.feijimiao.xianyuassistant.controller.dto.AutoDeliveryRecordRespDTO getAutoDeliveryRecords(
             com.feijimiao.xianyuassistant.controller.dto.AutoDeliveryRecordReqDTO reqDTO);
+
+    /**
+     * 触发自动发货
+     *
+     * @param reqDTO 触发发货请求DTO
+     * @return 操作结果
+     */
+    ResultObject<String> triggerAutoDelivery(TriggerAutoDeliveryReqDTO reqDTO);
 }

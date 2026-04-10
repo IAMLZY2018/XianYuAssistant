@@ -52,3 +52,19 @@ export function confirmShipment(data: ConfirmShipmentReq) {
     data
   });
 }
+
+// 触发自动发货请求
+export interface TriggerAutoDeliveryReq {
+  xianyuAccountId: number;
+  xyGoodsId: string;
+  orderId: string;
+}
+
+// 触发自动发货
+export function triggerAutoDelivery(data: TriggerAutoDeliveryReq) {
+  return request<string>({
+    url: '/autoDelivery/trigger',
+    method: 'POST',
+    data
+  });
+}

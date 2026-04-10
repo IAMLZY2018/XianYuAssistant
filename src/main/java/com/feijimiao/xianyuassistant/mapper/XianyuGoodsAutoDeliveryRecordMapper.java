@@ -105,4 +105,10 @@ public interface XianyuGoodsAutoDeliveryRecordMapper {
      */
     @Select("SELECT * FROM xianyu_goods_auto_delivery_record WHERE xianyu_account_id = #{accountId} AND order_id = #{orderId}")
     XianyuGoodsAutoDeliveryRecord selectByOrderId(@Param("accountId") Long accountId, @Param("orderId") String orderId);
+
+    /**
+     * 根据订单ID查询订单信息
+     */
+    @Select("SELECT * FROM xianyu_order WHERE xianyu_account_id = #{accountId} AND order_id = #{orderId}")
+    com.feijimiao.xianyuassistant.entity.XianyuOrder selectOrderByOrderId(@Param("accountId") Long accountId, @Param("orderId") String orderId);
 }

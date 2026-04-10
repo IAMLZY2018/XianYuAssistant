@@ -529,9 +529,20 @@ public class SyncMessageHandler extends AbstractLwpHandler {
     
     /**
      * 保存订单信息
+     * 只保存"等待卖家发货"状态的订单
      */
     private void saveOrderInfo(XianyuChatMessage message, String orderId) {
         try {
+            // 根据消息内容判断订单状态
+            String msgContent = message.getMsgContent();
+            
+            // 只处理"等待卖家发货"的消息
+            if (msgContent == null || !msgContent.contains("等待卖家发货")) {
+                log.debug("📋 跳过非发货订单消息: orderId={}, msgContent={}", 
+                        orderId, msgContent);
+                return;
+            }
+            
             XianyuOrder order = new XianyuOrder();
             order.setXianyuAccountId(message.getXianyuAccountId());
             order.setOrderId(orderId);
@@ -556,29 +567,10 @@ public class SyncMessageHandler extends AbstractLwpHandler {
                 }
             }
             
-            // 根据消息内容判断订单状态
-            String msgContent = message.getMsgContent();
-            if (msgContent != null) {
-                if (msgContent.contains("等待买家付款")) {
-                    order.setOrderStatus(1);
-                    order.setOrderStatusText("等待买家付款");
-                } else if (msgContent.contains("等待卖家发货")) {
-                    order.setOrderStatus(2);
-                    order.setOrderStatusText("等待卖家发货");
-                    order.setOrderPayTime(message.getMessageTime());
-                } else if (msgContent.contains("已发货")) {
-                    order.setOrderStatus(3);
-                    order.setOrderStatusText("已发货");
-                    order.setOrderDeliveryTime(message.getMessageTime());
-                } else if (msgContent.contains("交易成功") || msgContent.contains("已完成")) {
-                    order.setOrderStatus(4);
-                    order.setOrderStatusText("交易成功");
-                    order.setOrderCompleteTime(message.getMessageTime());
-                } else if (msgContent.contains("交易关闭") || msgContent.contains("已取消")) {
-                    order.setOrderStatus(5);
-                    order.setOrderStatusText("交易关闭");
-                }
-            }
+            // 设置订单状态为"等待卖家发货"
+            order.setOrderStatus(2);
+            order.setOrderStatusText("等待卖家发货");
+            order.setOrderPayTime(message.getMessageTime());
             
             // 保存或更新订单
             orderService.saveOrUpdateOrder(order);

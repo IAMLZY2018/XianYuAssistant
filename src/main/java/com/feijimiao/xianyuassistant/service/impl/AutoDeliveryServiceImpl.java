@@ -331,4 +331,46 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
         
         return respDTO;
     }
+
+    @Override
+    public com.feijimiao.xianyuassistant.common.ResultObject<String> triggerAutoDelivery(
+            com.feijimiao.xianyuassistant.controller.dto.TriggerAutoDeliveryReqDTO reqDTO) {
+        try {
+            Long accountId = reqDTO.getXianyuAccountId();
+            String xyGoodsId = reqDTO.getXyGoodsId();
+            String orderId = reqDTO.getOrderId();
+
+            log.info("【账号{}】触发自动发货: xyGoodsId={}, orderId={}", accountId, xyGoodsId, orderId);
+
+            // 1. 获取订单信息
+            com.feijimiao.xianyuassistant.entity.XianyuOrder order = 
+                    autoDeliveryRecordMapper.selectOrderByOrderId(accountId, orderId);
+            
+            if (order == null) {
+                log.warn("【账号{}】订单不存在: orderId={}", accountId, orderId);
+                return com.feijimiao.xianyuassistant.common.ResultObject.failed("订单不存在");
+            }
+
+            // 2. 获取会话ID (sId)
+            String sId = order.getSId();
+            if (sId == null || sId.isEmpty()) {
+                log.warn("【账号{}】订单没有会话ID: orderId={}", accountId, orderId);
+                return com.feijimiao.xianyuassistant.common.ResultObject.failed("订单没有会话ID");
+            }
+
+            // 3. 获取买家信息
+            String buyerUserId = order.getBuyerUserId();
+            String buyerUserName = order.getBuyerUserName();
+
+            // 4. 调用handleAutoDelivery触发自动发货
+            handleAutoDelivery(accountId, xyGoodsId, sId, buyerUserId, buyerUserName);
+
+            return com.feijimiao.xianyuassistant.common.ResultObject.success("触发自动发货成功");
+
+        } catch (Exception e) {
+            log.error("【账号{}】触发自动发货失败: xyGoodsId={}, orderId={}", 
+                    reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId(), reqDTO.getOrderId(), e);
+            return com.feijimiao.xianyuassistant.common.ResultObject.failed("触发自动发货失败: " + e.getMessage());
+        }
+    }
 }

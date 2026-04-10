@@ -15,7 +15,7 @@ import { showSuccess, showError, showInfo } from '@/utils';
 import type { Account } from '@/types';
 import type { GoodsItemWithConfig } from '@/api/goods';
 import GoodsDetailDialog from '../goods/components/GoodsDetailDialog.vue';
-import { getAutoDeliveryRecords, type AutoDeliveryRecordReq, type AutoDeliveryRecordResp, confirmShipment, type ConfirmShipmentReq } from '@/api/auto-delivery-record';
+import { getAutoDeliveryRecords, type AutoDeliveryRecordReq, type AutoDeliveryRecordResp, confirmShipment, type ConfirmShipmentReq, triggerAutoDelivery, type TriggerAutoDeliveryReq } from '@/api/auto-delivery-record';
 
 const route = useRoute();
 const loading = ref(false);
@@ -418,6 +418,58 @@ const extractOrderId = (content: string): string | null => {
   }
 };
 
+// 触发自动发货
+const handleTriggerDelivery = async (record: any) => {
+  if (!selectedAccountId.value || !selectedGoods.value) {
+    showInfo('请先选择账号和商品');
+    return;
+  }
+
+  if (!record.orderId) {
+    showError('该记录没有订单ID，无法触发发货');
+    return;
+  }
+
+  // 检查发货内容是否为空
+  if (!configForm.value.autoDeliveryContent || !configForm.value.autoDeliveryContent.trim()) {
+    showError('请配置发货内容！');
+    return;
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确认触发自动发货流程吗？订单ID: ${record.orderId}`,
+      '触发发货',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    );
+
+    const req: TriggerAutoDeliveryReq = {
+      xianyuAccountId: selectedAccountId.value,
+      xyGoodsId: selectedGoods.value.item.xyGoodId,
+      orderId: record.orderId
+    };
+
+    const response = await triggerAutoDelivery(req);
+    if (response.code === 0 || response.code === 200) {
+      showSuccess(response.data || '触发发货成功');
+      // 刷新记录列表
+      await loadDeliveryRecords();
+    } else {
+      throw new Error(response.msg || '触发发货失败');
+    }
+  } catch (error: any) {
+    if (error === 'cancel') {
+      return;
+    }
+    console.error('触发发货失败:', error);
+    showError(error.message || '触发发货失败');
+  }
+};
+
 onMounted(() => {
   loadAccounts();
 });
@@ -642,6 +694,17 @@ onMounted(() => {
                   <el-table-column prop="createTime" label="发货时间" width="180">
                     <template #default="{ row }">
                       {{ formatTime(row.createTime) }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="操作" width="100" align="center">
+                    <template #default="{ row }">
+                      <el-button
+                        type="primary"
+                        size="small"
+                        @click="handleTriggerDelivery(row)"
+                      >
+                        发货
+                      </el-button>
                     </template>
                   </el-table-column>
                   <template #empty>

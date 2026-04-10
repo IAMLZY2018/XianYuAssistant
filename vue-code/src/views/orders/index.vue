@@ -57,12 +57,37 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="orderStatusText" label="订单状态" width="100">
+        <el-table-column prop="orderStatusText" label="订单状态" width="150">
           <template #default="{ row }">
-            <el-tag v-if="row.orderStatusText" :type="getStatusType(row.orderStatus)">
-              {{ row.orderStatusText }}
-            </el-tag>
-            <span v-else>-</span>
+            <div style="display: flex; flex-direction: column; gap: 8px; align-items: center;">
+              <!-- 待发货状态：显示状态标签 + 确认发货按钮 -->
+              <template v-if="row.orderStatus === 2">
+                <el-tag :type="getStatusType(row.orderStatus)">
+                  {{ row.orderStatusText }}
+                </el-tag>
+                <el-button
+                  type="success"
+                  size="small"
+                  @click="handleConfirmShipment(row)"
+                  :loading="row.confirming"
+                >
+                  确认已发货
+                </el-button>
+              </template>
+              <!-- 已发货状态：只显示已发货标签 -->
+              <template v-else-if="row.orderStatus === 3">
+                <el-tag type="success">
+                  已发货
+                </el-tag>
+              </template>
+              <!-- 其他状态：显示状态标签 -->
+              <template v-else>
+                <el-tag v-if="row.orderStatusText" :type="getStatusType(row.orderStatus)">
+                  {{ row.orderStatusText }}
+                </el-tag>
+                <span v-else>-</span>
+              </template>
+            </div>
           </template>
         </el-table-column>
         <el-table-column prop="buyerUserName" label="买家" width="120" />
@@ -84,7 +109,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from 'axios'
 
 interface OrderItem {
@@ -99,6 +124,8 @@ interface OrderItem {
   orderStatusText: string | null
   buyerUserName: string
   xyGoodsId: string
+  xianyuAccountId: number
+  confirming?: boolean  // 确认发货loading状态
 }
 
 interface QueryParams {
@@ -173,6 +200,45 @@ const getStatusType = (status: number | null) => {
     case 4: return 'success'
     case 5: return 'info'
     default: return 'info'
+  }
+}
+
+// 确认发货
+const handleConfirmShipment = async (row: OrderItem) => {
+  try {
+    await ElMessageBox.confirm(
+      `确认订单 ${row.orderId} 已发货吗？`,
+      '确认发货',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    row.confirming = true
+    const response = await axios.post('/api/order/confirmShipment', {
+      xianyuAccountId: row.xianyuAccountId,
+      orderId: row.orderId
+    })
+    
+    const res = response.data
+    if (res.code === 200 || res.code === 0) {
+      ElMessage.success('确认发货成功')
+      // 更新订单状态
+      row.orderStatus = 3
+      row.orderStatusText = '已发货'
+      // 刷新列表
+      handleQuery()
+    } else {
+      ElMessage.error(res.msg || '确认发货失败')
+    }
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error('确认发货失败: ' + (error.message || '未知错误'))
+    }
+  } finally {
+    row.confirming = false
   }
 }
 
