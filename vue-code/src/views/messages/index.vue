@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
-import { Loading } from '@element-plus/icons-vue';
+import { Loading, ArrowLeft } from '@element-plus/icons-vue';
 import { getAccountList } from '@/api/account';
 import { getMessageList } from '@/api/message';
 import { getGoodsList } from '@/api/goods';
@@ -32,6 +32,20 @@ const quickReplyDialogVisible = ref(false);
 const quickReplyMessage = ref('');
 const quickReplySending = ref(false);
 const currentReplyMessage = ref<ChatMessage | null>(null);
+
+// 手机端适配
+const isMobile = ref(false);
+const mobileView = ref<'goods' | 'messages'>('goods'); // 手机端当前视图：商品列表或消息列表
+const selectedGoodsForMobile = ref<GoodsItemWithConfig | null>(null); // 手机端选中的商品
+
+// 检测屏幕宽度
+const checkScreenSize = () => {
+  isMobile.value = window.innerWidth < 768;
+  // 如果切换到桌面端，重置手机端视图状态
+  if (!isMobile.value) {
+    mobileView.value = 'goods';
+  }
+};
 
 // 获取当前选中账号的UNB
 const getCurrentAccountUnb = computed(() => {
@@ -208,7 +222,7 @@ const handleAccountChange = () => {
 };
 
 // 选择商品进行筛选
-const selectGoods = (goodsId: string) => {
+const selectGoods = (goodsId: string, goods?: GoodsItemWithConfig) => {
   // 如果点击的是已选中的商品，则取消筛选
   if (goodsIdFilter.value === goodsId) {
     clearFilter();
@@ -217,7 +231,18 @@ const selectGoods = (goodsId: string) => {
     showInfo('已筛选该商品的消息');
     currentPage.value = 1;
     loadMessages();
+    
+    // 手机端：记录选中的商品并切换到消息视图
+    if (isMobile.value && goods) {
+      selectedGoodsForMobile.value = goods;
+      mobileView.value = 'messages';
+    }
   }
+};
+
+// 手机端返回商品列表
+const goBackToGoods = () => {
+  mobileView.value = 'goods';
 };
 
 // 清除筛选
@@ -364,11 +389,15 @@ onMounted(() => {
   }, 0);
   // 监听窗口大小变化
   window.addEventListener('resize', handleResize);
+  // 检测屏幕宽度
+  checkScreenSize();
+  window.addEventListener('resize', checkScreenSize);
 });
 
 onUnmounted(() => {
   removeScrollListener();
   window.removeEventListener('resize', handleResize);
+  window.removeEventListener('resize', checkScreenSize);
 });
 
 // 处理窗口大小变化
@@ -379,74 +408,241 @@ const handleResize = () => {
 
 <template>
   <div class="messages-page">
-    <div class="page-header">
-      <h1 class="page-title">消息管理</h1>
-      <div class="header-actions">
-        <el-select
-          v-model="selectedAccountId"
-          placeholder="选择账号"
-          style="width: 200px"
-          @change="handleAccountChange"
-        >
-          <el-option
-            v-for="account in accounts"
-            :key="account.id"
-            :label="account.accountNote || account.unb"
-            :value="account.id"
+    <!-- 桌面端布局 -->
+    <template v-if="!isMobile">
+      <div class="page-header">
+        <h1 class="page-title">消息管理</h1>
+        <div class="header-actions">
+          <el-select
+            v-model="selectedAccountId"
+            placeholder="选择账号"
+            style="width: 200px"
+            @change="handleAccountChange"
+          >
+            <el-option
+              v-for="account in accounts"
+              :key="account.id"
+              :label="account.accountNote || account.unb"
+              :value="account.id"
+            />
+          </el-select>
+          
+          <el-button @click="loadMessages">刷新消息</el-button>
+          
+          <el-switch
+            v-model="filterCurrentAccount"
+            active-text="隐藏当前账号消息"
+            inactive-text="显示全部消息"
+            @change="loadMessages"
           />
-        </el-select>
-        
-        <el-button @click="loadMessages">刷新消息</el-button>
-        
-        <el-switch
-          v-model="filterCurrentAccount"
-          active-text="隐藏当前账号消息"
-          inactive-text="显示全部消息"
-          @change="loadMessages"
-        />
+        </div>
       </div>
-    </div>
 
-    <div class="content-container">
-      <!-- 左侧商品列表 -->
-      <el-card class="goods-filter-panel" :body-style="{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }">
-        <template #header>
-          <div class="panel-header">
-            <span class="panel-title">商品列表</span>
-            <el-button 
-              v-if="goodsIdFilter" 
-              type="info" 
-              size="small" 
-              plain
-              @click="clearFilter"
+      <div class="content-container">
+        <!-- 左侧商品列表 -->
+        <el-card class="goods-filter-panel" :body-style="{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }">
+          <template #header>
+            <div class="panel-header">
+              <span class="panel-title">商品列表</span>
+              <el-button 
+                v-if="goodsIdFilter" 
+                type="info" 
+                size="small" 
+                plain
+                @click="clearFilter"
+              >
+                取消筛选
+              </el-button>
+            </div>
+          </template>
+          
+          <div 
+            v-loading="goodsLoading && goodsCurrentPage === 1"
+            ref="goodsListRef" 
+            class="goods-list-container"
+          >
+            <div 
+              v-for="goods in goodsList" 
+              :key="goods.item.id"
+              class="goods-item"
+              :class="{ active: goodsIdFilter === goods.item.xyGoodId }"
+              @click="selectGoods(goods.item.xyGoodId, goods)"
             >
-              取消筛选
-            </el-button>
+              <div class="goods-cover">
+                <img 
+                  :src="goods.item.coverPic" 
+                  :alt="goods.item.title"
+                  class="cover-img"
+                >
+              </div>
+              <div class="goods-info">
+                <div class="goods-title">{{ goods.item.title }}</div>
+                <div class="goods-id">#{{ goods.item.xyGoodId }}</div>
+              </div>
+            </div>
+            
+            <!-- 加载更多提示 -->
+            <div v-if="goodsLoading && goodsCurrentPage > 1" class="loading-more">
+              <el-icon class="is-loading"><Loading /></el-icon>
+              加载中...
+            </div>
+            
+            <!-- 没有更多数据提示 -->
+            <div 
+              v-if="!goodsLoading && goodsList.length > 0 && goodsList.length >= goodsTotal" 
+              class="no-more-data"
+            >
+              已加载全部商品
+            </div>
+            
+            <el-empty
+              v-if="!goodsLoading && goodsList.length === 0"
+              description="暂无商品数据"
+              :image-size="80"
+            />
           </div>
-        </template>
+        </el-card>
+
+        <!-- 右侧消息列表 -->
+        <div class="messages-container">
+          <el-card class="messages-card">
+            <template #header>
+              <div class="card-header">
+                <span class="card-title">消息列表</span>
+                <span class="card-subtitle">共 {{ total }} 条消息</span>
+              </div>
+            </template>
+
+            <el-table
+              v-loading="loading"
+              :data="messageList"
+              stripe
+              style="width: 100%"
+              max-height="calc(100vh - 300px)"
+            >
+              <el-table-column type="index" label="序号" width="60" align="center" />
+              
+              <el-table-column prop="id" label="消息ID" width="100">
+                <template #default="{ row }">
+                  <div class="message-id">{{ row.id }}</div>
+                </template>
+              </el-table-column>
+              
+              <el-table-column label="消息类型" width="120">
+                <template #default="{ row }">
+                  <el-tag :type="getContentTypeTag(row.contentType, row)" size="small">
+                    {{ getContentTypeText(row.contentType, row) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              
+              <el-table-column prop="senderUserName" label="发送者" width="120" show-overflow-tooltip />
+              
+              <el-table-column prop="msgContent" label="消息内容" min-width="200" show-overflow-tooltip>
+                <template #default="{ row }">
+                  <div 
+                    class="message-content" 
+                    :class="{ 'user-message': isUserMessage(row) }"
+                  >
+                    {{ row.msgContent }}
+                  </div>
+                </template>
+              </el-table-column>
+              
+              <el-table-column prop="xyGoodsId" label="商品ID" width="120">
+                <template #default="{ row }">
+                  <div class="goods-id">{{ row.xyGoodsId || '-' }}</div>
+                </template>
+              </el-table-column>
+              
+              <el-table-column label="时间" width="150">
+                <template #default="{ row }">
+                  <div class="message-time">{{ formatMessageTime(row.messageTime) }}</div>
+                </template>
+              </el-table-column>
+              
+              <el-table-column label="操作" width="100" align="center" fixed="right">
+                <template #default="{ row }">
+                  <el-button
+                    v-if="isUserMessage(row)"
+                    type="primary"
+                    size="small"
+                    @click="openQuickReply(row)"
+                  >
+                    快速回复
+                  </el-button>
+                  <span v-else class="no-action">-</span>
+                </template>
+              </el-table-column>
+            </el-table>
+
+            <div class="pagination-container">
+              <el-pagination
+                v-model:current-page="currentPage"
+                :page-size="pageSize"
+                :total="total"
+                layout="total, prev, pager, next, jumper"
+                @current-change="handlePageChange"
+              />
+            </div>
+          </el-card>
+        </div>
+      </div>
+    </template>
+
+    <!-- 手机端布局 -->
+    <template v-else>
+      <!-- 手机端商品列表视图 -->
+      <div v-show="mobileView === 'goods'" class="mobile-goods-view">
+        <div class="mobile-header">
+          <h1 class="mobile-title">消息管理</h1>
+          <div class="mobile-header-actions">
+            <el-select
+              v-model="selectedAccountId"
+              placeholder="选择账号"
+              size="small"
+              style="width: 120px"
+              @change="handleAccountChange"
+            >
+              <el-option
+                v-for="account in accounts"
+                :key="account.id"
+                :label="account.accountNote || account.unb"
+                :value="account.id"
+              />
+            </el-select>
+            <el-switch
+              v-model="filterCurrentAccount"
+              size="small"
+              @change="loadMessages"
+            />
+          </div>
+        </div>
+        
+        <div class="mobile-goods-list-title">
+          <span>商品列表</span>
+          <span class="goods-count">共 {{ goodsTotal }} 件</span>
+        </div>
         
         <div 
           v-loading="goodsLoading && goodsCurrentPage === 1"
           ref="goodsListRef" 
-          class="goods-list-container"
+          class="mobile-goods-list"
         >
           <div 
             v-for="goods in goodsList" 
             :key="goods.item.id"
-            class="goods-item"
-            :class="{ active: goodsIdFilter === goods.item.xyGoodId }"
-            @click="selectGoods(goods.item.xyGoodId)"
+            class="mobile-goods-item"
+            @click="selectGoods(goods.item.xyGoodId, goods)"
           >
-            <div class="goods-cover">
-              <img 
-                :src="goods.item.coverPic" 
-                :alt="goods.item.title"
-                class="cover-img"
-              >
-            </div>
-            <div class="goods-info">
-              <div class="goods-title">{{ goods.item.title }}</div>
-              <div class="goods-id">#{{ goods.item.xyGoodId }}</div>
+            <img 
+              :src="goods.item.coverPic" 
+              :alt="goods.item.title"
+              class="mobile-goods-cover"
+            >
+            <div class="mobile-goods-info">
+              <div class="mobile-goods-title">{{ goods.item.title }}</div>
+              <div class="mobile-goods-id">ID: {{ goods.item.xyGoodId }}</div>
             </div>
           </div>
           
@@ -470,99 +666,88 @@ const handleResize = () => {
             :image-size="80"
           />
         </div>
-      </el-card>
-
-      <!-- 右侧消息列表 -->
-      <div class="messages-container">
-        <el-card class="messages-card">
-          <template #header>
-            <div class="card-header">
-              <span class="card-title">消息列表</span>
-              <span class="card-subtitle">共 {{ total }} 条消息</span>
-            </div>
-          </template>
-
-          <el-table
-            v-loading="loading"
-            :data="messageList"
-            stripe
-            style="width: 100%"
-            max-height="calc(100vh - 300px)"
-          >
-            <el-table-column type="index" label="序号" width="60" align="center" />
-            
-            <el-table-column prop="id" label="消息ID" width="100">
-              <template #default="{ row }">
-                <div class="message-id">{{ row.id }}</div>
-              </template>
-            </el-table-column>
-            
-            <el-table-column label="消息类型" width="120">
-              <template #default="{ row }">
-                <el-tag :type="getContentTypeTag(row.contentType, row)" size="small">
-                  {{ getContentTypeText(row.contentType, row) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            
-            <el-table-column prop="senderUserName" label="发送者" width="120" show-overflow-tooltip />
-            
-            <el-table-column prop="msgContent" label="消息内容" min-width="200" show-overflow-tooltip>
-              <template #default="{ row }">
-                <div 
-                  class="message-content" 
-                  :class="{ 'user-message': isUserMessage(row) }"
-                >
-                  {{ row.msgContent }}
-                </div>
-              </template>
-            </el-table-column>
-            
-            <el-table-column prop="xyGoodsId" label="商品ID" width="120">
-              <template #default="{ row }">
-                <div class="goods-id">{{ row.xyGoodsId || '-' }}</div>
-              </template>
-            </el-table-column>
-            
-            <el-table-column label="时间" width="150">
-              <template #default="{ row }">
-                <div class="message-time">{{ formatMessageTime(row.messageTime) }}</div>
-              </template>
-            </el-table-column>
-            
-            <el-table-column label="操作" width="100" align="center" fixed="right">
-              <template #default="{ row }">
-                <el-button
-                  v-if="isUserMessage(row)"
-                  type="primary"
-                  size="small"
-                  @click="openQuickReply(row)"
-                >
-                  快速回复
-                </el-button>
-                <span v-else class="no-action">-</span>
-              </template>
-            </el-table-column>
-          </el-table>
-
-          <div class="pagination-container">
-            <el-pagination
-              v-model:current-page="currentPage"
-              :page-size="pageSize"
-              :total="total"
-              layout="total, prev, pager, next, jumper"
-              @current-change="handlePageChange"
-            />
-          </div>
-        </el-card>
       </div>
-    </div>
+
+      <!-- 手机端消息列表视图 -->
+      <div v-show="mobileView === 'messages'" class="mobile-messages-view">
+        <div class="mobile-header">
+          <el-button 
+            :icon="ArrowLeft" 
+            size="small" 
+            @click="goBackToGoods"
+          >
+            返回
+          </el-button>
+          <div class="mobile-selected-goods" v-if="selectedGoodsForMobile">
+            <img :src="selectedGoodsForMobile.item.coverPic" class="selected-goods-cover">
+            <span class="selected-goods-title">{{ selectedGoodsForMobile.item.title }}</span>
+          </div>
+          <el-button size="small" @click="loadMessages">刷新</el-button>
+        </div>
+        
+        <div class="mobile-messages-list" v-loading="loading">
+          <!-- 消息卡片列表 -->
+          <div 
+            v-for="message in messageList" 
+            :key="message.id"
+            class="mobile-message-card"
+            :class="{ 'user-message': isUserMessage(message) }"
+          >
+            <div class="message-card-header">
+              <el-tag :type="getContentTypeTag(message.contentType, message)" size="small">
+                {{ getContentTypeText(message.contentType, message) }}
+              </el-tag>
+              <span class="message-time">{{ formatMessageTime(message.messageTime) }}</span>
+            </div>
+            
+            <div class="message-card-sender">
+              <span class="sender-label">发送者：</span>
+              <span class="sender-name">{{ message.senderUserName }}</span>
+            </div>
+            
+            <div class="message-card-content">
+              {{ message.msgContent }}
+            </div>
+            
+            <div class="message-card-footer">
+              <span class="message-id">ID: {{ message.id }}</span>
+              <el-button
+                v-if="isUserMessage(message)"
+                type="primary"
+                size="small"
+                @click="openQuickReply(message)"
+              >
+                快速回复
+              </el-button>
+            </div>
+          </div>
+          
+          <el-empty
+            v-if="!loading && messageList.length === 0"
+            description="暂无消息"
+            :image-size="80"
+          />
+        </div>
+        
+        <!-- 手机端分页 -->
+        <div class="mobile-pagination" v-if="total > 0">
+          <el-pagination
+            v-model:current-page="currentPage"
+            :page-size="pageSize"
+            :total="total"
+            layout="prev, pager, next"
+            small
+            @current-change="handlePageChange"
+          />
+        </div>
+      </div>
+    </template>
 
     <!-- 快速回复对话框 -->
     <el-dialog
       v-model="quickReplyDialogVisible"
       title="快速回复"
-      width="500px"
+      :width="isMobile ? '90%' : '500px'"
       :close-on-click-modal="false"
     >
       <div class="quick-reply-content">
@@ -856,5 +1041,195 @@ const handleResize = () => {
   color: #303133;
   flex: 1;
   word-break: break-all;
+}
+
+/* 手机端样式 */
+.mobile-goods-view,
+.mobile-messages-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background: #fff;
+  border-bottom: 1px solid #ebeef5;
+  gap: 10px;
+}
+
+.mobile-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+  margin: 0;
+}
+
+.mobile-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-goods-list-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background: #f5f7fa;
+  font-size: 14px;
+  font-weight: 500;
+  color: #606266;
+}
+
+.goods-count {
+  font-size: 12px;
+  color: #909399;
+}
+
+.mobile-goods-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  padding-bottom: 20px; /* 增加底部内边距，防止内容被遮挡 */
+}
+
+.mobile-goods-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: #fff;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  gap: 12px;
+}
+
+.mobile-goods-item:active {
+  background: #f5f7fa;
+}
+
+.mobile-goods-cover {
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.mobile-goods-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-goods-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-goods-id {
+  font-size: 12px;
+  color: #909399;
+}
+
+.mobile-selected-goods {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.selected-goods-cover {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.selected-goods-title {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-messages-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  padding-bottom: 20px; /* 增加底部内边距，防止内容被遮挡 */
+}
+
+.mobile-message-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.mobile-message-card.user-message {
+  border-left: 3px solid #67c23a;
+}
+
+.message-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.message-card-sender {
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.sender-label {
+  color: #909399;
+}
+
+.sender-name {
+  color: #606266;
+  font-weight: 500;
+}
+
+.message-card-content {
+  font-size: 14px;
+  color: #303133;
+  line-height: 1.6;
+  padding: 8px;
+  background: #f5f7fa;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+.message-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mobile-pagination {
+  padding: 10px;
+  background: #fff;
+  border-top: 1px solid #ebeef5;
+  display: flex;
+  justify-content: center;
 }
 </style>

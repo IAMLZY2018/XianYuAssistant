@@ -26,6 +26,12 @@ const router = createRouter({
       meta: { title: '连接管理', icon: '🔗' }
     },
     {
+      path: '/connection/:id',
+      name: 'connection-detail',
+      component: () => import('@/views/connection/ConnectionDetail.vue'),
+      meta: { title: '连接详情', icon: '🔗' }
+    },
+    {
       path: '/goods',
       name: 'goods',
       component: () => import('@/views/goods/index.vue'),

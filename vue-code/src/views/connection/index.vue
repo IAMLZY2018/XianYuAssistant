@@ -9,6 +9,7 @@ import type { Account, WebSocketStatus } from '@/types';
 import ManualUpdateCookieDialog from './components/ManualUpdateCookieDialog.vue';
 import ManualUpdateTokenDialog from './components/ManualUpdateTokenDialog.vue';
 import QRUpdateDialog from './components/QRUpdateDialog.vue';
+import ConnectionDetailDialog from './components/ConnectionDetailDialog.vue';
 
 interface ConnectionStatus {
   xianyuAccountId: number;
@@ -28,6 +29,16 @@ const statusLoading = ref(false);
 const refreshTokenLoading = ref(false);
 const logs = ref<Array<{ time: string; message: string; isError?: boolean }>>([]);
 let statusInterval: number | null = null;
+
+// 响应式检测
+const isMobile = ref(false);
+const checkScreenSize = () => {
+  isMobile.value = window.innerWidth < 768;
+};
+
+// 连接详情弹窗
+const showDetailDialog = ref(false);
+const detailAccountId = ref<number | null>(null);
 
 // 滚动加载相关
 const accountListRef = ref<HTMLElement | null>(null);
@@ -102,6 +113,14 @@ const handleScroll = () => {
 
 // 选择账号
 const selectAccount = (accountId: number) => {
+  // 手机端：打开详情弹窗
+  if (isMobile.value) {
+    detailAccountId.value = accountId;
+    showDetailDialog.value = true;
+    return;
+  }
+  
+  // 桌面端：在右侧显示详情
   selectedAccountId.value = accountId;
   loadConnectionStatus(accountId);
   
@@ -458,14 +477,19 @@ const handleQRUpdateSuccess = async () => {
 };
 
 onMounted(async () => {
+  // 初始化响应式检测
+  checkScreenSize();
+  window.addEventListener('resize', checkScreenSize);
+  
   await loadAccounts();
-  // 默认选择第一个账号
-  if (accounts.value.length > 0) {
+  // 桌面端默认选择第一个账号
+  if (!isMobile.value && accounts.value.length > 0) {
     selectAccount(accounts.value[0]?.id || 0);
   }
 });
 
 onUnmounted(() => {
+  window.removeEventListener('resize', checkScreenSize);
   if (statusInterval) {
     clearInterval(statusInterval);
   }
@@ -474,274 +498,307 @@ onUnmounted(() => {
 
 <template>
   <div class="connection-page">
-    <div class="page-header">
-      <h1 class="page-title">连接管理</h1>
-    </div>
+    <!-- 桌面端：左右分栏布局 -->
+    <template v-if="!isMobile">
+      <div class="page-header">
+        <h1 class="page-title">连接管理</h1>
+      </div>
 
-    <div class="connection-container">
-      <!-- 左侧账号列表 -->
-      <el-card class="account-panel">
-        <template #header>
-          <div class="panel-header">
-            <span class="panel-title">闲鱼账号</span>
-          </div>
-        </template>
-        
-        <div 
-          v-loading="loading" 
-          class="account-list"
-          ref="accountListRef"
-          @scroll="handleScroll"
-        >
-          <div
-            v-for="account in accounts"
-            :key="account.id"
-            class="account-item"
-            :class="{ active: selectedAccountId === account.id }"
-            @click="selectAccount(account.id)"
-          >
-            <div class="account-avatar">{{ getAccountAvatar(account) }}</div>
-            <div class="account-info">
-              <div class="account-name">{{ getAccountName(account) }}</div>
-              <div class="account-id">ID: {{ account.id }}</div>
+      <div class="connection-container">
+        <!-- 左侧账号列表 -->
+        <el-card class="account-panel">
+          <template #header>
+            <div class="panel-header">
+              <span class="panel-title">闲鱼账号</span>
             </div>
-          </div>
+          </template>
           
-          <!-- 加载更多提示 -->
-          <div v-if="loadingMore" class="loading-more">
-            <el-icon class="is-loading"><loading /></el-icon>
-            <span>加载中...</span>
-          </div>
-          
-          <!-- 没有更多数据提示 -->
-          <div v-if="!hasMore && accounts.length > 0" class="no-more">
-            已加载全部 {{ accounts.length }} 个账号
-          </div>
-          
-          <el-empty
-            v-if="!loading && accounts.length === 0"
-            description="暂无账号数据"
-            :image-size="80"
-          />
-        </div>
-      </el-card>
-
-      <!-- 右侧连接状态 -->
-      <el-card class="status-panel">
-        <template #header>
-          <div class="panel-header">
-            <span class="panel-title">连接状态</span>
-            <el-button
-              v-if="selectedAccountId"
-              size="small"
-              :icon="'Refresh'"
-              @click="handleRefresh"
-              circle
+          <div 
+            v-loading="loading" 
+            class="account-list"
+            ref="accountListRef"
+            @scroll="handleScroll"
+          >
+            <div
+              v-for="account in accounts"
+              :key="account.id"
+              class="account-item"
+              :class="{ active: selectedAccountId === account.id }"
+              @click="selectAccount(account.id)"
+            >
+              <div class="account-avatar">{{ getAccountAvatar(account) }}</div>
+              <div class="account-info">
+                <div class="account-name">{{ getAccountName(account) }}</div>
+                <div class="account-id">ID: {{ account.id }}</div>
+              </div>
+            </div>
+            
+            <!-- 加载更多提示 -->
+            <div v-if="loadingMore" class="loading-more">
+              <el-icon class="is-loading"><loading /></el-icon>
+              <span>加载中...</span>
+            </div>
+            
+            <!-- 没有更多数据提示 -->
+            <div v-if="!hasMore && accounts.length > 0" class="no-more">
+              已加载全部 {{ accounts.length }} 个账号
+            </div>
+            
+            <el-empty
+              v-if="!loading && accounts.length === 0"
+              description="暂无账号数据"
+              :image-size="80"
             />
           </div>
-        </template>
-        
-        <div v-if="!selectedAccountId" class="empty-state">
-          <el-empty description="请选择一个账号查看连接状态" :image-size="100">
-            <template #image>
-              <div class="empty-icon">🔗</div>
-            </template>
-          </el-empty>
-        </div>
+        </el-card>
 
-        <div v-else v-loading="statusLoading" class="status-content">
-          <!-- 连接状态大卡片 - 包含所有依赖信息 -->
-          <div v-if="connectionStatus" class="connection-main-card">
-            <!-- 主标题区域 -->
-            <div class="main-card-header">
-              <div class="header-left">
-                <div class="icon-wrapper-large" :class="connectionStatus.connected ? 'icon-success' : 'icon-danger'">
-                  <span class="icon-large">{{ connectionStatus.connected ? '✓' : '✕' }}</span>
+        <!-- 右侧连接状态 -->
+        <el-card class="status-panel">
+          <template #header>
+            <div class="panel-header">
+              <span class="panel-title">连接状态</span>
+              <el-button
+                v-if="selectedAccountId"
+                size="small"
+                :icon="'Refresh'"
+                @click="handleRefresh"
+                circle
+              />
+            </div>
+          </template>
+          
+          <div v-if="!selectedAccountId" class="empty-state">
+            <el-empty description="请选择一个账号查看连接状态" :image-size="100">
+              <template #image>
+                <div class="empty-icon">🔗</div>
+              </template>
+            </el-empty>
+          </div>
+
+          <div v-else v-loading="statusLoading" class="status-content">
+            <!-- 连接状态大卡片 - 包含所有依赖信息 -->
+            <div v-if="connectionStatus" class="connection-main-card">
+              <!-- 主标题区域 -->
+              <div class="main-card-header">
+                <div class="header-left">
+                  <div class="icon-wrapper-large" :class="connectionStatus.connected ? 'icon-success' : 'icon-danger'">
+                    <span class="icon-large">{{ connectionStatus.connected ? '✓' : '✕' }}</span>
+                  </div>
+                  <div class="header-info">
+                    <h2 class="main-title">连接状态</h2>
+                    <p class="main-subtitle">账号 ID: {{ connectionStatus.xianyuAccountId }} · {{ connectionStatus.status }}</p>
+                    <p class="main-note" :class="connectionStatus.connected ? 'note-success' : 'note-danger'">
+                      {{ connectionStatus.connected ? '已连接到闲鱼服务器' : '当前未连接到闲鱼服务器，无法监听消息以及执行自动化流程' }}
+                    </p>
+                  </div>
                 </div>
-                <div class="header-info">
-                  <h2 class="main-title">连接状态</h2>
-                  <p class="main-subtitle">账号 ID: {{ connectionStatus.xianyuAccountId }} · {{ connectionStatus.status }}</p>
-                  <p class="main-note" :class="connectionStatus.connected ? 'note-success' : 'note-danger'">
-                    {{ connectionStatus.connected ? '已连接到闲鱼服务器' : '当前未连接到闲鱼服务器，无法监听消息以及执行自动化流程' }}
-                  </p>
+                <div class="header-right">
+                  <el-tag
+                    :type="connectionStatus.connected ? 'success' : 'danger'"
+                    size="large"
+                    effect="dark"
+                    round
+                    class="status-tag-large"
+                  >
+                    {{ connectionStatus.connected ? '● 已连接' : '● 未连接' }}
+                  </el-tag>
                 </div>
               </div>
-              <div class="header-right">
-                <el-tag
-                  :type="connectionStatus.connected ? 'success' : 'danger'"
-                  size="large"
-                  effect="dark"
-                  round
-                  class="status-tag-large"
+
+              <!-- 详细信息区域 -->
+              <div class="details-grid">
+                <!-- Cookie 详情 -->
+                <div class="detail-section cookie-section">
+                  <div class="section-header">
+                    <div class="section-icon">🍪</div>
+                    <div class="section-title-group">
+                      <h3 class="section-title">Cookie 凭证</h3>
+                      <p class="section-note">用于识别账号，如果过期无法使用任何功能</p>
+                    </div>
+                    <el-tag 
+                      :type="getCookieStatusType(connectionStatus.cookieStatus)" 
+                      size="small"
+                      round
+                    >
+                      {{ getCookieStatusText(connectionStatus.cookieStatus) }}
+                    </el-tag>
+                  </div>
+                  <div class="section-body">
+                    <div class="info-box">
+                      <div class="info-box-label">Cookie 内容</div>
+                      <div class="info-box-value cookie-value">
+                        {{ connectionStatus.cookieText || '未获取到Cookie' }}
+                      </div>
+                      <div class="info-box-meta" v-if="connectionStatus.cookieText">
+                        长度: {{ connectionStatus.cookieText.length }} 字符
+                      </div>
+                    </div>
+                    <div class="section-actions">
+                      <el-button
+                        type="primary"
+                        size="small"
+                        @click="handleManualUpdateCookie"
+                        class="manual-update-btn"
+                      >
+                        ✏️ 手动更新
+                      </el-button>
+                      <el-button
+                        type="info"
+                        size="small"
+                        @click="showCookieHelp"
+                      >
+                        ❓ 如何获取？
+                      </el-button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Token 详情 -->
+                <div class="detail-section token-section">
+                  <div class="section-header">
+                    <div class="section-icon">🔑</div>
+                    <div class="section-title-group">
+                      <h3 class="section-title">WebSocket Token</h3>
+                      <p class="section-note">这个是收取消息的凭证，如果异常，可能是账号被锁人机验证，需要隔段时间再试一试</p>
+                    </div>
+                    <el-tag 
+                      :type="getTokenStatusType(connectionStatus.tokenExpireTime)" 
+                      size="small"
+                      round
+                    >
+                      {{ getTokenStatusText(connectionStatus.tokenExpireTime) }}
+                    </el-tag>
+                  </div>
+                  <div class="section-body">
+                    <div class="info-box">
+                      <div class="info-box-label">⏰ 过期时间</div>
+                      <div class="info-box-value time-value">
+                        {{ formatTimestamp(connectionStatus.tokenExpireTime) }}
+                      </div>
+                    </div>
+                    <div class="info-box">
+                      <div class="info-box-label">Token 内容</div>
+                      <div class="info-box-value token-value">
+                        {{ connectionStatus.websocketToken || '未获取到Token' }}
+                      </div>
+                      <div class="info-box-meta" v-if="connectionStatus.websocketToken">
+                        长度: {{ connectionStatus.websocketToken.length }} 字符
+                      </div>
+                    </div>
+                    <div class="section-actions">
+                      <el-button
+                        type="primary"
+                        size="small"
+                        @click="handleManualUpdateToken"
+                        class="manual-update-btn"
+                      >
+                        ✏️ 手动更新
+                      </el-button>
+                      <el-button
+                        type="info"
+                        size="small"
+                        @click="showTokenHelp"
+                      >
+                        ❓ 如何获取？
+                      </el-button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 操作区域 -->
+              <div class="main-actions">
+                <div class="action-wrapper">
+                  <div class="action-buttons">
+                    <el-button
+                      v-if="connectionStatus.connected"
+                      type="danger"
+                      size="default"
+                      @click="handleStopConnection"
+                      class="main-action-btn"
+                    >
+                      ⏸ 断开连接
+                    </el-button>
+                    <el-button
+                      v-else
+                      type="success"
+                      size="default"
+                      @click="handleStartConnection"
+                      class="main-action-btn start-connection-btn"
+                    >
+                      ▶ 启动连接
+                    </el-button>
+                    <el-button
+                      type="primary"
+                      size="default"
+                      @click="showQRUpdateDialog = true"
+                      class="main-action-btn qr-update-btn"
+                    >
+                      📱 扫码更新
+                    </el-button>
+                  </div>
+                  <div class="action-tip">
+                    ⚠️ 请勿频繁启用连接和断开连接，否则容易触发滑动窗口人机校验，导致账号暂时不可用
+                  </div>
+                  <div class="action-tip qr-update-tip">
+                    💡 扫码更新：通过扫码登录完成更新Cookie与Token
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 操作日志 -->
+            <div class="logs-section">
+              <div class="logs-header">操作日志</div>
+              <div class="logs-container">
+                <div
+                  v-for="(log, index) in logs"
+                  :key="index"
+                  class="log-entry"
+                  :class="{ 'log-error': log.isError }"
                 >
-                  {{ connectionStatus.connected ? '● 已连接' : '● 未连接' }}
-                </el-tag>
-              </div>
-            </div>
-
-            <!-- 详细信息区域 -->
-            <div class="details-grid">
-              <!-- Cookie 详情 -->
-              <div class="detail-section cookie-section">
-                <div class="section-header">
-                  <div class="section-icon">🍪</div>
-                  <div class="section-title-group">
-                    <h3 class="section-title">Cookie 凭证</h3>
-                    <p class="section-note">用于识别账号，如果过期无法使用任何功能</p>
-                  </div>
-                  <el-tag 
-                    :type="getCookieStatusType(connectionStatus.cookieStatus)" 
-                    size="small"
-                    round
-                  >
-                    {{ getCookieStatusText(connectionStatus.cookieStatus) }}
-                  </el-tag>
+                  <span class="log-time">[{{ log.time }}]</span>
+                  <span class="log-message">{{ log.message }}</span>
                 </div>
-                <div class="section-body">
-                  <div class="info-box">
-                    <div class="info-box-label">Cookie 内容</div>
-                    <div class="info-box-value cookie-value">
-                      {{ connectionStatus.cookieText || '未获取到Cookie' }}
-                    </div>
-                    <div class="info-box-meta" v-if="connectionStatus.cookieText">
-                      长度: {{ connectionStatus.cookieText.length }} 字符
-                    </div>
-                  </div>
-                  <div class="section-actions">
-                    <el-button
-                      type="primary"
-                      size="small"
-                      @click="handleManualUpdateCookie"
-                      class="manual-update-btn"
-                    >
-                      ✏️ 手动更新
-                    </el-button>
-                    <el-button
-                      type="info"
-                      size="small"
-                      @click="showCookieHelp"
-                    >
-                      ❓ 如何获取？
-                    </el-button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Token 详情 -->
-              <div class="detail-section token-section">
-                <div class="section-header">
-                  <div class="section-icon">🔑</div>
-                  <div class="section-title-group">
-                    <h3 class="section-title">WebSocket Token</h3>
-                    <p class="section-note">这个是收取消息的凭证，如果异常，可能是账号被锁人机验证，需要隔段时间再试一试</p>
-                  </div>
-                  <el-tag 
-                    :type="getTokenStatusType(connectionStatus.tokenExpireTime)" 
-                    size="small"
-                    round
-                  >
-                    {{ getTokenStatusText(connectionStatus.tokenExpireTime) }}
-                  </el-tag>
-                </div>
-                <div class="section-body">
-                  <div class="info-box">
-                    <div class="info-box-label">⏰ 过期时间</div>
-                    <div class="info-box-value time-value">
-                      {{ formatTimestamp(connectionStatus.tokenExpireTime) }}
-                    </div>
-                  </div>
-                  <div class="info-box">
-                    <div class="info-box-label">Token 内容</div>
-                    <div class="info-box-value token-value">
-                      {{ connectionStatus.websocketToken || '未获取到Token' }}
-                    </div>
-                    <div class="info-box-meta" v-if="connectionStatus.websocketToken">
-                      长度: {{ connectionStatus.websocketToken.length }} 字符
-                    </div>
-                  </div>
-                  <div class="section-actions">
-                    <el-button
-                      type="primary"
-                      size="small"
-                      @click="handleManualUpdateToken"
-                      class="manual-update-btn"
-                    >
-                      ✏️ 手动更新
-                    </el-button>
-                    <el-button
-                      type="info"
-                      size="small"
-                      @click="showTokenHelp"
-                    >
-                      ❓ 如何获取？
-                    </el-button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 操作区域 -->
-            <div class="main-actions">
-              <div class="action-wrapper">
-                <div class="action-buttons">
-                  <el-button
-                    v-if="connectionStatus.connected"
-                    type="danger"
-                    size="default"
-                    @click="handleStopConnection"
-                    class="main-action-btn"
-                  >
-                    ⏸ 断开连接
-                  </el-button>
-                  <el-button
-                    v-else
-                    type="success"
-                    size="default"
-                    @click="handleStartConnection"
-                    class="main-action-btn start-connection-btn"
-                  >
-                    ▶ 启动连接
-                  </el-button>
-                  <el-button
-                    type="primary"
-                    size="default"
-                    @click="showQRUpdateDialog = true"
-                    class="main-action-btn qr-update-btn"
-                  >
-                    📱 扫码更新
-                  </el-button>
-                </div>
-                <div class="action-tip">
-                  ⚠️ 请勿频繁启用连接和断开连接，否则容易触发滑动窗口人机校验，导致账号暂时不可用
-                </div>
-                <div class="action-tip qr-update-tip">
-                  💡 扫码更新：通过扫码登录完成更新Cookie与Token
+                <div v-if="logs.length === 0" class="log-empty">
+                  暂无日志记录
                 </div>
               </div>
             </div>
           </div>
+        </el-card>
+      </div>
+    </template>
 
-          <!-- 操作日志 -->
-          <div class="logs-section">
-            <div class="logs-header">操作日志</div>
-            <div class="logs-container">
-              <div
-                v-for="(log, index) in logs"
-                :key="index"
-                class="log-entry"
-                :class="{ 'log-error': log.isError }"
-              >
-                <span class="log-time">[{{ log.time }}]</span>
-                <span class="log-message">{{ log.message }}</span>
-              </div>
-              <div v-if="logs.length === 0" class="log-empty">
-                暂无日志记录
-              </div>
-            </div>
+    <!-- 手机端：卡片列表展示 -->
+    <template v-else>
+      <div class="mobile-page-header">
+        <h1 class="mobile-page-title">连接管理</h1>
+        <span class="mobile-page-subtitle">共 {{ accounts.length }} 个账号</span>
+      </div>
+
+      <div class="mobile-accounts-list" v-loading="loading">
+        <div
+          v-for="account in accounts"
+          :key="account.id"
+          class="mobile-account-item"
+          @click="selectAccount(account.id)"
+        >
+          <div class="mobile-account-avatar">{{ getAccountAvatar(account) }}</div>
+          <div class="mobile-account-info">
+            <div class="mobile-account-name">{{ getAccountName(account) }}</div>
+            <div class="mobile-account-id">ID: {{ account.id }}</div>
           </div>
+          <div class="mobile-account-arrow">›</div>
         </div>
-      </el-card>
-    </div>
+
+        <el-empty
+          v-if="!loading && accounts.length === 0"
+          description="暂无账号数据"
+          :image-size="80"
+        />
+      </div>
+    </template>
 
     <!-- 手动更新Cookie对话框 -->
     <ManualUpdateCookieDialog
@@ -767,6 +824,13 @@ onUnmounted(() => {
       v-model="showQRUpdateDialog"
       :account-id="currentAccount.id"
       @success="handleQRUpdateSuccess"
+    />
+
+    <!-- 连接详情弹窗 -->
+    <ConnectionDetailDialog
+      v-model="showDetailDialog"
+      :account-id="detailAccountId"
+      @refresh="loadAccounts"
     />
   </div>
 </template>
@@ -1511,6 +1575,106 @@ onUnmounted(() => {
 .captcha-guide-dialog .el-button--primary:hover {
   background: linear-gradient(135deg, #66b1ff 0%, #409eff 100%);
   box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4);
+}
+
+/* 手机端页面头部 */
+.mobile-page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.mobile-page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+  margin: 0;
+}
+
+.mobile-page-subtitle {
+  font-size: 13px;
+  color: #909399;
+}
+
+/* 手机端账号列表 */
+.mobile-accounts-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 4px;
+}
+
+.mobile-account-item {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #ebeef5;
+  cursor: pointer;
+  transition: all 0.3s;
+  gap: 12px;
+}
+
+.mobile-account-item:hover {
+  border-color: #409eff;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
+}
+
+.mobile-account-item:active {
+  transform: scale(0.98);
+  background: #f5f7fa;
+}
+
+.mobile-account-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.mobile-account-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-account-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-account-id {
+  font-size: 12px;
+  color: #909399;
+}
+
+.mobile-account-arrow {
+  font-size: 24px;
+  color: #c0c4cc;
+  font-weight: 300;
+  flex-shrink: 0;
+}
+
+/* 手机端响应式 */
+@media (max-width: 768px) {
+  .connection-page {
+    padding: 12px 16px;
+    height: 100%;
+  }
 }
 </style>
 
