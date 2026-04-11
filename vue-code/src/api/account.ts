@@ -3,7 +3,7 @@ import type { ApiResponse, Account } from '@/types'
 
 // 获取账号列表
 export function getAccountList() {
-  return request<{ accounts: Account[] }>({
+  return request<{ accounts: Account[]; total?: number }>({
     url: '/account/list',
     method: 'POST',
     data: {}
