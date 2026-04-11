@@ -19,6 +19,7 @@ const emit = defineEmits<Emits>()
 // 响应式检测
 const isMobile = ref(false)
 const checkScreenSize = () => {
+  // 手机端使用卡片视图，电脑端使用表格视图
   isMobile.value = window.innerWidth < 768
 }
 
@@ -132,15 +133,22 @@ onUnmounted(() => {
   overflow-y: auto;
 }
 
-/* 隐藏滚动条但保留滚动功能 */
+/* 自定义滚动条样式 - 显示细滚动条 */
 .mobile-account-list::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+  width: 6px;
 }
 
-.mobile-account-list {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+.mobile-account-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mobile-account-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.mobile-account-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .mobile-account-card {

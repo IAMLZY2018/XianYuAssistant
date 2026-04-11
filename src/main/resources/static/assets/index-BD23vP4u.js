@@ -1,1 +1,0 @@
-import{d as s,c as t,i as o,o as a,_ as n}from"./index-3ySjUv-b.js";const _={class:"auto-reply-page"},p=s({__name:"index",setup(r){return(c,e)=>(a(),t("div",_,[...e[0]||(e[0]=[o("h1",null,"自动回复",-1),o("p",null,"自动回复功能开发中...",-1)])]))}}),l=n(p,[["__scopeId","data-v-b3289d53"]]);export{l as default};

@@ -6,7 +6,6 @@ const route = useRoute()
 
 // 响应式导航栏状态
 const isMobile = ref(false)
-const isTablet = ref(false)
 const drawerVisible = ref(false)
 const screenWidth = ref(window.innerWidth)
 
@@ -32,7 +31,6 @@ const currentPageTitle = computed(() => {
 const checkScreenSize = () => {
   screenWidth.value = window.innerWidth
   isMobile.value = window.innerWidth < 768
-  isTablet.value = window.innerWidth >= 768 && window.innerWidth < 1024
 }
 
 // 切换抽屉显示
@@ -57,8 +55,8 @@ onUnmounted(() => {
 
 <template>
   <div class="app-container">
-    <!-- 手机端/平板端: 顶部导航栏 -->
-    <div v-if="isMobile || isTablet" class="mobile-header">
+    <!-- 手机端: 顶部导航栏 -->
+    <div v-if="isMobile" class="mobile-header">
       <el-button
         class="menu-toggle-btn"
         @click="toggleDrawer"
@@ -68,63 +66,6 @@ onUnmounted(() => {
       </el-button>
       <div class="mobile-page-title">{{ currentPageTitle }}</div>
     </div>
-
-    <!-- 抽屉式导航 (平板端) -->
-    <el-drawer
-      v-if="isTablet"
-      v-model="drawerVisible"
-      direction="ltr"
-      :with-header="false"
-      size="280px"
-      class="nav-drawer"
-    >
-      <div class="drawer-content">
-        <div class="logo">
-          <div class="logo-icon">闲</div>
-          <div class="logo-text">自动化管理</div>
-        </div>
-        <el-menu
-          :default-active="$route.path"
-          router
-          class="nav-menu"
-          @select="closeDrawer"
-        >
-          <el-menu-item index="/dashboard">
-            <span>📊 仪表板</span>
-          </el-menu-item>
-          <el-menu-item index="/accounts">
-            <span>👤 闲鱼账号</span>
-          </el-menu-item>
-          <el-menu-item index="/connection">
-            <span>🔗 连接管理</span>
-          </el-menu-item>
-          <el-menu-item index="/goods">
-            <span>📦 商品管理</span>
-          </el-menu-item>
-          <el-menu-item index="/orders">
-            <span>📋 订单管理</span>
-          </el-menu-item>
-          <el-menu-item index="/messages">
-            <span>💬 消息管理</span>
-          </el-menu-item>
-          
-          <el-divider content-position="left">自动化</el-divider>
-          
-          <el-menu-item index="/auto-delivery">
-            <span>🤖 自动发货</span>
-          </el-menu-item>
-          <el-menu-item index="/auto-reply">
-            <span>💭 自动回复</span>
-          </el-menu-item>
-          
-          <el-divider content-position="left">系统</el-divider>
-          
-          <el-menu-item index="/operation-log">
-            <span>📜 操作日志</span>
-          </el-menu-item>
-        </el-menu>
-      </div>
-    </el-drawer>
 
     <!-- 全屏菜单 (手机端) -->
     <div v-if="isMobile && drawerVisible" class="mobile-menu-overlay" @click="closeDrawer">
@@ -162,18 +103,18 @@ onUnmounted(() => {
             <el-menu-item index="/messages">
               <span>💬 消息管理</span>
             </el-menu-item>
-            
+
             <el-divider content-position="left">自动化</el-divider>
-            
+
             <el-menu-item index="/auto-delivery">
               <span>🤖 自动发货</span>
             </el-menu-item>
             <el-menu-item index="/auto-reply">
               <span>💭 自动回复</span>
             </el-menu-item>
-            
+
             <el-divider content-position="left">系统</el-divider>
-            
+
             <el-menu-item index="/operation-log">
               <span>📜 操作日志</span>
             </el-menu-item>
@@ -183,7 +124,7 @@ onUnmounted(() => {
     </div>
 
     <!-- 电脑端: 固定侧边栏 -->
-    <el-container v-if="!isMobile && !isTablet">
+    <el-container v-if="!isMobile">
       <el-aside width="240px" class="sidebar">
         <div class="logo">
           <div class="logo-icon">闲</div>
@@ -212,24 +153,24 @@ onUnmounted(() => {
           <el-menu-item index="/messages">
             <span>💬 消息管理</span>
           </el-menu-item>
-          
+
           <el-divider content-position="left">自动化</el-divider>
-          
+
           <el-menu-item index="/auto-delivery">
             <span>🤖 自动发货</span>
           </el-menu-item>
           <el-menu-item index="/auto-reply">
             <span>💭 自动回复</span>
           </el-menu-item>
-          
+
           <el-divider content-position="left">系统</el-divider>
-          
+
           <el-menu-item index="/operation-log">
             <span>📜 操作日志</span>
           </el-menu-item>
         </el-menu>
       </el-aside>
-      
+
       <el-container>
         <el-main>
           <RouterView />
@@ -237,8 +178,8 @@ onUnmounted(() => {
       </el-container>
     </el-container>
 
-    <!-- 手机端/平板端: 主内容区 -->
-    <el-container v-if="isMobile || isTablet">
+    <!-- 手机端: 主内容区 -->
+    <el-container v-if="isMobile">
       <el-main>
         <RouterView />
       </el-main>
@@ -331,7 +272,7 @@ onUnmounted(() => {
   border-color: transparent;
 }
 
-/* ========== 手机端/平板端: 顶部导航栏 ========== */
+/* ========== 手机端: 顶部导航栏 ========== */
 .mobile-header {
   display: flex;
   justify-content: flex-start;
@@ -372,17 +313,6 @@ onUnmounted(() => {
 .menu-icon {
   font-size: 20px;
   line-height: 1;
-}
-
-/* ========== 平板端: 抽屉样式 ========== */
-.drawer-content {
-  height: 100%;
-  background: #f8f8f8;
-}
-
-.nav-drawer :deep(.el-drawer__body) {
-  padding: 0;
-  background: #f8f8f8;
 }
 
 /* ========== 手机端: 全屏菜单 ========== */
@@ -464,13 +394,6 @@ onUnmounted(() => {
 /* 移除原来的 .mobile-menu .logo 样式,已在 .mobile-menu-header .logo 中定义 */
 
 /* ========== 响应式适配 ========== */
-
-/* 平板端 */
-@media (max-width: 1024px) {
-  .el-main {
-    padding: 20px 24px;
-  }
-}
 
 /* 手机端 */
 @media (max-width: 768px) {

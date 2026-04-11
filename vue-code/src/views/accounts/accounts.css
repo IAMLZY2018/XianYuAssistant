@@ -3,7 +3,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  /* 不设置overflow，让高度自然计算 */
 }
 
 .page-header {
@@ -31,8 +31,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   min-height: 0;
+  /* 不设置overflow，让内部滚动容器处理 */
 }
 
 .account-card :deep(.el-card__header) {
@@ -49,17 +49,25 @@
 .account-table-wrapper {
   height: 100%;
   overflow-y: auto;
+  /* 显示细滚动条，提供滚动指示 */
 }
 
-/* 隐藏滚动条但保留滚动功能 */
+/* 自定义滚动条样式 - 显示细滚动条 */
 .account-table-wrapper::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+  width: 6px;
 }
 
-.account-table-wrapper {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+.account-table-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.account-table-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.account-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .card-header {
@@ -75,21 +83,6 @@
 }
 
 /* ========== 响应式适配 ========== */
-
-/* 平板端 */
-@media (max-width: 1024px) {
-  .accounts-page {
-    padding: 15px;
-  }
-
-  .page-title {
-    font-size: 22px;
-  }
-
-  .header-actions {
-    gap: 10px;
-  }
-}
 
 /* 手机端 */
 @media (max-width: 768px) {

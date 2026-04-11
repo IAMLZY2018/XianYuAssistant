@@ -271,68 +271,6 @@
 
 /* ========== 响应式适配 ========== */
 
-/* 平板设备 (768px - 1024px) */
-@media screen and (max-width: 1024px) {
-  .dashboard-page {
-    padding: 15px;
-  }
-
-  .stat-icon {
-    width: 50px;
-    height: 50px;
-    font-size: 24px;
-    margin-right: 15px;
-  }
-
-  .stat-value {
-    font-size: 28px;
-  }
-
-  .stat-label {
-    font-size: 13px;
-  }
-
-  .card-title {
-    font-size: 18px;
-  }
-
-  .card-subtitle {
-    font-size: 13px;
-  }
-
-  .steps-container {
-    margin: 20px 0;
-  }
-
-  .step-icon {
-    font-size: 40px;
-  }
-
-  .step-title {
-    font-size: 15px;
-  }
-
-  .step-description {
-    font-size: 13px;
-  }
-
-  .step-details li {
-    font-size: 12px;
-  }
-
-  .feature-icon {
-    font-size: 40px;
-  }
-
-  .feature-title {
-    font-size: 15px;
-  }
-
-  .feature-description {
-    font-size: 13px;
-  }
-}
-
 /* 手机设备 (< 768px) */
 @media screen and (max-width: 768px) {
   .dashboard-page {
