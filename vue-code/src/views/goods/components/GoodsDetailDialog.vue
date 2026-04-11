@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { getGoodsDetail } from '@/api/goods';
-import { showSuccess, showError } from '@/utils';
+import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue';
+import { useRouter } from 'vue-router';
+import { getGoodsDetail, updateAutoDeliveryStatus, updateAutoReplyStatus, deleteItem } from '@/api/goods';
+import { showSuccess, showError, showConfirm } from '@/utils';
 import type { GoodsItemWithConfig } from '@/api/goods';
 
 interface Props {
@@ -17,11 +18,23 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+const router = useRouter();
 
 const loading = ref(false);
 const goodsDetail = ref<GoodsItemWithConfig | null>(null);
 const currentImageIndex = ref(0);
 const images = ref<string[]>([]);
+
+// 响应式检测
+const isMobile = ref(false);
+const checkScreenSize = () => {
+  isMobile.value = window.innerWidth < 768;
+};
+
+// 计算对话框宽度
+const dialogWidth = computed(() => {
+  return isMobile.value ? '95%' : '750px';
+});
 
 // 加载商品详情
 const loadDetail = async () => {
@@ -63,14 +76,14 @@ const loadDetail = async () => {
 // // 切换自动发货
 // const handleToggleAutoDelivery = async (value: boolean) => {
 //   if (!props.accountId || !goodsDetail.value) return;
-// 
+//
 //   try {
 //     const response = await updateAutoDeliveryStatus({
 //       xianyuAccountId: props.accountId,
 //       xyGoodsId: goodsDetail.value.item.xyGoodId,
 //       xianyuAutoDeliveryOn: value ? 1 : 0
 //     });
-// 
+//
 //     if (response.code === 0 || response.code === 200) {
 //       showSuccess(`自动发货${value ? '开启' : '关闭'}成功`);
 //       goodsDetail.value.xianyuAutoDeliveryOn = value ? 1 : 0;
@@ -86,18 +99,18 @@ const loadDetail = async () => {
 //     }
 //   }
 // };
-// 
+//
 // // 切换自动回复
 // const handleToggleAutoReply = async (value: boolean) => {
 //   if (!props.accountId || !goodsDetail.value) return;
-// 
+//
 //   try {
 //     const response = await updateAutoReplyStatus({
 //       xianyuAccountId: props.accountId,
 //       xyGoodsId: goodsDetail.value.item.xyGoodId,
 //       xianyuAutoReplyOn: value ? 1 : 0
 //     });
-// 
+//
 //     if (response.code === 0 || response.code === 200) {
 //       showSuccess(`自动回复${value ? '开启' : '关闭'}成功`);
 //       goodsDetail.value.xianyuAutoReplyOn = value ? 1 : 0;
@@ -113,6 +126,50 @@ const loadDetail = async () => {
 //     }
 //   }
 // };
+
+// 配置自动发货
+const handleConfigAutoDelivery = () => {
+  if (!goodsDetail.value) return;
+
+  router.push({
+    path: '/auto-delivery',
+    query: {
+      accountId: props.accountId?.toString(),
+      goodsId: goodsDetail.value.item.xyGoodId
+    }
+  });
+  handleClose();
+};
+
+// 删除商品
+const handleDelete = async () => {
+  if (!props.accountId || !goodsDetail.value) return;
+
+  try {
+    await showConfirm(
+      `确定要删除商品 "${goodsDetail.value.item.title}" 吗？此操作不可恢复。`,
+      '删除确认'
+    );
+
+    const response = await deleteItem({
+      xianyuAccountId: props.accountId,
+      xyGoodsId: goodsDetail.value.item.xyGoodId
+    });
+
+    if (response.code === 0 || response.code === 200) {
+      showSuccess('商品删除成功');
+      handleClose();
+      emit('refresh');
+    } else {
+      throw new Error(response.msg || '删除失败');
+    }
+  } catch (error: any) {
+    if (error === 'cancel') {
+      return;
+    }
+    showError('删除失败: ' + error.message);
+  }
+};
 
 // 获取状态标签类型
 const getStatusType = (status: number) => {
@@ -157,14 +214,27 @@ watch(() => props.modelValue, (val) => {
     loadDetail();
   }
 });
+
+onMounted(() => {
+  checkScreenSize();
+  window.addEventListener('resize', checkScreenSize);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', checkScreenSize);
+});
 </script>
 
 <template>
   <el-dialog
     :model-value="modelValue"
     title="商品详情"
-    width="750px"
+    :width="dialogWidth"
     @close="handleClose"
+    class="goods-detail-dialog"
+    :class="{ 'mobile-dialog': isMobile }"
+    :close-on-click-modal="false"
+    :close-on-press-escape="false"
   >
     <div v-loading="loading" class="goods-detail">
       <div v-if="goodsDetail" class="detail-content">
@@ -256,9 +326,23 @@ watch(() => props.modelValue, (val) => {
               <span class="time-value">{{ goodsDetail.item.updatedTime }}</span>
             </div>
           </div>
+
+          <!-- 操作按钮 -->
+          <div class="action-buttons">
+            <el-button type="success" @click="handleConfigAutoDelivery">
+              配置自动发货
+            </el-button>
+            <el-button type="danger" @click="handleDelete">
+              删除商品
+            </el-button>
+          </div>
         </div>
       </div>
     </div>
+
+    <template #footer>
+      <el-button @click="handleClose">关闭</el-button>
+    </template>
   </el-dialog>
 </template>
 
@@ -299,6 +383,7 @@ watch(() => props.modelValue, (val) => {
   display: flex;
   gap: 6px;
   overflow-x: auto;
+  padding-bottom: 4px;
 }
 
 .thumbnail {
@@ -307,7 +392,7 @@ watch(() => props.modelValue, (val) => {
   border-radius: 3px;
   overflow: hidden;
   cursor: pointer;
-  border: 1px solid transparent;
+  border: 2px solid transparent;
   transition: border-color 0.3s;
   flex-shrink: 0;
 }
@@ -330,6 +415,7 @@ watch(() => props.modelValue, (val) => {
   display: flex;
   flex-direction: column;
   gap: 15px;
+  min-width: 0;
 }
 
 .title-section {
@@ -341,7 +427,7 @@ watch(() => props.modelValue, (val) => {
   font-size: 18px;
   font-weight: 600;
   color: #303133;
-  margin: 0 0 6px 0;
+  margin: 0 0 8px 0;
   line-height: 1.4;
 }
 
@@ -349,6 +435,7 @@ watch(() => props.modelValue, (val) => {
   font-size: 12px;
   color: #909399;
   font-family: 'Courier New', Consolas, monospace;
+  word-break: break-all;
 }
 
 .price-section {
@@ -375,14 +462,27 @@ watch(() => props.modelValue, (val) => {
   font-size: 13px;
   font-weight: 600;
   color: #606266;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .description-content {
   font-size: 13px;
   color: #606266;
-  line-height: 1.5;
+  line-height: 1.6;
   white-space: pre-wrap;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+/* 隐藏描述内容的滚动条 */
+.description-content::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.description-content {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
 
 .config-section {
@@ -401,7 +501,7 @@ watch(() => props.modelValue, (val) => {
 }
 
 .config-label {
-  font-size: 13px;
+  font-size: 14px;
   color: #606266;
   font-weight: 500;
 }
@@ -413,14 +513,14 @@ watch(() => props.modelValue, (val) => {
 }
 
 .switch-status {
-  font-size: 12px;
+  font-size: 13px;
   color: #909399;
 }
 
 .time-info {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .time-item {
@@ -436,19 +536,206 @@ watch(() => props.modelValue, (val) => {
   color: #606266;
 }
 
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #ebeef5;
+}
+
+.action-buttons .el-button {
+  flex: 1;
+}
+
 /* 响应式 */
 @media (max-width: 768px) {
+  .goods-detail {
+    min-height: auto;
+  }
+
   .detail-content {
     flex-direction: column;
+    gap: 16px;
   }
-  
+
   .detail-left {
     flex: none;
     width: 100%;
   }
-  
+
   .main-image {
-    height: 250px;
+    height: 280px;
+  }
+
+  .thumbnails {
+    gap: 8px;
+  }
+
+  .thumbnail {
+    width: 50px;
+    height: 50px;
+  }
+
+  .detail-right {
+    gap: 12px;
+  }
+
+  .goods-title {
+    font-size: 16px;
+  }
+
+  .price {
+    font-size: 20px;
+  }
+
+  .description-content {
+    max-height: 120px;
+  }
+
+  .config-label {
+    font-size: 13px;
+  }
+
+  /* 手机端按钮保持一行显示 */
+  .action-buttons {
+    flex-direction: row;
+    gap: 10px;
+  }
+
+  .action-buttons .el-button {
+    flex: 1;
+    width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-image {
+    height: 240px;
+  }
+
+  .thumbnail {
+    width: 45px;
+    height: 45px;
+  }
+
+  .goods-title {
+    font-size: 15px;
+  }
+
+  .price {
+    font-size: 18px;
+  }
+
+  .description {
+    padding: 10px;
+  }
+
+  .description-content {
+    font-size: 12px;
+    max-height: 100px;
+  }
+
+  /* 小屏手机按钮也保持一行 */
+  .action-buttons {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .action-buttons .el-button {
+    flex: 1;
+  }
+}
+</style>
+
+<style>
+/* 全局样式：商品详情对话框 */
+.goods-detail-dialog .el-dialog__body {
+  padding: 16px 20px;
+}
+
+.goods-detail-dialog .el-dialog__header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.goods-detail-dialog .el-dialog__footer {
+  padding: 12px 20px;
+  border-top: 1px solid #ebeef5;
+}
+
+/* 隐藏滚动条但保留滚动功能 */
+.goods-detail-dialog .el-dialog__body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.goods-detail-dialog .el-dialog__body {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* 手机端弹窗样式：居中显示 */
+.mobile-dialog {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+  border-radius: 16px !important;
+  max-height: 85vh !important;
+  max-width: 95vw !important;
+  display: flex !important;
+  flex-direction: column !important;
+  /* 淡入效果 */
+  animation: fadeIn 0.2s ease-out !important;
+}
+
+.mobile-dialog .el-dialog__header {
+  padding: 16px 16px 12px !important;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.mobile-dialog .el-dialog__body {
+  padding: 12px 16px !important;
+  max-height: calc(85vh - 140px) !important;
+  overflow-y: auto !important;
+  flex: 1 !important;
+}
+
+.mobile-dialog .el-dialog__footer {
+  padding: 10px 16px !important;
+  border-top: 1px solid #ebeef5;
+  flex-shrink: 0 !important;
+}
+
+/* 淡入动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 遮罩层样式 */
+.mobile-dialog + .el-overlay {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+@media (max-width: 768px) {
+  .goods-detail-dialog .el-dialog__body {
+    padding: 12px 16px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+  }
+
+  .goods-detail-dialog .el-dialog__header {
+    padding: 12px 16px;
+  }
+
+  .goods-detail-dialog .el-dialog__footer {
+    padding: 10px 16px;
   }
 }
 </style>

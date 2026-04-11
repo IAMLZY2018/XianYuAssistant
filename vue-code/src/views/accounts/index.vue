@@ -27,7 +27,7 @@ loadAccounts();
 <template>
   <div class="accounts-page">
     <div class="page-header">
-      <h1 class="page-title">闲鱼账号</h1>
+      <h1 class="page-title mobile-hidden">闲鱼账号</h1>
       <div class="header-actions">
         <el-button type="primary" @click="showQRLoginDialog">
           📱 扫码添加闲鱼账号
@@ -42,9 +42,9 @@ loadAccounts();
       <template #header>
         <div class="card-header">
           <span class="card-title">闲鱼账号列表</span>
-          <el-button 
-            type="primary" 
-            link 
+          <el-button
+            type="primary"
+            link
             @click="loadAccounts"
             :loading="loading"
           >
@@ -52,13 +52,15 @@ loadAccounts();
           </el-button>
         </div>
       </template>
-      
-      <AccountTable
-        :accounts="accounts"
-        :loading="loading"
-        @edit="editAccount"
-        @delete="deleteAccount"
-      />
+
+      <div class="account-table-wrapper">
+        <AccountTable
+          :accounts="accounts"
+          :loading="loading"
+          @edit="editAccount"
+          @delete="deleteAccount"
+        />
+      </div>
     </el-card>
 
     <!-- 对话框组件 -->

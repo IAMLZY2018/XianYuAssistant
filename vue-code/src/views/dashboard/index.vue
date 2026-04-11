@@ -134,7 +134,7 @@ const navigateTo = (route: string) => {
   <div class="dashboard-page">
     <!-- 统计卡片 -->
     <el-row :gutter="20" class="stats-row" v-loading="loading">
-      <el-col :span="8">
+      <el-col :xs="24" :sm="12" :md="8">
         <el-card shadow="hover" class="stat-card">
           <div class="stat-content">
             <div class="stat-icon account-icon">👤</div>
@@ -146,7 +146,7 @@ const navigateTo = (route: string) => {
         </el-card>
       </el-col>
       
-      <el-col :span="8">
+      <el-col :xs="24" :sm="12" :md="8">
         <el-card shadow="hover" class="stat-card">
           <div class="stat-content">
             <div class="stat-icon goods-icon">📦</div>
@@ -158,7 +158,7 @@ const navigateTo = (route: string) => {
         </el-card>
       </el-col>
       
-      <el-col :span="8">
+      <el-col :xs="24" :sm="12" :md="8">
         <el-card shadow="hover" class="stat-card">
           <div class="stat-content">
             <div class="stat-icon online-icon">🔥</div>
@@ -192,7 +192,9 @@ const navigateTo = (route: string) => {
       <div class="steps-content">
         <el-row :gutter="20">
           <el-col 
-            :span="6" 
+            :xs="24" 
+            :sm="12" 
+            :md="6" 
             v-for="(step, index) in quickStartSteps" 
             :key="index"
           >
@@ -234,7 +236,7 @@ const navigateTo = (route: string) => {
       </template>
       
       <el-row :gutter="20">
-        <el-col :span="8" v-for="(feature, index) in features" :key="index">
+        <el-col :xs="24" :sm="12" :md="8" v-for="(feature, index) in features" :key="index">
           <el-card shadow="hover" class="feature-card">
             <div class="feature-icon" :style="{ color: feature.color }">
               {{ feature.icon }}

@@ -268,3 +268,251 @@
   color: #409eff;
   font-weight: bold;
 }
+
+/* ========== 响应式适配 ========== */
+
+/* 平板设备 (768px - 1024px) */
+@media screen and (max-width: 1024px) {
+  .dashboard-page {
+    padding: 15px;
+  }
+
+  .stat-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    margin-right: 15px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+  }
+
+  .stat-label {
+    font-size: 13px;
+  }
+
+  .card-title {
+    font-size: 18px;
+  }
+
+  .card-subtitle {
+    font-size: 13px;
+  }
+
+  .steps-container {
+    margin: 20px 0;
+  }
+
+  .step-icon {
+    font-size: 40px;
+  }
+
+  .step-title {
+    font-size: 15px;
+  }
+
+  .step-description {
+    font-size: 13px;
+  }
+
+  .step-details li {
+    font-size: 12px;
+  }
+
+  .feature-icon {
+    font-size: 40px;
+  }
+
+  .feature-title {
+    font-size: 15px;
+  }
+
+  .feature-description {
+    font-size: 13px;
+  }
+}
+
+/* 手机设备 (< 768px) */
+@media screen and (max-width: 768px) {
+  .dashboard-page {
+    padding: 10px;
+  }
+
+  .stats-row {
+    margin-bottom: 15px;
+  }
+
+  .stat-card {
+    margin-bottom: 10px;
+  }
+
+  .stat-content {
+    padding: 8px 0;
+  }
+
+  .stat-icon {
+    width: 45px;
+    height: 45px;
+    font-size: 22px;
+    margin-right: 12px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+    margin-bottom: 6px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+  }
+
+  .guide-card,
+  .features-card,
+  .faq-card,
+  .tips-card {
+    margin-bottom: 15px;
+  }
+
+  .card-header {
+    margin-bottom: 10px;
+  }
+
+  .card-title {
+    font-size: 16px;
+  }
+
+  .card-subtitle {
+    font-size: 12px;
+    margin-top: 3px;
+  }
+
+  .steps-container {
+    margin: 15px 0;
+  }
+
+  .steps-content {
+    margin-top: 15px;
+  }
+
+  .step-card {
+    margin-bottom: 10px;
+  }
+
+  .step-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+  }
+
+  .step-title {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  .step-description {
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+
+  .step-details {
+    margin-bottom: 15px;
+  }
+
+  .step-details li {
+    font-size: 11px;
+    padding: 5px 0;
+    padding-left: 15px;
+  }
+
+  .feature-card {
+    margin-bottom: 10px;
+    padding: 15px 8px;
+  }
+
+  .feature-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+  }
+
+  .feature-title {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  .feature-description {
+    font-size: 12px;
+  }
+
+  .faq-question {
+    font-size: 14px;
+  }
+
+  .faq-answer {
+    font-size: 12px;
+    padding: 10px 15px;
+  }
+
+  .tips-list li {
+    font-size: 12px;
+    padding: 5px 0;
+    padding-left: 15px;
+  }
+}
+
+/* 小屏手机 (< 480px) */
+@media screen and (max-width: 480px) {
+  .dashboard-page {
+    padding: 8px;
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    margin-right: 10px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+  }
+
+  .card-title {
+    font-size: 15px;
+  }
+
+  .card-subtitle {
+    font-size: 11px;
+  }
+
+  .step-icon {
+    font-size: 32px;
+  }
+
+  .step-title {
+    font-size: 13px;
+  }
+
+  .step-description {
+    font-size: 11px;
+  }
+
+  .step-details li {
+    font-size: 10px;
+  }
+
+  .feature-icon {
+    font-size: 32px;
+  }
+
+  .feature-title {
+    font-size: 13px;
+  }
+
+  .feature-description {
+    font-size: 11px;
+  }
+}
