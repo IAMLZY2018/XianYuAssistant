@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { ElMessageBox } from 'element-plus';
-import { QuestionFilled } from '@element-plus/icons-vue';
+import { QuestionFilled, Loading } from '@element-plus/icons-vue';
 import { getAccountList } from '@/api/account';
 import { getConnectionStatus, startConnection, stopConnection } from '@/api/websocket';
 import { showSuccess, showError, showInfo } from '@/utils';
@@ -29,6 +29,14 @@ const refreshTokenLoading = ref(false);
 const logs = ref<Array<{ time: string; message: string; isError?: boolean }>>([]);
 let statusInterval: number | null = null;
 
+// 滚动加载相关
+const accountListRef = ref<HTMLElement | null>(null);
+const currentPage = ref(1);
+const pageSize = ref(20);
+const totalAccounts = ref(0);
+const hasMore = ref(true);
+const loadingMore = ref(false);
+
 // 手动更新Cookie对话框
 const showManualUpdateCookieDialog = ref(false);
 // 手动更新Token对话框
@@ -42,20 +50,53 @@ const currentAccount = computed(() => {
 });
 
 // 加载账号列表
-const loadAccounts = async () => {
-  loading.value = true;
+const loadAccounts = async (isLoadMore = false) => {
+  if (isLoadMore) {
+    loadingMore.value = true;
+  } else {
+    loading.value = true;
+    currentPage.value = 1;
+    accounts.value = [];
+  }
+  
   try {
     const response = await getAccountList();
     if (response.code === 0 || response.code === 200) {
-      accounts.value = response.data?.accounts || [];
+      const newAccounts = response.data?.accounts || [];
+      
+      if (isLoadMore) {
+        accounts.value = [...accounts.value, ...newAccounts];
+      } else {
+        accounts.value = newAccounts;
+      }
+      
+      totalAccounts.value = response.data?.total || newAccounts.length;
+      hasMore.value = accounts.value.length < totalAccounts.value;
     } else {
       throw new Error(response.msg || '获取账号列表失败');
     }
   } catch (error: any) {
     console.error('加载账号列表失败:', error);
-    accounts.value = [];
+    if (!isLoadMore) {
+      accounts.value = [];
+    }
   } finally {
     loading.value = false;
+    loadingMore.value = false;
+  }
+};
+
+// 滚动加载更多
+const handleScroll = () => {
+  if (!accountListRef.value || loadingMore.value || !hasMore.value) return;
+  
+  const { scrollTop, scrollHeight, clientHeight } = accountListRef.value;
+  const scrollBottom = scrollHeight - scrollTop - clientHeight;
+  
+  // 距离底部100px时触发加载
+  if (scrollBottom < 100) {
+    currentPage.value++;
+    loadAccounts(true);
   }
 };
 
@@ -446,7 +487,12 @@ onUnmounted(() => {
           </div>
         </template>
         
-        <div v-loading="loading" class="account-list">
+        <div 
+          v-loading="loading" 
+          class="account-list"
+          ref="accountListRef"
+          @scroll="handleScroll"
+        >
           <div
             v-for="account in accounts"
             :key="account.id"
@@ -459,6 +505,17 @@ onUnmounted(() => {
               <div class="account-name">{{ getAccountName(account) }}</div>
               <div class="account-id">ID: {{ account.id }}</div>
             </div>
+          </div>
+          
+          <!-- 加载更多提示 -->
+          <div v-if="loadingMore" class="loading-more">
+            <el-icon class="is-loading"><loading /></el-icon>
+            <span>加载中...</span>
+          </div>
+          
+          <!-- 没有更多数据提示 -->
+          <div v-if="!hasMore && accounts.length > 0" class="no-more">
+            已加载全部 {{ accounts.length }} 个账号
           </div>
           
           <el-empty
@@ -780,6 +837,26 @@ onUnmounted(() => {
 .account-list {
   flex: 1;
   overflow-y: auto;
+  min-height: 0; /* 允许flex子项收缩 */
+  position: relative;
+}
+
+.loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  color: #909399;
+  font-size: 13px;
+}
+
+.no-more {
+  text-align: center;
+  padding: 12px;
+  color: #c0c4cc;
+  font-size: 12px;
+  border-top: 1px solid #f0f0f0;
 }
 
 .account-item {

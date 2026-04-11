@@ -15,7 +15,7 @@ spring:
           temperature: 0.7
       embedding:
         options:
-          model: qwen3-vl-embedding
+          model: text-embedding-v2
     vectorstore:
       chroma:
         client:
