@@ -11,5 +11,7 @@ import reactor.core.publisher.Flux;
 
 public interface AIService {
 
-    Flux<String> chatByRAG(String prompt);
+    Flux<String> chatByRAG(String msg,String goodsId);
+
+    void putDataToRAG(String content,String goodsId);
 }
