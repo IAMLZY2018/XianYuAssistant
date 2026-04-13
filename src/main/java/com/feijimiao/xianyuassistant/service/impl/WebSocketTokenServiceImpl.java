@@ -11,14 +11,16 @@ import com.feijimiao.xianyuassistant.service.AccountService;
 import com.feijimiao.xianyuassistant.service.CookieRefreshService;
 import com.feijimiao.xianyuassistant.service.OperationLogService;
 import com.feijimiao.xianyuassistant.service.WebSocketTokenService;
-import com.feijimiao.xianyuassistant.utils.HttpClientUtils;
 import com.feijimiao.xianyuassistant.utils.XianyuSignUtils;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,15 +28,18 @@ import java.util.regex.Pattern;
  * WebSocket Token服务实现
  * 参考Python XianyuAutoAgent的get_token/hasLogin方法
  *
- * 核心逻辑（与Python对齐）：
- * 1. 调用token API时，需要从响应Set-Cookie中提取新的_m_h5_tk并更新到数据库
- * 2. token获取失败时，先处理响应中的Set-Cookie（类似Python的clear_duplicate_cookies），再重试
- * 3. Cookie过期时，先调hasLogin刷新Cookie，再用新Cookie重新获取token
+ * 核心逻辑（与Python完全对齐）：
+ * 1. 使用OkHttp发送token请求（而非RestTemplate），确保能正确获取Set-Cookie响应头
+ * 2. 模拟Python requests.Session的有状态Cookie管理：
+ *    - 每次请求前，从数据库读取Cookie构建请求头
+ *    - 每次请求后，从响应Set-Cookie中更新Cookie到数据库
+ *    - 重试时使用更新后的Cookie（新_m_h5_tk）
+ * 3. hasLogin刷新后，必须从数据库读取新Cookie，确保签名使用新_m_h5_tk
  *
- * 关键改进：
- * - 每次重试都从数据库重新读取最新Cookie（可能已被其他线程更新）
- * - 添加并发锁防止多线程同时获取同一账号的Token
- * - hasLogin刷新后强制从数据库读取最新Cookie用于签名计算
+ * 与Python的关键对应关系：
+ * - Python self.session.cookies → Java 从数据库读取/更新Cookie
+ * - Python self.session.post → Java OkHttp发送请求+手动管理Cookie
+ * - Python self.clear_duplicate_cookies → Java mergeCookies + clearDuplicateCookies
  */
 @Slf4j
 @Service
@@ -105,6 +110,16 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
     private final Map<Long, Object> tokenLocks = new ConcurrentHashMap<>();
 
     /**
+     * 共享的OkHttpClient（用于发送token API请求）
+     */
+    private final OkHttpClient httpClient = new OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .followRedirects(true)
+            .build();
+
+    /**
      * 获取账号级别的锁对象
      */
     private Object getTokenLock(Long accountId) {
@@ -120,11 +135,6 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
 
     /**
      * 从数据库获取最新的Cookie字符串
-     * 每次调用都重新从数据库读取，确保拿到最新的Cookie
-     * （可能已被CookieRefreshService等线程更新）
-     *
-     * @param accountId 账号ID
-     * @return 最新的Cookie字符串，如果获取失败返回null
      */
     private String getLatestCookieFromDb(Long accountId) {
         try {
@@ -148,9 +158,9 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
      * 参考Python XianyuApis.get_token方法
      *
      * 核心改进（与Python对齐）：
-     * 1. 每次重试都从数据库重新读取最新Cookie
-     * 2. 签名计算使用数据库中最新的_m_h5_tk
-     * 3. API失败后从响应Set-Cookie更新数据库Cookie，再重试
+     * 1. 使用OkHttp发送请求，确保能正确获取Set-Cookie响应头
+     * 2. 每次重试都从数据库重新读取最新Cookie（可能已被Set-Cookie更新）
+     * 3. API失败后从响应Set-Cookie更新数据库Cookie，再重试（模拟Python session行为）
      *
      * @param accountId 账号ID
      * @param retryCount 当前重试次数
@@ -172,7 +182,7 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
                 }
             }
 
-            // 1. 【关键改进】每次都从数据库重新读取最新Cookie
+            // 1. 【关键】每次都从数据库重新读取最新Cookie
             String cookiesStr = getLatestCookieFromDb(accountId);
             if (cookiesStr == null || cookiesStr.isEmpty()) {
                 log.error("【账号{}】获取Cookie失败，无法获取Token", accountId);
@@ -205,7 +215,7 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
             // 3. 生成时间戳
             String timestamp = String.valueOf(System.currentTimeMillis());
 
-            // 4. 【关键改进】使用数据库中最新的Cookie来解析_m_h5_tk
+            // 4. 使用数据库中最新的Cookie来解析_m_h5_tk
             Map<String, String> cookies = XianyuSignUtils.parseCookies(cookiesStr);
             String mh5tk = cookies.get("_m_h5_tk");
             String token = "";
@@ -216,186 +226,179 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
                     token.isEmpty() ? "空" : token.substring(0, Math.min(10, token.length())) + "...");
 
             // 5. 构建data参数
-            // 获取deviceId
             String deviceId = getDeviceId(accountId, cookies);
-
             String dataVal = String.format("{\"appKey\":\"444e9908a51d1cb236a27862abc769c9\",\"deviceId\":\"%s\"}", deviceId);
 
             // 6. 生成签名
             String sign = XianyuSignUtils.generateSign(timestamp, token, dataVal);
 
             // 7. 构建URL参数
-            Map<String, String> params = new HashMap<>();
-            params.put("jsv", "2.7.2");
-            params.put("appKey", "34839810");
-            params.put("t", timestamp);
-            params.put("sign", sign);
-            params.put("v", "1.0");
-            params.put("type", "originaljson");
-            params.put("accountSite", "xianyu");
-            params.put("dataType", "json");
-            params.put("timeout", "20000");
-            params.put("api", "mtop.taobao.idlemessage.pc.login.token");
-            params.put("sessionOption", "AutoLoginOnly");
-            params.put("spm_cnt", "a21ybx.im.0.0");
-            params.put("spm_pre", "a21ybx.item.want.1.14ad3da6ALVq3n");
-            params.put("log_id", "14ad3da6ALVq3n");
-
-            // 8. 构建请求体
-            Map<String, String> data = new HashMap<>();
-            data.put("data", dataVal);
-
-            // 9. 构建请求头
-            Map<String, String> headers = new HashMap<>();
-            headers.put("Host", "h5api.m.goofish.com");
-            headers.put("sec-ch-ua-platform", "\"Windows\"");
-            headers.put("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36");
-            headers.put("accept", "application/json");
-            headers.put("sec-ch-ua", "\"Chromium\";v=\"146\", \"Not-A.Brand\";v=\"24\", \"Google Chrome\";v=\"146\"");
-            headers.put("content-type", "application/x-www-form-urlencoded");
-            headers.put("sec-ch-ua-mobile", "?0");
-            headers.put("origin", "https://www.goofish.com");
-            headers.put("sec-fetch-site", "same-site");
-            headers.put("sec-fetch-mode", "cors");
-            headers.put("sec-fetch-dest", "empty");
-            headers.put("referer", "https://www.goofish.com/");
-            headers.put("accept-language", "en,zh-CN;q=0.9,zh;q=0.8,zh-TW;q=0.7,ja;q=0.6");
-            headers.put("priority", "u=1, i");
-            headers.put("cookie", cookiesStr);
-
-            // 10. 构建完整URL
             StringBuilder urlBuilder = new StringBuilder(TOKEN_API_URL);
             urlBuilder.append("?");
-            params.forEach((key, value) -> {
-                try {
-                    urlBuilder.append(key).append("=").append(java.net.URLEncoder.encode(value, "UTF-8")).append("&");
-                } catch (Exception e) {
-                    log.error("URL编码失败: key={}", key, e);
-                }
-            });
+            appendUrlParam(urlBuilder, "jsv", "2.7.2");
+            appendUrlParam(urlBuilder, "appKey", "34839810");
+            appendUrlParam(urlBuilder, "t", timestamp);
+            appendUrlParam(urlBuilder, "sign", sign);
+            appendUrlParam(urlBuilder, "v", "1.0");
+            appendUrlParam(urlBuilder, "type", "originaljson");
+            appendUrlParam(urlBuilder, "accountSite", "xianyu");
+            appendUrlParam(urlBuilder, "dataType", "json");
+            appendUrlParam(urlBuilder, "timeout", "20000");
+            appendUrlParam(urlBuilder, "api", "mtop.taobao.idlemessage.pc.login.token");
+            appendUrlParam(urlBuilder, "sessionOption", "AutoLoginOnly");
+            appendUrlParam(urlBuilder, "spm_cnt", "a21ybx.im.0.0");
+            appendUrlParam(urlBuilder, "spm_pre", "a21ybx.item.want.1.14ad3da6ALVq3n");
+            appendUrlParam(urlBuilder, "log_id", "14ad3da6ALVq3n");
             String fullUrl = urlBuilder.toString();
             if (fullUrl.endsWith("&")) {
                 fullUrl = fullUrl.substring(0, fullUrl.length() - 1);
             }
 
+            // 8. 构建请求体（application/x-www-form-urlencoded）
+            String formData = "data=" + URLEncoder.encode(dataVal, "UTF-8");
+
+            // 9. 构建请求头
+            Request.Builder requestBuilder = new Request.Builder()
+                    .url(fullUrl)
+                    .post(RequestBody.create(formData, MediaType.parse("application/x-www-form-urlencoded")))
+                    .header("Host", "h5api.m.goofish.com")
+                    .header("sec-ch-ua-platform", "\"Windows\"")
+                    .header("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36")
+                    .header("accept", "application/json")
+                    .header("sec-ch-ua", "\"Chromium\";v=\"146\", \"Not-A.Brand\";v=\"24\", \"Google Chrome\";v=\"146\"")
+                    .header("sec-ch-ua-mobile", "?0")
+                    .header("origin", "https://www.goofish.com")
+                    .header("sec-fetch-site", "same-site")
+                    .header("sec-fetch-mode", "cors")
+                    .header("sec-fetch-dest", "empty")
+                    .header("referer", "https://www.goofish.com/")
+                    .header("accept-language", "en,zh-CN;q=0.9,zh;q=0.8,zh-TW;q=0.7,ja;q=0.6")
+                    .header("priority", "u=1, i")
+                    .header("Cookie", cookiesStr);
+
             log.info("【账号{}】============", accountId);
-            log.info("【账号{}】1、请求体: {}", accountId, data);
+            log.info("【账号{}】1、请求体: data={}", accountId, dataVal);
             log.info("【账号{}】2、发送POST请求: {}", accountId, fullUrl);
 
-            // 11. 发送POST请求（带响应头，用于提取Set-Cookie）
-            HttpClientUtils.HttpResponseResult httpResponse = HttpClientUtils.postWithHeaders(fullUrl, headers, data);
-
-            if (httpResponse == null) {
-                log.error("【账号{}】获取accessToken失败：HTTP请求异常", accountId);
-                return handleTokenFailure(accountId, retryCount, null, "HTTP请求异常");
-            }
-
-            String response = httpResponse.getBody();
-
-            // 【关键】处理响应中的Set-Cookie（参考Python: self.clear_duplicate_cookies()）
-            // Python的requests.Session会自动处理Set-Cookie，但Java的HttpClientUtils不会
-            // 所以我们需要手动从响应头中提取Set-Cookie并更新数据库中的Cookie
-            List<String> setCookieHeaders = httpResponse.getHeaderValues("Set-Cookie");
-            if (!setCookieHeaders.isEmpty()) {
-                log.info("【账号{}】检测到响应中的Set-Cookie，数量: {}", accountId, setCookieHeaders.size());
-                String updatedCookieStr = updateCookiesFromResponse(accountId, cookiesStr, setCookieHeaders);
-                if (updatedCookieStr != null && !updatedCookieStr.equals(cookiesStr)) {
-                    log.info("【账号{}】Cookie已从响应Set-Cookie中更新", accountId);
-                }
-            }
-
-            log.info("【账号{}】3、响应内容: {}", accountId, response);
-            log.info("【账号{}】============", accountId);
-
-            if (response == null || response.isEmpty()) {
-                log.error("【账号{}】获取accessToken失败：响应为空", accountId);
-                return handleTokenFailure(accountId, retryCount, null, "响应为空");
-            }
-
-            // 12. 解析响应
-            @SuppressWarnings("unchecked")
-            Map<String, Object> responseMap = objectMapper.readValue(response, Map.class);
-
-            // 检查ret字段
-            Object retObj = responseMap.get("ret");
-            if (retObj instanceof java.util.List) {
-                @SuppressWarnings("unchecked")
-                java.util.List<String> retList = (java.util.List<String>) retObj;
-                log.info("【账号{}】ret字段内容: {}", accountId, retList);
-
-                boolean success = retList.stream().anyMatch(ret -> ret.contains("SUCCESS::调用成功"));
-
-                if (success) {
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> dataMap = (Map<String, Object>) responseMap.get("data");
-                    if (dataMap != null && dataMap.containsKey("accessToken")) {
-                        String accessToken = (String) dataMap.get("accessToken");
-
-                        // 保存 token 到数据库
-                        saveTokenToDatabase(accountId, accessToken);
-
-                        // 更新账号状态为正常（1）
-                        updateAccountStatusToNormal(accountId);
-
-                        log.info("【账号{}】accessToken获取成功并已保存到数据库", accountId);
-                        log.debug("【账号{}】accessToken: {}...", accountId,
-                                accessToken.substring(0, Math.min(20, accessToken.length())));
-
-                        operationLogService.log(accountId,
-                            com.feijimiao.xianyuassistant.constants.OperationConstants.Type.REFRESH,
-                            com.feijimiao.xianyuassistant.constants.OperationConstants.Module.TOKEN,
-                            "WebSocket Token获取成功",
-                            com.feijimiao.xianyuassistant.constants.OperationConstants.Status.SUCCESS,
-                            com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.TOKEN,
-                            String.valueOf(accountId),
-                            null, null, null, null);
-
-                        return accessToken;
-                    }
+            // 10. 发送请求（OkHttp能正确返回Set-Cookie头）
+            try (Response httpResponse = httpClient.newCall(requestBuilder.build()).execute()) {
+                if (!httpResponse.isSuccessful()) {
+                    log.error("【账号{}】获取accessToken失败：HTTP {}", accountId, httpResponse.code());
+                    return handleTokenFailure(accountId, retryCount, null, "HTTP " + httpResponse.code());
                 }
 
-                // 检查是否需要滑块验证
-                boolean needCaptcha = retList.stream().anyMatch(ret -> ret.contains("FAIL_SYS_USER_VALIDATE"));
-                log.info("【账号{}】是否需要滑块验证: {}", accountId, needCaptcha);
+                String responseBody = httpResponse.body() != null ? httpResponse.body().string() : "";
 
-                if (needCaptcha) {
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> dataMap = (Map<String, Object>) responseMap.get("data");
-                    log.info("【账号{}】data字段内容: {}", accountId, dataMap);
+                // 【关键改进】处理响应中的Set-Cookie（参考Python: session自动处理 + clear_duplicate_cookies）
+                // OkHttp能正确返回Set-Cookie头，这是与RestTemplate的关键区别
+                Headers responseHeaders = httpResponse.headers();
+                List<String> setCookieHeaders = responseHeaders.values("Set-Cookie");
 
-                    if (dataMap != null && dataMap.containsKey("url")) {
-                        String captchaUrl = (String) dataMap.get("url");
-
-                        pendingCaptchaAccounts.put(accountId, captchaUrl);
-                        captchaTimestamps.put(accountId, System.currentTimeMillis());
-
-                        updateAccountStatusToCaptchaRequired(accountId);
-
-                        log.warn("【账号{}】检测到滑块验证，URL: {}", accountId, captchaUrl);
-                        log.warn("【账号{}】需要人工完成滑块验证，请访问: http://localhost:8080/websocket-manual-captcha.html", accountId);
-                        log.warn("【账号{}】账号状态已更新为-2（需要验证）", accountId);
-
-                        throw new CaptchaRequiredException(captchaUrl);
+                if (!setCookieHeaders.isEmpty()) {
+                    log.info("【账号{}】检测到响应中的Set-Cookie，数量: {}", accountId, setCookieHeaders.size());
+                    String updatedCookieStr = updateCookiesFromResponse(accountId, cookiesStr, setCookieHeaders);
+                    if (updatedCookieStr != null && !updatedCookieStr.equals(cookiesStr)) {
+                        log.info("【账号{}】Cookie已从响应Set-Cookie中更新，_m_h5_tk可能已更新", accountId);
                     } else {
-                        log.error("【账号{}】需要滑块验证但未找到URL", accountId);
+                        log.info("【账号{}】Set-Cookie未改变Cookie内容", accountId);
+                    }
+                } else {
+                    log.info("【账号{}】响应中无Set-Cookie", accountId);
+                }
+
+                log.info("【账号{}】3、响应内容: {}", accountId, responseBody);
+                log.info("【账号{}】============", accountId);
+
+                if (responseBody == null || responseBody.isEmpty()) {
+                    log.error("【账号{}】获取accessToken失败：响应为空", accountId);
+                    return handleTokenFailure(accountId, retryCount, null, "响应为空");
+                }
+
+                // 11. 解析响应
+                @SuppressWarnings("unchecked")
+                Map<String, Object> responseMap = objectMapper.readValue(responseBody, Map.class);
+
+                // 检查ret字段
+                Object retObj = responseMap.get("ret");
+                if (retObj instanceof java.util.List) {
+                    @SuppressWarnings("unchecked")
+                    java.util.List<String> retList = (java.util.List<String>) retObj;
+                    log.info("【账号{}】ret字段内容: {}", accountId, retList);
+
+                    boolean success = retList.stream().anyMatch(ret -> ret.contains("SUCCESS::调用成功"));
+
+                    if (success) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> dataMap = (Map<String, Object>) responseMap.get("data");
+                        if (dataMap != null && dataMap.containsKey("accessToken")) {
+                            String accessToken = (String) dataMap.get("accessToken");
+
+                            // 保存 token 到数据库
+                            saveTokenToDatabase(accountId, accessToken);
+
+                            // 更新账号状态为正常（1）
+                            updateAccountStatusToNormal(accountId);
+
+                            log.info("【账号{}】accessToken获取成功并已保存到数据库", accountId);
+                            log.debug("【账号{}】accessToken: {}...", accountId,
+                                    accessToken.substring(0, Math.min(20, accessToken.length())));
+
+                            operationLogService.log(accountId,
+                                com.feijimiao.xianyuassistant.constants.OperationConstants.Type.REFRESH,
+                                com.feijimiao.xianyuassistant.constants.OperationConstants.Module.TOKEN,
+                                "WebSocket Token获取成功",
+                                com.feijimiao.xianyuassistant.constants.OperationConstants.Status.SUCCESS,
+                                com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.TOKEN,
+                                String.valueOf(accountId),
+                                null, null, null, null);
+
+                            return accessToken;
+                        }
+                    }
+
+                    // 检查是否需要滑块验证
+                    boolean needCaptcha = retList.stream().anyMatch(ret -> ret.contains("FAIL_SYS_USER_VALIDATE"));
+                    log.info("【账号{}】是否需要滑块验证: {}", accountId, needCaptcha);
+
+                    if (needCaptcha) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> dataMap = (Map<String, Object>) responseMap.get("data");
+                        log.info("【账号{}】data字段内容: {}", accountId, dataMap);
+
+                        if (dataMap != null && dataMap.containsKey("url")) {
+                            String captchaUrl = (String) dataMap.get("url");
+
+                            pendingCaptchaAccounts.put(accountId, captchaUrl);
+                            captchaTimestamps.put(accountId, System.currentTimeMillis());
+
+                            updateAccountStatusToCaptchaRequired(accountId);
+
+                            log.warn("【账号{}】检测到滑块验证，URL: {}", accountId, captchaUrl);
+                            log.warn("【账号{}】需要人工完成滑块验证，请访问: http://localhost:8080/websocket-manual-captcha.html", accountId);
+                            log.warn("【账号{}】账号状态已更新为-2（需要验证）", accountId);
+
+                            throw new CaptchaRequiredException(captchaUrl);
+                        } else {
+                            log.error("【账号{}】需要滑块验证但未找到URL", accountId);
+                        }
+                    }
+
+                    // 检查是否触发风控（RGV587_ERROR）
+                    boolean needRiskControl = retList.stream().anyMatch(ret -> ret.contains("RGV587_ERROR") || ret.contains("被挤爆啦"));
+                    if (needRiskControl) {
+                        log.error("【账号{}】❌ 触发风控: {}", accountId, retList);
+                        log.error("【账号{}】系统目前无法自动解决，请进入闲鱼网页版-点击消息-过滑块-复制最新的Cookie", accountId);
+                        updateCookieStatus(accountId, 3);
+                        throw new com.feijimiao.xianyuassistant.exception.CookieExpiredException(
+                                "触发风控，请进入闲鱼网页版过滑块后更新Cookie");
                     }
                 }
 
-                // 检查是否触发风控（RGV587_ERROR）
-                boolean needRiskControl = retList.stream().anyMatch(ret -> ret.contains("RGV587_ERROR") || ret.contains("被挤爆啦"));
-                if (needRiskControl) {
-                    log.error("【账号{}】❌ 触发风控: {}", accountId, retList);
-                    log.error("【账号{}】系统目前无法自动解决，请进入闲鱼网页版-点击消息-过滑块-复制最新的Cookie", accountId);
-                    updateCookieStatus(accountId, 3);
-                    throw new com.feijimiao.xianyuassistant.exception.CookieExpiredException(
-                            "触发风控，请进入闲鱼网页版过滑块后更新Cookie");
-                }
+                log.error("【账号{}】获取accessToken失败：{}", accountId, responseBody);
+
+                // Token获取失败，进入失败处理流程
+                return handleTokenFailure(accountId, retryCount, responseBody, "Token API调用失败");
             }
-
-            log.error("【账号{}】获取accessToken失败：{}", accountId, response);
-
-            // Token获取失败，进入失败处理流程
-            return handleTokenFailure(accountId, retryCount, response, "Token API调用失败");
 
         } catch (CaptchaRequiredException e) {
             throw e;
@@ -404,6 +407,17 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
         } catch (Exception e) {
             log.error("【账号{}】获取accessToken异常", accountId, e);
             return null;
+        }
+    }
+
+    /**
+     * URL参数追加辅助方法
+     */
+    private void appendUrlParam(StringBuilder sb, String key, String value) {
+        try {
+            sb.append(key).append("=").append(URLEncoder.encode(value, "UTF-8")).append("&");
+        } catch (Exception e) {
+            log.error("URL编码失败: key={}", key, e);
         }
     }
 
@@ -430,18 +444,12 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
      * 1. 非SUCCESS时，先检查响应Set-Cookie并更新cookies（clear_duplicate_cookies）
      * 2. retry_count < 2时，直接重试（此时session已有新cookie）
      * 3. retry_count >= 2时，调用hasLogin刷新Cookie，成功后重置retry_count重新获取token
-     *
-     * @param accountId 账号ID
-     * @param retryCount 当前重试次数
-     * @param response API响应内容
-     * @param reason 失败原因
-     * @return accessToken或null
      */
     private String handleTokenFailure(Long accountId, int retryCount, String response, String reason) {
 
         boolean isCookieExpired = response != null && (
             response.contains("FAIL_SYS_SESSION_EXPIRED") ||
-            response.contains("FAIL_SYS_TOKEN_EXOIRED") ||  // API返回的拼写错误
+            response.contains("FAIL_SYS_TOKEN_EXOIRED") ||
             response.contains("FAIL_SYS_TOKEN_EXPIRED") ||
             response.contains("令牌过期"));
 
@@ -460,8 +468,7 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
                 Thread.currentThread().interrupt();
             }
 
-            // 【关键改进】重试时不再传递旧的cookiesStr，而是从数据库重新读取最新Cookie
-            // 这样可以确保使用已被Set-Cookie更新的Cookie
+            // 【关键】重试时从数据库重新读取最新Cookie（可能已被Set-Cookie更新）
             return getAccessTokenWithRetry(accountId, retryCount + 1);
         }
 
@@ -480,10 +487,6 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
      *         return self.get_token(device_id, 0)  # 重置重试次数
      *     else:
      *         sys.exit(1)  # Cookie彻底失效
-     *
-     * @param accountId 账号ID
-     * @param hasLoginRetryCount hasLogin重试次数
-     * @return accessToken或null
      */
     private String refreshTokenViaHasLogin(Long accountId, int hasLoginRetryCount) {
         if (hasLoginRetryCount >= MAX_COOKIE_RETRY_COUNT) {
@@ -519,11 +522,16 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
                     Thread.currentThread().interrupt();
                 }
 
-                // 【关键改进】不再从参数传入cookiesStr，而是从数据库重新读取
-                // hasLogin成功后Cookie可能已经更新（包括_m_h5_tk等关键字段）
+                // hasLogin成功后从数据库读取最新Cookie
                 String newCookieStr = getLatestCookieFromDb(accountId);
                 if (newCookieStr != null && !newCookieStr.isEmpty()) {
-                    log.info("【账号{}】hasLogin后从数据库获取到最新Cookie，长度: {}", accountId, newCookieStr.length());
+                    Map<String, String> newCookies = XianyuSignUtils.parseCookies(newCookieStr);
+                    String newMh5tk = newCookies.get("_m_h5_tk");
+                    log.info("【账号{}】hasLogin后从数据库获取到最新Cookie，长度: {}，_m_h5_tk前缀: {}",
+                            accountId, newCookieStr.length(),
+                            newMh5tk != null && newMh5tk.contains("_")
+                                    ? newMh5tk.split("_")[0].substring(0, Math.min(10, newMh5tk.split("_")[0].length())) + "..."
+                                    : "空");
                     // 重置retryCount为0，重新开始获取token流程
                     return getAccessTokenWithRetry(accountId, 0);
                 } else {
@@ -544,9 +552,9 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
      * 从响应的Set-Cookie中更新Cookie
      * 参考Python: requests.Session自动处理Set-Cookie + clear_duplicate_cookies
      *
-     * 关键：token API在返回FAIL_SYS_TOKEN_EXOIRED时，响应的Set-Cookie中会包含新的_m_h5_tk
+     * 关键：token API在返回FAIL_SYS_SESSION_EXPIRED时，响应的Set-Cookie中会包含新的_m_h5_tk
      * Python的requests.Session会自动保存这些Cookie，所以下次请求时签名是正确的
-     * 但Java的HttpClientUtils是无状态的，需要手动处理
+     * Java需要手动处理，并且必须确保Set-Cookie头能被正确读取（OkHttp可以）
      *
      * @param accountId 账号ID
      * @param currentCookieStr 当前Cookie字符串
@@ -555,6 +563,19 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
      */
     private String updateCookiesFromResponse(Long accountId, String currentCookieStr, List<String> setCookieHeaders) {
         try {
+            // 打印所有Set-Cookie内容（调试用，确认Set-Cookie中是否包含_m_h5_tk）
+            for (int i = 0; i < setCookieHeaders.size(); i++) {
+                String setCookie = setCookieHeaders.get(i);
+                // 只打印name=value部分，不打印Path等属性
+                if (setCookie.contains("_m_h5_tk")) {
+                    log.info("【账号{}】Set-Cookie中包含_m_h5_tk: {}", accountId,
+                            setCookie.length() > 80 ? setCookie.substring(0, 80) + "..." : setCookie);
+                } else {
+                    log.debug("【账号{}】Set-Cookie[{}]: {}", accountId, i,
+                            setCookie.length() > 80 ? setCookie.substring(0, 80) + "..." : setCookie);
+                }
+            }
+
             String newCookieStr = mergeCookies(currentCookieStr, setCookieHeaders);
 
             // 清理重复Cookie
@@ -572,6 +593,8 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
                 log.info("【账号{}】✅ _m_h5_tk已从响应中更新: {} -> {}", accountId,
                         oldMh5tk != null ? oldMh5tk.substring(0, Math.min(20, oldMh5tk.length())) + "..." : "null",
                         newMh5tk.substring(0, Math.min(20, newMh5tk.length())) + "...");
+            } else {
+                log.info("【账号{}】_m_h5_tk未变化（可能Set-Cookie中没有新的_m_h5_tk）", accountId);
             }
 
             // 更新数据库中的Cookie
@@ -693,14 +716,7 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
                 // 1. 清除旧token，强制重新获取
                 clearToken(accountId);
 
-                // 2. 获取新token（getAccessTokenWithRetry内部会自动从数据库读取Cookie和计算deviceId）
-                String cookiesStr = getLatestCookieFromDb(accountId);
-                if (cookiesStr == null || cookiesStr.isEmpty()) {
-                    log.warn("【账号{}】未找到Cookie，无法刷新token", accountId);
-                    return null;
-                }
-
-                // 3. 获取新token
+                // 2. 获取新token
                 String newToken = getAccessTokenWithRetry(accountId, 0);
 
                 if (newToken != null && !newToken.isEmpty()) {
