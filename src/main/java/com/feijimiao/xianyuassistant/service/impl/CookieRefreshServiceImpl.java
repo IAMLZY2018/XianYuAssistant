@@ -159,7 +159,17 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
                     Headers responseHeaders = response.headers();
                     List<String> setCookieHeaders = responseHeaders.values("Set-Cookie");
 
+                    log.info("【账号{}】hasLogin响应Set-Cookie数量: {}", accountId, setCookieHeaders.size());
+
                     if (!setCookieHeaders.isEmpty()) {
+                        // 打印包含_m_h5_tk的Set-Cookie
+                        for (String sc : setCookieHeaders) {
+                            if (sc.contains("_m_h5_tk")) {
+                                log.info("【账号{}】hasLogin Set-Cookie包含_m_h5_tk: {}", accountId,
+                                        sc.length() > 80 ? sc.substring(0, 80) + "..." : sc);
+                            }
+                        }
+
                         String oldCookieStr = cookie.getCookieText();
                         String newCookieStr = mergeCookies(oldCookieStr, setCookieHeaders);
 
