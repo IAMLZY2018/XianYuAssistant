@@ -210,10 +210,11 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
                             cookieMapper.update(null,
                                     new LambdaUpdateWrapper<XianyuCookie>()
                                             .eq(XianyuCookie::getXianyuAccountId, accountId)
-                                            .set(XianyuCookie::getCookieStatus, 1)
+                                    .set(XianyuCookie::getCookieStatus, 1)
                             );
                             log.info("【账号{}】✅ Cookie状态已更新为有效", accountId);
                         }
+                        log.info("【账号{}】本次hasLogin未返回新的Set-Cookie，仅确认登录态仍然有效", accountId);
                     }
 
                     // 记录操作日志
