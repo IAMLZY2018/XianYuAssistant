@@ -231,7 +231,7 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
             boolean refreshSuccess = cookieRefreshService.checkLoginStatus(accountId);
             
             if (refreshSuccess) {
-                log.info("【账号{}】hasLogin成功，Cookie已刷新，重新获取_m_h5_tk（重置重试计数）", accountId);
+                log.info("【账号{}】hasLogin成功，登录态有效，准备重新获取_m_h5_tk（重置重试计数）", accountId);
                 
                 try {
                     Thread.sleep(500);
@@ -244,6 +244,11 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
             } else {
                 log.warn("【账号{}】hasLogin失败", accountId);
             }
+        } catch (com.feijimiao.xianyuassistant.exception.CaptchaRequiredException e) {
+            log.warn("【账号{}】hasLogin后继续刷新Token时触发滑块验证，停止自动重试，等待人工处理", accountId);
+            throw e;
+        } catch (com.feijimiao.xianyuassistant.exception.CookieExpiredException e) {
+            throw e;
         } catch (Exception e) {
             log.error("【账号{}】hasLogin刷新过程发生异常", accountId, e);
         }

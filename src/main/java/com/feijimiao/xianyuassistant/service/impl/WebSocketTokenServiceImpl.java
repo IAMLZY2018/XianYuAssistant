@@ -514,7 +514,7 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
             boolean refreshSuccess = cookieRefreshService.refreshCookie(accountId);
 
             if (refreshSuccess) {
-                log.info("【账号{}】hasLogin成功，Cookie已刷新，重新获取Token（重置重试计数）", accountId);
+                log.info("【账号{}】hasLogin成功，登录态有效，准备重新获取Token（重置重试计数）", accountId);
 
                 try {
                     Thread.sleep(RETRY_INTERVAL);
@@ -540,6 +540,11 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
             } else {
                 log.warn("【账号{}】hasLogin失败", accountId);
             }
+        } catch (CaptchaRequiredException e) {
+            log.warn("【账号{}】hasLogin后重新获取Token时触发滑块验证，停止自动重试，等待人工处理", accountId);
+            throw e;
+        } catch (com.feijimiao.xianyuassistant.exception.CookieExpiredException e) {
+            throw e;
         } catch (Exception e) {
             log.error("【账号{}】hasLogin刷新过程发生异常", accountId, e);
         }
@@ -727,6 +732,10 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
                     return null;
                 }
 
+            } catch (CaptchaRequiredException e) {
+                throw e;
+            } catch (com.feijimiao.xianyuassistant.exception.CookieExpiredException e) {
+                throw e;
             } catch (Exception e) {
                 log.error("【账号{}】刷新WebSocket token异常", accountId, e);
                 return null;
