@@ -1,456 +1,708 @@
-.dashboard-page {
-  padding: 20px;
-  background: #f5f7fa;
+/* ============================================================
+   Dashboard — Apple-style Design System
+   iOS 18 / iPadOS 18 / macOS unified experience
+   ============================================================ */
+
+/* --- Design Tokens --- */
+.dashboard {
+  --d-bg: transparent;
+  --d-surface: rgba(255, 255, 255, 0.82);
+  --d-surface-hover: rgba(255, 255, 255, 0.95);
+  --d-surface-active: rgba(255, 255, 255, 1);
+  --d-border: rgba(0, 0, 0, 0.06);
+  --d-border-strong: rgba(0, 0, 0, 0.12);
+  --d-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --d-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --d-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --d-text-primary: #1d1d1f;
+  --d-text-secondary: #6e6e73;
+  --d-text-tertiary: #86868b;
+  --d-accent: #007aff;
+  --d-radius-sm: 8px;
+  --d-radius-md: 12px;
+  --d-radius-lg: 16px;
+  --d-space-1: 4px;
+  --d-space-2: 8px;
+  --d-space-3: 12px;
+  --d-space-4: 16px;
+  --d-space-5: 20px;
+  --d-space-6: 24px;
+  --d-transition: 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* --- Page Container --- */
+.dashboard {
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
+  background: var(--d-bg);
+  padding: var(--d-space-4);
+  padding-top: env(safe-area-inset-top, var(--d-space-4));
+  padding-bottom: env(safe-area-inset-bottom, var(--d-space-4));
+  padding-left: max(var(--d-space-4), env(safe-area-inset-left, var(--d-space-4)));
+  padding-right: max(var(--d-space-4), env(safe-area-inset-right, var(--d-space-4)));
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-/* 隐藏滚动条但保留滚动功能 */
-.dashboard-page::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+.dashboard::-webkit-scrollbar {
+  display: none;
 }
 
-.dashboard-page {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-
-/* 统计卡片 */
-.stats-row {
-  margin-bottom: 20px;
+/* --- Stats Grid --- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(160px, 25vw, 280px), 1fr));
+  gap: var(--d-space-3);
+  margin-bottom: var(--d-space-4);
 }
 
 .stat-card {
-  transition: all 0.3s;
-  border-radius: 12px;
-}
-
-.stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-}
-
-.stat-content {
   display: flex;
   align-items: center;
-  padding: 10px 0;
+  gap: var(--d-space-3);
+  padding: var(--d-space-4);
+  background: var(--d-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--d-border);
+  border-radius: var(--d-radius-md);
+  box-shadow: var(--d-shadow-sm);
+  transition: box-shadow var(--d-transition), transform var(--d-transition);
 }
 
-.stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 12px;
+@media (hover: hover) {
+  .stat-card:hover {
+    box-shadow: var(--d-shadow-md);
+    transform: translateY(-1px);
+  }
+}
+
+.stat-card__icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
-  margin-right: 20px;
+  border-radius: var(--d-radius-sm);
+  background: rgba(0, 0, 0, 0.04);
 }
 
-.account-icon {
-  background: #409eff;
+.stat-card__icon svg {
+  width: 22px;
+  height: 22px;
 }
 
-.goods-icon {
-  background: #67c23a;
-}
-
-.online-icon {
-  background: #e6a23c;
-}
-
-.stat-info {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 32px;
-  font-weight: bold;
-  color: #303133;
-  line-height: 1;
-  margin-bottom: 8px;
-}
-
-.stat-label {
-  font-size: 14px;
-  color: #909399;
-}
-
-/* 卡片头部 */
-.card-header {
+.stat-card__body {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
-.card-title {
-  font-size: 20px;
+.stat-card__value {
+  font-size: clamp(22px, 3vw, 28px);
+  font-weight: 700;
+  color: var(--d-text-primary);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-card__label {
+  font-size: 13px;
+  color: var(--d-text-secondary);
+  line-height: 1.3;
+  margin-top: 2px;
+}
+
+/* --- Section --- */
+.section {
+  background: var(--d-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--d-border);
+  border-radius: var(--d-radius-lg);
+  box-shadow: var(--d-shadow-sm);
+  padding: var(--d-space-5);
+  margin-bottom: var(--d-space-4);
+}
+
+.section__header {
+  display: flex;
+  align-items: center;
+  gap: var(--d-space-3);
+  margin-bottom: var(--d-space-4);
+}
+
+.section__icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--d-radius-sm);
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--d-text-primary);
+}
+
+.section__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.section__icon--info {
+  color: var(--d-accent);
+}
+
+.section__text {
+  min-width: 0;
+}
+
+.section__title {
+  font-size: 17px;
   font-weight: 600;
-  color: #303133;
+  color: var(--d-text-primary);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
-.card-subtitle {
-  font-size: 14px;
-  color: #909399;
-  margin-top: 4px;
+.section__subtitle {
+  font-size: 13px;
+  color: var(--d-text-tertiary);
+  line-height: 1.3;
+  margin-top: 2px;
 }
 
-/* 快速开始指南 */
-.guide-card {
-  margin-bottom: 20px;
-  border-radius: 12px;
-}
-
-.steps-container {
-  margin: 30px 0;
-}
-
-.steps-content {
-  margin-top: 30px;
+/* --- Steps Grid --- */
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(200px, 22vw, 260px), 1fr));
+  gap: var(--d-space-3);
 }
 
 .step-card {
-  height: 100%;
-  border-radius: 12px;
-  transition: all 0.3s;
+  position: relative;
+  padding: var(--d-space-4);
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--d-border);
+  border-radius: var(--d-radius-md);
   cursor: pointer;
-  border: 2px solid transparent;
+  transition: all var(--d-transition);
+  min-height: 40px; /* touch target */
 }
 
-.step-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  border-color: #409eff;
+@media (hover: hover) {
+  .step-card:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: var(--d-border-strong);
+    box-shadow: var(--d-shadow-sm);
+  }
 }
 
-.step-card.active {
-  border-color: #409eff;
-  background: #ecf5ff;
+.step-card--active {
+  background: rgba(0, 122, 255, 0.04);
+  border-color: rgba(0, 122, 255, 0.2);
 }
 
-.step-icon {
-  font-size: 48px;
-  text-align: center;
-  margin-bottom: 16px;
-}
-
-.step-title {
-  font-size: 16px;
+.step-card__number {
+  position: absolute;
+  top: var(--d-space-3);
+  right: var(--d-space-3);
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
   font-weight: 600;
-  color: #303133;
-  margin: 0 0 12px 0;
-  text-align: center;
+  color: var(--d-text-tertiary);
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 50%;
+  line-height: 1;
 }
 
-.step-description {
-  font-size: 14px;
-  color: #606266;
-  text-align: center;
-  margin: 0 0 16px 0;
-  line-height: 1.6;
+.step-card--active .step-card__number {
+  background: rgba(0, 122, 255, 0.12);
+  color: var(--d-accent);
 }
 
-.step-details {
+.step-card__icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--d-text-primary);
+  margin-bottom: var(--d-space-3);
+}
+
+.step-card__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.step-card__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--d-text-primary);
+  line-height: 1.3;
+  margin-bottom: var(--d-space-1);
+}
+
+.step-card__desc {
+  font-size: 13px;
+  color: var(--d-text-secondary);
+  line-height: 1.5;
+  margin-bottom: var(--d-space-3);
+}
+
+.step-card__details {
   list-style: none;
   padding: 0;
-  margin: 0 0 20px 0;
+  margin: 0 0 var(--d-space-4) 0;
 }
 
-.step-details li {
-  font-size: 13px;
-  color: #909399;
-  padding: 6px 0;
-  line-height: 1.6;
+.step-card__details li {
+  font-size: 12px;
+  color: var(--d-text-tertiary);
+  line-height: 1.5;
+  padding: 3px 0 3px 16px;
   position: relative;
-  padding-left: 20px;
 }
 
-.step-details li::before {
-  content: '▸';
+.step-card__details li::before {
+  content: '';
   position: absolute;
   left: 0;
-  color: #409eff;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--d-text-tertiary);
+  opacity: 0.4;
+  transform: translateY(-50%);
 }
 
-.step-button {
+.step-card--active .step-card__details li::before {
+  background: var(--d-accent);
+  opacity: 0.6;
+}
+
+.step-card__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--d-space-1);
   width: 100%;
+  height: 36px;
+  padding: 0 var(--d-space-4);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--d-accent);
+  background: rgba(0, 122, 255, 0.06);
+  border: 1px solid rgba(0, 122, 255, 0.12);
+  border-radius: var(--d-radius-sm);
+  cursor: pointer;
+  transition: all var(--d-transition);
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* 功能特性 */
-.features-card {
-  margin-bottom: 20px;
-  border-radius: 12px;
+.step-card__btn svg {
+  width: 14px;
+  height: 14px;
 }
 
-.features-card .el-row {
-  row-gap: 20px;
+@media (hover: hover) {
+  .step-card__btn:hover {
+    background: rgba(0, 122, 255, 0.1);
+    border-color: rgba(0, 122, 255, 0.2);
+  }
+}
+
+.step-card__btn:active {
+  transform: scale(0.97);
+}
+
+/* --- Features Grid --- */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(160px, 20vw, 220px), 1fr));
+  gap: var(--d-space-3);
 }
 
 .feature-card {
-  height: 100%;
-  border-radius: 12px;
-  transition: all 0.3s;
-  text-align: center;
-  padding: 20px 10px;
-  margin-bottom: 0;
+  padding: var(--d-space-4);
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--d-border);
+  border-radius: var(--d-radius-md);
+  transition: all var(--d-transition);
 }
 
-.feature-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+@media (hover: hover) {
+  .feature-card:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: var(--d-border-strong);
+    box-shadow: var(--d-shadow-sm);
+  }
 }
 
-.feature-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
+.feature-card__icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--d-radius-sm);
+  background: rgba(0, 0, 0, 0.04);
+  margin-bottom: var(--d-space-3);
 }
 
-.feature-title {
-  font-size: 16px;
+.feature-card__icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.feature-card__title {
+  font-size: 15px;
   font-weight: 600;
-  color: #303133;
-  margin: 0 0 12px 0;
+  color: var(--d-text-primary);
+  line-height: 1.3;
+  margin-bottom: var(--d-space-1);
 }
 
-.feature-description {
-  font-size: 14px;
-  color: #606266;
-  line-height: 1.6;
-  margin: 0;
+.feature-card__desc {
+  font-size: 13px;
+  color: var(--d-text-secondary);
+  line-height: 1.5;
 }
 
-/* 常见问题 */
-.faq-card {
-  margin-bottom: 20px;
-  border-radius: 12px;
+/* --- FAQ List --- */
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.faq-question {
+.faq-item {
+  border-bottom: 1px solid var(--d-border);
+}
+
+.faq-item:first-child {
+  border-top: none;
+}
+
+.faq-item:last-child {
+  border-bottom: none;
+}
+
+.faq-item__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--d-space-4) 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  min-height: 44px; /* touch target */
+  -webkit-tap-highlight-color: transparent;
+  transition: color var(--d-transition);
+}
+
+.faq-item__question {
   font-size: 15px;
   font-weight: 500;
-  color: #303133;
+  color: var(--d-text-primary);
+  line-height: 1.4;
+  flex: 1;
+  min-width: 0;
 }
 
-.faq-answer {
-  font-size: 14px;
-  color: #606266;
-  line-height: 1.8;
-  padding: 12px 20px;
-  background: #f5f7fa;
-  border-radius: 8px;
+.faq-item__chevron {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--d-text-tertiary);
+  transition: transform var(--d-transition);
+  margin-left: var(--d-space-2);
 }
 
-/* 底部提示 */
-.tips-card {
-  border-radius: 12px;
+.faq-item__chevron svg {
+  width: 16px;
+  height: 16px;
+}
+
+.faq-item--expanded .faq-item__chevron {
+  transform: rotate(180deg);
+}
+
+.faq-item__body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--d-transition);
+}
+
+.faq-item--expanded .faq-item__body {
+  grid-template-rows: 1fr;
+}
+
+.faq-item__answer {
+  overflow: hidden;
+}
+
+.faq-item--expanded .faq-item__answer {
+  padding-bottom: var(--d-space-4);
+}
+
+.faq-item__answer p {
+  font-size: 13px;
+  color: var(--d-text-secondary);
+  line-height: 1.6;
+  padding: var(--d-space-2) var(--d-space-3);
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: var(--d-radius-sm);
+}
+
+/* --- Tips Section --- */
+.section--tips {
+  background: rgba(0, 122, 255, 0.03);
+  border-color: rgba(0, 122, 255, 0.08);
 }
 
 .tips-list {
   list-style: none;
   padding: 0;
-  margin: 8px 0 0 0;
+  margin: 0;
 }
 
 .tips-list li {
-  font-size: 14px;
-  color: #606266;
-  padding: 6px 0;
-  line-height: 1.8;
+  font-size: 13px;
+  color: var(--d-text-secondary);
+  line-height: 1.5;
+  padding: var(--d-space-2) 0 var(--d-space-2) var(--d-space-4);
   position: relative;
-  padding-left: 20px;
 }
 
 .tips-list li::before {
-  content: '•';
+  content: '';
   position: absolute;
   left: 0;
-  color: #409eff;
-  font-weight: bold;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--d-accent);
+  opacity: 0.3;
+  transform: translateY(-50%);
 }
 
-/* ========== 响应式适配 ========== */
+/* --- Loading State --- */
+.dashboard.is-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
 
-/* 手机设备 (< 768px) */
+/* ============================================================
+   Responsive — Mobile First
+   ============================================================ */
+
+/* Phone (< 768px) */
 @media screen and (max-width: 768px) {
-  .dashboard-page {
-    padding: 10px;
+  .dashboard {
+    padding: var(--d-space-3);
   }
 
-  .stats-row {
-    margin-bottom: 15px;
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--d-space-2);
+    margin-bottom: var(--d-space-3);
   }
 
   .stat-card {
-    margin-bottom: 10px;
+    padding: var(--d-space-3);
+    gap: var(--d-space-2);
   }
 
-  .stat-content {
-    padding: 8px 0;
+  .stat-card__icon {
+    width: 36px;
+    height: 36px;
   }
 
-  .stat-icon {
-    width: 45px;
-    height: 45px;
+  .stat-card__icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .stat-card__value {
     font-size: 22px;
-    margin-right: 12px;
   }
 
-  .stat-value {
-    font-size: 24px;
-    margin-bottom: 6px;
-  }
-
-  .stat-label {
+  .stat-card__label {
     font-size: 12px;
   }
 
-  .guide-card,
-  .features-card,
-  .faq-card,
-  .tips-card {
-    margin-bottom: 15px;
+  .section {
+    padding: var(--d-space-4);
+    margin-bottom: var(--d-space-3);
   }
 
-  .card-header {
-    margin-bottom: 10px;
+  .section__header {
+    margin-bottom: var(--d-space-3);
   }
 
-  .card-title {
+  .section__title {
     font-size: 16px;
   }
 
-  .card-subtitle {
-    font-size: 12px;
-    margin-top: 3px;
-  }
-
-  .steps-container {
-    margin: 15px 0;
-  }
-
-  .steps-content {
-    margin-top: 15px;
+  .steps-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--d-space-2);
   }
 
   .step-card {
-    margin-bottom: 10px;
+    padding: var(--d-space-3);
   }
 
-  .step-icon {
-    font-size: 36px;
-    margin-bottom: 12px;
+  .step-card__icon {
+    width: 32px;
+    height: 32px;
+    margin-bottom: var(--d-space-2);
   }
 
-  .step-title {
+  .step-card__icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .step-card__title {
     font-size: 14px;
-    margin-bottom: 10px;
   }
 
-  .step-description {
+  .step-card__desc {
     font-size: 12px;
-    margin-bottom: 12px;
+    margin-bottom: var(--d-space-2);
   }
 
-  .step-details {
-    margin-bottom: 15px;
-  }
-
-  .step-details li {
+  .step-card__details li {
     font-size: 11px;
-    padding: 5px 0;
-    padding-left: 15px;
+    padding: 2px 0 2px 14px;
+  }
+
+  .step-card__btn {
+    height: 34px;
+    font-size: 12px;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--d-space-2);
   }
 
   .feature-card {
-    margin-bottom: 10px;
-    padding: 15px 8px;
+    padding: var(--d-space-3);
   }
 
-  .feature-icon {
-    font-size: 36px;
-    margin-bottom: 12px;
+  .feature-card__icon {
+    width: 32px;
+    height: 32px;
+    margin-bottom: var(--d-space-2);
   }
 
-  .feature-title {
-    font-size: 14px;
-    margin-bottom: 10px;
+  .feature-card__icon svg {
+    width: 18px;
+    height: 18px;
   }
 
-  .feature-description {
-    font-size: 12px;
-  }
-
-  .faq-question {
+  .feature-card__title {
     font-size: 14px;
   }
 
-  .faq-answer {
+  .feature-card__desc {
     font-size: 12px;
-    padding: 10px 15px;
+  }
+
+  .faq-item__question {
+    font-size: 14px;
+  }
+
+  .faq-item__answer p {
+    font-size: 12px;
   }
 
   .tips-list li {
     font-size: 12px;
-    padding: 5px 0;
-    padding-left: 15px;
   }
 }
 
-/* 小屏手机 (< 480px) */
+/* Small phone (< 480px) */
 @media screen and (max-width: 480px) {
-  .dashboard-page {
-    padding: 8px;
+  .dashboard {
+    padding: var(--d-space-2);
   }
 
-  .stat-icon {
-    width: 40px;
-    height: 40px;
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: var(--d-space-2);
+  }
+
+  .steps-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--d-space-2);
+  }
+
+  .section {
+    padding: var(--d-space-3);
+  }
+
+  .stat-card__value {
     font-size: 20px;
-    margin-right: 10px;
+  }
+}
+
+/* Tablet (768px ~ 1024px) */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 
-  .stat-value {
-    font-size: 20px;
+  .steps-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .stat-label {
-    font-size: 11px;
+  .features-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Desktop (> 1024px) */
+@media screen and (min-width: 1025px) {
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 
-  .card-title {
-    font-size: 15px;
+  .steps-grid {
+    grid-template-columns: repeat(4, 1fr);
   }
 
-  .card-subtitle {
-    font-size: 11px;
+  .features-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
+}
 
-  .step-icon {
-    font-size: 32px;
-  }
-
-  .step-title {
-    font-size: 13px;
-  }
-
-  .step-description {
-    font-size: 11px;
-  }
-
-  .step-details li {
-    font-size: 10px;
-  }
-
-  .feature-icon {
-    font-size: 32px;
-  }
-
-  .feature-title {
-    font-size: 13px;
-  }
-
-  .feature-description {
-    font-size: 11px;
+/* Large Desktop (> 1440px) */
+@media screen and (min-width: 1440px) {
+  .features-grid {
+    grid-template-columns: repeat(6, 1fr);
   }
 }

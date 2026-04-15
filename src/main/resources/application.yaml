@@ -19,7 +19,7 @@ spring:
     vectorstore:
       chroma:
         client:
-          host: http://192.168.0.188
+          host: http://localhost
           port: 8321
         initialize-schema: false
         tenant-name: default_tenant
