@@ -13,6 +13,7 @@ const {
   selectedAccountId,
   connectionStatus,
   statusLoading,
+  allConnectionStatuses,
   loadAccounts,
   selectAccount,
   handleRefresh,
@@ -33,7 +34,7 @@ const checkScreenSize = () => {
   isMobile.value = window.innerWidth < 768
 }
 
-// Build connection map for card display
+// Build connection map for card display（使用所有账号的连接状态）
 const connectionMap = computed(() => {
   const map = new Map<number, {
     connected?: boolean
@@ -41,12 +42,12 @@ const connectionMap = computed(() => {
     cookieStatus?: number
     tokenExpireTime?: number
   }>()
-  if (connectionStatus.value && selectedAccountId.value) {
-    map.set(selectedAccountId.value, {
-      connected: connectionStatus.value.connected,
-      status: connectionStatus.value.status,
-      cookieStatus: connectionStatus.value.cookieStatus,
-      tokenExpireTime: connectionStatus.value.tokenExpireTime
+  for (const [accountId, status] of allConnectionStatuses.value) {
+    map.set(accountId, {
+      connected: status.connected,
+      status: status.status,
+      cookieStatus: status.cookieStatus,
+      tokenExpireTime: status.tokenExpireTime
     })
   }
   return map
