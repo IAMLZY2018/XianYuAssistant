@@ -1,1702 +1,512 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
-  import { useRoute } from 'vue-router';
-import { ElMessageBox } from 'element-plus';
-import { Loading, ArrowLeft } from '@element-plus/icons-vue';
-import { getAccountList } from '@/api/account';
-import { getGoodsList, getGoodsDetail, updateAutoDeliveryStatus } from '@/api/goods';
-import {
-  getAutoDeliveryConfig,
-  saveOrUpdateAutoDeliveryConfig,
-  type AutoDeliveryConfig,
-  type SaveAutoDeliveryConfigReq,
-  type GetAutoDeliveryConfigReq
-} from '@/api/auto-delivery-config';
-import { showSuccess, showError, showInfo } from '@/utils';
-import type { Account } from '@/types';
-import type { GoodsItemWithConfig } from '@/api/goods';
-import GoodsDetailDialog from '../goods/components/GoodsDetailDialog.vue';
-import { getAutoDeliveryRecords, type AutoDeliveryRecordReq, type AutoDeliveryRecordResp, confirmShipment, type ConfirmShipmentReq, triggerAutoDelivery, type TriggerAutoDeliveryReq } from '@/api/auto-delivery-record';
-
-const route = useRoute();
-const loading = ref(false);
-const saving = ref(false);
-const accounts = ref<Account[]>([]);
-const selectedAccountId = ref<number | null>(null);
-const goodsList = ref<GoodsItemWithConfig[]>([]);
-const selectedGoods = ref<GoodsItemWithConfig | null>(null);
-const currentConfig = ref<AutoDeliveryConfig | null>(null);
-
-// 商品列表滚动加载相关
-const goodsCurrentPage = ref(1);
-const goodsTotal = ref(0);
-const goodsLoading = ref(false);
-const goodsListRef = ref<HTMLElement | null>(null);
-
-// 商品详情对话框
-const detailDialogVisible = ref(false);
-const selectedGoodsId = ref<string>('');
-
-// 表单数据
-const configForm = ref({
-  type: 1,
-  autoDeliveryContent: '',
-  autoConfirmShipment: 0
-});
-
-// 自动发货记录
-const recordsLoading = ref(false);
-const deliveryRecords = ref<any[]>([]);
-const recordsTotal = ref(0);
-const recordsPageNum = ref(1);
-const recordsPageSize = ref(20);
-const recordsExpanded = ref(false); // 记录表格是否展开全屏
-
-// 手机端适配
-const isMobile = ref(false);
-const mobileView = ref<'goods' | 'config'>('goods'); // 手机端当前视图：商品列表或配置页面
-
-// 检测屏幕宽度
-const checkScreenSize = () => {
-  isMobile.value = window.innerWidth < 768;
-  // 如果切换到桌面端，重置手机端视图状态
-  if (!isMobile.value) {
-    mobileView.value = 'goods';
-  }
-};
-
-// 手机端返回商品列表
-const goBackToGoods = () => {
-  mobileView.value = 'goods';
-};
-
-// 格式化时间
-const formatTime = (time: string) => {
-  if (!time) return '-';
-  // 将ISO时间格式转换为 YYYY-MM-DD HH:mm:ss
-  return time.replace('T', ' ').substring(0, 19);
-};
-
-// 加载账号列表
-const loadAccounts = async () => {
-  try {
-    const response = await getAccountList();
-    if (response.code === 0 || response.code === 200) {
-      accounts.value = response.data?.accounts || [];
-
-      // 检查路由参数,如果有则使用路由参数中的账号ID
-      const accountIdFromQuery = route.query.accountId;
-      if (accountIdFromQuery) {
-        const accountId = parseInt(accountIdFromQuery as string);
-        if (accounts.value.some(acc => acc.id === accountId)) {
-          selectedAccountId.value = accountId;
-          await loadGoods();
-          return;
-        }
-      }
-
-      // 默认选择第一个账号
-      if (accounts.value.length > 0 && !selectedAccountId.value) {
-        selectedAccountId.value = accounts.value[0]?.id || null;
-        loadGoods();
-      }
-    }
-  } catch (error: any) {
-    console.error('加载账号列表失败:', error);
-  }
-};
-
-// 加载商品列表
-const loadGoods = async () => {
-  if (!selectedAccountId.value) {
-    showInfo('请先选择账号');
-    return;
-  }
-
-  goodsLoading.value = true;
-  try {
-    const params = {
-      xianyuAccountId: selectedAccountId.value,
-      pageNum: goodsCurrentPage.value,
-      pageSize: 20 // 每次加载20条
-    };
-
-    const response = await getGoodsList(params);
-    if (response.code === 0 || response.code === 200) {
-      // 如果是第一页，则替换列表，否则追加到列表末尾
-      if (goodsCurrentPage.value === 1) {
-        goodsList.value = response.data?.itemsWithConfig || [];
-      } else {
-        goodsList.value.push(...(response.data?.itemsWithConfig || []));
-      }
-      goodsTotal.value = response.data?.totalCount || 0;
-
-      // 检查路由参数,如果有则使用路由参数中的商品ID
-      const goodsIdFromQuery = route.query.goodsId;
-      if (goodsIdFromQuery && goodsCurrentPage.value === 1) {
-        const targetGoods = goodsList.value.find(g => g.item.xyGoodId === goodsIdFromQuery);
-        if (targetGoods) {
-          await selectGoods(targetGoods);
-          return;
-        }
-      }
-
-      // 默认选择第一个商品（仅第一页）
-      if (goodsCurrentPage.value === 1 && goodsList.value.length > 0 && !selectedGoods.value) {
-        if (goodsList.value.length > 0) {
-          selectGoods(goodsList.value[0]!);
-        }
-      }
-
-      // 检查是否需要继续加载（当内容不足以触发滚动时）
-      checkAndLoadMore();
-    } else {
-      throw new Error(response.msg || '获取商品列表失败');
-    }
-  } catch (error: any) {
-    console.error('加载商品列表失败:', error);
-    goodsList.value = [];
-  } finally {
-    goodsLoading.value = false;
-  }
-};
-
-// 检查是否需要继续加载更多数据
-const checkAndLoadMore = () => {
-  nextTick(() => {
-    if (!goodsListRef.value) return;
-
-    const { scrollHeight, clientHeight } = goodsListRef.value;
-
-    // 如果内容高度小于容器高度，且还有更多数据，则继续加载
-    if (scrollHeight <= clientHeight && goodsList.value.length < goodsTotal.value) {
-      goodsCurrentPage.value++;
-      loadGoods();
-    }
-  });
-};
-
-// 处理商品列表滚动事件
-const handleGoodsScroll = () => {
-  if (!goodsListRef.value || goodsLoading.value) return;
-
-  const { scrollTop, scrollHeight, clientHeight } = goodsListRef.value;
-
-  // 当滚动到底部时加载更多（距离底部50px时触发）
-  if (scrollTop + clientHeight >= scrollHeight - 50) {
-    if (goodsList.value.length < goodsTotal.value) {
-      goodsCurrentPage.value++;
-      loadGoods();
-    }
-  }
-};
-
-// 监听滚动事件
-const addScrollListener = () => {
-  nextTick(() => {
-    if (goodsListRef.value) {
-      goodsListRef.value.addEventListener('scroll', handleGoodsScroll);
-    }
-  });
-};
-
-// 移除滚动监听
-const removeScrollListener = () => {
-  if (goodsListRef.value) {
-    goodsListRef.value.removeEventListener('scroll', handleGoodsScroll);
-  }
-};
-
-// 处理窗口大小变化
-const handleResize = () => {
-  checkAndLoadMore();
-};
-
-// 账号变更
-const handleAccountChange = () => {
-  selectedGoods.value = null;
-  currentConfig.value = null;
-  goodsCurrentPage.value = 1; // 重置页码
-  loadGoods();
-};
-
-// 选择商品
-const selectGoods = async (goods: GoodsItemWithConfig) => {
-  selectedGoods.value = goods;
-  recordsPageNum.value = 1; // 重置页码
-  await loadConfig();
-  await loadDeliveryRecords();
-  
-  // 手机端：切换到配置视图
-  if (isMobile.value) {
-    mobileView.value = 'config';
-  }
-};
-
-// 加载配置
-const loadConfig = async () => {
-  if (!selectedGoods.value || !selectedAccountId.value) return;
-
-  try {
-    const req: GetAutoDeliveryConfigReq = {
-      xianyuAccountId: selectedAccountId.value,
-      xyGoodsId: selectedGoods.value.item.xyGoodId
-    };
-
-    const response = await getAutoDeliveryConfig(req);
-    if (response.code === 0 || response.code === 200) {
-      currentConfig.value = response.data || null;
-      if (response.data) {
-        configForm.value.type = response.data.type;
-        configForm.value.autoDeliveryContent = response.data.autoDeliveryContent || '';
-        configForm.value.autoConfirmShipment = response.data.autoConfirmShipment || 0;
-      } else {
-        // 重置表单
-        configForm.value.type = 1;
-        configForm.value.autoDeliveryContent = '';
-        configForm.value.autoConfirmShipment = 0;
-      }
-    } else {
-      throw new Error(response.msg || '获取配置失败');
-    }
-  } catch (error: any) {
-    console.error('加载配置失败:', error);
-    currentConfig.value = null;
-  }
-};
-
-// 保存配置
-const saveConfig = async () => {
-  if (!selectedGoods.value || !selectedAccountId.value) {
-    showInfo('请先选择商品');
-    return;
-  }
-
-  if (!configForm.value.autoDeliveryContent.trim()) {
-    showInfo('请输入自动发货内容');
-    return;
-  }
-
-  saving.value = true;
-  try {
-    const req: SaveAutoDeliveryConfigReq = {
-      xianyuAccountId: selectedAccountId.value,
-      xianyuGoodsId: selectedGoods.value.item.id,
-      xyGoodsId: selectedGoods.value.item.xyGoodId,
-      type: configForm.value.type,
-      autoDeliveryContent: configForm.value.autoDeliveryContent.trim(),
-      autoConfirmShipment: configForm.value.autoConfirmShipment
-    };
-
-    const response = await saveOrUpdateAutoDeliveryConfig(req);
-    if (response.code === 0 || response.code === 200) {
-      showSuccess('保存配置成功');
-      currentConfig.value = response.data || null;
-    } else {
-      throw new Error(response.msg || '保存配置失败');
-    }
-  } catch (error: any) {
-    console.error('保存配置失败:', error);
-  } finally {
-    saving.value = false;
-  }
-};
-
-// 获取状态标签类型
-const getStatusType = (status: number) => {
-  const statusMap: Record<number, string> = {
-    0: 'success',
-    1: 'info',
-    2: 'warning'
-  };
-  return statusMap[status] || 'info';
-};
-
-// 获取状态文本
-const getStatusText = (status: number) => {
-  const statusMap: Record<number, string> = {
-    0: '在售',
-    1: '已下架',
-    2: '已售出'
-  };
-  return statusMap[status] || '未知';
-};
-
-// 格式化价格
-const formatPrice = (price: string) => {
-  return price ? `¥${price}` : '-';
-};
-
-// 查看商品详情
-const viewGoodsDetail = () => {
-  if (!selectedGoods.value || !selectedAccountId.value) {
-    showInfo('请先选择商品');
-    return;
-  }
-
-  selectedGoodsId.value = selectedGoods.value.item.xyGoodId;
-  detailDialogVisible.value = true;
-};
-
-// 切换自动发货状态
-const toggleAutoDelivery = async (value: boolean) => {
-  if (!selectedGoods.value || !selectedAccountId.value) {
-    showInfo('请先选择商品');
-    return;
-  }
-
-  try {
-    const response = await updateAutoDeliveryStatus({
-      xianyuAccountId: selectedAccountId.value,
-      xyGoodsId: selectedGoods.value.item.xyGoodId,
-      xianyuAutoDeliveryOn: value ? 1 : 0
-    });
-
-    if (response.code === 0 || response.code === 200) {
-      showSuccess(`自动发货${value ? '开启' : '关闭'}成功`);
-      // 更新本地状态
-      if (selectedGoods.value) {
-        selectedGoods.value.xianyuAutoDeliveryOn = value ? 1 : 0;
-      }
-      // 同时更新商品列表中的状态
-      const goodsItem = goodsList.value.find(item => item.item.xyGoodId === selectedGoods.value?.item.xyGoodId);
-      if (goodsItem) {
-        goodsItem.xianyuAutoDeliveryOn = value ? 1 : 0;
-      }
-    } else {
-      throw new Error(response.msg || '操作失败');
-    }
-  } catch (error: any) {
-    console.error('操作失败:', error);
-    // 恢复开关状态
-    if (selectedGoods.value) {
-      selectedGoods.value.xianyuAutoDeliveryOn = value ? 0 : 1;
-    }
-  }
-};
-
-// 加载自动发货记录
-const loadDeliveryRecords = async () => {
-  if (!selectedAccountId.value || !selectedGoods.value) {
-    deliveryRecords.value = [];
-    recordsTotal.value = 0;
-    return;
-  }
-
-  recordsLoading.value = true;
-  try {
-    const req: AutoDeliveryRecordReq = {
-      xianyuAccountId: selectedAccountId.value,
-      xyGoodsId: selectedGoods.value.item.xyGoodId,
-      pageNum: recordsPageNum.value,
-      pageSize: recordsPageSize.value
-    };
-
-    const response = await getAutoDeliveryRecords(req);
-    if (response.code === 0 || response.code === 200) {
-      deliveryRecords.value = response.data?.records || [];
-      recordsTotal.value = response.data?.total || 0;
-    } else {
-      throw new Error(response.msg || '获取记录失败');
-    }
-  } catch (error: any) {
-    console.error('加载自动发货记录失败:', error);
-    deliveryRecords.value = [];
-    recordsTotal.value = 0;
-  } finally {
-    recordsLoading.value = false;
-  }
-};
-
-// 记录分页变化
-const handleRecordsPageChange = (page: number) => {
-  recordsPageNum.value = page;
-  loadDeliveryRecords();
-};
-
-// 记录每页数量变化
-const handleRecordsSizeChange = (size: number) => {
-  recordsPageSize.value = size;
-  recordsPageNum.value = 1;
-  loadDeliveryRecords();
-};
-
-// 获取状态标签类型
-const getRecordStatusType = (state: number) => {
-  return state === 1 ? 'success' : 'danger';
-};
-
-// 获取状态文本
-const getRecordStatusText = (state: number) => {
-  return state === 1 ? '成功' : '失败';
-};
-
-// 确认已发货
-const handleConfirmShipment = async (record: any) => {
-  if (!selectedAccountId.value) {
-    showInfo('请先选择账号');
-    return;
-  }
-
-  if (!record.orderId) {
-    showError('该记录没有订单ID，无法确认已发货');
-    return;
-  }
-
-  try {
-    await ElMessageBox.confirm(
-      `确定要确认已发货吗？订单ID: ${record.orderId}`,
-      '确认已发货',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    );
-
-    const req: ConfirmShipmentReq = {
-      xianyuAccountId: selectedAccountId.value,
-      orderId: record.orderId
-    };
-
-    const response = await confirmShipment(req);
-    if (response.code === 0 || response.code === 200) {
-      showSuccess(response.data || '确认已发货成功');
-      // 刷新记录列表
-      await loadDeliveryRecords();
-    } else {
-      // 检查是否是token过期错误
-      if (response.msg && (response.msg.includes('Token') || response.msg.includes('令牌'))) {
-        throw new Error('Cookie已过期，请重新扫码登录获取新的Cookie');
-      }
-      throw new Error(response.msg || '确认已发货失败');
-    }
-  } catch (error: any) {
-    if (error === 'cancel') {
-      // 用户取消操作
-      return;
-    }
-    console.error('确认已发货失败:', error);
-    showError(error.message || '确认已发货失败');
-  }
-};
-
-// 从消息内容中提取订单ID
-const extractOrderId = (content: string): string | null => {
-  try {
-    // 尝试解析 JSON
-    const data = JSON.parse(content);
-    
-    // 从 reminderUrl 中提取订单ID
-    // 格式: fleamarket://order_detail?id=3052762719755595568&role=seller
-    const reminderUrl = data?.['1']?.['6']?.['10']?.reminderUrl || '';
-    const match = reminderUrl.match(/[?&]id=(\d+)/);
-    if (match && match[1]) {
-      return match[1];
-    }
-    
-    // 如果 reminderUrl 中没有，尝试从 targetUrl 中提取
-    const targetUrl = data?.['1']?.['6']?.['5']?.['1']?.['1']?.['1']?.main?.targetUrl || '';
-    const match2 = targetUrl.match(/[?&]id=(\d+)/);
-    if (match2 && match2[1]) {
-      return match2[1];
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('解析订单ID失败:', error);
-    return null;
-  }
-};
-
-// 触发自动发货
-const handleTriggerDelivery = async (record: any) => {
-  if (!selectedAccountId.value || !selectedGoods.value) {
-    showInfo('请先选择账号和商品');
-    return;
-  }
-
-  if (!record.orderId) {
-    showError('该记录没有订单ID，无法触发发货');
-    return;
-  }
-
-  // 检查发货内容是否为空
-  if (!configForm.value.autoDeliveryContent || !configForm.value.autoDeliveryContent.trim()) {
-    showError('请配置发货内容！');
-    return;
-  }
-
-  try {
-    await ElMessageBox.confirm(
-      `确认触发自动发货流程吗？订单ID: ${record.orderId}`,
-      '触发发货',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    );
-
-    const req: TriggerAutoDeliveryReq = {
-      xianyuAccountId: selectedAccountId.value,
-      xyGoodsId: selectedGoods.value.item.xyGoodId,
-      orderId: record.orderId
-    };
-
-    const response = await triggerAutoDelivery(req);
-    if (response.code === 0 || response.code === 200) {
-      showSuccess(response.data || '触发发货成功');
-      // 刷新记录列表
-      await loadDeliveryRecords();
-    } else {
-      throw new Error(response.msg || '触发发货失败');
-    }
-  } catch (error: any) {
-    if (error === 'cancel') {
-      return;
-    }
-    console.error('触发发货失败:', error);
-    showError(error.message || '触发发货失败');
-  }
-};
-
-onMounted(() => {
-  loadAccounts();
-  // 等待DOM渲染完成后添加滚动监听
-  setTimeout(() => {
-    addScrollListener();
-  }, 0);
-  // 监听窗口大小变化
-  window.addEventListener('resize', handleResize);
-  // 检测屏幕宽度
-  checkScreenSize();
-  window.addEventListener('resize', checkScreenSize);
-});
-
-onUnmounted(() => {
-  removeScrollListener();
-  window.removeEventListener('resize', handleResize);
-  window.removeEventListener('resize', checkScreenSize);
-});
+import { useAutoDelivery } from './useAutoDelivery'
+import './auto-delivery.css'
+
+import IconTruck from '@/components/icons/IconTruck.vue'
+import IconChevronDown from '@/components/icons/IconChevronDown.vue'
+import IconChevronLeft from '@/components/icons/IconChevronLeft.vue'
+import IconChevronRight from '@/components/icons/IconChevronRight.vue'
+import IconText from '@/components/icons/IconText.vue'
+import IconRobot from '@/components/icons/IconRobot.vue'
+import IconSend from '@/components/icons/IconSend.vue'
+import IconImage from '@/components/icons/IconImage.vue'
+import IconSparkle from '@/components/icons/IconSparkle.vue'
+import IconCheck from '@/components/icons/IconCheck.vue'
+import IconClock from '@/components/icons/IconClock.vue'
+import IconPackage from '@/components/icons/IconPackage.vue'
+
+import GoodsDetailDialog from '../goods/components/GoodsDetailDialog.vue'
+
+const {
+  saving,
+  accounts,
+  selectedAccountId,
+  goodsList,
+  selectedGoods,
+  currentConfig,
+  configForm,
+  goodsTotal,
+  goodsLoading,
+  goodsListRef,
+  detailDialogVisible,
+  selectedGoodsId,
+  deliveryRecords,
+  recordsLoading,
+  recordsTotal,
+  recordsPageNum,
+  recordsPageSize,
+  recordsTotalPages,
+  isMobile,
+  mobileView,
+  confirmDialog,
+  handleAccountChange,
+  selectGoods,
+  saveConfig,
+  toggleAutoDelivery,
+  loadDeliveryRecords,
+  handleRecordsPageChange,
+  viewGoodsDetail,
+  handleConfirmShipment,
+  handleTriggerDelivery,
+  handleDialogConfirm,
+  handleDialogCancel,
+  handleGoodsScroll,
+  goBackToGoods,
+  formatTime,
+  formatPrice,
+  getStatusText,
+  getStatusClass,
+  getRecordStatusText,
+  getRecordStatusClass
+} = useAutoDelivery()
 </script>
 
 <template>
-  <div class="auto-delivery-page">
-    <!-- 桌面端布局 -->
-    <template v-if="!isMobile">
-      <div class="page-header">
-        <h1 class="page-title">自动发货配置</h1>
-        <div class="header-actions">
-          <span class="account-label">选择闲鱼账号</span>
-          <el-select
+  <div class="ad">
+    <!-- Header -->
+    <div class="ad__header">
+      <div class="ad__title-row">
+        <div class="ad__title-icon">
+          <IconTruck />
+        </div>
+        <h1 class="ad__title">自动发货</h1>
+      </div>
+      <div class="ad__actions">
+        <div class="ad__select-wrap">
+          <select
             v-model="selectedAccountId"
-            placeholder="选择账号"
-            style="width: 200px"
+            class="ad__select"
             @change="handleAccountChange"
           >
-            <el-option
-              v-for="account in accounts"
-              :key="account.id"
-              :label="account.accountNote || account.unb"
-              :value="account.id"
-            />
-          </el-select>
+            <option :value="null" disabled>选择账号</option>
+            <option v-for="acc in accounts" :key="acc.id" :value="acc.id">
+              {{ acc.accountNote || acc.unb }}
+            </option>
+          </select>
+          <span class="ad__select-icon">
+            <IconChevronDown />
+          </span>
         </div>
       </div>
+    </div>
 
-      <div class="content-container">
-        <!-- 左侧商品列表 -->
-        <div class="goods-panel">
-          <el-card class="goods-card" :body-style="{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }">
-            <template #header>
-              <div class="card-header">
-                <span class="card-title">商品列表</span>
-                <span class="card-subtitle">共 {{ goodsTotal }} 件商品</span>
-              </div>
-            </template>
-
-            <div 
-              class="goods-list" 
-              v-loading="goodsLoading && goodsCurrentPage === 1"
-              ref="goodsListRef"
-            >
-              <div
-                v-for="goods in goodsList"
-                :key="goods.item.xyGoodId"
-                :id="`goods-item-${goods.item.id}-${Math.random().toString(36).substr(2, 9)}`"
-                class="goods-item"
-                :class="{ active: selectedGoods?.item.xyGoodId === goods.item.xyGoodId }"
-                @click="selectGoods(goods)"
-              >
-                <el-image
-                  :src="goods.item.coverPic"
-                  fit="cover"
-                  class="goods-image"
-                />
-                <div class="goods-info">
-                  <div class="goods-title">{{ goods.item.title }}</div>
-                  <div class="goods-meta">
-                    <span class="goods-price">{{ formatPrice(goods.item.soldPrice) }}</span>
-                    <el-tag :type="getStatusType(goods.item.status)" size="small">
-                      {{ getStatusText(goods.item.status) }}
-                    </el-tag>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 加载更多提示 -->
-              <div v-if="goodsLoading && goodsCurrentPage > 1" class="loading-more">
-                <el-icon class="is-loading"><Loading /></el-icon>
-                加载中...
-              </div>
-
-              <!-- 没有更多数据提示 -->
-              <div 
-                v-if="!goodsLoading && goodsList.length > 0 && goodsList.length >= goodsTotal" 
-                class="no-more-data"
-              >
-                已加载全部商品
-              </div>
-
-              <div v-if="goodsList.length === 0 && !goodsLoading" class="empty-goods">
-                <el-empty description="暂无商品" />
-              </div>
-            </div>
-          </el-card>
+    <!-- Body -->
+    <div class="ad__body">
+      <!-- Goods Panel -->
+      <div
+        class="ad__goods-panel"
+        :class="{ 'ad__goods-panel--hidden': isMobile && mobileView === 'config' }"
+      >
+        <div class="ad__goods-toolbar">
+          <span class="ad__goods-toolbar-title">商品列表</span>
+          <span v-if="goodsTotal > 0" class="ad__goods-toolbar-count">共 {{ goodsTotal }} 件</span>
         </div>
 
-        <!-- 右侧配置面板 -->
-        <div class="config-panel">
-          <el-card class="config-card">
-            <template #header>
-              <div class="card-header">
-                <span class="card-title">自动发货配置</span>
-                <span class="card-subtitle" v-if="!selectedGoods">
-                  请选择商品
-                </span>
-              </div>
-            </template>
-
-            <div class="config-form" v-if="selectedGoods" :class="{ 'records-expanded': recordsExpanded }">
-              <div class="config-content" v-show="!recordsExpanded">
-                <div class="goods-title-section">
-                  <div class="goods-title-text">{{ selectedGoods.item.title }}</div>
-                  <el-button
-                    type="primary"
-                    size="small"
-                    @click="viewGoodsDetail"
-                  >
-                    查看商品详情
-                  </el-button>
-                </div>
-
-                <el-form :model="configForm" label-width="100px">
-                  <el-form-item label="自动发货">
-                    <el-switch
-                      v-model="selectedGoods.xianyuAutoDeliveryOn"
-                      :active-value="1"
-                      :inactive-value="0"
-                      @change="toggleAutoDelivery"
-                    />
-                    <span class="switch-label">
-                      {{ selectedGoods.xianyuAutoDeliveryOn === 1 ? '已开启' : '已关闭' }}
-                    </span>
-                  </el-form-item>
-
-                  <el-form-item label="发货类型">
-                    <el-radio-group v-model="configForm.type">
-                      <el-radio :value="1">文本内容</el-radio>
-                      <el-radio :value="2">自定义</el-radio>
-                    </el-radio-group>
-                  </el-form-item>
-
-                  <el-form-item label="发货内容">
-                    <el-input
-                      v-model="configForm.autoDeliveryContent"
-                      type="textarea"
-                      :rows="8"
-                      placeholder="请输入自动发货内容，买家下单后将自动发送此内容"
-                      maxlength="1000"
-                      show-word-limit
-                    />
-                  </el-form-item>
-
-                  <el-form-item label="自动确认发货">
-                    <el-switch
-                      v-model="configForm.autoConfirmShipment"
-                      :active-value="1"
-                      :inactive-value="0"
-                      :disabled="selectedGoods.xianyuAutoDeliveryOn !== 1"
-                    />
-                    <span class="switch-label">
-                      {{ configForm.autoConfirmShipment === 1 ? '已开启' : '已关闭' }}
-                    </span>
-                    <div class="form-tip">
-                      {{ selectedGoods.xianyuAutoDeliveryOn === 1 
-                        ? '开启后，自动发货成功将自动确认已发货' 
-                        : '需要先开启自动发货' }}
-                    </div>
-                  </el-form-item>
-
-                  <el-form-item>
-                    <div class="save-config-container">
-                      <el-button type="primary" :loading="saving" @click="saveConfig">
-                        保存配置
-                      </el-button>
-                      <span v-if="currentConfig" class="last-update-time">
-                        上次更新: {{ formatTime(currentConfig.updateTime) }}
-                      </span>
-                    </div>
-                  </el-form-item>
-                </el-form>
-              </div>
-
-              <!-- 自动发货记录表格 -->
-              <div class="delivery-records-section">
-                <div class="records-header">
-                  <div class="records-info">
-                    <span class="records-title">自动发货记录</span>
-                    <span class="records-count">共 {{ recordsTotal }} 条记录</span>
-                  </div>
-                  <div class="records-actions">
-                    <div class="records-pagination" v-if="recordsTotal > 0 && !recordsExpanded">
-                      <el-pagination
-                        v-model:current-page="recordsPageNum"
-                        v-model:page-size="recordsPageSize"
-                        :page-sizes="[10, 20, 50, 100]"
-                        :total="recordsTotal"
-                        layout="sizes, prev, pager, next"
-                        size="small"
-                        @size-change="handleRecordsSizeChange"
-                        @current-change="handleRecordsPageChange"
-                      />
-                    </div>
-                    <el-button
-                      :icon="recordsExpanded ? 'ArrowDown' : 'ArrowUp'"
-                      size="small"
-                      @click="recordsExpanded = !recordsExpanded"
-                    >
-                      {{ recordsExpanded ? '收起' : '展开' }}
-                    </el-button>
-                  </div>
-                </div>
-                
-                <div class="records-table-wrapper" v-loading="recordsLoading">
-                  <el-table
-                    :data="deliveryRecords"
-                    stripe
-                    style="width: 100%"
-                    :max-height="recordsExpanded ? 'calc(100vh - 250px)' : 400"
-                  >
-                    <el-table-column type="index" label="序号" width="60" align="center" />
-                    <el-table-column prop="orderId" label="订单ID" width="180">
-                      <template #default="{ row }">
-                        <span class="order-id">{{ row.orderId || '-' }}</span>
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="buyerUserId" label="买家ID" width="120">
-                      <template #default="{ row }">
-                        {{ row.buyerUserId || '-' }}
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="buyerUserName" label="买家名称" width="120">
-                      <template #default="{ row }">
-                        {{ row.buyerUserName || '-' }}
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="content" label="发货内容" min-width="200">
-                      <template #default="{ row }">
-                        <div class="content-text">{{ row.content || '-' }}</div>
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="state" label="自动发货结果" width="120" align="center">
-                      <template #default="{ row }">
-                        <el-tag :type="getRecordStatusType(row.state)" size="small">
-                          {{ getRecordStatusText(row.state) }}
-                        </el-tag>
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="createTime" label="发货时间" width="180">
-                      <template #default="{ row }">
-                        {{ formatTime(row.createTime) }}
-                      </template>
-                    </el-table-column>
-                    <el-table-column label="操作" width="100" align="center">
-                      <template #default="{ row }">
-                        <el-button
-                          type="primary"
-                          size="small"
-                          @click="handleTriggerDelivery(row)"
-                        >
-                          发货
-                        </el-button>
-                      </template>
-                    </el-table-column>
-                    <template #empty>
-                      <el-empty description="暂无发货记录" :image-size="80" />
-                    </template>
-                  </el-table>
-                  
-                  <div class="pagination-container-bottom" v-if="recordsTotal > 0 && recordsExpanded">
-                    <el-pagination
-                      v-model:current-page="recordsPageNum"
-                      v-model:page-size="recordsPageSize"
-                      :page-sizes="[10, 20, 50, 100]"
-                      :total="recordsTotal"
-                      layout="total, sizes, prev, pager, next, jumper"
-                      size="small"
-                      @size-change="handleRecordsSizeChange"
-                      @current-change="handleRecordsPageChange"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div v-else class="empty-config">
-              <el-empty description="请选择左侧商品进行配置" />
-            </div>
-          </el-card>
-        </div>
-      </div>
-    </template>
-
-    <!-- 手机端布局 -->
-    <template v-else>
-      <!-- 手机端商品列表视图 -->
-      <div v-show="mobileView === 'goods'" class="mobile-goods-view">
-        <div class="mobile-header">
-          <h1 class="mobile-title">自动发货</h1>
-          <el-select
-            v-model="selectedAccountId"
-            placeholder="选择账号"
-            size="small"
-            style="width: 120px"
-            @change="handleAccountChange"
-          >
-            <el-option
-              v-for="account in accounts"
-              :key="account.id"
-              :label="account.accountNote || account.unb"
-              :value="account.id"
-            />
-          </el-select>
-        </div>
-        
-        <div class="mobile-goods-list-title">
-          <span>商品列表</span>
-          <span class="goods-count">共 {{ goodsTotal }} 件</span>
-        </div>
-        
-        <div 
-          v-loading="goodsLoading && goodsCurrentPage === 1"
-          ref="goodsListRef" 
-          class="mobile-goods-list"
+        <div
+          class="ad__goods-list"
+          ref="goodsListRef"
+          @scroll="handleGoodsScroll"
         >
-          <div 
-            v-for="goods in goodsList" 
-            :key="goods.item.id"
-            class="mobile-goods-item"
+          <!-- Loading first page -->
+          <div v-if="goodsLoading && goodsList.length === 0" class="ad__loading">
+            <div class="ad__spinner"></div>
+            <span>加载中...</span>
+          </div>
+
+          <!-- Goods items -->
+          <div
+            v-for="goods in goodsList"
+            :key="goods.item.xyGoodId"
+            class="ad__goods-item"
+            :class="{ 'ad__goods-item--active': selectedGoods?.item.xyGoodId === goods.item.xyGoodId }"
             @click="selectGoods(goods)"
           >
-            <img 
-              :src="goods.item.coverPic" 
+            <img
+              :src="goods.item.coverPic"
               :alt="goods.item.title"
-              class="mobile-goods-cover"
-            >
-            <div class="mobile-goods-info">
-              <div class="mobile-goods-title">{{ goods.item.title }}</div>
-              <div class="mobile-goods-meta">
-                <span class="mobile-goods-price">{{ formatPrice(goods.item.soldPrice) }}</span>
-                <el-tag :type="getStatusType(goods.item.status)" size="small">
+              class="ad__goods-cover"
+            />
+            <div class="ad__goods-info">
+              <div class="ad__goods-title">{{ goods.item.title }}</div>
+              <div class="ad__goods-meta">
+                <span class="ad__goods-price">{{ formatPrice(goods.item.soldPrice) }}</span>
+                <span
+                  class="ad__goods-status"
+                  :class="`ad__goods-status--${getStatusClass(goods.item.status)}`"
+                >
                   {{ getStatusText(goods.item.status) }}
-                </el-tag>
+                </span>
+                <span
+                  v-if="goods.xianyuAutoDeliveryOn === 1"
+                  class="ad__goods-auto-badge ad__goods-auto-badge--on"
+                >
+                  <IconSparkle />
+                  自动
+                </span>
               </div>
             </div>
           </div>
-          
-          <!-- 加载更多提示 -->
-          <div v-if="goodsLoading && goodsCurrentPage > 1" class="loading-more">
-            <el-icon class="is-loading"><Loading /></el-icon>
-            加载中...
+
+          <!-- Loading more -->
+          <div v-if="goodsLoading && goodsList.length > 0" class="ad__loading">
+            <div class="ad__spinner"></div>
+            <span>加载中...</span>
           </div>
-          
-          <!-- 没有更多数据提示 -->
-          <div 
-            v-if="!goodsLoading && goodsList.length > 0 && goodsList.length >= goodsTotal" 
-            class="no-more-data"
+
+          <!-- No more data -->
+          <div
+            v-if="!goodsLoading && goodsList.length > 0 && goodsList.length >= goodsTotal"
+            class="ad__no-more"
           >
-            已加载全部商品
+            已加载全部
           </div>
-          
-          <el-empty
-            v-if="!goodsLoading && goodsList.length === 0"
-            description="暂无商品数据"
-            :image-size="80"
-          />
+
+          <!-- Empty -->
+          <div v-if="!goodsLoading && goodsList.length === 0" class="ad__empty">
+            <IconPackage />
+            <span class="ad__empty-text">暂无商品</span>
+          </div>
         </div>
       </div>
 
-      <!-- 手机端配置视图 -->
-      <div v-show="mobileView === 'config'" class="mobile-config-view">
-        <div class="mobile-header">
-          <el-button 
-            :icon="ArrowLeft" 
-            size="small" 
-            @click="goBackToGoods"
-          >
+      <!-- Config Panel -->
+      <div
+        class="ad__config-panel"
+        :class="{ 'ad__config-panel--hidden': isMobile && mobileView === 'goods' }"
+      >
+        <!-- Mobile back button -->
+        <div v-if="isMobile && selectedGoods" class="ad__config-header">
+          <button class="ad__back-btn" @click="goBackToGoods">
+            <IconChevronLeft />
             返回
-          </el-button>
-          <div class="mobile-selected-goods" v-if="selectedGoods">
-            <img :src="selectedGoods.item.coverPic" class="selected-goods-cover">
-            <span class="selected-goods-title">{{ selectedGoods.item.title }}</span>
+          </button>
+          <img
+            v-if="selectedGoods"
+            :src="selectedGoods.item.coverPic"
+            :alt="selectedGoods.item.title"
+            class="ad__config-goods-cover"
+          />
+          <div class="ad__config-goods-info">
+            <div class="ad__config-goods-title">{{ selectedGoods.item.title }}</div>
+            <div class="ad__config-goods-sub">{{ formatPrice(selectedGoods.item.soldPrice) }}</div>
           </div>
         </div>
-        
-        <div class="mobile-config-content" v-if="selectedGoods">
-          <!-- 配置表单 -->
-          <div class="mobile-config-form">
-            <div class="config-item">
-              <div class="config-label">自动发货</div>
-              <div class="config-value">
-                <el-switch
-                  v-model="selectedGoods.xianyuAutoDeliveryOn"
-                  :active-value="1"
-                  :inactive-value="0"
-                  @change="toggleAutoDelivery"
-                />
-                <span class="switch-text">
-                  {{ selectedGoods.xianyuAutoDeliveryOn === 1 ? '已开启' : '已关闭' }}
-                </span>
+
+        <!-- Desktop config header -->
+        <div v-if="!isMobile && selectedGoods" class="ad__config-header">
+          <img
+            :src="selectedGoods.item.coverPic"
+            :alt="selectedGoods.item.title"
+            class="ad__config-goods-cover"
+          />
+          <div class="ad__config-goods-info">
+            <div class="ad__config-goods-title">{{ selectedGoods.item.title }}</div>
+            <div class="ad__config-goods-sub">{{ formatPrice(selectedGoods.item.soldPrice) }}</div>
+          </div>
+          <button class="btn btn--ghost btn--sm" @click="viewGoodsDetail">
+            <IconImage />
+            <span class="mobile-hidden">详情</span>
+          </button>
+        </div>
+
+        <!-- Empty state -->
+        <div v-if="!selectedGoods" class="ad__config-empty">
+          <IconPackage />
+          <span class="ad__config-empty-text">选择商品以配置自动发货</span>
+        </div>
+
+        <!-- Config content -->
+        <div v-if="selectedGoods" class="ad__config-scroll">
+          <!-- Delivery Toggle Section -->
+          <div class="ad__config-section">
+            <div class="ad__config-section-title">发货设置</div>
+
+            <div class="ad__toggle-row">
+              <div class="ad__toggle-info">
+                <div class="ad__toggle-label">自动发货</div>
+                <div class="ad__toggle-hint">买家下单后自动发送发货内容</div>
               </div>
+              <label class="ad__switch">
+                <input
+                  type="checkbox"
+                  :checked="selectedGoods.xianyuAutoDeliveryOn === 1"
+                  @change="toggleAutoDelivery(($event.target as HTMLInputElement).checked)"
+                />
+                <span class="ad__switch-track"></span>
+                <span class="ad__switch-thumb"></span>
+              </label>
             </div>
-            
-            <div class="config-item">
-              <div class="config-label">发货类型</div>
-              <el-radio-group v-model="configForm.type" size="small">
-                <el-radio :value="1">文本内容</el-radio>
-                <el-radio :value="2">自定义</el-radio>
-              </el-radio-group>
-            </div>
-            
-            <div class="config-item">
-              <div class="config-label">发货内容</div>
-              <el-input
-                v-model="configForm.autoDeliveryContent"
-                type="textarea"
-                :rows="6"
-                placeholder="请输入自动发货内容"
-                maxlength="1000"
-                show-word-limit
-              />
-            </div>
-            
-            <div class="config-item">
-              <div class="config-label">自动确认发货</div>
-              <div class="config-value">
-                <el-switch
-                  v-model="configForm.autoConfirmShipment"
-                  :active-value="1"
-                  :inactive-value="0"
+
+            <div class="ad__toggle-row">
+              <div class="ad__toggle-info">
+                <div class="ad__toggle-label">自动确认发货</div>
+                <div class="ad__toggle-hint">
+                  {{ selectedGoods.xianyuAutoDeliveryOn === 1
+                    ? '发货成功后自动确认已发货'
+                    : '需先开启自动发货' }}
+                </div>
+              </div>
+              <label class="ad__switch">
+                <input
+                  type="checkbox"
+                  :checked="configForm.autoConfirmShipment === 1"
                   :disabled="selectedGoods.xianyuAutoDeliveryOn !== 1"
+                  @change="configForm.autoConfirmShipment = ($event.target as HTMLInputElement).checked ? 1 : 0"
                 />
-                <span class="switch-text">
-                  {{ configForm.autoConfirmShipment === 1 ? '已开启' : '已关闭' }}
-                </span>
-              </div>
-            </div>
-            
-            <div class="config-actions">
-              <el-button type="primary" :loading="saving" @click="saveConfig" style="width: 100%">
-                保存配置
-              </el-button>
-              <el-button @click="viewGoodsDetail" style="width: 100%">
-                查看商品详情
-              </el-button>
+                <span class="ad__switch-track"></span>
+                <span class="ad__switch-thumb"></span>
+              </label>
             </div>
           </div>
-          
-          <!-- 发货记录 -->
-          <div class="mobile-records-section">
-            <div class="mobile-records-header">
-              <span>发货记录</span>
-              <span class="records-count">共 {{ recordsTotal }} 条</span>
-            </div>
-            
-            <div class="mobile-records-list" v-loading="recordsLoading">
-              <div 
-                v-for="record in deliveryRecords" 
-                :key="record.id"
-                class="mobile-record-card"
+
+          <!-- Content Type Section -->
+          <div class="ad__config-section">
+            <div class="ad__config-section-title">发货内容</div>
+
+            <div class="ad__radio-group" style="margin-bottom: 12px;">
+              <button
+                class="ad__radio-btn"
+                :class="{ 'ad__radio-btn--active': configForm.type === 1 }"
+                @click="configForm.type = 1"
               >
-                <div class="record-header">
-                  <el-tag :type="getRecordStatusType(record.state)" size="small">
+                <IconText />
+                文本内容
+              </button>
+              <button
+                class="ad__radio-btn"
+                :class="{ 'ad__radio-btn--active': configForm.type === 2 }"
+                @click="configForm.type = 2"
+              >
+                <IconRobot />
+                自定义
+              </button>
+            </div>
+
+            <textarea
+              v-model="configForm.autoDeliveryContent"
+              class="ad__textarea"
+              placeholder="请输入自动发货内容，买家下单后将自动发送此内容"
+              maxlength="1000"
+            ></textarea>
+            <div class="ad__textarea-footer">
+              <span class="ad__textarea-hint">支持文本、链接、卡密等内容</span>
+              <span class="ad__textarea-count">{{ configForm.autoDeliveryContent.length }} / 1000</span>
+            </div>
+
+            <div class="ad__save-row">
+              <button
+                class="btn btn--primary"
+                :class="{ 'btn--loading': saving }"
+                :disabled="saving"
+                @click="saveConfig"
+              >
+                <IconCheck />
+                保存配置
+              </button>
+              <span v-if="currentConfig" class="ad__save-time">
+                更新于 {{ formatTime(currentConfig.updateTime) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Records Section -->
+          <div class="ad__records">
+            <div class="ad__records-header">
+              <div class="ad__records-title-row">
+                <IconClock style="width:16px;height:16px;color:var(--d-text-tertiary)" />
+                <span class="ad__records-title">发货记录</span>
+                <span v-if="recordsTotal > 0" class="ad__records-count">共 {{ recordsTotal }} 条</span>
+              </div>
+            </div>
+
+            <!-- Records Loading -->
+            <div v-if="recordsLoading" class="ad__loading">
+              <div class="ad__spinner"></div>
+              <span>加载中...</span>
+            </div>
+
+            <!-- Desktop Table -->
+            <table v-if="!isMobile && !recordsLoading && deliveryRecords.length > 0" class="ad__records-table">
+              <thead>
+                <tr>
+                  <th>订单ID</th>
+                  <th>买家</th>
+                  <th>发货内容</th>
+                  <th>状态</th>
+                  <th>时间</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="record in deliveryRecords" :key="record.id">
+                  <td>
+                    <span class="ad__record-order-id">{{ record.orderId || '-' }}</span>
+                  </td>
+                  <td>{{ record.buyerUserName || '-' }}</td>
+                  <td>
+                    <span class="ad__record-content" :title="record.content">{{ record.content || '-' }}</span>
+                  </td>
+                  <td>
+                    <span
+                      class="ad__record-status"
+                      :class="`ad__record-status--${getRecordStatusClass(record.state)}`"
+                    >
+                      {{ getRecordStatusText(record.state) }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="ad__record-time">{{ formatTime(record.createTime) }}</span>
+                  </td>
+                  <td>
+                    <button
+                      class="ad__record-action-btn"
+                      @click="handleTriggerDelivery(record)"
+                    >
+                      发货
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Mobile Record Cards -->
+            <div v-if="isMobile && !recordsLoading && deliveryRecords.length > 0">
+              <div
+                v-for="record in deliveryRecords"
+                :key="record.id"
+                class="ad__record-card"
+              >
+                <div class="ad__record-card-header">
+                  <span
+                    class="ad__record-status"
+                    :class="`ad__record-status--${getRecordStatusClass(record.state)}`"
+                  >
                     {{ getRecordStatusText(record.state) }}
-                  </el-tag>
-                  <span class="record-time">{{ formatTime(record.createTime) }}</span>
+                  </span>
+                  <span class="ad__record-time">{{ formatTime(record.createTime) }}</span>
                 </div>
-                
-                <div class="record-info">
-                  <div class="record-row">
-                    <span class="record-label">订单ID：</span>
-                    <span class="record-value">{{ record.orderId || '-' }}</span>
-                  </div>
-                  <div class="record-row">
-                    <span class="record-label">买家：</span>
-                    <span class="record-value">{{ record.buyerUserName || '-' }}</span>
-                  </div>
-                  <div class="record-row">
-                    <span class="record-label">内容：</span>
-                    <span class="record-value">{{ record.content || '-' }}</span>
-                  </div>
+                <div class="ad__record-card-row">
+                  <span class="ad__record-card-label">订单：</span>
+                  <span class="ad__record-card-value">{{ record.orderId || '-' }}</span>
                 </div>
-                
-                <div class="record-footer">
-                  <el-button
-                    type="primary"
-                    size="small"
+                <div class="ad__record-card-row">
+                  <span class="ad__record-card-label">买家：</span>
+                  <span class="ad__record-card-value">{{ record.buyerUserName || '-' }}</span>
+                </div>
+                <div class="ad__record-card-row">
+                  <span class="ad__record-card-label">内容：</span>
+                  <span class="ad__record-card-value">{{ record.content || '-' }}</span>
+                </div>
+                <div class="ad__record-card-footer">
+                  <button
+                    class="ad__record-action-btn"
                     @click="handleTriggerDelivery(record)"
                   >
                     发货
-                  </el-button>
+                  </button>
                 </div>
               </div>
-              
-              <el-empty
-                v-if="!recordsLoading && deliveryRecords.length === 0"
-                description="暂无发货记录"
-                :image-size="60"
-              />
             </div>
-            
-            <!-- 手机端分页 -->
-            <div class="mobile-pagination" v-if="recordsTotal > 0">
-              <el-pagination
-                v-model:current-page="recordsPageNum"
-                :page-size="recordsPageSize"
-                :total="recordsTotal"
-                layout="prev, pager, next"
-                small
-                @current-change="handleRecordsPageChange"
-              />
+
+            <!-- Records Empty -->
+            <div v-if="!recordsLoading && deliveryRecords.length === 0" class="ad__empty">
+              <IconSend />
+              <span class="ad__empty-text">暂无发货记录</span>
+            </div>
+
+            <!-- Records Pagination -->
+            <div v-if="recordsTotalPages > 1" class="ad__pagination">
+              <button
+                class="ad__page-btn"
+                :class="{ 'ad__page-btn--disabled': recordsPageNum <= 1 }"
+                @click="handleRecordsPageChange(recordsPageNum - 1)"
+              >
+                <IconChevronLeft />
+              </button>
+
+              <template v-for="page in (() => {
+                const btns: number[] = []
+                const max = 5
+                let start = Math.max(1, recordsPageNum - Math.floor(max / 2))
+                const end = Math.min(recordsTotalPages, start + max - 1)
+                start = Math.max(1, end - max + 1)
+                for (let i = start; i <= end; i++) btns.push(i)
+                return btns
+              })()" :key="page">
+                <button
+                  class="ad__page-btn"
+                  :class="{ 'ad__page-btn--active': page === recordsPageNum }"
+                  @click="handleRecordsPageChange(page)"
+                >
+                  {{ page }}
+                </button>
+              </template>
+
+              <button
+                class="ad__page-btn"
+                :class="{ 'ad__page-btn--disabled': recordsPageNum >= recordsTotalPages }"
+                @click="handleRecordsPageChange(recordsPageNum + 1)"
+              >
+                <IconChevronRight />
+              </button>
+
+              <span class="ad__page-info">{{ recordsPageNum }} / {{ recordsTotalPages }}</span>
             </div>
           </div>
         </div>
       </div>
-    </template>
+    </div>
 
-    <!-- 商品详情对话框 -->
+    <!-- Goods Detail Dialog -->
     <GoodsDetailDialog
       v-model="detailDialogVisible"
       :goods-id="selectedGoodsId"
       :account-id="selectedAccountId"
     />
+
+    <!-- Confirm Dialog -->
+    <Transition name="overlay-fade">
+      <div
+        v-if="confirmDialog.visible"
+        class="ad__dialog-overlay"
+        @click.self="handleDialogCancel"
+      >
+        <div class="ad__dialog">
+          <div class="ad__dialog-header">
+            <h3 class="ad__dialog-title">{{ confirmDialog.title }}</h3>
+          </div>
+          <div class="ad__dialog-body">
+            <p class="ad__dialog-text">{{ confirmDialog.message }}</p>
+          </div>
+          <div class="ad__dialog-footer">
+            <button
+              class="ad__dialog-btn ad__dialog-btn--cancel"
+              @click="handleDialogCancel"
+            >
+              取消
+            </button>
+            <button
+              class="ad__dialog-btn"
+              :class="confirmDialog.type === 'danger' ? 'ad__dialog-btn--danger' : 'ad__dialog-btn--primary'"
+              @click="handleDialogConfirm"
+            >
+              确定
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <style scoped>
-.auto-delivery-page {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  padding: 15px;
+.overlay-fade-enter-active,
+.overlay-fade-leave-active {
+  transition: opacity 0.2s ease;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.page-title {
-  font-size: 22px;
-  font-weight: 600;
-  color: #303133;
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.account-label {
-  font-size: 14px;
-  color: #606266;
-  font-weight: 500;
-}
-
-.content-container {
-  flex: 1;
-  display: flex;
-  gap: 15px;
-  min-height: 0;
-}
-
-.goods-panel {
-  flex: 1;
-  min-width: 0;
-  max-width: 400px;
-}
-
-.config-panel {
-  flex: 2;
-  min-width: 0;
-}
-
-.goods-card,
-.config-card {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.card-title {
-  font-size: 17px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.card-subtitle {
-  font-size: 13px;
-  color: #909399;
-}
-
-.goods-list {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  min-height: 0;
-  padding-right: 5px;
-}
-
-/* 隐藏滚动条但保持滚动功能 */
-.goods-list::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-}
-
-.goods-list {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-
-.goods-item {
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  border: 1px solid #ebeef5;
-  border-radius: 3px;
-  margin-bottom: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.goods-item:hover {
-  background-color: #f5f7fa;
-  border-color: #c0c4cc;
-}
-
-.goods-item.active {
-  background-color: #ecf5ff;
-  border-color: #409eff;
-}
-
-.goods-image {
-  width: 50px;
-  height: 50px;
-  border-radius: 3px;
-  margin-right: 10px;
-  flex-shrink: 0;
-}
-
-.goods-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.goods-title {
-  font-size: 13px;
-  font-weight: 500;
-  color: #303133;
-  margin-bottom: 6px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.goods-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.goods-price {
-  font-size: 15px;
-  font-weight: 600;
-  color: #f56c6c;
-}
-
-.loading-more {
-  text-align: center;
-  padding: 12px;
-  color: #909399;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.no-more-data {
-  text-align: center;
-  padding: 12px;
-  color: #c0c4cc;
-  font-size: 13px;
-}
-
-.empty-goods,
-.empty-config {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
-}
-
-.config-form {
-  padding: 0;
-}
-
-.config-content {
-  margin-bottom: 20px;
-}
-
-.goods-title-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 15px;
-  padding-top: 5px;
-}
-
-.goods-title-text {
-  flex: 1;
-  font-size: 15px;
-  font-weight: 500;
-  color: #303133;
-  line-height: 1.5;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.config-form .el-form-item:first-child {
-  margin-bottom: 20px;
-}
-
-.config-time {
-  color: #909399;
-  font-size: 13px;
-}
-
-.switch-label {
-  margin-left: 10px;
-  font-size: 14px;
-  color: #606266;
-}
-
-.form-tip {
-  margin-left: 10px;
-  font-size: 12px;
-  color: #909399;
-  line-height: 1.5;
-}
-
-.save-config-container {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.last-update-time {
-  font-size: 12px;
-  color: #909399;
-}
-
-.delivery-records-section {
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 1px solid #ebeef5;
-}
-
-.config-form.records-expanded .delivery-records-section {
-  margin-top: 0;
-  padding-top: 0;
-  border-top: none;
-}
-
-.records-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  gap: 15px;
-}
-
-.records-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.records-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.records-count {
-  font-size: 13px;
-  color: #909399;
-}
-
-.records-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.records-pagination {
-  flex-shrink: 0;
-}
-
-.records-table-wrapper {
-  border: 1px solid #ebeef5;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 15px;
-}
-
-.config-form.records-expanded .records-table-wrapper {
-  margin-bottom: 0;
-}
-
-.pagination-container-bottom {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 12px 15px;
-  background-color: #fafafa;
-  border-top: 1px solid #ebeef5;
-  flex-shrink: 0;
-}
-
-.buyer-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.buyer-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: #303133;
-}
-
-.buyer-id {
-  font-size: 12px;
-  color: #909399;
-}
-
-.content-text {
-  font-size: 13px;
-  color: #606266;
-  line-height: 1.5;
-  word-break: break-all;
-}
-
-.order-id {
-  font-family: 'Courier New', monospace;
-  font-size: 13px;
-  color: #409eff;
-  font-weight: 500;
-}
-
-/* 手机端样式 */
-.mobile-goods-view,
-.mobile-config-view {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.mobile-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 15px;
-  background: #fff;
-  border-bottom: 1px solid #ebeef5;
-  gap: 10px;
-}
-
-.mobile-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
-  margin: 0;
-}
-
-.mobile-goods-list-title {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 15px;
-  background: #f5f7fa;
-  font-size: 14px;
-  font-weight: 500;
-  color: #606266;
-}
-
-.goods-count {
-  font-size: 12px;
-  color: #909399;
-}
-
-.mobile-goods-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 10px;
-  padding-bottom: 20px; /* 增加底部内边距，防止内容被遮挡 */
-}
-
-/* 隐藏手机端滚动条 */
-.mobile-goods-list::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-}
-
-.mobile-goods-list {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-
-.mobile-goods-item {
-  display: flex;
-  align-items: center;
-  padding: 12px;
-  background: #fff;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  gap: 12px;
-}
-
-.mobile-goods-item:active {
-  background: #f5f7fa;
-}
-
-.mobile-goods-cover {
-  width: 60px;
-  height: 60px;
-  border-radius: 6px;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.mobile-goods-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.mobile-goods-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: #303133;
-  margin-bottom: 6px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.mobile-goods-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.mobile-goods-price {
-  font-size: 15px;
-  font-weight: 600;
-  color: #f56c6c;
-}
-
-.mobile-selected-goods {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.selected-goods-cover {
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.selected-goods-title {
-  flex: 1;
-  font-size: 14px;
-  font-weight: 500;
-  color: #303133;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.mobile-config-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 10px;
-  padding-bottom: 20px; /* 增加底部内边距，防止内容被遮挡 */
-}
-
-/* 隐藏手机端配置内容滚动条 */
-.mobile-config-content::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-}
-
-.mobile-config-content {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-
-.mobile-config-form {
-  background: #fff;
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 10px;
-}
-
-.config-item {
-  margin-bottom: 15px;
-}
-
-.config-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #606266;
-  margin-bottom: 8px;
-}
-
-.config-value {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.switch-text {
-  font-size: 13px;
-  color: #909399;
-}
-
-.config-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.mobile-records-section {
-  background: #fff;
-  border-radius: 8px;
-  padding: 15px;
-}
-
-.mobile-records-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
-  font-weight: 500;
-  color: #606266;
-  margin-bottom: 12px;
-}
-
-.records-count {
-  font-size: 12px;
-  color: #909399;
-}
-
-.mobile-records-list {
-  min-height: 100px;
-}
-
-.mobile-record-card {
-  background: #f5f7fa;
-  border-radius: 6px;
-  padding: 12px;
-  margin-bottom: 10px;
-}
-
-.record-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.record-time {
-  font-size: 12px;
-  color: #909399;
-}
-
-.record-info {
-  margin-bottom: 8px;
-}
-
-.record-row {
-  display: flex;
-  font-size: 13px;
-  margin-bottom: 4px;
-}
-
-.record-label {
-  color: #909399;
-  flex-shrink: 0;
-}
-
-.record-value {
-  color: #606266;
-  word-break: break-all;
-}
-
-.record-footer {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.mobile-pagination {
-  padding: 10px 0;
-  display: flex;
-  justify-content: center;
+.overlay-fade-enter-from,
+.overlay-fade-leave-to {
+  opacity: 0;
 }
 </style>

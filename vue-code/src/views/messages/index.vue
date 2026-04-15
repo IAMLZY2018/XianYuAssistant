@@ -1,1235 +1,633 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
-import { Loading, ArrowLeft } from '@element-plus/icons-vue';
-import { getAccountList } from '@/api/account';
-import { getMessageList } from '@/api/message';
-import { getGoodsList } from '@/api/goods';
-import { sendMessage } from '@/api/websocket';
-import { showError, showInfo, showSuccess } from '@/utils';
-import type { Account } from '@/types';
-import type { ChatMessage } from '@/api/message';
-import type { GoodsItemWithConfig } from '@/api/goods';
+import { onMounted, onBeforeUnmount, ref, computed } from 'vue'
+import { useMessageManager } from './useMessageManager'
+import './messages.css'
 
-const loading = ref(false);
-const accounts = ref<Account[]>([]);
-const selectedAccountId = ref<number | null>(null);
-const goodsIdFilter = ref<string>('');
-const messageList = ref<ChatMessage[]>([]);
-const currentPage = ref(1);
-const pageSize = ref(20);
-const total = ref(0);
-const filterCurrentAccount = ref(false); // 过滤当前账号消息开关
+import IconMessage from '@/components/icons/IconMessage.vue'
+import IconRefresh from '@/components/icons/IconRefresh.vue'
+import IconChevronDown from '@/components/icons/IconChevronDown.vue'
+import IconChevronLeft from '@/components/icons/IconChevronLeft.vue'
+import IconChevronRight from '@/components/icons/IconChevronRight.vue'
+import IconSend from '@/components/icons/IconSend.vue'
 
-// 商品列表相关
-const goodsList = ref<GoodsItemWithConfig[]>([]);
-const goodsCurrentPage = ref(1);
-const goodsTotal = ref(0);
-const goodsLoading = ref(false);
-const goodsListRef = ref<HTMLElement | null>(null);
+import GoodsSidebar from './components/GoodsSidebar.vue'
+import MessageList from './components/MessageList.vue'
 
-// 快速回复相关
-const quickReplyDialogVisible = ref(false);
-const quickReplyMessage = ref('');
-const quickReplySending = ref(false);
-const currentReplyMessage = ref<ChatMessage | null>(null);
+const {
+  loading,
+  accounts,
+  selectedAccountId,
+  goodsIdFilter,
+  messageList,
+  currentPage,
+  pageSize,
+  total,
+  totalPages,
+  filterCurrentAccount,
+  goodsList,
+  goodsTotal,
+  goodsLoading,
+  goodsListRef,
+  quickReplyVisible,
+  quickReplyMessage,
+  quickReplySending,
+  currentReplyMessage,
+  isMobile,
+  mobileView,
+  selectedGoodsForMobile,
+  loadAccounts,
+  loadMessages,
+  loadGoodsList,
+  handleGoodsScroll,
+  handleAccountChange,
+  selectGoods,
+  goBackToGoods,
+  clearFilter,
+  handlePageChange,
+  openQuickReply,
+  handleQuickReply,
+  isUserMessage,
+  getContentTypeText,
+  getContentTypeColor,
+  getContentTypeBg,
+  formatMessageTime
+} = useMessageManager()
 
-// 手机端适配
-const isMobile = ref(false);
-const mobileView = ref<'goods' | 'messages'>('goods'); // 手机端当前视图：商品列表或消息列表
-const selectedGoodsForMobile = ref<GoodsItemWithConfig | null>(null); // 手机端选中的商品
-
-// 检测屏幕宽度
-const checkScreenSize = () => {
-  isMobile.value = window.innerWidth < 768;
-  // 如果切换到桌面端，重置手机端视图状态
-  if (!isMobile.value) {
-    mobileView.value = 'goods';
+// 分页按钮
+const getPageButtons = () => {
+  const buttons: number[] = []
+  const maxVisible = 5
+  let start = Math.max(1, currentPage.value - Math.floor(maxVisible / 2))
+  const end = Math.min(totalPages.value, start + maxVisible - 1)
+  start = Math.max(1, end - maxVisible + 1)
+  for (let i = start; i <= end; i++) {
+    buttons.push(i)
   }
-};
+  return buttons
+}
 
-// 获取当前选中账号的UNB
-const getCurrentAccountUnb = computed(() => {
-  if (!selectedAccountId.value) return '';
-  const account = accounts.value.find(acc => acc.id === selectedAccountId.value);
-  return account ? account.unb : '';
-});
+// 手机端商品列表滚动容器
+const mobileGoodsRef = ref<HTMLElement | null>(null)
 
-// 加载账号列表
-const loadAccounts = async () => {
-  try {
-    const response = await getAccountList();
-    if (response.code === 0 || response.code === 200) {
-      accounts.value = response.data?.accounts || [];
-      // 默认选择第一个账号
-      if (accounts.value.length > 0 && !selectedAccountId.value) {
-        selectedAccountId.value = accounts.value[0]?.id ?? null;
-        loadMessages();
-        loadGoodsList();
-      }
-    }
-  } catch (error: any) {
-    console.error('加载账号列表失败:', error);
-  }
-};
-
-// 加载消息列表
-const loadMessages = async () => {
-  if (!selectedAccountId.value) {
-    showInfo('请先选择账号');
-    return;
-  }
-
-  loading.value = true;
-  try {
-    const params: any = {
-      xianyuAccountId: selectedAccountId.value,
-      pageNum: currentPage.value,
-      pageSize: pageSize.value,
-      filterCurrentAccount: filterCurrentAccount.value // 添加过滤参数
-    };
-
-    if (goodsIdFilter.value) {
-      params.xyGoodsId = goodsIdFilter.value;
-    }
-
-    const response = await getMessageList(params);
-    if (response.code === 0 || response.code === 200) {
-      messageList.value = response.data?.list || [];
-      total.value = response.data?.totalCount || 0;
-    } else {
-      throw new Error(response.msg || '获取消息列表失败');
-    }
-  } catch (error: any) {
-    console.error('加载消息列表失败:', error);
-    messageList.value = [];
-  } finally {
-    loading.value = false;
-  }
-};
-
-// 加载商品列表
-const loadGoodsList = async () => {
-  if (!selectedAccountId.value) {
-    return;
-  }
-
-  goodsLoading.value = true;
-  try {
-    const params: any = {
-      xianyuAccountId: selectedAccountId.value,
-      pageNum: goodsCurrentPage.value,
-      pageSize: 20  // 每次加载20条
-    };
-
-    const response = await getGoodsList(params);
-    if (response.code === 0 || response.code === 200) {
-      // 如果是第一页，则替换列表，否则追加到列表末尾
-      if (goodsCurrentPage.value === 1) {
-        goodsList.value = response.data?.itemsWithConfig || [];
-      } else {
-        goodsList.value.push(...(response.data?.itemsWithConfig || []));
-      }
-      goodsTotal.value = response.data?.totalCount || 0;
-
-      // 检查是否需要继续加载（当内容不足以触发滚动时）
-      checkAndLoadMore();
-    } else {
-      throw new Error(response.msg || '获取商品列表失败');
-    }
-  } catch (error: any) {
-    console.error('加载商品列表失败:', error);
-    goodsList.value = [];
-  } finally {
-    goodsLoading.value = false;
-  }
-};
-
-// 检查是否需要继续加载更多数据
-const checkAndLoadMore = () => {
-  nextTick(() => {
-    if (!goodsListRef.value) return;
-
-    const { scrollHeight, clientHeight } = goodsListRef.value;
-    console.log('检查是否需要加载更多:', {
-      scrollHeight,
-      clientHeight,
-      hasScroll: scrollHeight > clientHeight,
-      currentCount: goodsList.value.length,
-      totalCount: goodsTotal.value
-    });
-
-    // 如果内容高度小于容器高度，且还有更多数据，则继续加载
-    if (scrollHeight <= clientHeight && goodsList.value.length < goodsTotal.value) {
-      console.log('内容不足以触发滚动，自动加载更多');
-      goodsCurrentPage.value++;
-      loadGoodsList();
-    }
-  });
-};
-
-// 处理商品列表滚动事件
-const handleGoodsScroll = () => {
-  if (!goodsListRef.value || goodsLoading.value) return;  // 如果正在加载，则不触发
-
-  const { scrollTop, scrollHeight, clientHeight } = goodsListRef.value;
-
-  // 调试日志
-  console.log('滚动事件触发:', {
-    scrollTop,
-    scrollHeight,
-    clientHeight,
-    currentCount: goodsList.value.length,
-    totalCount: goodsTotal.value,
-    isLoading: goodsLoading.value
-  });
-
-  // 当滚动到底部时加载更多（距离底部50px时触发）
+const handleMobileGoodsScroll = () => {
+  if (!mobileGoodsRef.value || goodsLoading.value) return
+  const { scrollTop, scrollHeight, clientHeight } = mobileGoodsRef.value
   if (scrollTop + clientHeight >= scrollHeight - 50) {
     if (goodsList.value.length < goodsTotal.value) {
-      console.log('触发加载更多');
-      goodsCurrentPage.value++;
-      loadGoodsList();
+      loadGoodsList()
     }
   }
-};
+}
 
-// 监听滚动事件
-const addScrollListener = () => {
-  nextTick(() => {
-    if (goodsListRef.value) {
-      console.log('添加滚动监听器');
-      goodsListRef.value.addEventListener('scroll', handleGoodsScroll);
-    } else {
-      console.error('goodsListRef.value 为空，无法添加滚动监听');
-    }
-  });
-};
-
-// 移除滚动监听
-const removeScrollListener = () => {
-  if (goodsListRef.value) {
-    console.log('移除滚动监听器');
-    goodsListRef.value.removeEventListener('scroll', handleGoodsScroll);
-  }
-};
-
-// 账号变更
-const handleAccountChange = () => {
-  currentPage.value = 1;
-  goodsCurrentPage.value = 1;
-  loadMessages();
-  loadGoodsList();
-};
-
-// 选择商品进行筛选
-const selectGoods = (goodsId: string, goods?: GoodsItemWithConfig) => {
-  // 如果点击的是已选中的商品，则取消筛选
-  if (goodsIdFilter.value === goodsId) {
-    clearFilter();
-  } else {
-    goodsIdFilter.value = goodsId;
-    showInfo('已筛选该商品的消息');
-    currentPage.value = 1;
-    loadMessages();
-    
-    // 手机端：记录选中的商品并切换到消息视图
-    if (isMobile.value && goods) {
-      selectedGoodsForMobile.value = goods;
-      mobileView.value = 'messages';
-    }
-  }
-};
-
-// 手机端返回商品列表
-const goBackToGoods = () => {
-  mobileView.value = 'goods';
-};
-
-// 清除筛选
-const clearFilter = () => {
-  goodsIdFilter.value = '';
-  showInfo('已取消筛选，显示全部消息');
-  currentPage.value = 1;
-  loadMessages();
-};
-
-// 分页变更
-const handlePageChange = (page: number) => {
-  currentPage.value = page;
-  loadMessages();
-};
-
-// 获取消息类型文本
-const getContentTypeText = (contentType: number, row: ChatMessage) => {
-  // 如果是当前账号发送的消息，显示"你发送的"
-  if (!isUserMessage(row)) {
-    return '你发送的';
-  }
-  
-  // contentType=1 是用户消息，其他都是系统消息
-  if (contentType === 1) {
-    return '用户消息';
-  }
-  return `系统消息(${contentType})`;
-};
-
-// 获取消息类型标签类型
-const getContentTypeTag = (contentType: number, row: ChatMessage) => {
-  // 如果是当前账号发送的消息，使用primary类型（蓝色）
-  if (!isUserMessage(row)) {
-    return 'primary';
-  }
-  
-  // contentType=1 是用户消息（绿色），其他都是系统消息（橙色）
-  if (contentType === 1) {
-    return 'success';
-  }
-  return 'warning';
-};
-
-// 判断是否为用户发送的消息
-const isUserMessage = (row: ChatMessage) => {
-  // 如果senderUserId不等于当前账号的UNB，则标记为用户发送的消息
-  return row.senderUserId !== getCurrentAccountUnb.value;
-};
-
-// 格式化消息时间
-const formatMessageTime = (timestamp: number) => {
-  if (!timestamp) return '-';
-
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-
-  // 小于1分钟
-  if (diff < 60000) {
-    return '刚刚';
-  }
-
-  // 小于1小时
-  if (diff < 3600000) {
-    return `${Math.floor(diff / 60000)}分钟前`;
-  }
-
-  // 小于24小时
-  if (diff < 86400000) {
-    return `${Math.floor(diff / 3600000)}小时前`;
-  }
-
-  // 超过24小时，显示具体日期时间
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
-
-// 打开快速回复对话框
-const openQuickReply = (message: ChatMessage) => {
-  currentReplyMessage.value = message;
-  quickReplyMessage.value = '';
-  quickReplyDialogVisible.value = true;
-};
-
-// 发送快速回复
-const handleQuickReply = async () => {
-  if (!quickReplyMessage.value.trim()) {
-    showInfo('请输入回复内容');
-    return;
-  }
-
-  if (!currentReplyMessage.value || !selectedAccountId.value) {
-    showError('消息信息不完整');
-    return;
-  }
-
-  if (!currentReplyMessage.value.sid) {
-    showError('会话ID(sid)不存在，无法发送消息');
-    return;
-  }
-
-  if (!currentReplyMessage.value.senderUserId) {
-    showError('接收方ID(senderUserId)不存在，无法发送消息');
-    return;
-  }
-
-  quickReplySending.value = true;
-  try {
-    const response = await sendMessage({
-      xianyuAccountId: selectedAccountId.value,
-      cid: currentReplyMessage.value.sid,  // 使用 sid 作为会话ID
-      toId: currentReplyMessage.value.senderUserId,  // 使用 senderUserId 作为接收方ID
-      text: quickReplyMessage.value.trim()  // 注意：参数名是 text，不是 content
-    });
-
-    if (response.code === 0 || response.code === 200) {
-      showSuccess('消息发送成功');
-      quickReplyDialogVisible.value = false;
-      quickReplyMessage.value = '';
-      currentReplyMessage.value = null;
-      // 刷新消息列表
-      loadMessages();
-    }
-    // 注意：错误情况已经在请求拦截器中处理并显示了，这里不需要再次显示
-  } catch (error: any) {
-    console.error('发送消息失败:', error);
-    // 请求拦截器已经显示了错误消息，这里不需要重复显示
-  } finally {
-    quickReplySending.value = false;
-  }
-};
+const handleImgError = (e: Event) => {
+  const img = e.target as HTMLImageElement
+  img.style.display = 'none'
+}
 
 onMounted(() => {
-  loadAccounts();
-  // 等待DOM渲染完成后添加滚动监听
-  setTimeout(() => {
-    addScrollListener();
-  }, 0);
-  // 监听窗口大小变化
-  window.addEventListener('resize', handleResize);
-  // 检测屏幕宽度
-  checkScreenSize();
-  window.addEventListener('resize', checkScreenSize);
-});
+  loadAccounts()
+  checkScreenSize()
+  window.addEventListener('resize', checkScreenSize)
+})
 
-onUnmounted(() => {
-  removeScrollListener();
-  window.removeEventListener('resize', handleResize);
-  window.removeEventListener('resize', checkScreenSize);
-});
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', checkScreenSize)
+})
 
-// 处理窗口大小变化
-const handleResize = () => {
-  checkAndLoadMore();
-};
+const checkScreenSize = () => {
+  isMobile.value = window.innerWidth < 768
+  if (!isMobile.value) {
+    mobileView.value = 'goods'
+  }
+}
 </script>
 
 <template>
-  <div class="messages-page">
-    <!-- 桌面端布局 -->
+  <div class="messages">
+    <!-- ========== Desktop Layout ========== -->
     <template v-if="!isMobile">
-      <div class="page-header">
-        <h1 class="page-title">消息管理</h1>
-        <div class="header-actions">
-          <el-select
-            v-model="selectedAccountId"
-            placeholder="选择账号"
-            style="width: 200px"
-            @change="handleAccountChange"
-          >
-            <el-option
-              v-for="account in accounts"
-              :key="account.id"
-              :label="account.accountNote || account.unb"
-              :value="account.id"
-            />
-          </el-select>
-          
-          <el-button @click="loadMessages">刷新消息</el-button>
-          
-          <el-switch
-            v-model="filterCurrentAccount"
-            active-text="隐藏当前账号消息"
-            inactive-text="显示全部消息"
-            @change="loadMessages"
-          />
-        </div>
-      </div>
-
-      <div class="content-container">
-        <!-- 左侧商品列表 -->
-        <el-card class="goods-filter-panel" :body-style="{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }">
-          <template #header>
-            <div class="panel-header">
-              <span class="panel-title">商品列表</span>
-              <el-button 
-                v-if="goodsIdFilter" 
-                type="info" 
-                size="small" 
-                plain
-                @click="clearFilter"
-              >
-                取消筛选
-              </el-button>
-            </div>
-          </template>
-          
-          <div 
-            v-loading="goodsLoading && goodsCurrentPage === 1"
-            ref="goodsListRef" 
-            class="goods-list-container"
-          >
-            <div 
-              v-for="goods in goodsList" 
-              :key="goods.item.id"
-              class="goods-item"
-              :class="{ active: goodsIdFilter === goods.item.xyGoodId }"
-              @click="selectGoods(goods.item.xyGoodId, goods)"
-            >
-              <div class="goods-cover">
-                <img 
-                  :src="goods.item.coverPic" 
-                  :alt="goods.item.title"
-                  class="cover-img"
-                >
-              </div>
-              <div class="goods-info">
-                <div class="goods-title">{{ goods.item.title }}</div>
-                <div class="goods-id">#{{ goods.item.xyGoodId }}</div>
-              </div>
-            </div>
-            
-            <!-- 加载更多提示 -->
-            <div v-if="goodsLoading && goodsCurrentPage > 1" class="loading-more">
-              <el-icon class="is-loading"><Loading /></el-icon>
-              加载中...
-            </div>
-            
-            <!-- 没有更多数据提示 -->
-            <div 
-              v-if="!goodsLoading && goodsList.length > 0 && goodsList.length >= goodsTotal" 
-              class="no-more-data"
-            >
-              已加载全部商品
-            </div>
-            
-            <el-empty
-              v-if="!goodsLoading && goodsList.length === 0"
-              description="暂无商品数据"
-              :image-size="80"
-            />
+      <!-- Header -->
+      <div class="messages__header">
+        <div class="messages__title-row">
+          <div class="messages__title-icon">
+            <IconMessage />
           </div>
-        </el-card>
-
-        <!-- 右侧消息列表 -->
-        <div class="messages-container">
-          <el-card class="messages-card">
-            <template #header>
-              <div class="card-header">
-                <span class="card-title">消息列表</span>
-                <span class="card-subtitle">共 {{ total }} 条消息</span>
-              </div>
-            </template>
-
-            <el-table
-              v-loading="loading"
-              :data="messageList"
-              stripe
-              style="width: 100%"
-              max-height="calc(100vh - 300px)"
-            >
-              <el-table-column type="index" label="序号" width="60" align="center" />
-              
-              <el-table-column prop="id" label="消息ID" width="100">
-                <template #default="{ row }">
-                  <div class="message-id">{{ row.id }}</div>
-                </template>
-              </el-table-column>
-              
-              <el-table-column label="消息类型" width="120">
-                <template #default="{ row }">
-                  <el-tag :type="getContentTypeTag(row.contentType, row)" size="small">
-                    {{ getContentTypeText(row.contentType, row) }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              
-              <el-table-column prop="senderUserName" label="发送者" width="120" show-overflow-tooltip />
-              
-              <el-table-column prop="msgContent" label="消息内容" min-width="200" show-overflow-tooltip>
-                <template #default="{ row }">
-                  <div 
-                    class="message-content" 
-                    :class="{ 'user-message': isUserMessage(row) }"
-                  >
-                    {{ row.msgContent }}
-                  </div>
-                </template>
-              </el-table-column>
-              
-              <el-table-column prop="xyGoodsId" label="商品ID" width="120">
-                <template #default="{ row }">
-                  <div class="goods-id">{{ row.xyGoodsId || '-' }}</div>
-                </template>
-              </el-table-column>
-              
-              <el-table-column label="时间" width="150">
-                <template #default="{ row }">
-                  <div class="message-time">{{ formatMessageTime(row.messageTime) }}</div>
-                </template>
-              </el-table-column>
-              
-              <el-table-column label="操作" width="100" align="center" fixed="right">
-                <template #default="{ row }">
-                  <el-button
-                    v-if="isUserMessage(row)"
-                    type="primary"
-                    size="small"
-                    @click="openQuickReply(row)"
-                  >
-                    快速回复
-                  </el-button>
-                  <span v-else class="no-action">-</span>
-                </template>
-              </el-table-column>
-            </el-table>
-
-            <div class="pagination-container">
-              <el-pagination
-                v-model:current-page="currentPage"
-                :page-size="pageSize"
-                :total="total"
-                layout="total, prev, pager, next, jumper"
-                @current-change="handlePageChange"
-              />
-            </div>
-          </el-card>
+          <h1 class="messages__title">消息管理</h1>
         </div>
-      </div>
-    </template>
-
-    <!-- 手机端布局 -->
-    <template v-else>
-      <!-- 手机端商品列表视图 -->
-      <div v-show="mobileView === 'goods'" class="mobile-goods-view">
-        <div class="mobile-header">
-          <h1 class="mobile-title">消息管理</h1>
-          <div class="mobile-header-actions">
-            <el-select
+        <div class="messages__actions">
+          <div class="messages__select-wrap">
+            <select
               v-model="selectedAccountId"
-              placeholder="选择账号"
-              size="small"
-              style="width: 120px"
+              class="messages__select"
               @change="handleAccountChange"
             >
-              <el-option
-                v-for="account in accounts"
-                :key="account.id"
-                :label="account.accountNote || account.unb"
-                :value="account.id"
-              />
-            </el-select>
-            <el-switch
-              v-model="filterCurrentAccount"
-              size="small"
-              @change="loadMessages"
-            />
+              <option :value="null" disabled>选择账号</option>
+              <option v-for="acc in accounts" :key="acc.id" :value="acc.id">
+                {{ acc.accountNote || acc.unb }}
+              </option>
+            </select>
+            <span class="messages__select-icon">
+              <IconChevronDown />
+            </span>
           </div>
-        </div>
-        
-        <div class="mobile-goods-list-title">
-          <span>商品列表</span>
-          <span class="goods-count">共 {{ goodsTotal }} 件</span>
-        </div>
-        
-        <div 
-          v-loading="goodsLoading && goodsCurrentPage === 1"
-          ref="goodsListRef" 
-          class="mobile-goods-list"
-        >
-          <div 
-            v-for="goods in goodsList" 
-            :key="goods.item.id"
-            class="mobile-goods-item"
-            @click="selectGoods(goods.item.xyGoodId, goods)"
+
+          <button
+            class="btn btn--secondary"
+            :class="{ 'btn--loading': loading }"
+            :disabled="loading"
+            @click="loadMessages"
           >
-            <img 
-              :src="goods.item.coverPic" 
-              :alt="goods.item.title"
-              class="mobile-goods-cover"
+            <IconRefresh />
+            <span>刷新</span>
+          </button>
+
+          <div class="messages__toggle-wrap">
+            <span class="messages__toggle-label">隐藏我发送的</span>
+            <button
+              class="messages__toggle"
+              :class="{ 'messages__toggle--on': filterCurrentAccount }"
+              @click="filterCurrentAccount = !filterCurrentAccount; currentPage = 1; loadMessages()"
             >
-            <div class="mobile-goods-info">
-              <div class="mobile-goods-title">{{ goods.item.title }}</div>
-              <div class="mobile-goods-id">ID: {{ goods.item.xyGoodId }}</div>
-            </div>
+              <span class="messages__toggle-track">
+                <span class="messages__toggle-thumb"></span>
+              </span>
+            </button>
           </div>
-          
-          <!-- 加载更多提示 -->
-          <div v-if="goodsLoading && goodsCurrentPage > 1" class="loading-more">
-            <el-icon class="is-loading"><Loading /></el-icon>
-            加载中...
-          </div>
-          
-          <!-- 没有更多数据提示 -->
-          <div 
-            v-if="!goodsLoading && goodsList.length > 0 && goodsList.length >= goodsTotal" 
-            class="no-more-data"
-          >
-            已加载全部商品
-          </div>
-          
-          <el-empty
-            v-if="!goodsLoading && goodsList.length === 0"
-            description="暂无商品数据"
-            :image-size="80"
-          />
         </div>
       </div>
 
-      <!-- 手机端消息列表视图 -->
-      <div v-show="mobileView === 'messages'" class="mobile-messages-view">
-        <div class="mobile-header">
-          <el-button 
-            :icon="ArrowLeft" 
-            size="small" 
-            @click="goBackToGoods"
-          >
-            返回
-          </el-button>
-          <div class="mobile-selected-goods" v-if="selectedGoodsForMobile">
-            <img :src="selectedGoodsForMobile.item.coverPic" class="selected-goods-cover">
-            <span class="selected-goods-title">{{ selectedGoodsForMobile.item.title }}</span>
-          </div>
-          <el-button size="small" @click="loadMessages">刷新</el-button>
+      <!-- Content: Sidebar + Main -->
+      <div class="messages__content">
+        <!-- Goods Sidebar -->
+        <div class="messages__sidebar">
+          <GoodsSidebar
+            :goods-list="goodsList"
+            :goods-total="goodsTotal"
+            :goods-loading="goodsLoading"
+            :goods-id-filter="goodsIdFilter"
+            @select="selectGoods"
+            @clear-filter="clearFilter"
+          />
         </div>
-        
-        <div class="mobile-messages-list" v-loading="loading">
-          <!-- 消息卡片列表 -->
-          <div 
-            v-for="message in messageList" 
-            :key="message.id"
-            class="mobile-message-card"
-            :class="{ 'user-message': isUserMessage(message) }"
+
+        <!-- Message Main -->
+        <div class="messages__main">
+          <div class="messages__main-header">
+            <span class="messages__main-title">消息列表</span>
+            <span v-if="total > 0" class="messages__main-count">
+              共 {{ total }} 条
+            </span>
+          </div>
+
+          <div
+            ref="goodsListRef"
+            class="messages__table-wrap"
+            @scroll="handleGoodsScroll"
           >
-            <div class="message-card-header">
-              <el-tag :type="getContentTypeTag(message.contentType, message)" size="small">
-                {{ getContentTypeText(message.contentType, message) }}
-              </el-tag>
-              <span class="message-time">{{ formatMessageTime(message.messageTime) }}</span>
-            </div>
-            
-            <div class="message-card-sender">
-              <span class="sender-label">发送者：</span>
-              <span class="sender-name">{{ message.senderUserName }}</span>
-            </div>
-            
-            <div class="message-card-content">
-              {{ message.msgContent }}
-            </div>
-            
-            <div class="message-card-footer">
-              <span class="message-id">ID: {{ message.id }}</span>
-              <el-button
-                v-if="isUserMessage(message)"
-                type="primary"
-                size="small"
-                @click="openQuickReply(message)"
+            <MessageList
+              :message-list="messageList"
+              :loading="loading"
+              @reply="openQuickReply"
+            />
+          </div>
+
+          <!-- Pagination -->
+          <div v-if="totalPages > 1" class="messages__pagination">
+            <button
+              class="messages__page-btn"
+              :class="{ 'messages__page-btn--disabled': currentPage <= 1 }"
+              @click="handlePageChange(currentPage - 1)"
+            >
+              <IconChevronLeft />
+            </button>
+            <template v-for="page in getPageButtons()" :key="page">
+              <button
+                class="messages__page-btn"
+                :class="{ 'messages__page-btn--active': page === currentPage }"
+                @click="handlePageChange(page)"
               >
-                快速回复
-              </el-button>
-            </div>
+                {{ page }}
+              </button>
+            </template>
+            <button
+              class="messages__page-btn"
+              :class="{ 'messages__page-btn--disabled': currentPage >= totalPages }"
+              @click="handlePageChange(currentPage + 1)"
+            >
+              <IconChevronRight />
+            </button>
+            <span class="messages__page-info">{{ currentPage }} / {{ totalPages }}</span>
           </div>
-          
-          <el-empty
-            v-if="!loading && messageList.length === 0"
-            description="暂无消息"
-            :image-size="80"
-          />
-        </div>
-        
-        <!-- 手机端分页 -->
-        <div class="mobile-pagination" v-if="total > 0">
-          <el-pagination
-            v-model:current-page="currentPage"
-            :page-size="pageSize"
-            :total="total"
-            layout="prev, pager, next"
-            small
-            @current-change="handlePageChange"
-          />
         </div>
       </div>
     </template>
 
-    <!-- 快速回复对话框 -->
-    <el-dialog
-      v-model="quickReplyDialogVisible"
-      title="快速回复"
-      :width="isMobile ? '90%' : '500px'"
-      :close-on-click-modal="false"
-    >
-      <div class="quick-reply-content">
-        <div class="reply-info">
-          <div class="info-item">
-            <span class="info-label">回复给：</span>
-            <span class="info-value">{{ currentReplyMessage?.senderUserName }}</span>
+    <!-- ========== Mobile Layout ========== -->
+    <template v-else>
+      <!-- Mobile: Goods View -->
+      <div v-show="mobileView === 'goods'" class="mobile-goods">
+        <div class="messages__header" style="margin-bottom: 0; border-bottom: 1px solid var(--d-border);">
+          <div class="messages__title-row">
+            <div class="messages__title-icon">
+              <IconMessage />
+            </div>
+            <h1 class="messages__title">消息</h1>
           </div>
-          <div class="info-item">
-            <span class="info-label">原消息：</span>
-            <span class="info-value">{{ currentReplyMessage?.msgContent }}</span>
+          <div class="messages__actions">
+            <div class="messages__select-wrap">
+              <select
+                v-model="selectedAccountId"
+                class="messages__select"
+                style="min-width: 100px"
+                @change="handleAccountChange"
+              >
+                <option :value="null" disabled>账号</option>
+                <option v-for="acc in accounts" :key="acc.id" :value="acc.id">
+                  {{ acc.accountNote || acc.unb }}
+                </option>
+              </select>
+              <span class="messages__select-icon">
+                <IconChevronDown />
+              </span>
+            </div>
+
+            <button
+              class="messages__toggle"
+              :class="{ 'messages__toggle--on': filterCurrentAccount }"
+              @click="filterCurrentAccount = !filterCurrentAccount; currentPage = 1; loadMessages()"
+            >
+              <span class="messages__toggle-track">
+                <span class="messages__toggle-thumb"></span>
+              </span>
+            </button>
           </div>
         </div>
-        
-        <el-input
-          v-model="quickReplyMessage"
-          type="textarea"
-          :rows="6"
-          placeholder="请输入回复内容..."
-          maxlength="500"
-          show-word-limit
-        />
-      </div>
-      
-      <template #footer>
-        <el-button @click="quickReplyDialogVisible = false">取消</el-button>
-        <el-button
-          type="primary"
-          :loading="quickReplySending"
-          @click="handleQuickReply"
+
+        <div class="mobile-goods__title-bar">
+          <span>选择商品查看消息</span>
+          <span class="mobile-goods__count">{{ goodsTotal }} 件</span>
+        </div>
+
+        <div
+          ref="mobileGoodsRef"
+          class="mobile-goods__list"
+          @scroll="handleMobileGoodsScroll"
         >
-          发送
-        </el-button>
-      </template>
-    </el-dialog>
+          <div
+            v-for="goods in goodsList"
+            :key="goods.item.id"
+            class="mobile-goods__item"
+            :class="{ 'mobile-goods__item--active': goodsIdFilter === goods.item.xyGoodId }"
+            @click="selectGoods(goods.item.xyGoodId, goods)"
+          >
+            <div class="mobile-goods__thumb">
+              <img
+                v-if="goods.item.coverPic"
+                :src="goods.item.coverPic"
+                :alt="goods.item.title"
+                @error="handleImgError"
+              />
+              <div v-else class="mobile-goods__placeholder">
+                <IconImage />
+              </div>
+            </div>
+            <div class="mobile-goods__info">
+              <div class="mobile-goods__name">{{ goods.item.title }}</div>
+              <div class="mobile-goods__id">{{ goods.item.xyGoodId }}</div>
+            </div>
+          </div>
+
+          <div v-if="goodsLoading" class="mobile-goods__loading">
+            <div class="mobile-goods__spinner"></div>
+            <span>加载中...</span>
+          </div>
+
+          <div
+            v-if="!goodsLoading && goodsList.length > 0 && goodsList.length >= goodsTotal"
+            class="mobile-goods__end"
+          >
+            已加载全部
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile: Messages View -->
+      <div v-show="mobileView === 'messages'" class="mobile-messages">
+        <div class="mobile-messages__header">
+          <button class="mobile-messages__back" @click="goBackToGoods">
+            <IconChevronLeft />
+            <span>返回</span>
+          </button>
+          <div v-if="selectedGoodsForMobile" class="mobile-messages__goods">
+            <img
+              v-if="selectedGoodsForMobile.item.coverPic"
+              :src="selectedGoodsForMobile.item.coverPic"
+              class="mobile-messages__goods-img"
+            />
+            <span class="mobile-messages__goods-name">{{ selectedGoodsForMobile.item.title }}</span>
+          </div>
+          <button class="btn btn--secondary" style="height:32px;padding:0 12px;" @click="loadMessages">
+            <IconRefresh />
+          </button>
+        </div>
+
+        <div class="mobile-messages__body">
+          <MessageList
+            :message-list="messageList"
+            :loading="loading"
+            @reply="openQuickReply"
+          />
+        </div>
+
+        <!-- Mobile Pagination -->
+        <div v-if="totalPages > 1" class="messages__pagination" style="flex-shrink: 0;">
+          <button
+            class="messages__page-btn"
+            :class="{ 'messages__page-btn--disabled': currentPage <= 1 }"
+            @click="handlePageChange(currentPage - 1)"
+          >
+            <IconChevronLeft />
+          </button>
+          <template v-for="page in getPageButtons()" :key="page">
+            <button
+              class="messages__page-btn"
+              :class="{ 'messages__page-btn--active': page === currentPage }"
+              @click="handlePageChange(page)"
+            >
+              {{ page }}
+            </button>
+          </template>
+          <button
+            class="messages__page-btn"
+            :class="{ 'messages__page-btn--disabled': currentPage >= totalPages }"
+            @click="handlePageChange(currentPage + 1)"
+          >
+            <IconChevronRight />
+          </button>
+          <span class="messages__page-info">{{ currentPage }} / {{ totalPages }}</span>
+        </div>
+      </div>
+    </template>
+
+    <!-- ========== Quick Reply Dialog ========== -->
+    <Transition name="overlay-fade">
+      <div v-if="quickReplyVisible" class="messages__dialog-overlay" @click.self="quickReplyVisible = false">
+        <div class="messages__dialog">
+          <div class="messages__dialog-header">
+            <h3 class="messages__dialog-title">快速回复</h3>
+          </div>
+          <div class="messages__dialog-body">
+            <div class="messages__reply-info" v-if="currentReplyMessage">
+              <div class="messages__reply-row">
+                <span class="messages__reply-label">回复给：</span>
+                <span class="messages__reply-value">{{ currentReplyMessage.senderUserName }}</span>
+              </div>
+              <div class="messages__reply-row">
+                <span class="messages__reply-label">原消息：</span>
+                <span class="messages__reply-value">{{ currentReplyMessage.msgContent }}</span>
+              </div>
+            </div>
+            <textarea
+              v-model="quickReplyMessage"
+              class="messages__reply-textarea"
+              placeholder="请输入回复内容..."
+              maxlength="500"
+            ></textarea>
+          </div>
+          <div class="messages__dialog-footer">
+            <button class="btn btn--secondary" @click="quickReplyVisible = false">取消</button>
+            <button
+              class="btn btn--primary"
+              :class="{ 'btn--loading': quickReplySending }"
+              :disabled="quickReplySending"
+              @click="handleQuickReply"
+            >
+              <IconSend />
+              <span>发送</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <style scoped>
-.messages-page {
-  height: calc(100vh - 40px);  /* 减去页面padding */
+/* ============================================================
+   Mobile Goods View
+   ============================================================ */
+.mobile-goods {
   display: flex;
   flex-direction: column;
-  padding: 20px;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.page-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #303133;
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.content-container {
-  display: flex;
-  flex: 1;
-  gap: 15px;
-  min-height: 0;
-}
-
-.goods-filter-panel {
-  flex: 1;
-  min-width: 0;
-  max-width: 400px;
   height: 100%;
-  display: flex;
-  flex-direction: column;
 }
 
-.panel-header {
+.mobile-goods__title-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--d-text-secondary, #6e6e73);
+  background: rgba(0, 0, 0, 0.02);
+  flex-shrink: 0;
 }
 
-.panel-title {
-  font-size: 17px;
-  font-weight: 600;
-  color: #303133;
+.mobile-goods__count {
+  font-size: 12px;
+  color: var(--d-text-tertiary, #86868b);
 }
 
-.goods-list-container {
+.mobile-goods__list {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
-  min-height: 0;  /* 确保flex子元素可以正确滚动 */
-  padding-right: 5px;  /* 为滚动条留出空间 */
+  padding: 8px 12px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
 }
 
-/* 自定义滚动条样式 */
-.goods-list-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.goods-list-container::-webkit-scrollbar-thumb {
-  background-color: #c0c4cc;
-  border-radius: 3px;
-}
-
-.goods-list-container::-webkit-scrollbar-thumb:hover {
-  background-color: #909399;
-}
-
-.goods-list-container::-webkit-scrollbar-track {
-  background-color: #f5f7fa;
-}
-
-.goods-item {
+.mobile-goods__item {
   display: flex;
+  gap: 10px;
   padding: 10px;
-  border: 1px solid #ebeef5;
-  border-radius: 3px;
-  margin-bottom: 6px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  gap: 12px;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  border: 1px solid transparent;
+  margin-bottom: 4px;
 }
 
-.goods-item:hover {
-  background-color: #f5f7fa;
-  border-color: #c0c4cc;
+.mobile-goods__item:active {
+  transform: scale(0.98);
 }
 
-.goods-item.active {
-  background-color: #ecf5ff;
-  border-color: #409eff;
+.mobile-goods__item--active {
+  background: rgba(0, 122, 255, 0.06);
+  border-color: rgba(0, 122, 255, 0.15);
 }
 
-.goods-cover {
-  width: 50px;
-  height: 50px;
-  border-radius: 4px;
+.mobile-goods__thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
   overflow: hidden;
   flex-shrink: 0;
-  background-color: #f5f7fa;
+  background: rgba(0, 0, 0, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.cover-img {
+.mobile-goods__thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.goods-info {
+.mobile-goods__placeholder svg {
+  width: 18px;
+  height: 18px;
+  color: rgba(0, 0, 0, 0.2);
+}
+
+.mobile-goods__info {
   flex: 1;
   min-width: 0;
 }
 
-.goods-title {
+.mobile-goods__name {
   font-size: 13px;
   font-weight: 500;
-  color: #303133;
-  margin-bottom: 6px;
-  white-space: nowrap;
+  color: #1d1d1f;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 2px;
 }
 
-.goods-id {
-  font-size: 12px;
-  color: #909399;
+.mobile-goods__id {
+  font-size: 11px;
+  color: #86868b;
+  font-family: 'SF Mono', 'Menlo', monospace;
 }
 
-.loading-more {
-  text-align: center;
-  padding: 12px;
-  color: #909399;
-  font-size: 14px;
+.mobile-goods__loading {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  padding: 16px;
+  font-size: 12px;
+  color: #86868b;
 }
 
-.no-more-data {
+.mobile-goods__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0, 0, 0, 0.06);
+  border-top-color: #007aff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.mobile-goods__end {
   text-align: center;
   padding: 12px;
-  color: #c0c4cc;
-  font-size: 13px;
-}
-
-.messages-container {
-  flex: 2;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.messages-card {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.card-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.card-subtitle {
-  font-size: 14px;
-  color: #909399;
-}
-
-.message-id {
-  font-family: 'Courier New', Consolas, monospace;
   font-size: 12px;
-  color: #606266;
+  color: #86868b;
+  opacity: 0.6;
 }
 
-.goods-id {
-  font-family: 'Courier New', Consolas, monospace;
-  font-size: 12px;
-  color: #409eff;
-}
-
-.message-time {
-  font-size: 12px;
-  color: #909399;
-}
-
-.no-action {
-  color: #c0c4cc;
-}
-
-.message-content {
-  padding: 4px;
-}
-
-.message-content.user-message {
-  border: 2px solid #67c23a;
-  border-radius: 4px;
-}
-
-.pagination-container {
-  display: flex;
-  justify-content: center;
-  padding: 10px 0;
-  margin-top: 10px;
-  border-top: 1px solid #ebeef5;
-}
-
-.quick-reply-content {
+/* ============================================================
+   Mobile Messages View
+   ============================================================ */
+.mobile-messages {
   display: flex;
   flex-direction: column;
-  gap: 15px;
-}
-
-.reply-info {
-  background-color: #f5f7fa;
-  padding: 12px;
-  border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.info-item {
-  display: flex;
-  gap: 8px;
-  font-size: 14px;
-}
-
-.info-label {
-  color: #909399;
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
-.info-value {
-  color: #303133;
-  flex: 1;
-  word-break: break-all;
-}
-
-/* 手机端样式 */
-.mobile-goods-view,
-.mobile-messages-view {
   height: 100%;
-  display: flex;
-  flex-direction: column;
 }
 
-.mobile-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 15px;
-  background: #fff;
-  border-bottom: 1px solid #ebeef5;
-  gap: 10px;
-}
-
-.mobile-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
-  margin: 0;
-}
-
-.mobile-header-actions {
+.mobile-messages__header {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 8px 12px;
+  padding-top: max(8px, env(safe-area-inset-top, 8px));
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
-.mobile-goods-list-title {
-  display: flex;
-  justify-content: space-between;
+.mobile-messages__back {
+  display: inline-flex;
   align-items: center;
-  padding: 10px 15px;
-  background: #f5f7fa;
-  font-size: 14px;
+  gap: 2px;
+  height: 36px;
+  padding: 0 8px;
+  font-size: 16px;
   font-weight: 500;
-  color: #606266;
-}
-
-.goods-count {
-  font-size: 12px;
-  color: #909399;
-}
-
-.mobile-goods-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 10px;
-  padding-bottom: 20px; /* 增加底部内边距，防止内容被遮挡 */
-}
-
-.mobile-goods-item {
-  display: flex;
-  align-items: center;
-  padding: 12px;
-  background: #fff;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  color: #007aff;
+  background: none;
+  border: none;
   cursor: pointer;
-  transition: all 0.3s ease;
-  gap: 12px;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.mobile-goods-item:active {
-  background: #f5f7fa;
+.mobile-messages__back svg {
+  width: 20px;
+  height: 20px;
 }
 
-.mobile-goods-cover {
-  width: 60px;
-  height: 60px;
-  border-radius: 6px;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.mobile-goods-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.mobile-goods-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: #303133;
-  margin-bottom: 6px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.mobile-goods-id {
-  font-size: 12px;
-  color: #909399;
-}
-
-.mobile-selected-goods {
+.mobile-messages__goods {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 
-.selected-goods-cover {
-  width: 32px;
-  height: 32px;
+.mobile-messages__goods-img {
+  width: 28px;
+  height: 28px;
   border-radius: 4px;
   object-fit: cover;
   flex-shrink: 0;
 }
 
-.selected-goods-title {
-  flex: 1;
+.mobile-messages__goods-name {
   font-size: 14px;
   font-weight: 500;
-  color: #303133;
+  color: #1d1d1f;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.mobile-messages-list {
+.mobile-messages__body {
   flex: 1;
   overflow-y: auto;
-  padding: 10px;
-  padding-bottom: 20px; /* 增加底部内边距，防止内容被遮挡 */
+  min-height: 0;
 }
 
-.mobile-message-card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+/* ============================================================
+   Transition
+   ============================================================ */
+.overlay-fade-enter-active,
+.overlay-fade-leave-active {
+  transition: opacity 0.2s ease;
 }
 
-.mobile-message-card.user-message {
-  border-left: 3px solid #67c23a;
-}
-
-.message-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.message-card-sender {
-  font-size: 13px;
-  margin-bottom: 8px;
-}
-
-.sender-label {
-  color: #909399;
-}
-
-.sender-name {
-  color: #606266;
-  font-weight: 500;
-}
-
-.message-card-content {
-  font-size: 14px;
-  color: #303133;
-  line-height: 1.6;
-  padding: 8px;
-  background: #f5f7fa;
-  border-radius: 4px;
-  margin-bottom: 8px;
-  word-break: break-word;
-}
-
-.message-card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.mobile-pagination {
-  padding: 10px;
-  background: #fff;
-  border-top: 1px solid #ebeef5;
-  display: flex;
-  justify-content: center;
+.overlay-fade-enter-from,
+.overlay-fade-leave-to {
+  opacity: 0;
 }
 </style>
