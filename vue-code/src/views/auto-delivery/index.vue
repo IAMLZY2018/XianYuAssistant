@@ -14,6 +14,7 @@ import IconSparkle from '@/components/icons/IconSparkle.vue'
 import IconCheck from '@/components/icons/IconCheck.vue'
 import IconClock from '@/components/icons/IconClock.vue'
 import IconPackage from '@/components/icons/IconPackage.vue'
+import IconCopy from '@/components/icons/IconCopy.vue'
 
 import GoodsDetailDialog from '../goods/components/GoodsDetailDialog.vue'
 
@@ -57,7 +58,15 @@ const {
   getStatusText,
   getStatusClass,
   getRecordStatusText,
-  getRecordStatusClass
+  getRecordStatusClass,
+  apiHintUrl,
+  apiHintParamsJson,
+  confirmShipmentUrl,
+  confirmShipmentParamsJson,
+  copyApiUrl,
+  copyApiParams,
+  copyConfirmShipmentUrl,
+  copyConfirmShipmentParams
 } = useAutoDelivery()
 </script>
 
@@ -217,99 +226,201 @@ const {
 
         <!-- Config content -->
         <div v-if="selectedGoods" class="ad__config-scroll">
-          <!-- Delivery Toggle Section -->
-          <div class="ad__config-section">
-            <div class="ad__config-section-title">发货设置</div>
-
-            <div class="ad__toggle-row">
-              <div class="ad__toggle-info">
-                <div class="ad__toggle-label">自动发货</div>
-                <div class="ad__toggle-hint">买家下单后自动发送发货内容</div>
-              </div>
-              <label class="ad__switch">
-                <input
-                  type="checkbox"
-                  :checked="selectedGoods.xianyuAutoDeliveryOn === 1"
-                  @change="toggleAutoDelivery(($event.target as HTMLInputElement).checked)"
-                />
-                <span class="ad__switch-track"></span>
-                <span class="ad__switch-thumb"></span>
-              </label>
-            </div>
-
-            <div class="ad__toggle-row">
-              <div class="ad__toggle-info">
-                <div class="ad__toggle-label">自动确认发货</div>
-                <div class="ad__toggle-hint">
-                  {{ selectedGoods.xianyuAutoDeliveryOn === 1
-                    ? '发货成功后自动确认已发货'
-                    : '需先开启自动发货' }}
-                </div>
-              </div>
-              <label class="ad__switch">
-                <input
-                  type="checkbox"
-                  :checked="configForm.autoConfirmShipment === 1"
-                  :disabled="selectedGoods.xianyuAutoDeliveryOn !== 1"
-                  @change="configForm.autoConfirmShipment = ($event.target as HTMLInputElement).checked ? 1 : 0"
-                />
-                <span class="ad__switch-track"></span>
-                <span class="ad__switch-thumb"></span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Content Type Section -->
-          <div class="ad__config-section">
-            <div class="ad__config-section-title">发货内容</div>
-
-            <div class="ad__radio-group" style="margin-bottom: 12px;">
+          <!-- Top Tab Switch -->
+          <div class="ad__config-section ad__config-section--no-pad-bottom">
+            <div class="ad__tab-group">
               <button
-                class="ad__radio-btn"
-                :class="{ 'ad__radio-btn--active': configForm.type === 1 }"
+                class="ad__tab-btn"
+                :class="{ 'ad__tab-btn--active': configForm.type === 1 }"
                 @click="configForm.type = 1"
               >
                 <IconText />
-                文本内容
+                自动发货
               </button>
               <button
-                class="ad__radio-btn"
-                :class="{ 'ad__radio-btn--active': configForm.type === 2 }"
+                class="ad__tab-btn"
+                :class="{ 'ad__tab-btn--active': configForm.type === 2 }"
                 @click="configForm.type = 2"
               >
                 <IconRobot />
-                自定义
+                自定义发货
               </button>
-            </div>
-
-            <textarea
-              v-model="configForm.autoDeliveryContent"
-              class="ad__textarea"
-              placeholder="请输入自动发货内容，买家下单后将自动发送此内容"
-              maxlength="1000"
-            ></textarea>
-            <div class="ad__textarea-footer">
-              <span class="ad__textarea-hint">支持文本、链接、卡密等内容</span>
-              <span class="ad__textarea-count">{{ configForm.autoDeliveryContent.length }} / 1000</span>
-            </div>
-
-            <div class="ad__save-row">
-              <button
-                class="btn btn--primary"
-                :class="{ 'btn--loading': saving }"
-                :disabled="saving"
-                @click="saveConfig"
-              >
-                <IconCheck />
-                保存配置
-              </button>
-              <span v-if="currentConfig" class="ad__save-time">
-                更新于 {{ formatTime(currentConfig.updateTime) }}
-              </span>
             </div>
           </div>
 
-          <!-- Records Section -->
+          <!-- ====== 自动发货视图 ====== -->
+          <template v-if="configForm.type === 1">
+            <!-- Delivery Toggle Section -->
+            <div class="ad__config-section">
+              <div class="ad__config-section-title">发货设置</div>
+
+              <div class="ad__toggle-row">
+                <div class="ad__toggle-info">
+                  <div class="ad__toggle-label">自动发货</div>
+                  <div class="ad__toggle-hint">买家下单后自动发送发货内容</div>
+                </div>
+                <label class="ad__switch">
+                  <input
+                    type="checkbox"
+                    :checked="selectedGoods.xianyuAutoDeliveryOn === 1"
+                    @change="toggleAutoDelivery(($event.target as HTMLInputElement).checked)"
+                  />
+                  <span class="ad__switch-track"></span>
+                  <span class="ad__switch-thumb"></span>
+                </label>
+              </div>
+
+              <div class="ad__toggle-row">
+                <div class="ad__toggle-info">
+                  <div class="ad__toggle-label">自动确认发货</div>
+                  <div class="ad__toggle-hint">
+                    {{ selectedGoods.xianyuAutoDeliveryOn === 1
+                      ? '发货成功后自动确认已发货'
+                      : '需先开启自动发货' }}
+                  </div>
+                </div>
+                <label class="ad__switch">
+                  <input
+                    type="checkbox"
+                    :checked="configForm.autoConfirmShipment === 1"
+                    :disabled="selectedGoods.xianyuAutoDeliveryOn !== 1"
+                    @change="configForm.autoConfirmShipment = ($event.target as HTMLInputElement).checked ? 1 : 0"
+                  />
+                  <span class="ad__switch-track"></span>
+                  <span class="ad__switch-thumb"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Content Section -->
+            <div class="ad__config-section">
+              <div class="ad__config-section-title">发货内容</div>
+
+              <textarea
+                v-model="configForm.autoDeliveryContent"
+                class="ad__textarea"
+                placeholder="请输入自动发货内容，买家下单后将自动发送此内容"
+                maxlength="1000"
+              ></textarea>
+              <div class="ad__textarea-footer">
+                <span class="ad__textarea-hint">支持文本、链接、卡密等内容</span>
+                <span class="ad__textarea-count">{{ configForm.autoDeliveryContent.length }} / 1000</span>
+              </div>
+
+              <div class="ad__save-row">
+                <button
+                  class="btn btn--primary"
+                  :class="{ 'btn--loading': saving }"
+                  :disabled="saving"
+                  @click="saveConfig"
+                >
+                  <IconCheck />
+                  保存配置
+                </button>
+                <span v-if="currentConfig" class="ad__save-time">
+                  更新于 {{ formatTime(currentConfig.updateTime) }}
+                </span>
+              </div>
+            </div>
+          </template>
+
+          <!-- ====== 自定义发货视图 ====== -->
+          <template v-if="configForm.type === 2">
+            <!-- API Hint Panel -->
+            <div class="ad__config-section">
+              <div class="ad__api-hint">
+                <div class="ad__api-hint-header">
+                  <span class="ad__api-hint-title">API 接入指南</span>
+                </div>
+                <div class="ad__api-hint-desc">
+                  自定义发货需调用 <code>/api/order/list</code> 获取待发货订单，再调用 <code>/api/order/confirmShipment</code> 确认发货。
+                </div>
+
+                <div class="ad__api-hint-cols">
+                  <!-- Left: /api/order/list -->
+                  <div class="ad__api-hint-col">
+                    <div class="ad__api-hint-col-title">获取订单列表</div>
+
+                    <div class="ad__api-hint-section">
+                      <div class="ad__api-hint-label">
+                        接口地址
+                        <button class="ad__api-hint-copy-btn" @click="copyApiUrl">
+                          <IconCopy /> 复制
+                        </button>
+                      </div>
+                      <div class="ad__api-hint-code">POST {{ apiHintUrl }}</div>
+                    </div>
+
+                    <div class="ad__api-hint-section">
+                      <div class="ad__api-hint-label">
+                        请求参数
+                        <button class="ad__api-hint-copy-btn" @click="copyApiParams">
+                          <IconCopy /> 复制
+                        </button>
+                      </div>
+                      <pre class="ad__api-hint-pre"><code>{{ apiHintParamsJson }}</code></pre>
+                    </div>
+
+                    <div class="ad__api-hint-params-desc">
+                      <div class="ad__api-hint-params-title">参数说明</div>
+                      <table class="ad__api-hint-table">
+                        <thead>
+                          <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+                        </thead>
+                        <tbody>
+                          <tr><td>xianyuAccountId</td><td>number</td><td>否</td><td>闲鱼账号ID</td></tr>
+                          <tr><td>xyGoodsId</td><td>string</td><td>否</td><td>闲鱼商品ID</td></tr>
+                          <tr><td>orderStatus</td><td>number</td><td>否</td><td>1=待付款 2=待发货 3=已发货 4=已完成 5=已关闭</td></tr>
+                          <tr><td>pageNum</td><td>number</td><td>是</td><td>页码</td></tr>
+                          <tr><td>pageSize</td><td>number</td><td>是</td><td>每页条数</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <!-- Right: /api/order/confirmShipment -->
+                  <div class="ad__api-hint-col">
+                    <div class="ad__api-hint-col-title">确认发货</div>
+
+                    <div class="ad__api-hint-section">
+                      <div class="ad__api-hint-label">
+                        接口地址
+                        <button class="ad__api-hint-copy-btn" @click="copyConfirmShipmentUrl">
+                          <IconCopy /> 复制
+                        </button>
+                      </div>
+                      <div class="ad__api-hint-code">POST {{ confirmShipmentUrl }}</div>
+                    </div>
+
+                    <div class="ad__api-hint-section">
+                      <div class="ad__api-hint-label">
+                        请求参数
+                        <button class="ad__api-hint-copy-btn" @click="copyConfirmShipmentParams">
+                          <IconCopy /> 复制
+                        </button>
+                      </div>
+                      <pre class="ad__api-hint-pre"><code>{{ confirmShipmentParamsJson }}</code></pre>
+                    </div>
+
+                    <div class="ad__api-hint-params-desc">
+                      <div class="ad__api-hint-params-title">参数说明</div>
+                      <table class="ad__api-hint-table">
+                        <thead>
+                          <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+                        </thead>
+                        <tbody>
+                          <tr><td>xianyuAccountId</td><td>number</td><td>是</td><td>闲鱼账号ID</td></tr>
+                          <tr><td>orderId</td><td>string</td><td>是</td><td>订单ID</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- Records Section (shared) -->
           <div class="ad__records">
             <div class="ad__records-header">
               <div class="ad__records-title-row">
