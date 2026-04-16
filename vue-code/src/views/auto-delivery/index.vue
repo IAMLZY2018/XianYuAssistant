@@ -395,7 +395,7 @@ const {
                 </div>
                 <div class="ad__record-card-row">
                   <span class="ad__record-card-label">内容：</span>
-                  <span class="ad__record-card-value">{{ record.content || '-' }}</span>
+                  <span class="ad__record-card-value ad__record-card-value--content" :title="record.content">{{ record.content || '-' }}</span>
                 </div>
                 <div class="ad__record-card-footer">
                   <button
