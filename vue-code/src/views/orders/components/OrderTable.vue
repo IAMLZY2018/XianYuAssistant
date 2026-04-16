@@ -129,7 +129,7 @@ const getStatusText = (status: number | null) => {
           <span>复制会话ID</span>
         </button>
         <button
-          v-if="order.orderStatus === OrderStatus.WAITING_DELIVERY"
+          v-if="order.orderStatus !== 3"
           class="order-card__action order-card__action--ship"
           :class="{ 'order-card__action--loading': order.confirming }"
           @click="emit('confirmShipment', order)"
@@ -206,13 +206,13 @@ const getStatusText = (status: number | null) => {
           </td>
           <td class="table__td table__td--actions">
             <button
-              v-if="order.orderStatus === OrderStatus.WAITING_DELIVERY"
+              v-if="order.orderStatus !== 3"
               class="table__action table__action--ship"
               :class="{ 'table__action--loading': order.confirming }"
               @click="emit('confirmShipment', order)"
             >
               <IconTruck />
-              <span>{{ order.confirming ? '处理中' : '发货' }}</span>
+              <span>{{ order.confirming ? '处理中' : '确认发货' }}</span>
             </button>
             <span v-else class="table__action-placeholder">-</span>
           </td>

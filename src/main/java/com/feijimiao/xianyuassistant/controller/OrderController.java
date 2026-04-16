@@ -2,6 +2,7 @@ package com.feijimiao.xianyuassistant.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.feijimiao.xianyuassistant.common.ResultObject;
+import com.feijimiao.xianyuassistant.controller.dto.ConfirmShipmentReqDTO;
 import com.feijimiao.xianyuassistant.controller.dto.OrderQueryReqDTO;
 import com.feijimiao.xianyuassistant.controller.vo.OrderVO;
 import com.feijimiao.xianyuassistant.service.OrderService;
@@ -57,15 +58,7 @@ public class OrderController {
         }
     }
 
-    /**
-     * 确认发货请求DTO
-     */
-    @Data
-    public static class ConfirmShipmentReqDTO {
-        private Long xianyuAccountId;  // 账号ID
-        private String orderId;         // 订单ID
-    }
-    
+
     /**
      * 分页查询订单列表
      */
