@@ -5,6 +5,7 @@ import com.feijimiao.xianyuassistant.controller.dto.ChatWithAIReqDTO;
 import com.feijimiao.xianyuassistant.controller.dto.PutNewDataToRAGReqDTO;
 import com.feijimiao.xianyuassistant.service.AIService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
@@ -12,10 +13,11 @@ import reactor.core.publisher.Flux;
 /**
  * @author IAMLZY
  * @date 2026/4/12 00:16
- * @description
+ * @description AI对话控制器，仅在ai.enabled=true时加载
  */
 @RestController
 @RequestMapping("/ai")
+@ConditionalOnProperty(name = "ai.enabled", havingValue = "true")
 public class AIChatController {
     @Autowired
     private AIService  aiService;

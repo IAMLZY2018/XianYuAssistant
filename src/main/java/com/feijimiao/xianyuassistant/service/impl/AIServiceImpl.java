@@ -3,12 +3,12 @@ package com.feijimiao.xianyuassistant.service.impl;
 import com.feijimiao.xianyuassistant.service.AIService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
@@ -20,13 +20,12 @@ import java.util.stream.Collectors;
 /**
  * @author IAMLZY
  * @date 2026/4/10 22:26
- * @description
+ * @description AI服务实现，仅在ai.enabled=true时加载
  */
 
-
 @Service
+@ConditionalOnProperty(name = "ai.enabled", havingValue = "true")
 public class AIServiceImpl implements AIService {
-
 
     @Autowired
     @Qualifier("XianYuChatClient")
@@ -34,8 +33,6 @@ public class AIServiceImpl implements AIService {
 
     @Autowired
     private VectorStore vectorStore;
-
-
 
     @Override
     public Flux<String> chatByRAG(String prompt,String goodsId) {

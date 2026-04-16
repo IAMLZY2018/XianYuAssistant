@@ -1,6 +1,10 @@
 server:
   port: 12400
 
+# AI功能开关（默认关闭，开启需要部署Chroma向量数据库并配置ALI_API_KEY）
+ai:
+  enabled: false
+
 spring:
   datasource:
     url: jdbc:sqlite:dbdata/xianyu_assistant.db
@@ -19,7 +23,7 @@ spring:
     vectorstore:
       chroma:
         client:
-          host: http://192.168.8.88
+          host: http://192.168.8.188
           port: 8321
         initialize-schema: false
         tenant-name: default_tenant
