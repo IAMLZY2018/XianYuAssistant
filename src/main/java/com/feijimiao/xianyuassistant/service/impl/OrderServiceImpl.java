@@ -68,11 +68,8 @@ public class OrderServiceImpl implements OrderService {
             );
             
             if (existingOrder != null) {
-                // 更新已存在的订单
-                order.setId(existingOrder.getId());
-                order.setUpdateTime(LocalDateTime.now());
-                orderMapper.updateById(order);
-                log.info("更新订单成功: orderId={}, accountId={}", 
+                // 订单已存在，跳过更新，防止重复消息覆盖数据
+                log.debug("订单已存在，跳过更新: orderId={}, accountId={}", 
                         order.getOrderId(), order.getXianyuAccountId());
                 return existingOrder.getId();
             } else {
