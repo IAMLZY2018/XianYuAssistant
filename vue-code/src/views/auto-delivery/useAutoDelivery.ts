@@ -22,6 +22,20 @@ import { showSuccess, showError, showInfo } from '@/utils'
 import type { Account } from '@/types'
 import type { GoodsItemWithConfig } from '@/api/goods'
 
+const copyToClipboard = (text: string) => {
+  navigator.clipboard.writeText(text).then(() => {
+    showSuccess('已复制到剪贴板')
+  }).catch(() => {
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textarea)
+    showSuccess('已复制到剪贴板')
+  })
+}
+
 export function useAutoDelivery() {
   const route = useRoute()
 
@@ -69,6 +83,50 @@ export function useAutoDelivery() {
     type: 'danger' as 'danger' | 'primary',
     onConfirm: () => {}
   })
+
+  // API hint panel
+  const apiHintUrl = computed(() => '/api/order/list')
+
+  const apiHintParams = computed(() => {
+    const params: Record<string, any> = {
+      xianyuAccountId: selectedAccountId.value || undefined,
+      xyGoodsId: selectedGoods.value?.item.xyGoodId || undefined,
+      orderStatus: 2,
+      pageNum: 1,
+      pageSize: 20
+    }
+    return params
+  })
+
+  const apiHintParamsJson = computed(() => JSON.stringify(apiHintParams.value, null, 2))
+
+  const confirmShipmentUrl = computed(() => '/api/order/confirmShipment')
+
+  const confirmShipmentParams = computed(() => {
+    const params: Record<string, any> = {
+      xianyuAccountId: selectedAccountId.value || undefined,
+      orderId: '订单ID'
+    }
+    return params
+  })
+
+  const confirmShipmentParamsJson = computed(() => JSON.stringify(confirmShipmentParams.value, null, 2))
+
+  const copyApiUrl = () => {
+    copyToClipboard(apiHintUrl.value)
+  }
+
+  const copyApiParams = () => {
+    copyToClipboard(apiHintParamsJson.value)
+  }
+
+  const copyConfirmShipmentUrl = () => {
+    copyToClipboard(confirmShipmentUrl.value)
+  }
+
+  const copyConfirmShipmentParams = () => {
+    copyToClipboard(confirmShipmentParamsJson.value)
+  }
 
   // Check screen size
   const checkScreenSize = () => {
@@ -520,6 +578,12 @@ export function useAutoDelivery() {
     isMobile,
     mobileView,
     confirmDialog,
+    apiHintUrl,
+    apiHintParams,
+    apiHintParamsJson,
+    confirmShipmentUrl,
+    confirmShipmentParams,
+    confirmShipmentParamsJson,
 
     // Methods
     loadAccounts,
@@ -535,6 +599,10 @@ export function useAutoDelivery() {
     handleTriggerDelivery,
     handleDialogConfirm,
     handleDialogCancel,
+    copyApiUrl,
+    copyApiParams,
+    copyConfirmShipmentUrl,
+    copyConfirmShipmentParams,
     handleGoodsScroll,
     goBackToGoods,
     formatTime,
