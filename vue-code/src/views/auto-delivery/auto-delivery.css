@@ -1,5 +1,5 @@
 /* ============================================================
-   Auto Delivery — Apple-style Design System
+   Auto Delivery �?Apple-style Design System
    ============================================================ */
 
 .ad {
@@ -817,10 +817,12 @@
 }
 
 .ad__record-content {
+  display: block;
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: default;
 }
 
 .ad__record-status {
@@ -908,6 +910,17 @@
   color: var(--d-text-secondary);
   word-break: break-all;
   font-size: 12px;
+}
+
+.ad__record-card-value--content {
+  word-break: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+  display: inline-block;
+  vertical-align: middle;
+  cursor: default;
 }
 
 .ad__record-card-footer {

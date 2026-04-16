@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import { request } from '@/utils/request'
 import type { ApiResponse } from '@/types'
 
 export interface OrderQueryReq {
@@ -14,11 +14,11 @@ export interface OrderVO {
   accountRemark: string
   orderId: string
   goodsTitle: string
-  sid: string  // 改为小写，匹配后端返回
+  sid: string
   createTime: number
   autoDeliverySuccess: boolean
-  orderStatus: number
-  orderStatusText: string
+  orderStatus: number | null
+  orderStatusText: string | null
   buyerUserName: string
   xyGoodsId: string
 }
