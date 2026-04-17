@@ -19,9 +19,9 @@ PORT="${PORT:-12400}"
 JAVA_OPTS="${JAVA_OPTS:--Xms256m -Xmx512m}"
 JDK_VERSION="21"
 
-# JAR 包下载地址（优先 Gitee，备用 GitHub）
+# JAR 包下载地址
 GITEE_JAR="https://gitee.com/lzy2018cn/xian-yu-assistant/releases/download/latest/xianyu-assistant.jar"
-GITHUB_JAR="https://github.com/IAMLZY2018/-XianYuAssistant/releases/download/latest/xianyu-assistant.jar"
+GITHUB_JAR="https://github.com/IAMLZY2018/XianYuAssistant/releases/download/latest/xianyu-assistant.jar"
 
 echo -e "${BLUE}"
 echo "╔════════════════════════════════════════════════════════╗"
@@ -55,9 +55,10 @@ check_jdk() {
 
 # 安装 JDK 21
 install_jdk() {
+    echo ""
     echo -e "${YELLOW}需要安装 JDK ${JDK_VERSION}${NC}"
-    echo -e "输入 ${GREEN}y${NC} 确认安装，其他键取消: \c"
-    read -r confirm
+    echo -e "${YELLOW}输入 y 确认安装，其他键取消${NC}"
+    read -p "请选择: " confirm
     
     if [ "$confirm" != "y" ] && [ "$confirm" != "Y" ]; then
         echo -e "${RED}已取消安装${NC}"
@@ -95,21 +96,54 @@ install_jdk() {
     esac
 }
 
+# 选择下载源
+select_source() {
+    echo ""
+    echo -e "${YELLOW}请选择下载源:${NC}"
+    echo -e "  ${GREEN}1${NC}. Gitee (国内推荐)"
+    echo -e "  ${GREEN}2${NC}. GitHub"
+    echo ""
+    read -p "请输入选择 [1/2, 默认1]: " source_choice
+    
+    case "$source_choice" in
+        2)
+            SOURCE="github"
+            JAR_URL="$GITHUB_JAR"
+            echo -e "${GREEN}✓ 已选择 GitHub${NC}"
+            ;;
+        *)
+            SOURCE="gitee"
+            JAR_URL="$GITEE_JAR"
+            echo -e "${GREEN}✓ 已选择 Gitee${NC}"
+            ;;
+    esac
+}
+
 # 下载 JAR 包
 download_jar() {
     mkdir -p "$INSTALL_DIR"
     cd "$INSTALL_DIR"
     
+    echo ""
     echo -e "${YELLOW}正在下载 JAR 包...${NC}"
     
-    # 优先 Gitee
-    if curl -fsSL --connect-timeout 10 "$GITEE_JAR" -o xianyu-assistant.jar 2>/dev/null; then
-        echo -e "${GREEN}✓ 下载成功 (Gitee)${NC}"
-    elif curl -fsSL --connect-timeout 10 "$GITHUB_JAR" -o xianyu-assistant.jar 2>/dev/null; then
-        echo -e "${GREEN}✓ 下载成功 (GitHub)${NC}"
+    if curl -fsSL --connect-timeout 15 "$JAR_URL" -o xianyu-assistant.jar; then
+        echo -e "${GREEN}✓ 下载成功${NC}"
     else
-        echo -e "${RED}下载失败，请检查网络${NC}"
-        exit 1
+        # 如果选择的源失败，尝试另一个
+        echo -e "${YELLOW}主源下载失败，尝试备用源...${NC}"
+        if [ "$SOURCE" = "gitee" ]; then
+            BACKUP_URL="$GITHUB_JAR"
+        else
+            BACKUP_URL="$GITEE_JAR"
+        fi
+        
+        if curl -fsSL --connect-timeout 15 "$BACKUP_URL" -o xianyu-assistant.jar; then
+            echo -e "${GREEN}✓ 下载成功 (备用源)${NC}"
+        else
+            echo -e "${RED}下载失败，请检查网络${NC}"
+            exit 1
+        fi
     fi
 }
 
@@ -124,6 +158,7 @@ start_service() {
         rm -f xianyu.pid
     fi
     
+    echo ""
     echo -e "${YELLOW}正在启动服务...${NC}"
     
     nohup java $JAVA_OPTS -Dserver.port=$PORT -jar xianyu-assistant.jar > logs/console.log 2>&1 &
@@ -159,6 +194,9 @@ main() {
     else
         install_jdk
     fi
+    
+    # 选择下载源
+    select_source
     
     # 下载并启动
     download_jar
