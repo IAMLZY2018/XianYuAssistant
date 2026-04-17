@@ -31,7 +31,10 @@ echo -e "${NC}"
 
 # 检测操作系统
 detect_os() {
-    if [ -f /etc/os-release ]; then
+    # 检测 Termux (Android)
+    if [ -n "$TERMUX_VERSION" ] || [ -d "/data/data/com.termux" ]; then
+        OS="termux"
+    elif [ -f /etc/os-release ]; then
         . /etc/os-release
         OS=$ID
     elif [ "$(uname)" = "Darwin" ]; then
@@ -88,6 +91,10 @@ install_jdk() {
             ;;
         arch|manjaro)
             sudo pacman -S --noconfirm jdk-openjdk
+            ;;
+        termux)
+            pkg update
+            pkg install openjdk-21
             ;;
         *)
             echo -e "${RED}不支持的系统，请手动安装 JDK ${JDK_VERSION}${NC}"
