@@ -31,9 +31,15 @@
 配置商品自动发货规则，支持自动确认收货：
 
 <div align="center">
-  <img src="docs/images/2.png" alt="自动发货配置" width="800"/>
-  <p><i>自动发货 - 配置发货内容与规则</i></p>
+  <img src="docs/images/2-1.png" alt="自动发货配置" width="800"/>
+  <p><i>自动发货 - 自动同步闲鱼商品列表</i></p>
 </div>
+
+<div align="center">
+  <img src="docs/images/2.png" alt="自动发货配置" width="800"/>
+  <p><i>自动发货 -  配置发货内容与规则</i></p>
+</div>
+
 
 ### 闲鱼账号管理
 
