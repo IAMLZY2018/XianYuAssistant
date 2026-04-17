@@ -88,7 +88,53 @@
 
 ## 🚀 部署方式
 
-### 方式一：JAR包部署（推荐）
+### 方式一：一键安装（推荐）
+
+适合快速体验，自动检测并安装 JDK 21，下载 JAR 包并启动服务。
+
+#### Linux / Mac / Termux
+
+```bash
+# Gitee（国内推荐）
+curl -fsSL https://gitee.com/lzy2018cn/xian-yu-assistant/raw/master/install.sh | bash
+
+# GitHub
+curl -fsSL https://raw.githubusercontent.com/IAMLZY2018/XianYuAssistant/master/install.sh | bash
+```
+
+#### 自定义配置
+
+```bash
+# 自定义端口
+PORT=8080 curl -fsSL https://gitee.com/lzy2018cn/xian-yu-assistant/raw/master/install.sh | bash
+
+# 自定义 JVM 内存
+JAVA_OPTS="-Xms512m -Xmx1024m" curl -fsSL https://gitee.com/lzy2018cn/xian-yu-assistant/raw/master/install.sh | bash
+```
+
+#### 安装流程
+
+```
+1. 检查 JDK 环境 → 未安装则提示安装 JDK 21
+2. 选择下载源 → Gitee 或 GitHub
+3. 下载 JAR 包 → 自动下载最新版本
+4. 启动服务 → 后台运行并输出访问地址
+```
+
+#### 支持的操作系统
+
+| 系统 | 安装命令 |
+|------|----------|
+| Ubuntu/Debian | `apt-get install openjdk-21-jdk` |
+| CentOS/RHEL/Rocky | `yum install java-21-openjdk` |
+| Fedora | `dnf install java-21-openjdk` |
+| macOS | `brew install openjdk@21` |
+| Arch/Manjaro | `pacman -S jdk-openjdk` |
+| Termux (Android) | `pkg install openjdk-21` |
+
+---
+
+### 方式二：JAR包部署
 
 适合快速体验和生产环境使用，无需安装开发环境。
 
@@ -100,7 +146,7 @@
 
 1. **下载JAR包**
 
-   前往 [Releases](https://github.com/IAMLZY2018/-XianYuAssistant/releases) 页面下载最新版本的 `xianyu-assistant.jar`
+   前往 [Releases](https://github.com/IAMLZY2018/XianYuAssistant/releases) 页面下载最新版本的 `xianyu-assistant.jar`
 
 2. **启动应用**
 
