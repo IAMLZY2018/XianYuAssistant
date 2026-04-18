@@ -8,6 +8,7 @@ services:
     container_name: xianyu-assistant
     ports:
       - "8080:8080"
+      - "12400:12400"
     volumes:
       # 持久化数据库文件
       - ./data:/app/data
