@@ -12,6 +12,7 @@ import IconSparkle from '@/components/icons/IconSparkle.vue'
 import IconCheck from '@/components/icons/IconCheck.vue'
 import IconPackage from '@/components/icons/IconPackage.vue'
 import IconClipboard from '@/components/icons/IconClipboard.vue'
+import IconSearch from '@/components/icons/IconSearch.vue'
 
 import GoodsDetailDialog from '../goods/components/GoodsDetailDialog.vue'
 
@@ -29,6 +30,9 @@ const {
   rightTab,
   dataContent,
   uploading,
+  ragDataList,
+  ragDataLoading,
+  ragDataVisible,
   chatMessages,
   chatInput,
   chatSending,
@@ -40,6 +44,7 @@ const {
   selectGoods,
   toggleAutoReply,
   handleUploadData,
+  handleQueryRAGData,
   handleSendChat,
   handleChatKeydown,
   handleGoodsScroll,
@@ -280,8 +285,19 @@ const {
                   <IconCheck />
                   上传资料
                 </button>
+                <button
+                  class="btn btn--secondary"
+                  :class="{ 'btn--loading': ragDataLoading }"
+                  :disabled="ragDataLoading"
+                  @click="handleQueryRAGData"
+                >
+                  <IconSearch />
+                  查看现有资料
+                </button>
               </div>
             </div>
+
+
           </template>
 
           <!-- ====== AI 对话视图 ====== -->
@@ -380,6 +396,56 @@ const {
             >
               确定
             </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- RAG Data Dialog -->
+    <Transition name="overlay-fade">
+      <div
+        v-if="ragDataVisible"
+        class="ar__dialog-overlay"
+        @click.self="ragDataVisible = false"
+      >
+        <div class="ar__rag-dialog">
+          <div class="ar__rag-dialog-header">
+            <h3 class="ar__rag-dialog-title">现有资料</h3>
+            <span v-if="!ragDataLoading && ragDataList.length > 0" class="ar__rag-dialog-count">共 {{ ragDataList.length }} 条</span>
+            <button class="ar__rag-dialog-close" @click="ragDataVisible = false">
+              &times;
+            </button>
+          </div>
+          <div class="ar__rag-dialog-body">
+            <div v-if="ragDataLoading" class="ar__loading">
+              <div class="ar__spinner"></div>
+              <span>加载中...</span>
+            </div>
+
+            <div v-else-if="ragDataList.length === 0" class="ar__rag-empty">
+              <span class="ar__rag-empty-text">暂无资料</span>
+            </div>
+
+            <div v-else class="ar__rag-table-wrap">
+              <table class="ar__rag-table">
+                <thead class="ar__rag-table-head">
+                  <tr>
+                    <th class="ar__rag-table-th ar__rag-table-th--index">#</th>
+                    <th class="ar__rag-table-th ar__rag-table-th--content">资料内容</th>
+                    <th class="ar__rag-table-th ar__rag-table-th--time">创建时间</th>
+                  </tr>
+                </thead>
+                <tbody class="ar__rag-table-body">
+                  <tr v-for="(item, index) in ragDataList" :key="index" class="ar__rag-table-tr">
+                    <td class="ar__rag-table-td ar__rag-table-td--index">{{ index + 1 }}</td>
+                    <td class="ar__rag-table-td ar__rag-table-td--content">
+                      <span class="ar__rag-content-text">{{ item.content }}</span>
+                    </td>
+                    <td class="ar__rag-table-td ar__rag-table-td--time">{{ formatTime(item.createTime) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

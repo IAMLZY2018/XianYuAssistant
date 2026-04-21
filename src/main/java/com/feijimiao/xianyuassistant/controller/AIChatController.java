@@ -4,11 +4,14 @@ import com.feijimiao.xianyuassistant.common.ResultObject;
 import com.feijimiao.xianyuassistant.controller.dto.ChatWithAIReqDTO;
 import com.feijimiao.xianyuassistant.controller.dto.PutNewDataToRAGReqDTO;
 import com.feijimiao.xianyuassistant.service.AIService;
+import com.feijimiao.xianyuassistant.service.bo.RAGDataRespBO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
+
+import java.util.List;
 
 /**
  * @author IAMLZY
@@ -32,6 +35,12 @@ public class AIChatController {
     public ResultObject<?> putNewData(@RequestBody PutNewDataToRAGReqDTO putNewDataToRAGReqDTO) {
         aiService.putDataToRAG(putNewDataToRAGReqDTO.getContent(), putNewDataToRAGReqDTO.getGoodsId());
         return ResultObject.success(null);
+    }
+
+    @PostMapping("/queryRAGData")
+    public ResultObject<List<RAGDataRespBO>> queryRAGData(@RequestBody PutNewDataToRAGReqDTO req) {
+        List<RAGDataRespBO> data = aiService.queryRAGDataBygoodsId(req.getGoodsId());
+        return ResultObject.success(data);
     }
 
 }

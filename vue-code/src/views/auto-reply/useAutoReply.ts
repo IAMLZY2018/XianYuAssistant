@@ -2,7 +2,8 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { getAccountList } from '@/api/account'
 import { getGoodsList, updateAutoReplyStatus } from '@/api/goods'
-import { chatWithAI, putNewDataToRAG } from '@/api/ai'
+import { chatWithAI, putNewDataToRAG, queryRAGData } from '@/api/ai'
+import type { RAGDataItem } from '@/api/ai'
 import { showSuccess, showError, showInfo } from '@/utils'
 import type { Account } from '@/types'
 import type { GoodsItemWithConfig } from '@/api/goods'
@@ -41,6 +42,11 @@ export function useAutoReply() {
   // Upload data form
   const dataContent = ref('')
   const uploading = ref(false)
+
+  // Query existing RAG data
+  const ragDataList = ref<RAGDataItem[]>([])
+  const ragDataLoading = ref(false)
+  const ragDataVisible = ref(false)
 
   // Chat
   const chatMessages = ref<ChatMessage[]>([])
@@ -213,6 +219,8 @@ export function useAutoReply() {
     chatMessages.value = []
     dataContent.value = ''
     rightTab.value = 'data'
+    ragDataVisible.value = false
+    ragDataList.value = []
 
     if (isMobile.value) {
       mobileView.value = 'config'
@@ -280,6 +288,10 @@ export function useAutoReply() {
       if (result.code === 0 || result.code === 200) {
         showSuccess('资料上传成功')
         dataContent.value = ''
+        // 上传成功后如果正在查看资料列表，自动刷新
+        if (ragDataVisible.value) {
+          handleQueryRAGData()
+        }
       } else {
         throw new Error(result.msg || '上传资料失败')
       }
@@ -288,6 +300,40 @@ export function useAutoReply() {
       showError(error.message || '上传资料失败')
     } finally {
       uploading.value = false
+    }
+  }
+
+  // Query existing RAG data
+  const handleQueryRAGData = async () => {
+    if (!selectedGoods.value) {
+      showInfo('请先选择商品')
+      return
+    }
+
+    ragDataLoading.value = true
+    ragDataVisible.value = true
+    try {
+      const response = await queryRAGData({
+        goodsId: selectedGoods.value.item.xyGoodId
+      })
+      if (!response.ok) {
+        if (response.status === 405 || response.status === 404) {
+          throw new Error('AI 功能未开启，请在后端配置 ai.enabled=true 并确保 Chroma 数据库可用')
+        }
+        throw new Error(`查询资料失败: ${response.status}`)
+      }
+      const result = await response.json()
+      if (result.code === 0 || result.code === 200) {
+        ragDataList.value = result.data || []
+      } else {
+        throw new Error(result.msg || '查询资料失败')
+      }
+    } catch (error: any) {
+      console.error('查询资料失败:', error)
+      showError(error.message || '查询资料失败')
+      ragDataList.value = []
+    } finally {
+      ragDataLoading.value = false
     }
   }
 
@@ -470,6 +516,9 @@ export function useAutoReply() {
     rightTab,
     dataContent,
     uploading,
+    ragDataList,
+    ragDataLoading,
+    ragDataVisible,
     chatMessages,
     chatInput,
     chatSending,
@@ -483,6 +532,7 @@ export function useAutoReply() {
     selectGoods,
     toggleAutoReply,
     handleUploadData,
+    handleQueryRAGData,
     handleSendChat,
     handleChatKeydown,
     handleGoodsScroll,

@@ -1,7 +1,10 @@
 package com.feijimiao.xianyuassistant.service;
 
+import com.feijimiao.xianyuassistant.service.bo.RAGDataRespBO;
 import org.antlr.v4.runtime.TokenStream;
 import reactor.core.publisher.Flux;
+
+import java.util.List;
 
 /**
  * @author IAMLZY
@@ -14,4 +17,6 @@ public interface AIService {
     Flux<String> chatByRAG(String msg,String goodsId);
 
     void putDataToRAG(String content,String goodsId);
+
+    List<RAGDataRespBO> queryRAGDataBygoodsId(String goodsId);
 }

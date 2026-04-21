@@ -1,6 +1,7 @@
 package com.feijimiao.xianyuassistant.service.impl;
 
 import com.feijimiao.xianyuassistant.service.AIService;
+import com.feijimiao.xianyuassistant.service.bo.RAGDataRespBO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
@@ -13,6 +14,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,8 +64,8 @@ public class AIServiceImpl implements AIService {
 
         // 3. 构建带上下文的 prompt
         String ragPrompt = String.format("""
-                你是一个闲鱼卖家，不要回复的像AI。
-                参考相关信息回答,不要乱回答,不知道就根据自身理解简单回答，不要犯错
+                你是一个闲鱼卖家，你叫肥极喵，不要回复的像AI，简短回答
+                参考相关信息回答,不要乱回答,不知道就换不同语气回复提示用户详细点询问
             
                 参考资料：
                 %s
@@ -96,6 +98,8 @@ public class AIServiceImpl implements AIService {
 
         Map<String,Object> metadata = new HashMap<>();
         metadata.put("goodsId",goodsId);
+        metadata.put("createTime",new Date());
+
         Document document = new Document(content,metadata);
 
         // 自动切片，默认配置参数：
@@ -109,5 +113,32 @@ public class AIServiceImpl implements AIService {
         log.info("[AI RAG] 切片完成, 切片数={}, 写入Chroma...", chunks.size());
         vectorStore.add(chunks);
         log.info("[AI RAG] 写入Chroma完成");
+    }
+
+    @Override
+    public List<RAGDataRespBO> queryRAGDataBygoodsId(String goodsId) {
+        log.info("[AI RAG] 查询Chroma数据, goodsId={}", goodsId);
+
+        // 用宽泛查询 + 低阈值 + goodsId过滤，获取该商品的所有向量数据
+        List<Document> documents = vectorStore.similaritySearch(
+                SearchRequest.builder()
+                        .query("")
+                        .topK(100)
+                        .similarityThreshold(0.0)
+                        .filterExpression(String.format("goodsId == '%s'", goodsId))
+                        .build()
+        );
+
+        List<RAGDataRespBO> result = documents.stream().map(doc -> {
+            RAGDataRespBO bo = new RAGDataRespBO();
+            bo.setGoodsID(goodsId);
+            bo.setContent(doc.getText());
+            Object createTime = doc.getMetadata().get("createTime");
+            bo.setCreateTime(createTime != null ? createTime.toString() : null);
+            return bo;
+        }).collect(Collectors.toList());
+
+        log.info("[AI RAG] 查询Chroma数据完成, goodsId={}, 结果数={}", goodsId, result.size());
+        return result;
     }
 }

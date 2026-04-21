@@ -721,6 +721,196 @@
   align-items: center;
   gap: var(--d-space-3);
   margin-top: var(--d-space-4);
+  flex-wrap: wrap;
+}
+
+/* --- RAG Data Table --- */
+.ar__rag-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--d-space-5);
+  color: var(--d-text-tertiary);
+}
+
+.ar__rag-empty-text {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.ar__rag-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ar__rag-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.ar__rag-table-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.ar__rag-table-th {
+  padding: var(--d-space-2) var(--d-space-3);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--d-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: left;
+  background: rgba(0, 0, 0, 0.02);
+  border-bottom: 1px solid var(--d-border-strong);
+  white-space: nowrap;
+}
+
+.ar__rag-table-th--index {
+  width: 36px;
+  text-align: center;
+}
+
+.ar__rag-table-th--time {
+  width: 140px;
+  white-space: nowrap;
+}
+
+.ar__rag-table-tr {
+  border-bottom: 1px solid var(--d-border);
+  transition: background var(--d-transition);
+}
+
+.ar__rag-table-tr:last-child {
+  border-bottom: none;
+}
+
+@media (hover: hover) {
+  .ar__rag-table-tr:hover {
+    background: rgba(0, 0, 0, 0.02);
+  }
+}
+
+.ar__rag-table-td {
+  padding: var(--d-space-2) var(--d-space-3);
+  color: var(--d-text-primary);
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+.ar__rag-table-td--index {
+  text-align: center;
+  color: var(--d-text-tertiary);
+  font-size: 12px;
+}
+
+.ar__rag-table-td--content {
+  min-width: 0;
+}
+
+.ar__rag-content-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.ar__rag-table-td--time {
+  white-space: nowrap;
+  color: var(--d-text-tertiary);
+  font-size: 12px;
+}
+
+/* --- RAG Data Dialog --- */
+.ar__rag-dialog {
+  width: 100%;
+  max-width: 680px;
+  max-height: 80vh;
+  background: #fff;
+  border-radius: var(--d-radius-lg);
+  box-shadow: var(--d-shadow-md);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ar__rag-dialog-header {
+  display: flex;
+  align-items: center;
+  gap: var(--d-space-2);
+  padding: var(--d-space-4) var(--d-space-4) var(--d-space-3);
+  border-bottom: 1px solid var(--d-border);
+  flex-shrink: 0;
+}
+
+.ar__rag-dialog-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--d-text-primary);
+  margin: 0;
+}
+
+.ar__rag-dialog-count {
+  font-size: 12px;
+  color: var(--d-text-tertiary);
+  font-weight: 400;
+}
+
+.ar__rag-dialog-close {
+  margin-left: auto;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--d-text-tertiary);
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all var(--d-transition);
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+
+@media (hover: hover) {
+  .ar__rag-dialog-close:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--d-text-primary);
+  }
+}
+
+.ar__rag-dialog-close:active {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.ar__rag-dialog-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding: var(--d-space-3);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
+}
+
+.ar__rag-dialog-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ar__rag-dialog-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ar__rag-dialog-body::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 3px;
 }
 
 /* --- Chat Window --- */
@@ -1184,6 +1374,11 @@
 
   .ar__chat-container {
     padding: var(--d-space-3);
+  }
+
+  .ar__rag-dialog {
+    max-width: 100%;
+    max-height: 90vh;
   }
 }
 
