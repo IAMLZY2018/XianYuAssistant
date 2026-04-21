@@ -3,7 +3,8 @@ server:
 
 # AI功能开关（默认关闭，开启需要部署Chroma向量数据库并配置ALI_API_KEY）
 ai:
-  enabled: false
+  enabled: true
+
 
 spring:
   datasource:
@@ -23,9 +24,9 @@ spring:
     vectorstore:
       chroma:
         client:
-          host: http://192.168.8.188
+          host: http://iamlzy.home
           port: 8321
-        initialize-schema: false
+        initialize-schema: true
         tenant-name: default_tenant
         database-name: default_database
 
