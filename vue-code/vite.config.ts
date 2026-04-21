@@ -15,6 +15,10 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:12400',
         changeOrigin: true
+      },
+      '/ai': {
+        target: 'http://localhost:12400',
+        changeOrigin: true
       }
     }
   },
