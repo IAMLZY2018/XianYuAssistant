@@ -371,9 +371,9 @@ export function useAutoReply() {
               const data = line.substring(5).trim()
               if (data === '[DONE]') continue
               try {
-                // 尝试解析 JSON，如果后端返回的是 JSON 字符串
+                // 尝试解析 JSON，提取 reply/content/text 字段
                 const parsed = JSON.parse(data)
-                assistantMsg.content += parsed.content || parsed.text || parsed || ''
+                assistantMsg.content += parsed.reply || parsed.content || parsed.text || ''
               } catch {
                 // 直接作为文本追加
                 assistantMsg.content += data
@@ -389,7 +389,7 @@ export function useAutoReply() {
           if (data && data !== '[DONE]') {
             try {
               const parsed = JSON.parse(data)
-              assistantMsg.content += parsed.content || parsed.text || parsed || ''
+              assistantMsg.content += parsed.reply || parsed.content || parsed.text || ''
             } catch {
               assistantMsg.content += data
             }

@@ -1,6 +1,7 @@
 package com.feijimiao.xianyuassistant.service.impl;
 
 import com.feijimiao.xianyuassistant.service.AIService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
@@ -15,6 +16,7 @@ import reactor.core.publisher.Flux;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
  */
 
 @Service
+@Slf4j
 @ConditionalOnProperty(name = "ai.enabled", havingValue = "true")
 public class AIServiceImpl implements AIService {
 
@@ -36,15 +39,21 @@ public class AIServiceImpl implements AIService {
 
     @Override
     public Flux<String> chatByRAG(String prompt,String goodsId) {
+        long startTime = System.currentTimeMillis();
+        log.info("[AI Chat] 收到请求, prompt={}, goodsId={}", prompt, goodsId);
+
         // 1. 先从向量库搜索相关内容
+        long searchStart = System.currentTimeMillis();
         List<Document> documents = vectorStore.similaritySearch(
                 SearchRequest.builder()
                         .query(prompt)
                         .topK(5)
-                        .similarityThreshold(0.6)
+                        .similarityThreshold(0.1)
                         .filterExpression(String.format("goodsId == '%s'",goodsId))
                         .build()
         );
+        long searchCost = System.currentTimeMillis() - searchStart;
+        log.info("[AI Chat] 向量搜索耗时: {}ms, 命中文档数: {}", searchCost, documents.size());
 
         // 2. 把搜索结果拼成上下文
         String context = documents.stream()
@@ -53,8 +62,8 @@ public class AIServiceImpl implements AIService {
 
         // 3. 构建带上下文的 prompt
         String ragPrompt = String.format("""
-                你是一个智能助手，请根据以下内部参考资料回答用户问题。
-                如果参考内容中没有相关信息，请根据自身知识回答,但是不要乱回答,返回json格式{"goodName":"商品名称","":""}
+                你是一个闲鱼卖家，不要回复的像AI。
+                参考相关信息回答,不要乱回答,不知道就根据自身理解简单回答，不要犯错
             
                 参考资料：
                 %s
@@ -62,15 +71,29 @@ public class AIServiceImpl implements AIService {
                 用户问题：%s
                 """, context, prompt);
 
+        long llmStart = System.currentTimeMillis();
+        log.info("[AI Chat] 准备调用LLM, 总预处理耗时: {}ms", llmStart - startTime);
+        log.info("[AI Chat] LLM请求参数 - model: deepseek-v3, temperature: 0.7, goodsId: {}", goodsId);
+        log.info("[AI Chat] LLM完整prompt:\n{}", ragPrompt);
+
         // 4. 请求大模型，流式返回
+        AtomicBoolean firstTokenLogged = new AtomicBoolean(false);
         return chatClient.prompt()
                 .user(ragPrompt)
                 .stream()
-                .content();
+                .content()
+                .doOnNext(token -> {
+                    if (firstTokenLogged.compareAndSet(false, true)) {
+                        long firstTokenCost = System.currentTimeMillis() - llmStart;
+                        log.info("[AI Chat] 首 token 耗时: {}ms (从请求到LLM开始输出)", firstTokenCost);
+                    }
+                });
     }
 
     @Override
     public void putDataToRAG(String content, String goodsId) {
+        log.info("[AI RAG] 写入Chroma, goodsId={}, 内容长度={}字符, 内容={}", goodsId, content.length(), content);
+
         Map<String,Object> metadata = new HashMap<>();
         metadata.put("goodsId",goodsId);
         Document document = new Document(content,metadata);
@@ -82,6 +105,9 @@ public class AIServiceImpl implements AIService {
         //        10000,  // maxNumChunks         最大 chunk 数量
         //        true    // keepSeparator        是否保留分隔符
         TokenTextSplitter splitter = new TokenTextSplitter();
-        vectorStore.add(splitter.apply(List.of(document)));
+        List<Document> chunks = splitter.apply(List.of(document));
+        log.info("[AI RAG] 切片完成, 切片数={}, 写入Chroma...", chunks.size());
+        vectorStore.add(chunks);
+        log.info("[AI RAG] 写入Chroma完成");
     }
 }

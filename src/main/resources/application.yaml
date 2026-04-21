@@ -11,11 +11,11 @@ spring:
     url: jdbc:sqlite:dbdata/xianyu_assistant.db
   ai:
     openai:
-      api-key: ${ALI_API_KEY}
+      api-key: sk-6882dd7e1239446fb86d882e39465f7e
       base-url: https://dashscope.aliyuncs.com/compatible-mode
       chat:
         options:
-          model: qwen3.5-27b
+          model: deepseek-v3
           temperature: 0.7
       embedding:
         base-url: https://dashscope.aliyuncs.com/compatible-mode
