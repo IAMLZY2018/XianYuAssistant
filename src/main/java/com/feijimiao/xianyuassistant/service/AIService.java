@@ -19,4 +19,6 @@ public interface AIService {
     void putDataToRAG(String content,String goodsId);
 
     List<RAGDataRespBO> queryRAGDataBygoodsId(String goodsId);
+
+    void deleteRAGDataByDocumentId(String documentId);
 }

@@ -201,7 +201,7 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
      */
     private boolean refreshMh5tkViaHasLogin(Long accountId, int hasLoginRetryCount) {
         if (hasLoginRetryCount >= 2) {
-            log.error("【账号{}】hasLogin刷新重试次数已达上限，Cookie已彻底过期", accountId);
+            log.error("【账号{}】hasLogin刷新重试次数已达上限，_m_h5_tk获取持续失败", accountId);
             
             // 更新Cookie状态为过期
             cookieMapper.update(null,
@@ -214,11 +214,11 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
             operationLogService.log(accountId,
                 com.feijimiao.xianyuassistant.constants.OperationConstants.Type.REFRESH,
                 com.feijimiao.xianyuassistant.constants.OperationConstants.Module.TOKEN,
-                "_m_h5_tk Token刷新失败：Cookie过期且自动刷新失败",
+                "_m_h5_tk Token刷新失败：多次hasLogin后仍无法获取",
                 com.feijimiao.xianyuassistant.constants.OperationConstants.Status.FAIL,
                 com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.TOKEN,
                 String.valueOf(accountId),
-                null, null, "Cookie过期且自动刷新失败", null);
+                null, null, "多次hasLogin后仍无法获取_m_h5_tk", null);
             
             return false;
         }
@@ -240,7 +240,16 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
                 }
                 
                 // 重置retryCount为0，重新开始获取_m_h5_tk流程
-                return refreshMh5tkTokenWithRetry(accountId, 0);
+                boolean tokenRefreshed = refreshMh5tkTokenWithRetry(accountId, 0);
+                
+                if (tokenRefreshed) {
+                    return true;
+                }
+                
+                // hasLogin成功但_m_h5_tk仍然获取失败，递增hasLogin重试计数继续尝试
+                log.warn("【账号{}】hasLogin成功但_m_h5_tk仍获取失败，继续尝试hasLogin刷新... ({}/2)", 
+                        accountId, hasLoginRetryCount + 1);
+                return refreshMh5tkViaHasLogin(accountId, hasLoginRetryCount + 1);
             } else {
                 log.warn("【账号{}】hasLogin失败", accountId);
             }

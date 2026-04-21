@@ -738,11 +738,6 @@
   font-weight: 500;
 }
 
-.ar__rag-table-wrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
 .ar__rag-table {
   width: 100%;
   border-collapse: collapse;
@@ -774,8 +769,13 @@
 }
 
 .ar__rag-table-th--time {
-  width: 140px;
+  width: 130px;
   white-space: nowrap;
+}
+
+.ar__rag-table-th--action {
+  width: 52px;
+  text-align: center;
 }
 
 .ar__rag-table-tr {
@@ -826,91 +826,136 @@
   font-size: 12px;
 }
 
-/* --- RAG Data Dialog --- */
-.ar__rag-dialog {
-  width: 100%;
-  max-width: 680px;
-  max-height: 80vh;
-  background: #fff;
-  border-radius: var(--d-radius-lg);
-  box-shadow: var(--d-shadow-md);
+.ar__rag-table-td--action {
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* --- RAG Delete Button --- */
+.ar__rag-del-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--d-danger);
+  background: transparent;
+  border: 1px solid rgba(255, 59, 48, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--d-transition);
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) {
+  .ar__rag-del-btn:hover {
+    background: rgba(255, 59, 48, 0.06);
+    border-color: rgba(255, 59, 48, 0.35);
+  }
+}
+
+.ar__rag-del-btn:active {
+  background: rgba(255, 59, 48, 0.1);
+  transform: scale(0.97);
+}
+
+/* --- RAG Mobile Card View --- */
+.ar__rag-card-list {
   display: flex;
   flex-direction: column;
+  gap: var(--d-space-3);
+}
+
+.ar__rag-card {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--d-border);
+  border-radius: var(--d-radius-sm);
+  padding: var(--d-space-3);
+}
+
+.ar__rag-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--d-space-2);
+}
+
+.ar__rag-card-index {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--d-text-tertiary);
+}
+
+.ar__rag-card-time {
+  font-size: 11px;
+  color: var(--d-text-tertiary);
+}
+
+.ar__rag-card-content {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--d-text-primary);
+  word-break: break-word;
+  white-space: pre-wrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.ar__rag-dialog-header {
+.ar__rag-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--d-space-2);
+  padding-top: var(--d-space-2);
+  border-top: 1px solid var(--d-border);
+}
+
+/* --- RAG Data Section (full panel view) --- */
+.ar__rag-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: var(--d-space-4);
+}
+
+.ar__rag-section-header {
   display: flex;
   align-items: center;
   gap: var(--d-space-2);
-  padding: var(--d-space-4) var(--d-space-4) var(--d-space-3);
-  border-bottom: 1px solid var(--d-border);
+  margin-bottom: var(--d-space-3);
   flex-shrink: 0;
 }
 
-.ar__rag-dialog-title {
-  font-size: 16px;
+.ar__rag-section-title {
+  font-size: 12px;
   font-weight: 600;
-  color: var(--d-text-primary);
-  margin: 0;
+  color: var(--d-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.ar__rag-dialog-count {
+.ar__rag-section-count {
   font-size: 12px;
   color: var(--d-text-tertiary);
   font-weight: 400;
 }
 
-.ar__rag-dialog-close {
-  margin-left: auto;
-  width: 28px;
-  height: 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  color: var(--d-text-tertiary);
-  background: transparent;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: all var(--d-transition);
-  -webkit-tap-highlight-color: transparent;
-  flex-shrink: 0;
-}
-
-@media (hover: hover) {
-  .ar__rag-dialog-close:hover {
-    background: rgba(0, 0, 0, 0.06);
-    color: var(--d-text-primary);
-  }
-}
-
-.ar__rag-dialog-close:active {
-  background: rgba(0, 0, 0, 0.08);
-}
-
-.ar__rag-dialog-body {
+/* --- RAG scrollable content area --- */
+.ar__rag-scroll {
   flex: 1;
-  overflow-y: auto;
   min-height: 0;
-  padding: var(--d-space-3);
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
+  scrollbar-width: none;
 }
 
-.ar__rag-dialog-body::-webkit-scrollbar {
-  width: 6px;
-}
-
-.ar__rag-dialog-body::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.ar__rag-dialog-body::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.12);
-  border-radius: 3px;
+.ar__rag-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 /* --- Chat Window --- */
@@ -1372,13 +1417,12 @@
     padding: var(--d-space-3);
   }
 
-  .ar__chat-container {
+  .ar__rag-section {
     padding: var(--d-space-3);
   }
 
-  .ar__rag-dialog {
-    max-width: 100%;
-    max-height: 90vh;
+  .ar__chat-container {
+    padding: var(--d-space-3);
   }
 }
 

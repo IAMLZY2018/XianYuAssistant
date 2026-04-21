@@ -2,7 +2,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { getAccountList } from '@/api/account'
 import { getGoodsList, updateAutoReplyStatus } from '@/api/goods'
-import { chatWithAI, putNewDataToRAG, queryRAGData } from '@/api/ai'
+import { chatWithAI, putNewDataToRAG, queryRAGData, deleteRAGData } from '@/api/ai'
 import type { RAGDataItem } from '@/api/ai'
 import { showSuccess, showError, showInfo } from '@/utils'
 import type { Account } from '@/types'
@@ -311,7 +311,6 @@ export function useAutoReply() {
     }
 
     ragDataLoading.value = true
-    ragDataVisible.value = true
     try {
       const response = await queryRAGData({
         goodsId: selectedGoods.value.item.xyGoodId
@@ -334,6 +333,39 @@ export function useAutoReply() {
       ragDataList.value = []
     } finally {
       ragDataLoading.value = false
+    }
+  }
+
+  // Delete RAG data
+  const handleDeleteRAGData = (documentId: string) => {
+    confirmDialog.value = {
+      visible: true,
+      title: '删除资料',
+      message: '确定要删除该资料吗？删除后不可恢复。',
+      type: 'danger',
+      onConfirm: async () => {
+        confirmDialog.value.visible = false
+        try {
+          const response = await deleteRAGData({ documentId })
+          if (!response.ok) {
+            if (response.status === 405 || response.status === 404) {
+              throw new Error('AI 功能未开启，请在后端配置 ai.enabled=true 并确保 Chroma 数据库可用')
+            }
+            throw new Error(`删除资料失败: ${response.status}`)
+          }
+          const result = await response.json()
+          if (result.code === 0 || result.code === 200) {
+            showSuccess('资料删除成功')
+            // 从列表中移除已删除项
+            ragDataList.value = ragDataList.value.filter(item => item.documentId !== documentId)
+          } else {
+            throw new Error(result.msg || '删除资料失败')
+          }
+        } catch (error: any) {
+          console.error('删除资料失败:', error)
+          showError(error.message || '删除资料失败')
+        }
+      }
     }
   }
 
@@ -533,6 +565,7 @@ export function useAutoReply() {
     toggleAutoReply,
     handleUploadData,
     handleQueryRAGData,
+    handleDeleteRAGData,
     handleSendChat,
     handleChatKeydown,
     handleGoodsScroll,

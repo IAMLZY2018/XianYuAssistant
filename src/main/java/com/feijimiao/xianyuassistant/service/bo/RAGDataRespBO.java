@@ -10,6 +10,8 @@ import lombok.Data;
 @Data
 public class RAGDataRespBO {
 
+    private String documentId;
+
     private String goodsID;
 
     private String content;

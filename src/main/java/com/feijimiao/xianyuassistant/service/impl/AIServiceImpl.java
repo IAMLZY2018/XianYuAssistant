@@ -131,6 +131,7 @@ public class AIServiceImpl implements AIService {
 
         List<RAGDataRespBO> result = documents.stream().map(doc -> {
             RAGDataRespBO bo = new RAGDataRespBO();
+            bo.setDocumentId(doc.getId());
             bo.setGoodsID(goodsId);
             bo.setContent(doc.getText());
             Object createTime = doc.getMetadata().get("createTime");
@@ -140,5 +141,12 @@ public class AIServiceImpl implements AIService {
 
         log.info("[AI RAG] 查询Chroma数据完成, goodsId={}, 结果数={}", goodsId, result.size());
         return result;
+    }
+
+    @Override
+    public void deleteRAGDataByDocumentId(String documentId) {
+        log.info("[AI RAG] 删除Chroma数据, documentId={}", documentId);
+        vectorStore.delete(List.of(documentId));
+        log.info("[AI RAG] 删除Chroma数据完成, documentId={}", documentId);
     }
 }
