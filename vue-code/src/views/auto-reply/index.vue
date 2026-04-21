@@ -45,6 +45,7 @@ const {
   toggleAutoReply,
   handleUploadData,
   handleQueryRAGData,
+  handleDeleteRAGData,
   handleSendChat,
   handleChatKeydown,
   handleGoodsScroll,
@@ -258,7 +259,8 @@ const {
 
           <!-- ====== 知识资料视图 ====== -->
           <template v-if="rightTab === 'data'">
-            <div class="ar__config-section">
+            <!-- Upload view -->
+            <div v-if="!ragDataVisible" class="ar__config-section">
               <div class="ar__config-section-title">上传资料</div>
               <div class="ar__toggle-hint" style="margin-bottom: 8px;">
                 上传商品相关资料到AI知识库，AI将基于这些资料自动回复买家咨询
@@ -289,7 +291,7 @@ const {
                   class="btn btn--secondary"
                   :class="{ 'btn--loading': ragDataLoading }"
                   :disabled="ragDataLoading"
-                  @click="handleQueryRAGData"
+                  @click="ragDataVisible = true; handleQueryRAGData()"
                 >
                   <IconSearch />
                   查看现有资料
@@ -297,7 +299,65 @@ const {
               </div>
             </div>
 
+            <!-- Existing RAG Data view (replaces upload view) -->
+            <div v-else class="ar__rag-section">
+              <div class="ar__rag-section-header">
+                <span class="ar__rag-section-title">现有资料</span>
+                <span v-if="!ragDataLoading && ragDataList.length > 0" class="ar__rag-section-count">共 {{ ragDataList.length }} 条</span>
+                <button class="btn btn--ghost btn--sm" style="margin-left: auto;" @click="ragDataVisible = false">
+                  返回上传
+                </button>
+              </div>
 
+              <div class="ar__rag-scroll">
+                <div v-if="ragDataLoading" class="ar__loading">
+                  <div class="ar__spinner"></div>
+                  <span>加载中...</span>
+                </div>
+
+                <div v-else-if="ragDataList.length === 0" class="ar__rag-empty">
+                  <span class="ar__rag-empty-text">暂无资料</span>
+                </div>
+
+                <!-- Desktop: Table view -->
+                <table v-else-if="!isMobile" class="ar__rag-table">
+                  <thead class="ar__rag-table-head">
+                    <tr>
+                      <th class="ar__rag-table-th ar__rag-table-th--index">#</th>
+                      <th class="ar__rag-table-th ar__rag-table-th--content">资料内容</th>
+                      <th class="ar__rag-table-th ar__rag-table-th--time">创建时间</th>
+                      <th class="ar__rag-table-th ar__rag-table-th--action">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody class="ar__rag-table-body">
+                    <tr v-for="(item, index) in ragDataList" :key="item.documentId" class="ar__rag-table-tr">
+                      <td class="ar__rag-table-td ar__rag-table-td--index">{{ index + 1 }}</td>
+                      <td class="ar__rag-table-td ar__rag-table-td--content">
+                        <span class="ar__rag-content-text">{{ item.content }}</span>
+                      </td>
+                      <td class="ar__rag-table-td ar__rag-table-td--time">{{ formatTime(item.createTime) }}</td>
+                      <td class="ar__rag-table-td ar__rag-table-td--action">
+                        <button class="ar__rag-del-btn" @click="handleDeleteRAGData(item.documentId)">删除</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <!-- Mobile: Card view -->
+                <div v-else class="ar__rag-card-list">
+                  <div v-for="(item, index) in ragDataList" :key="item.documentId" class="ar__rag-card">
+                    <div class="ar__rag-card-header">
+                      <span class="ar__rag-card-index">#{{ index + 1 }}</span>
+                      <span class="ar__rag-card-time">{{ formatTime(item.createTime) }}</span>
+                    </div>
+                    <div class="ar__rag-card-content">{{ item.content }}</div>
+                    <div class="ar__rag-card-footer">
+                      <button class="ar__rag-del-btn" @click="handleDeleteRAGData(item.documentId)">删除</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </template>
 
           <!-- ====== AI 对话视图 ====== -->
@@ -396,56 +456,6 @@ const {
             >
               确定
             </button>
-          </div>
-        </div>
-      </div>
-    </Transition>
-
-    <!-- RAG Data Dialog -->
-    <Transition name="overlay-fade">
-      <div
-        v-if="ragDataVisible"
-        class="ar__dialog-overlay"
-        @click.self="ragDataVisible = false"
-      >
-        <div class="ar__rag-dialog">
-          <div class="ar__rag-dialog-header">
-            <h3 class="ar__rag-dialog-title">现有资料</h3>
-            <span v-if="!ragDataLoading && ragDataList.length > 0" class="ar__rag-dialog-count">共 {{ ragDataList.length }} 条</span>
-            <button class="ar__rag-dialog-close" @click="ragDataVisible = false">
-              &times;
-            </button>
-          </div>
-          <div class="ar__rag-dialog-body">
-            <div v-if="ragDataLoading" class="ar__loading">
-              <div class="ar__spinner"></div>
-              <span>加载中...</span>
-            </div>
-
-            <div v-else-if="ragDataList.length === 0" class="ar__rag-empty">
-              <span class="ar__rag-empty-text">暂无资料</span>
-            </div>
-
-            <div v-else class="ar__rag-table-wrap">
-              <table class="ar__rag-table">
-                <thead class="ar__rag-table-head">
-                  <tr>
-                    <th class="ar__rag-table-th ar__rag-table-th--index">#</th>
-                    <th class="ar__rag-table-th ar__rag-table-th--content">资料内容</th>
-                    <th class="ar__rag-table-th ar__rag-table-th--time">创建时间</th>
-                  </tr>
-                </thead>
-                <tbody class="ar__rag-table-body">
-                  <tr v-for="(item, index) in ragDataList" :key="index" class="ar__rag-table-tr">
-                    <td class="ar__rag-table-td ar__rag-table-td--index">{{ index + 1 }}</td>
-                    <td class="ar__rag-table-td ar__rag-table-td--content">
-                      <span class="ar__rag-content-text">{{ item.content }}</span>
-                    </td>
-                    <td class="ar__rag-table-td ar__rag-table-td--time">{{ formatTime(item.createTime) }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
           </div>
         </div>
       </div>

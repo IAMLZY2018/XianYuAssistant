@@ -2,6 +2,7 @@ package com.feijimiao.xianyuassistant.controller;
 
 import com.feijimiao.xianyuassistant.common.ResultObject;
 import com.feijimiao.xianyuassistant.controller.dto.ChatWithAIReqDTO;
+import com.feijimiao.xianyuassistant.controller.dto.DeleteRAGDataReqDTO;
 import com.feijimiao.xianyuassistant.controller.dto.PutNewDataToRAGReqDTO;
 import com.feijimiao.xianyuassistant.service.AIService;
 import com.feijimiao.xianyuassistant.service.bo.RAGDataRespBO;
@@ -41,6 +42,12 @@ public class AIChatController {
     public ResultObject<List<RAGDataRespBO>> queryRAGData(@RequestBody PutNewDataToRAGReqDTO req) {
         List<RAGDataRespBO> data = aiService.queryRAGDataBygoodsId(req.getGoodsId());
         return ResultObject.success(data);
+    }
+
+    @PostMapping("/deleteRAGData")
+    public ResultObject<?> deleteRAGData(@RequestBody DeleteRAGDataReqDTO req) {
+        aiService.deleteRAGDataByDocumentId(req.getDocumentId());
+        return ResultObject.success(null);
     }
 
 }
