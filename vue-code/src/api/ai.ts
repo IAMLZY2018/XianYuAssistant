@@ -12,6 +12,7 @@ export interface PutNewDataReq {
 
 // 查询 RAG 资料响应
 export interface RAGDataItem {
+  documentId: string
   goodsID: string
   content: string
   createTime: string
@@ -45,6 +46,17 @@ export function putNewDataToRAG(data: PutNewDataReq): Promise<Response> {
 // 查询 RAG 知识库资料
 export function queryRAGData(data: { goodsId: string }): Promise<Response> {
   return fetch('/ai/queryRAGData', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  })
+}
+
+// 删除 RAG 知识库资料
+export function deleteRAGData(data: { documentId: string }): Promise<Response> {
+  return fetch('/ai/deleteRAGData', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
