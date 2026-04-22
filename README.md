@@ -9,7 +9,7 @@
 
 一个功能强大的闲鱼店铺自动化管理工具，支持自动发货、自动回复、AI智能客服、消息管理等功能。
 
-[功能特性](#功能特性) • [部署方式](#部署方式) • [使用指南](#使用指南) • [截图展示](#截图展示) • [技术栈](#技术栈) • [API文档](#api文档) • [常见问题](#常见问题)
+[功能特性](#功能特性) • [部署方式](#部署方式) • [使用指南](#使用指南) • [截图展示](#截图展示) • [技术栈](#技术栈) • [常见问题](#常见问题)
 
 </div>
 
@@ -88,185 +88,157 @@
 
 ## 🚀 部署方式
 
-### 方式一：一键安装（推荐）
+### Docker 部署（推荐）
 
-适合快速体验，自动检测并安装 JDK 21，下载 JAR 包并启动服务。
-
-#### Linux / Mac / Termux
-
-```bash
-# Gitee（国内推荐）
-curl -fsSL https://gitee.com/lzy2018cn/xian-yu-assistant/raw/master/install.sh | bash
-
-# GitHub
-curl -fsSL https://raw.githubusercontent.com/IAMLZY2018/XianYuAssistant/master/install.sh | bash
-```
-
-#### 自定义配置
-
-```bash
-# 自定义端口
-PORT=8080 curl -fsSL https://gitee.com/lzy2018cn/xian-yu-assistant/raw/master/install.sh | bash
-
-# 自定义 JVM 内存
-JAVA_OPTS="-Xms512m -Xmx1024m" curl -fsSL https://gitee.com/lzy2018cn/xian-yu-assistant/raw/master/install.sh | bash
-```
-
-#### 安装流程
-
-```
-1. 检查 JDK 环境 → 未安装则提示安装 JDK 21
-2. 选择下载源 → Gitee 或 GitHub
-3. 下载 JAR 包 → 自动下载最新版本
-4. 启动服务 → 后台运行并输出访问地址
-```
-
-#### 支持的操作系统
-
-| 系统 | 安装命令 |
-|------|----------|
-| Ubuntu/Debian | `apt-get install openjdk-21-jdk` |
-| CentOS/RHEL/Rocky | `yum install java-21-openjdk` |
-| Fedora | `dnf install java-21-openjdk` |
-| macOS | `brew install openjdk@21` |
-| Arch/Manjaro | `pacman -S jdk-openjdk` |
-| Termux (Android) | `pkg install openjdk-21` |
-
----
-
-### 方式二：JAR包部署
-
-适合快速体验和生产环境使用，无需安装开发环境。
+使用 Docker Compose 一键部署，包含应用服务和 Chroma 向量数据库。
 
 #### 环境要求
 
-- **Java**: 21 或更高版本
+- **Docker**: 20.10+
+- **Docker Compose**: 2.0+
 
-#### 部署步骤
+#### 快速启动
 
-1. **下载JAR包**
-
-   前往 [Releases](https://github.com/IAMLZY2018/XianYuAssistant/releases) 页面下载最新版本的 `xianyu-assistant.jar`
-
-2. **启动应用**
+1. **创建部署目录并下载 docker-compose.yml**
 
    ```bash
-   java -jar xianyu-assistant.jar
+   mkdir xianyu-assistant && cd xianyu-assistant
+   ```
+
+   下载 [docker-compose.yml](https://raw.githubusercontent.com/IAMLZY2018/XianYuAssistant/master/docker-compose.yml) 到该目录：
+
+   ```bash
+   # Linux/Mac
+   curl -O https://raw.githubusercontent.com/IAMLZY2018/XianYuAssistant/master/docker-compose.yml
+
+   # Windows PowerShell
+   Invoke-WebRequest -Uri https://raw.githubusercontent.com/IAMLZY2018/XianYuAssistant/master/docker-compose.yml -OutFile docker-compose.yml
+   ```
+
+2. **启动服务**
+
+   ```bash
+   docker compose up -d
    ```
 
 3. **访问应用**
 
    打开浏览器访问: `http://localhost:12400`
 
-#### 后台运行（可选）
+#### 自定义配置
 
-**Windows:**
-```bash
-start /b java -jar xianyu-assistant.jar
+通过 `.env` 文件或环境变量自定义数据存储路径和其他配置：
+
+**方式一：创建 `.env` 文件**（推荐）
+
+在 `docker-compose.yml` 同目录下创建 `.env` 文件：
+
+```env
+# 端口配置
+APP_PORT=12400                            # 应用服务端口
+CHROMA_PORT=8321                          # Chroma向量数据库端口
+
+# 数据存储路径
+SQLITE_DATA_PATH=/data/xianyu/sqlite      # SQLite数据库文件路径
+LOGS_PATH=/data/xianyu/logs               # 应用日志路径
+CHROMA_DATA_PATH=/data/xianyu/chroma      # Chroma向量数据库路径
+
+# API配置
+ALI_API_KEY=your_ali_api_key              # 阿里云API Key（AI功能必需）
+CHROMA_AUTH_TOKEN=your_chroma_token       # Chroma认证Token
 ```
 
-**Linux/Mac:**
+**方式二：命令行指定**
+
 ```bash
-nohup java -jar xianyu-assistant.jar &
+# Linux/Mac
+SQLITE_DATA_PATH=/data/xianyu/sqlite \
+LOGS_PATH=/data/xianyu/logs \
+CHROMA_DATA_PATH=/data/xianyu/chroma \
+ALI_API_KEY=your_ali_api_key \
+docker compose up -d
+
+# Windows PowerShell
+$env:SQLITE_DATA_PATH="D:\xianyu\data\sqlite"
+$env:LOGS_PATH="D:\xianyu\data\logs"
+$env:CHROMA_DATA_PATH="D:\xianyu\data\chroma"
+$env:ALI_API_KEY="your_ali_api_key"
+docker compose up -d
 ```
 
----
+#### 配置项说明
 
-### 方式二：Docker部署
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `APP_PORT` | `12400` | 应用服务端口 |
+| `CHROMA_PORT` | `8321` | Chroma 向量数据库端口 |
+| `SQLITE_DATA_PATH` | `./data/sqlite` | SQLite 数据库文件存储路径 |
+| `LOGS_PATH` | `./data/logs` | 应用日志存储路径 |
+| `CHROMA_DATA_PATH` | `./data/chroma` | Chroma 向量数据库存储路径 |
+| `ALI_API_KEY` | 空 | 阿里云 API Key（启用 AI 功能必需） |
+| `CHROMA_AUTH_TOKEN` | `xianyu-chroma-token` | Chroma 认证 Token |
 
-适合容器化部署和服务器环境，自动完成所有构建步骤。
+#### 服务端口
 
-#### 环境要求
+| 服务 | 物理机端口 | 容器端口 | 说明 |
+|------|-----------|---------|------|
+| xianyu-assistant | 12400 | 12400 | 应用主服务 |
+| chroma | 8321 | 8000 | Chroma 向量数据库 |
 
-- **Docker**: 20.10+
-- **Docker Compose**: 2.0+ (可选)
-
-#### 本地Docker部署
-
-1. **克隆项目**
-
-   ```bash
-   # Gitee (国内推荐)
-   git clone https://gitee.com/lzy2018cn/xian-yu-assistant.git
-
-   # 或 GitHub
-   git clone https://github.com/IAMLZY2018/-XianYuAssistant.git
-
-   cd xian-yu-assistant
-   ```
-
-2. **启动服务**
-
-   ```bash
-   docker-compose up -d
-   ```
-
-3. **查看日志**
-
-   ```bash
-   docker-compose logs -f
-   ```
-
-4. **访问应用**
-
-   打开浏览器访问: `http://localhost:12400`
-
-#### 服务器Docker部署
-
-1. **SSH连接到服务器**
-
-   ```bash
-   ssh username@your-server-ip
-   ```
-
-2. **安装Docker（如未安装）**
-
-   ```bash
-   curl -fsSL https://get.docker.com | sh
-   sudo systemctl start docker
-   sudo systemctl enable docker
-   ```
-
-3. **克隆并启动**
-
-   ```bash
-   cd /opt
-
-   # Gitee (国内推荐)
-   git clone https://gitee.com/lzy2018cn/xian-yu-assistant.git
-
-   # 或 GitHub
-   git clone https://github.com/IAMLZY2018/-XianYuAssistant.git
-
-   cd xian-yu-assistant
-   docker compose up -d
-   ```
-
-4. **访问应用**
-
-   打开浏览器访问: `http://your-server-ip:12400`
-
-#### Docker常用命令
+#### 常用命令
 
 ```bash
+# 启动服务
+docker compose up -d
+
 # 停止服务
-docker-compose down
-
-# 重启服务
-docker-compose restart
+docker compose down
 
 # 查看日志
-docker-compose logs -f
+docker compose logs -f
 
-# 更新服务
-git pull
-docker-compose up -d --build
+# 查看应用日志
+docker compose logs -f xianyu-assistant
+
+# 重启服务
+docker compose restart
+
+# 更新到最新版本
+docker compose pull && docker compose up -d
 ```
 
-#### 更多Docker部署信息
+#### 服务器部署示例
 
-- [完整Docker部署指南](DOCKER_DEPLOY.md) - 详细的Docker配置和故障排查
-- [服务器部署指南](SERVER_DEPLOY.md) - 生产环境部署、Nginx配置、HTTPS等
+```bash
+# 1. SSH 连接服务器
+ssh username@your-server-ip
+
+# 2. 安装 Docker（如未安装）
+curl -fsSL https://get.docker.com | sh
+sudo systemctl start docker && sudo systemctl enable docker
+
+# 3. 创建部署目录
+mkdir -p /opt/xianyu-assistant && cd /opt/xianyu-assistant
+
+# 4. 下载 docker-compose.yml
+curl -O https://raw.githubusercontent.com/IAMLZY2018/XianYuAssistant/master/docker-compose.yml
+
+# 5. 创建 .env 配置
+cat > .env << 'EOF'
+APP_PORT=12400
+CHROMA_PORT=8321
+SQLITE_DATA_PATH=/opt/xianyu-assistant/data/sqlite
+LOGS_PATH=/opt/xianyu-assistant/data/logs
+CHROMA_DATA_PATH=/opt/xianyu-assistant/data/chroma
+ALI_API_KEY=your_ali_api_key
+EOF
+
+# 6. 启动服务
+docker compose up -d
+
+# 7. 访问应用
+# 浏览器打开 http://your-server-ip:12400
+```
 
 ---
 
@@ -350,8 +322,8 @@ docker-compose up -d --build
 集成通义千问大模型，通过RAG知识库实现智能回复。
 
 **配置步骤**:
-1. 配置环境变量 `ALI_API_KEY`（阿里云API Key）
-2. 部署Chroma向量数据库
+1. 在 `.env` 中设置 `ALI_API_KEY`（阿里云API Key）
+2. Chroma向量数据库已随Docker自动部署
 3. 在AI对话页面上传商品知识库数据
 4. 开启AI自动回复
 
@@ -399,287 +371,6 @@ docker-compose up -d --build
 
 ---
 
-## 📁 项目结构
-
-```
-xianyu-assistant/
-├── src/main/java/                          # Java源代码
-│   └── com/feijimiao/xianyuassistant/
-│       ├── controller/                      # 控制器层 (11个Controller)
-│       │   ├── dto/                         # 请求DTO
-│       │   └── vo/                          # 响应VO
-│       ├── service/                         # 服务层 (17个Service)
-│       │   └── impl/                        # 服务实现
-│       ├── mapper/                          # 数据访问层 (11个Mapper)
-│       ├── entity/                          # 实体类 (11个Entity)
-│       ├── config/                          # 配置类
-│       │   └── rag/                         # AI/RAG配置
-│       ├── websocket/                       # WebSocket核心
-│       │   └── handler/                     # 消息处理器
-│       ├── event/                           # Spring事件机制
-│       │   └── chatMessageEvent/            # 聊天消息事件及监听器
-│       ├── exception/                       # 异常处理
-│       ├── enums/                           # 枚举类
-│       ├── constants/                       # 常量定义
-│       └── utils/                           # 工具类 (11个Utils)
-├── src/main/resources/
-│   ├── static/                              # 前端构建产物
-│   ├── sql/schema.sql                       # 数据库建表脚本
-│   └── application.yaml                     # 配置文件
-├── vue-code/                                # 前端源代码
-│   ├── src/
-│   │   ├── views/                           # 页面组件 (10个页面)
-│   │   ├── components/                      # 公共组件
-│   │   ├── api/                             # API接口 (10个模块)
-│   │   ├── stores/                          # Pinia状态管理
-│   │   ├── router/                          # 路由配置
-│   │   ├── types/                           # TypeScript类型定义
-│   │   └── utils/                           # 工具函数
-│   └── vite.config.ts                       # Vite构建配置
-├── dbdata/                                  # SQLite数据库文件
-├── logs/                                    # 日志文件
-├── docs/                                    # 文档及截图
-├── pom.xml                                  # Maven构建配置
-├── docker-compose.yml                       # Docker Compose配置
-├── Dockerfile                               # Docker多阶段构建
-└── build-all.bat                            # 一键构建脚本
-```
-
----
-
-## 📊 数据库设计
-
-使用SQLite嵌入式数据库，数据文件位于 `dbdata/xianyu_assistant.db`。
-
-| 表名 | 说明 |
-|------|------|
-| `xianyu_account` | 闲鱼账号信息 |
-| `xianyu_cookie` | Cookie/Token凭证 |
-| `xianyu_goods` | 商品信息 |
-| `xianyu_chat_message` | 聊天消息记录 |
-| `xianyu_goods_config` | 商品配置（自动发货/回复开关） |
-| `xianyu_goods_auto_delivery_config` | 自动发货配置 |
-| `xianyu_goods_auto_delivery_record` | 自动发货记录 |
-| `xianyu_goods_auto_reply_config` | 自动回复配置 |
-| `xianyu_goods_auto_reply_record` | 自动回复记录 |
-| `xianyu_order` | 订单信息 |
-| `xianyu_operation_log` | 操作日志 |
-
----
-
-## 🔌 API文档
-
-所有API以 `/api` 为前缀，采用 POST + JSON 请求体风格。
-
-### 账号管理
-
-| 接口 | 说明 |
-|------|------|
-| `POST /api/account/list` | 获取账号列表 |
-| `POST /api/account/add` | 添加账号 |
-| `POST /api/account/update` | 更新账号 |
-| `POST /api/account/delete` | 删除账号 |
-| `POST /api/account/detail` | 获取账号详情 |
-
-### WebSocket管理
-
-| 接口 | 说明 |
-|------|------|
-| `POST /api/websocket/start` | 启动WebSocket连接 |
-| `POST /api/websocket/stop` | 停止WebSocket连接 |
-| `POST /api/websocket/status` | 获取连接状态 |
-| `POST /api/websocket/sendMessage` | 发送消息 |
-| `POST /api/websocket/refreshToken` | 刷新Token |
-
-### 商品管理
-
-| 接口 | 说明 |
-|------|------|
-| `POST /api/item/list` | 获取商品列表 |
-| `POST /api/item/refresh` | 刷新商品信息 |
-
-### 订单管理
-
-| 接口 | 说明 |
-|------|------|
-| `POST /api/order/list` | 获取订单列表 |
-| `POST /api/order/confirmShipment` | 确认发货 |
-
-#### 订单列表参数
-
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| xianyuAccountId | number | 否 | 闲鱼账号ID |
-| xyGoodsId | string | 否 | 闲鱼商品ID |
-| orderStatus | number | 否 | 1=待付款 2=待发货 3=已发货 4=已完成 5=已关闭 |
-| pageNum | number | 是 | 页码 |
-| pageSize | number | 是 | 每页条数 |
-
-#### 确认发货参数
-
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| xianyuAccountId | number | 是 | 闲鱼账号ID |
-| orderId | string | 是 | 订单ID |
-
-### 自动发货
-
-| 接口 | 说明 |
-|------|------|
-| `POST /api/auto-delivery-config/get` | 获取自动发货配置 |
-| `POST /api/auto-delivery-config/saveOrUpdate` | 保存/更新配置 |
-| `POST /api/auto-delivery-record/list` | 获取发货记录 |
-| `POST /api/auto-delivery-record/confirmShipment` | 确认已发货 |
-| `POST /api/auto-delivery-record/triggerAutoDelivery` | 触发自动发货 |
-
-### 自动回复
-
-| 接口 | 说明 |
-|------|------|
-| `POST /api/auto-reply-config/list` | 获取回复规则列表 |
-| `POST /api/auto-reply-config/saveOrUpdate` | 保存/更新规则 |
-| `POST /api/auto-reply-config/delete` | 删除规则 |
-| `POST /api/auto-reply-record/list` | 获取回复记录 |
-
-### 消息管理
-
-| 接口 | 说明 |
-|------|------|
-| `POST /api/msg/list` | 获取消息列表 |
-| `POST /api/msg/send` | 发送消息 |
-
-### AI智能客服
-
-| 接口 | 说明 |
-|------|------|
-| `POST /ai/chat` | AI对话（SSE流式响应） |
-| `POST /ai/putNewData` | 写入RAG知识库数据 |
-
-### 其他
-
-| 接口 | 说明 |
-|------|------|
-| `POST /api/dashboard/stats` | 仪表板数据统计 |
-| `POST /api/operation-log/list` | 操作日志列表 |
-| `POST /api/qrlogin/generate` | 生成登录二维码 |
-| `POST /api/qrlogin/check` | 检查扫码状态 |
-
----
-
-## 🏗️ 架构设计
-
-### WebSocket消息处理流程
-
-```
-闲鱼服务器 → XianyuWebSocketClient(接收+解密+ACK)
-  → DefaultWebSocketMessageHandler(分发)
-    → WebSocketMessageRouter(按lwp字段路由)
-      → SyncMessageHandler(解析消息字段)
-        → ApplicationEventPublisher(发布ChatMessageReceivedEvent)
-          → [异步] ChatMessageEventSaveListener(去重+保存DB)
-          → [异步] ChatMessageEventAutoDeliveryListener(判断+自动发货)
-```
-
-### 凭证体系
-
-三级凭证依赖关系：Cookie → _m_h5_tk → WebSocket Token
-
-- **Cookie**: 登录态基础，每30分钟保活
-- **_m_h5_tk**: API签名令牌，每2小时刷新
-- **WebSocket Token**: 连接鉴权令牌，提前1小时刷新
-
-详细说明见 [CREDENTIALS.md](CREDENTIALS.md)
-
-### 设计特点
-
-- **事件驱动**: 消息解析与业务处理解耦，通过Spring Event机制异步并发执行
-- **模板方法模式**: AbstractLwpHandler定义处理骨架，SyncMessageHandler实现具体逻辑
-- **信号量控制**: 最多100个并发消息处理
-- **人工模拟**: HumanLikeDelayUtils模拟阅读/思考/打字延迟，避免风控检测
-- **嵌入式数据库**: SQLite零外部依赖，数据文件随应用管理
-
----
-
-## 📝 开发指南
-
-### 从源码构建
-
-#### 环境要求
-
-- **Java**: 21 或更高版本
-- **Node.js**: 20.19.0 或更高版本
-- **Maven**: 3.6+ (可选，项目包含 Maven Wrapper)
-
-#### 构建步骤
-
-1. **克隆项目**
-
-   ```bash
-   # Gitee (国内推荐)
-   git clone https://gitee.com/lzy2018cn/xian-yu-assistant.git
-
-   # 或 GitHub
-   git clone https://github.com/IAMLZY2018/-XianYuAssistant.git
-
-   cd xian-yu-assistant
-   ```
-
-2. **构建前端**
-
-   ```bash
-   cd vue-code
-   npm install
-   npm run build:spring
-   cd ..
-   ```
-
-3. **启动后端**
-
-   ```bash
-   # Windows
-   mvnw.cmd spring-boot:run
-
-   # Linux/Mac
-   ./mvnw spring-boot:run
-   ```
-
-4. **访问应用**
-
-   打开浏览器访问: `http://localhost:12400`
-
-### 前端开发模式
-
-```bash
-cd vue-code
-npm install
-npm run dev
-```
-
-访问: `http://localhost:5173`，Vite自动将 `/api` 请求代理到后端 `http://localhost:12400`。
-
-### 构建生产版本
-
-```bash
-# 方式一：一键构建
-build-all.bat
-
-# 方式二：分步构建
-cd vue-code && npm run build:spring && cd ..
-mvn clean package
-```
-
-生成的JAR包位于: `target/xianyu-assistant.jar`
-
-### AI功能配置
-
-如需启用AI智能客服功能：
-
-1. 设置环境变量 `ALI_API_KEY`（阿里云DashScope API Key）
-2. 部署Chroma向量数据库（默认连接 `http://192.168.8.88:8321`）
-3. 在 `application.yaml` 中配置AI模型参数
-
----
-
 ## ❓ 常见问题
 
 ### 1. WebSocket连接失败怎么办？
@@ -711,10 +402,23 @@ mvn clean package
 
 ### 7. AI智能客服如何配置？
 
-1. 获取阿里云API Key并设置环境变量 `ALI_API_KEY`
-2. 部署Chroma向量数据库
+1. 在 `.env` 中设置 `ALI_API_KEY`（阿里云API Key）
+2. Chroma向量数据库已随Docker自动部署，无需额外配置
 3. 在AI对话页面上传商品知识库数据
 4. 系统将自动使用RAG检索相关知识并生成智能回复
+
+### 8. Docker部署数据存在哪里？
+
+默认存储在 `./data/` 目录下，可通过环境变量自定义：
+- `SQLITE_DATA_PATH` - SQLite数据库
+- `LOGS_PATH` - 应用日志
+- `CHROMA_DATA_PATH` - Chroma向量数据
+
+### 9. 如何更新到最新版本？
+
+```bash
+docker compose pull && docker compose up -d
+```
 
 ---
 

@@ -34,16 +34,12 @@ CREATE TRIGGER IF NOT EXISTS update_sys_user_time
 AFTER UPDATE ON sys_user
 BEGIN
     UPDATE sys_user SET updated_time = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END
-$
-
+END;
 CREATE TRIGGER IF NOT EXISTS update_sys_login_token_time
 AFTER UPDATE ON sys_login_token
 BEGIN
     UPDATE sys_login_token SET updated_time = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END
-$
-
+END;
 -- 闲鱼账号表
 CREATE TABLE IF NOT EXISTS xianyu_account (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,16 +78,12 @@ CREATE TRIGGER IF NOT EXISTS update_xianyu_account_time
 AFTER UPDATE ON xianyu_account
 BEGIN
     UPDATE xianyu_account SET updated_time = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END
-$$
-
+END;
 CREATE TRIGGER IF NOT EXISTS update_xianyu_cookie_time 
 AFTER UPDATE ON xianyu_cookie
 BEGIN
     UPDATE xianyu_cookie SET updated_time = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END
-$$
-
+END;
 -- 闲鱼商品信息表
 CREATE TABLE IF NOT EXISTS xianyu_goods (
     id BIGINT PRIMARY KEY,                        -- 表ID（使用雪花ID）
@@ -119,9 +111,7 @@ CREATE TRIGGER IF NOT EXISTS update_xianyu_goods_time
 AFTER UPDATE ON xianyu_goods
 BEGIN
     UPDATE xianyu_goods SET updated_time = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END
-$
-
+END;
 -- 闲鱼聊天消息表
 CREATE TABLE IF NOT EXISTS xianyu_chat_message (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -195,9 +185,7 @@ CREATE TRIGGER IF NOT EXISTS update_xianyu_goods_config_time
 AFTER UPDATE ON xianyu_goods_config
 BEGIN
     UPDATE xianyu_goods_config SET update_time = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END
-$
-
+END;
 -- 商品自动发货配置表
 CREATE TABLE IF NOT EXISTS xianyu_goods_auto_delivery_config (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -222,9 +210,7 @@ CREATE TRIGGER IF NOT EXISTS update_xianyu_goods_auto_delivery_config_time
 AFTER UPDATE ON xianyu_goods_auto_delivery_config
 BEGIN
     UPDATE xianyu_goods_auto_delivery_config SET update_time = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END
-$
-
+END;
 -- 商品自动发货记录表 (优化版: 移除重复字段,通过关联xianyu_order表获取订单信息)
 CREATE TABLE IF NOT EXISTS xianyu_goods_auto_delivery_record (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -275,9 +261,7 @@ CREATE TRIGGER IF NOT EXISTS update_xianyu_goods_auto_reply_config_time
 AFTER UPDATE ON xianyu_goods_auto_reply_config
 BEGIN
     UPDATE xianyu_goods_auto_reply_config SET update_time = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END
-$
-
+END;
 -- 商品自动回复记录表
 CREATE TABLE IF NOT EXISTS xianyu_goods_auto_reply_record (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -371,9 +355,7 @@ CREATE TRIGGER IF NOT EXISTS update_xianyu_order_time
 AFTER UPDATE ON xianyu_order
 BEGIN
     UPDATE xianyu_order SET update_time = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END
-$
-
+END;
 -- 操作日志表
 CREATE TABLE IF NOT EXISTS xianyu_operation_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -418,9 +400,7 @@ CREATE TRIGGER IF NOT EXISTS update_xianyu_sys_setting_time
 AFTER UPDATE ON xianyu_sys_setting
 BEGIN
     UPDATE xianyu_sys_setting SET updated_time = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END
-$
-
+END;
 -- 初始化系统配置数据
 INSERT OR IGNORE INTO xianyu_sys_setting (setting_key, setting_value, setting_desc)
 VALUES ('sys_prompt', '你是一个闲鱼卖家，你叫肥极喵，不要回复的像AI，简短回答
