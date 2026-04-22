@@ -54,4 +54,9 @@ public interface AuthService {
      * 修改密码
      */
     void changePassword(ChangePasswordReqBO reqBO);
+
+    /**
+     * 退出登录
+     */
+    void logout(String token);
 }

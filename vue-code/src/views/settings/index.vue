@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { getCurrentUser, changePassword } from '@/api/system'
-import { ElMessage } from 'element-plus'
+import { logout } from '@/api/auth'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { clearAuthToken } from '@/utils/request'
 
+const router = useRouter()
 const username = ref('')
 const lastLoginTime = ref('')
 const loading = ref(false)
@@ -17,6 +21,9 @@ const changingPassword = ref(false)
 const showOldPassword = ref(false)
 const showNewPassword = ref(false)
 const showConfirmPassword = ref(false)
+
+// 退出登录
+const loggingOut = ref(false)
 
 onMounted(async () => {
   loading.value = true
@@ -64,6 +71,37 @@ async function handleChangePassword() {
     changingPassword.value = false
   }
 }
+
+async function handleLogout() {
+  try {
+    await ElMessageBox.confirm(
+      '确定要退出登录吗？',
+      '退出确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+
+    loggingOut.value = true
+    try {
+      await logout()
+      clearAuthToken()
+      ElMessage.success('已退出登录')
+      router.push('/login')
+    } catch (e) {
+      console.error('退出登录失败:', e)
+      // 即使接口失败，也清除本地token并跳转
+      clearAuthToken()
+      router.push('/login')
+    } finally {
+      loggingOut.value = false
+    }
+  } catch {
+    // 用户取消
+  }
+}
 </script>
 
 <template>
@@ -85,6 +123,20 @@ async function handleChangePassword() {
           <span class="s__info-label">最后登录时间</span>
           <span class="s__info-value">{{ lastLoginTime || '-' }}</span>
         </div>
+      </div>
+    </div>
+
+    <div class="s__card">
+      <div class="s__card-title">退出登录</div>
+      <div class="s__logout-content">
+        <p class="s__logout-text">退出当前系统账号，退出后需要重新登录</p>
+        <button
+          class="s__btn s__btn--danger"
+          :disabled="loggingOut"
+          @click="handleLogout"
+        >
+          {{ loggingOut ? '退出中...' : '退出登录' }}
+        </button>
       </div>
     </div>
 
@@ -391,6 +443,32 @@ async function handleChangePassword() {
 .s__btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.s__btn--danger {
+  background: #ff4d4f;
+  color: #fff;
+}
+
+.s__btn--danger:hover {
+  background: #ff7875;
+}
+
+.s__btn--danger:active {
+  transform: scale(0.97);
+}
+
+/* Logout */
+.s__logout-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--d-space-3);
+}
+
+.s__logout-text {
+  font-size: 13px;
+  color: var(--d-text-secondary);
+  margin: 0;
 }
 
 /* Responsive */

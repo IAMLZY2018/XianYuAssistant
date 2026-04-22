@@ -128,4 +128,12 @@ public interface AccountService {
      * @return 是否更新成功
      */
     boolean updateDeviceId(Long accountId, String deviceId);
+    
+    /**
+     * 获取闲鱼用户ID（即UNB）
+     *
+     * @param accountId 账号ID
+     * @return 闲鱼用户ID（UNB），如果不存在则返回null
+     */
+    String getXianyuUserId(Long accountId);
 }

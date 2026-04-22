@@ -134,6 +134,24 @@ public class LoginController {
     }
 
     /**
+     * 退出登录
+     */
+    @PostMapping("/logout")
+    public ResultObject<?> logout(HttpServletRequest request) {
+        try {
+            String token = request.getHeader("Authorization");
+            if (token != null && token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+            authService.logout(token);
+            return ResultObject.success(null);
+        } catch (Exception e) {
+            log.error("退出登录失败", e);
+            return ResultObject.failed("退出登录失败: " + e.getMessage());
+        }
+    }
+
+    /**
      * 获取客户端IP
      */
     private String getClientIp(HttpServletRequest request) {

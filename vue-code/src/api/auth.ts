@@ -25,3 +25,11 @@ export function register(data: { username: string; password: string; confirmPass
     data
   })
 }
+
+/** 退出登录 */
+export function logout() {
+  return request<null>({
+    url: '/login/logout',
+    method: 'post'
+  })
+}

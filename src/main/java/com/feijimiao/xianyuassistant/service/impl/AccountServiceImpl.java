@@ -602,4 +602,25 @@ public class AccountServiceImpl implements AccountService {
             return false;
         }
     }
+    
+    @Override
+    public String getXianyuUserId(Long accountId) {
+        try {
+            // 查询账号
+            XianyuAccount account = accountMapper.selectById(accountId);
+            if (account == null) {
+                log.warn("账号不存在: accountId={}", accountId);
+                return null;
+            }
+            
+            // UNB就是闲鱼用户ID
+            String unb = account.getUnb();
+            log.debug("获取闲鱼用户ID: accountId={}, unb={}", accountId, unb);
+            return unb;
+            
+        } catch (Exception e) {
+            log.error("获取闲鱼用户ID失败: accountId={}", accountId, e);
+            return null;
+        }
+    }
 }

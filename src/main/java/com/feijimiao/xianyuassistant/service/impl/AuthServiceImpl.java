@@ -241,4 +241,21 @@ public class AuthServiceImpl implements AuthService {
         sysUserMapper.updateById(user);
         log.info("[Auth] 修改密码成功: userId={}", reqBO.getUserId());
     }
+
+    @Override
+    public void logout(String token) {
+        if (token == null || token.isEmpty()) {
+            return;
+        }
+
+        // 删除数据库中的Token
+        LambdaQueryWrapper<SysLoginToken> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SysLoginToken::getToken, token);
+        sysLoginTokenMapper.delete(wrapper);
+
+        // 删除缓存中的Token
+        cacheService.remove("token:" + token);
+
+        log.info("[Auth] 退出登录成功: token={}", token);
+    }
 }
