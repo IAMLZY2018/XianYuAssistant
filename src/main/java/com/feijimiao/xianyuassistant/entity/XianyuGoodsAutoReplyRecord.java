@@ -29,6 +29,26 @@ public class XianyuGoodsAutoReplyRecord {
     private String xyGoodsId;
     
     /**
+     * 会话ID（用于延时任务去重）
+     */
+    private String sId;
+    
+    /**
+     * 触发回复的消息pnmId
+     */
+    private String pnmId;
+    
+    /**
+     * 买家用户ID
+     */
+    private String buyerUserId;
+    
+    /**
+     * 买家用户名
+     */
+    private String buyerUserName;
+    
+    /**
      * 买家消息内容
      */
     private String buyerMessage;
@@ -39,12 +59,17 @@ public class XianyuGoodsAutoReplyRecord {
     private String replyContent;
     
     /**
+     * 回复类型：1-关键词匹配，2-RAG智能回复
+     */
+    private Integer replyType;
+    
+    /**
      * 匹配的关键词
      */
     private String matchedKeyword;
     
     /**
-     * 状态是否成功1-成功，0-失败
+     * 状态：0-待回复，1-成功，-1-失败
      */
     private Integer state;
     

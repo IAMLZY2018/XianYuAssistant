@@ -116,3 +116,33 @@ export function deleteItem(data: {
     data
   });
 }
+
+// RAG自动回复配置响应
+export interface RagAutoReplyConfigResponse {
+  ragDelaySeconds: number;
+}
+
+// 获取RAG自动回复配置
+export function getRagAutoReplyConfig(data: {
+  xianyuAccountId: number;
+  xyGoodsId: string;
+}) {
+  return request<RagAutoReplyConfigResponse>({
+    url: '/items/getRagAutoReplyConfig',
+    method: 'POST',
+    data
+  });
+}
+
+// 更新RAG自动回复配置
+export function updateRagAutoReplyConfig(data: {
+  xianyuAccountId: number;
+  xyGoodsId: string;
+  ragDelaySeconds: number;
+}) {
+  return request({
+    url: '/items/updateRagAutoReplyConfig',
+    method: 'POST',
+    data
+  });
+}

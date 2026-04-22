@@ -26,15 +26,16 @@ public interface XianyuGoodsAutoReplyConfigMapper {
     /**
      * 插入配置
      */
-    @Insert("INSERT INTO xianyu_goods_auto_reply_config (xianyu_account_id, xianyu_goods_id, xy_goods_id, keyword, reply_content, match_type) " +
-            "VALUES (#{xianyuAccountId}, #{xianyuGoodsId}, #{xyGoodsId}, #{keyword}, #{replyContent}, #{matchType})")
+    @Insert("INSERT INTO xianyu_goods_auto_reply_config (xianyu_account_id, xianyu_goods_id, xy_goods_id, keyword, reply_content, match_type, rag_delay_seconds) " +
+            "VALUES (#{xianyuAccountId}, #{xianyuGoodsId}, #{xyGoodsId}, #{keyword}, #{replyContent}, #{matchType}, #{ragDelaySeconds})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(XianyuGoodsAutoReplyConfig config);
     
     /**
      * 更新配置
      */
-    @Update("UPDATE xianyu_goods_auto_reply_config SET keyword = #{keyword}, reply_content = #{replyContent}, match_type = #{matchType} WHERE id = #{id}")
+    @Update("UPDATE xianyu_goods_auto_reply_config SET keyword = #{keyword}, reply_content = #{replyContent}, match_type = #{matchType}, " +
+            "rag_delay_seconds = #{ragDelaySeconds} WHERE id = #{id}")
     int update(XianyuGoodsAutoReplyConfig config);
     
     /**

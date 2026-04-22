@@ -56,4 +56,20 @@ public interface ItemService {
      * @return 删除结果
      */
     ResultObject<DeleteItemRespDTO> deleteItem(DeleteItemReqDTO reqDTO);
+    
+    /**
+     * 获取RAG自动回复配置
+     *
+     * @param reqDTO 请求参数
+     * @return RAG配置
+     */
+    ResultObject<RagAutoReplyConfigRespDTO> getRagAutoReplyConfig(RagAutoReplyConfigReqDTO reqDTO);
+    
+    /**
+     * 更新RAG自动回复配置
+     *
+     * @param reqDTO 请求参数
+     * @return 更新结果
+     */
+    ResultObject<?> updateRagAutoReplyConfig(UpdateRagAutoReplyConfigReqDTO reqDTO);
 }
