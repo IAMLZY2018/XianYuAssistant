@@ -260,6 +260,7 @@ CREATE TABLE IF NOT EXISTS xianyu_goods_auto_reply_config (
     keyword TEXT,                                     -- 关键词（支持多个，用逗号分隔）
     reply_content TEXT,                               -- 回复内容
     match_type TINYINT DEFAULT 1,                     -- 匹配类型（1-包含，2-完全匹配，3-正则）
+    rag_delay_seconds INTEGER DEFAULT 15,             -- RAG回复延时秒数（默认15秒）
     create_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 创建时间
     update_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 更新时间
     FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
@@ -283,10 +284,15 @@ CREATE TABLE IF NOT EXISTS xianyu_goods_auto_reply_record (
     xianyu_account_id BIGINT NOT NULL,                -- 闲鱼账号ID
     xianyu_goods_id BIGINT,                           -- 本地闲鱼商品ID
     xy_goods_id VARCHAR(100) NOT NULL,                -- 闲鱼的商品ID
+    s_id VARCHAR(100),                                -- 会话ID（用于延时任务去重）
+    pnm_id VARCHAR(100),                              -- 触发回复的消息pnmId
+    buyer_user_id VARCHAR(100),                       -- 买家用户ID
+    buyer_user_name VARCHAR(200),                     -- 买家用户名
     buyer_message TEXT,                               -- 买家消息内容
     reply_content TEXT,                               -- 回复消息内容
+    reply_type TINYINT DEFAULT 1,                     -- 回复类型：1-关键词匹配，2-RAG智能回复
     matched_keyword VARCHAR(200),                     -- 匹配的关键词
-    state TINYINT DEFAULT 0,                          -- 状态是否成功1-成功，0-失败
+    state TINYINT DEFAULT 0,                          -- 状态：0-待回复，1-成功，-1-失败
     create_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 创建时间
     FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
 );
@@ -296,6 +302,11 @@ CREATE INDEX IF NOT EXISTS idx_auto_reply_record_account_id ON xianyu_goods_auto
 CREATE INDEX IF NOT EXISTS idx_auto_reply_record_xy_goods_id ON xianyu_goods_auto_reply_record(xy_goods_id);
 CREATE INDEX IF NOT EXISTS idx_auto_reply_record_state ON xianyu_goods_auto_reply_record(state);
 CREATE INDEX IF NOT EXISTS idx_auto_reply_record_create_time ON xianyu_goods_auto_reply_record(create_time);
+CREATE INDEX IF NOT EXISTS idx_auto_reply_record_s_id ON xianyu_goods_auto_reply_record(s_id);
+CREATE INDEX IF NOT EXISTS idx_auto_reply_record_pnm_id ON xianyu_goods_auto_reply_record(pnm_id);
+-- 创建唯一索引，防止同一会话重复回复（用于延时任务去重）
+CREATE UNIQUE INDEX IF NOT EXISTS idx_auto_reply_record_unique 
+ON xianyu_goods_auto_reply_record(xianyu_account_id, s_id, pnm_id);
 
 -- 闲鱼订单表
 CREATE TABLE IF NOT EXISTS xianyu_order (

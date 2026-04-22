@@ -147,4 +147,40 @@ public class ItemController {
             return ResultObject.failed("获取自动发货记录失败: " + e.getMessage());
         }
     }
+    
+    /**
+     * 获取RAG自动回复配置
+     *
+     * @param reqDTO 请求参数
+     * @return RAG配置
+     */
+    @PostMapping("/getRagAutoReplyConfig")
+    public ResultObject<RagAutoReplyConfigRespDTO> getRagAutoReplyConfig(@RequestBody RagAutoReplyConfigReqDTO reqDTO) {
+        try {
+            log.info("获取RAG自动回复配置: xianyuAccountId={}, xyGoodsId={}", 
+                    reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId());
+            return itemService.getRagAutoReplyConfig(reqDTO);
+        } catch (Exception e) {
+            log.error("获取RAG自动回复配置失败", e);
+            return ResultObject.failed("获取RAG自动回复配置失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 更新RAG自动回复配置
+     *
+     * @param reqDTO 请求参数
+     * @return 更新结果
+     */
+    @PostMapping("/updateRagAutoReplyConfig")
+    public ResultObject<?> updateRagAutoReplyConfig(@RequestBody UpdateRagAutoReplyConfigReqDTO reqDTO) {
+        try {
+            log.info("更新RAG自动回复配置: xianyuAccountId={}, xyGoodsId={}, ragDelaySeconds={}", 
+                    reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId(), reqDTO.getRagDelaySeconds());
+            return itemService.updateRagAutoReplyConfig(reqDTO);
+        } catch (Exception e) {
+            log.error("更新RAG自动回复配置失败", e);
+            return ResultObject.failed("更新RAG自动回复配置失败: " + e.getMessage());
+        }
+    }
 }

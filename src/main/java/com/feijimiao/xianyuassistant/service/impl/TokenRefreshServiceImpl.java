@@ -64,17 +64,10 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
     
     /**
      * 刷新_m_h5_tk token
-     * 通过调用闲鱼API，服务器会返回新的_m_h5_tk
-     * 
-     * 参考Python逻辑：
-     * 1. 调用H5 API获取新的_m_h5_tk
-     * 2. 如果失败，重试最多2次
-     * 3. 重试失败后，调用hasLogin刷新Cookie
-     * 4. hasLogin成功后，重新尝试获取_m_h5_tk
      */
     @Override
     public boolean refreshMh5tkToken(Long accountId) {
-        return refreshMh5tkTokenWithRetry(accountId, 0);
+        return refreshMh5tkTokenWithRetry(accountId, 0, 0);
     }
     
     /**
@@ -82,10 +75,11 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
      * 参考Python XianyuApis.get_token的重试逻辑
      * 
      * @param accountId 账号ID
-     * @param retryCount 当前重试次数
+     * @param retryCount 当前重试次数（_m_h5_tk获取重试）
+     * @param hasLoginRetryCount hasLogin重试次数（用于跨调用传递）
      * @return 是否成功
      */
-    private boolean refreshMh5tkTokenWithRetry(Long accountId, int retryCount) {
+    private boolean refreshMh5tkTokenWithRetry(Long accountId, int retryCount, int hasLoginRetryCount) {
         try {
             log.info("【账号{}】开始刷新_m_h5_tk token... (重试次数: {})", accountId, retryCount);
             
@@ -154,11 +148,11 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
             
             // 4. 响应中未包含新的_m_h5_tk，进入失败处理
             log.warn("【账号{}】⚠️ 响应中未包含新的_m_h5_tk", accountId);
-            return handleMh5tkRefreshFailure(accountId, retryCount, "响应中未包含新Token");
+            return handleMh5tkRefreshFailure(accountId, retryCount, hasLoginRetryCount, "响应中未包含新Token");
             
         } catch (Exception e) {
             log.error("【账号{}】刷新_m_h5_tk token失败", accountId, e);
-            return handleMh5tkRefreshFailure(accountId, retryCount, "异常: " + e.getMessage());
+            return handleMh5tkRefreshFailure(accountId, retryCount, hasLoginRetryCount, "异常: " + e.getMessage());
         }
     }
     
@@ -168,10 +162,11 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
      * 
      * @param accountId 账号ID
      * @param retryCount 当前重试次数
+     * @param hasLoginRetryCount hasLogin重试次数
      * @param reason 失败原因
      * @return 是否成功
      */
-    private boolean handleMh5tkRefreshFailure(Long accountId, int retryCount, String reason) {
+    private boolean handleMh5tkRefreshFailure(Long accountId, int retryCount, int hasLoginRetryCount, String reason) {
         // 参考Python: retry_count < 2 时直接重试
         if (retryCount < 2) {
             log.warn("【账号{}】_m_h5_tk刷新失败({})，准备重试... (重试次数: {}/2)", 
@@ -183,12 +178,15 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
                 Thread.currentThread().interrupt();
             }
             
-            return refreshMh5tkTokenWithRetry(accountId, retryCount + 1);
+            return refreshMh5tkTokenWithRetry(accountId, retryCount + 1, hasLoginRetryCount);
         }
         
         // 参考Python: retry_count >= 2 时，调用hasLogin刷新Cookie后重试
-        log.warn("【账号{}】_m_h5_tk刷新重试已达上限，尝试通过hasLogin刷新Cookie...", accountId);
-        return refreshMh5tkViaHasLogin(accountId, 0);
+        // 递增 hasLoginRetryCount，因为之前的 hasLogin 没有解决问题
+        int nextHasLoginRetryCount = hasLoginRetryCount + 1;
+        log.warn("【账号{}】_m_h5_tk刷新重试已达上限，尝试通过hasLogin刷新Cookie... (hasLogin次数: {}/2)", 
+                accountId, nextHasLoginRetryCount);
+        return refreshMh5tkViaHasLogin(accountId, nextHasLoginRetryCount);
     }
     
     /**
@@ -231,7 +229,7 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
             boolean refreshSuccess = cookieRefreshService.checkLoginStatus(accountId);
             
             if (refreshSuccess) {
-                log.info("【账号{}】hasLogin成功，登录态有效，准备重新获取_m_h5_tk（重置重试计数）", accountId);
+                log.info("【账号{}】hasLogin成功，登录态有效，准备重新获取_m_h5_tk", accountId);
                 
                 try {
                     Thread.sleep(500);
@@ -239,8 +237,9 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
                     Thread.currentThread().interrupt();
                 }
                 
-                // 重置retryCount为0，重新开始获取_m_h5_tk流程
-                boolean tokenRefreshed = refreshMh5tkTokenWithRetry(accountId, 0);
+                // 重置retryCount为0，但保持hasLoginRetryCount不变
+                // 如果_m_h5_tk仍失败，会继续递增hasLoginRetryCount
+                boolean tokenRefreshed = refreshMh5tkTokenWithRetry(accountId, 0, hasLoginRetryCount);
                 
                 if (tokenRefreshed) {
                     return true;

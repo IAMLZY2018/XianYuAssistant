@@ -1,1 +1,0 @@
-import{_ as o,h as n,c as r,b as t}from"./index-CWsQwLDm.js";const s={},c={xmlns:"http://www.w3.org/2000/svg",viewBox:"0 0 24 24",fill:"none",stroke:"currentColor","stroke-width":"1.5","stroke-linecap":"round","stroke-linejoin":"round"};function l(a,e){return n(),r("svg",c,[...e[0]||(e[0]=[t("path",{d:"M20 6L9 17l-5-5"},null,-1)])])}const _=o(s,[["render",l]]);export{_ as I};

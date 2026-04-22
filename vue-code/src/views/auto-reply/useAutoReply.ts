@@ -1,7 +1,7 @@
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getAccountList } from '@/api/account'
-import { getGoodsList, updateAutoReplyStatus } from '@/api/goods'
+import { getGoodsList, updateAutoReplyStatus, getRagAutoReplyConfig, updateRagAutoReplyConfig } from '@/api/goods'
 import { chatWithAI, putNewDataToRAG, queryRAGData, deleteRAGData } from '@/api/ai'
 import type { RAGDataItem } from '@/api/ai'
 import { showSuccess, showError, showInfo } from '@/utils'
@@ -66,6 +66,11 @@ export function useAutoReply() {
     type: 'danger' as 'danger' | 'primary',
     onConfirm: () => {}
   })
+
+  // RAG config
+  const ragDelaySeconds = ref(15)
+  const ragConfigLoading = ref(false)
+  const ragConfigSaving = ref(false)
 
   // Check screen size
   const checkScreenSize = () => {
@@ -224,6 +229,59 @@ export function useAutoReply() {
 
     if (isMobile.value) {
       mobileView.value = 'config'
+    }
+
+    // 加载RAG配置
+    loadRagConfig()
+  }
+
+  // Load RAG config
+  const loadRagConfig = async () => {
+    if (!selectedGoods.value || !selectedAccountId.value) return
+
+    ragConfigLoading.value = true
+    try {
+      const response = await getRagAutoReplyConfig({
+        xianyuAccountId: selectedAccountId.value,
+        xyGoodsId: selectedGoods.value.item.xyGoodId
+      })
+      if (response.code === 0 || response.code === 200) {
+        ragDelaySeconds.value = response.data?.ragDelaySeconds ?? 15
+      }
+    } catch (error: any) {
+      console.error('加载RAG配置失败:', error)
+    } finally {
+      ragConfigLoading.value = false
+    }
+  }
+
+  // Update RAG delay seconds
+  const updateRagDelaySeconds = async () => {
+    if (!selectedGoods.value || !selectedAccountId.value) return
+
+    // 验证范围
+    let seconds = ragDelaySeconds.value
+    if (seconds < 5) seconds = 5
+    if (seconds > 120) seconds = 120
+    ragDelaySeconds.value = seconds
+
+    ragConfigSaving.value = true
+    try {
+      const response = await updateRagAutoReplyConfig({
+        xianyuAccountId: selectedAccountId.value,
+        xyGoodsId: selectedGoods.value.item.xyGoodId,
+        ragDelaySeconds: seconds
+      })
+      if (response.code === 0 || response.code === 200) {
+        showSuccess('延时设置已保存')
+      } else {
+        throw new Error(response.msg || '操作失败')
+      }
+    } catch (error: any) {
+      console.error('更新RAG延时失败:', error)
+      showError(error.message || '操作失败')
+    } finally {
+      ragConfigSaving.value = false
     }
   }
 
@@ -558,6 +616,9 @@ export function useAutoReply() {
     isMobile,
     mobileView,
     confirmDialog,
+    ragDelaySeconds,
+    ragConfigLoading,
+    ragConfigSaving,
 
     // Methods
     handleAccountChange,
@@ -577,6 +638,8 @@ export function useAutoReply() {
     formatPrice,
     getStatusText,
     getStatusClass,
-    checkScreenSize
+    checkScreenSize,
+    loadRagConfig,
+    updateRagDelaySeconds
   }
 }

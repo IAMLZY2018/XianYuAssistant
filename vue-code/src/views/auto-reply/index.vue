@@ -40,6 +40,9 @@ const {
   isMobile,
   mobileView,
   confirmDialog,
+  ragDelaySeconds,
+  ragConfigLoading,
+  ragConfigSaving,
   handleAccountChange,
   selectGoods,
   toggleAutoReply,
@@ -56,7 +59,8 @@ const {
   formatTime,
   formatPrice,
   getStatusText,
-  getStatusClass
+  getStatusClass,
+  updateRagDelaySeconds
 } = useAutoReply()
 </script>
 
@@ -234,6 +238,30 @@ const {
                 <span class="ar__switch-track"></span>
                 <span class="ar__switch-thumb"></span>
               </label>
+            </div>
+
+            <!-- Delay Config (show when auto reply is enabled) -->
+            <div v-if="selectedGoods.xianyuAutoReplyOn === 1" class="ar__delay-config">
+              <div class="ar__delay-label">回复延时</div>
+              <div class="ar__delay-input-wrap">
+                <input
+                  type="number"
+                  v-model.number="ragDelaySeconds"
+                  class="ar__delay-input"
+                  min="5"
+                  max="120"
+                  :disabled="ragConfigSaving"
+                />
+                <span class="ar__delay-unit">秒</span>
+              </div>
+              <button
+                class="ar__delay-save-btn"
+                :disabled="ragConfigSaving"
+                @click="updateRagDelaySeconds"
+              >
+                保存
+              </button>
+              <div class="ar__delay-hint">买家发送消息后等待指定时间，若无新消息则自动回复</div>
             </div>
           </div>
 
