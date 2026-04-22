@@ -1,0 +1,39 @@
+# ============================================================
+# XianYuAssistant Docker Compose 配置
+# 配置项通过 .env 文件管理, 直接修改 .env 即可
+# ============================================================
+
+services:
+  xianyu-assistant:
+    image: iamlzy/xianyuassistant:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: xianyu-assistant
+    ports:
+      - "${APP_PORT:-12400}:12400"          # 应用端口: 物理机端口(可配置):容器端口
+    environment:
+      - SERVER_PORT=12400                   # Spring Boot服务端口 (容器内部固定)
+      - JAVA_OPTS=-Xms256m -Xmx512m        # JVM内存参数: 初始256MB, 最大512MB
+      - ALI_API_KEY=${ALI_API_KEY:-}        # 阿里云API Key (用于AI对话)
+      - SPRING_AI_VECTORSTORE_CHROMA_CLIENT_HOST=http://chroma  # Chroma服务地址 (容器内网络)
+      - SPRING_AI_VECTORSTORE_CHROMA_CLIENT_PORT=8000           # Chroma服务端口
+    volumes:
+      - ${SQLITE_DATA_PATH:-/home/iamlzy/xianyu-docker/dbdata}:/app/dbdata   # SQLite数据库文件持久化
+      - ${LOGS_PATH:-/home/iamlzy/xianyu-docker/logs}:/app/logs               # 应用日志持久化
+    depends_on:
+      chroma:
+        condition: service_started         # 等待Chroma服务启动后再启动本服务
+    restart: unless-stopped               # 异常退出时自动重启
+
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: xianyu-chroma
+    ports:
+      - "${CHROMA_PORT:-8678}:8000"       # Chroma端口: 物理机端口(可配置) -> 容器8000
+    volumes:
+      - ${CHROMA_DATA_PATH:-/home/iamlzy/xianyu-docker/chromadata}:/chroma/chroma_core_data  # Chroma数据持久化
+    environment:
+      - CHROMA_SERVER_AUTHN_PROVIDER=chromadb.auth.token.TokenAuthServerProvider  # Chroma认证方式: Token认证
+      - CHROMA_AUTH_TOKEN=${CHROMA_AUTH_TOKEN:-xianyu-chroma-token}               # Chroma认证Token
+    restart: unless-stopped               # 异常退出时自动重启
