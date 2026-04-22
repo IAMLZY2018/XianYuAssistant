@@ -59,6 +59,14 @@
   <p><i>商品管理 - 商品列表与配置</i></p>
 </div>
 
+### 自动回复配置
+
+支持为商品单独配置知识库，根据知识库回答用户问题：
+
+<div align="center">
+  <img src="docs/images/5.png" alt="商品管理" width="800"/>
+  <p><i>商品管理 - 商品列表与配置</i></p>
+</div>
 ---
 
 ## 📋 功能特性
@@ -99,29 +107,41 @@
 
 #### 快速启动
 
-1. **创建部署目录并下载 docker-compose.yml**
+1. **创建部署目录并下载配置文件**
 
    ```bash
    mkdir xianyu-assistant && cd xianyu-assistant
    ```
 
-   下载 [docker-compose.yml](https://raw.githubusercontent.com/IAMLZY2018/XianYuAssistant/master/docker-compose.yml) 到该目录：
+   下载 [docker-compose.yml](https://raw.githubusercontent.com/IAMLZY2018/XianYuAssistant/master/docker-compose.yml) 和 [.env](https://raw.githubusercontent.com/IAMLZY2018/XianYuAssistant/master/.env) 到该目录：
 
    ```bash
    # Linux/Mac
    curl -O https://raw.githubusercontent.com/IAMLZY2018/XianYuAssistant/master/docker-compose.yml
+   curl -O https://raw.githubusercontent.com/IAMLZY2018/XianYuAssistant/master/.env
 
    # Windows PowerShell
    Invoke-WebRequest -Uri https://raw.githubusercontent.com/IAMLZY2018/XianYuAssistant/master/docker-compose.yml -OutFile docker-compose.yml
+   Invoke-WebRequest -Uri https://raw.githubusercontent.com/IAMLZY2018/XianYuAssistant/master/.env -OutFile .env
    ```
 
-2. **启动服务**
+2. **配置阿里云 API Key**（启用 AI 智能客服必需，目前不配置无法启动）
+
+   编辑 `.env` 文件，将 `ALI_API_KEY` 设置为你的阿里云 API Key：
+
+   ```env
+   ALI_API_KEY=sk-your-actual-api-key-here
+   ```
+
+   > **提示**: 如果不需要 AI 智能客服功能，可跳过此步，但 AI 相关功能将不可用。
+
+3. **启动服务**
 
    ```bash
    docker compose up -d
    ```
 
-3. **访问应用**
+4. **访问应用**
 
    打开浏览器访问: `http://localhost:12400`
 
@@ -129,9 +149,9 @@
 
 通过 `.env` 文件或环境变量自定义数据存储路径和其他配置：
 
-**方式一：创建 `.env` 文件**（推荐）
+**方式一：编辑 `.env` 文件**（推荐）
 
-在 `docker-compose.yml` 同目录下创建 `.env` 文件：
+在 `docker-compose.yml` 同目录下编辑 `.env` 文件（快速启动时已下载，如未下载可手动创建）：
 
 ```env
 # 端口配置
