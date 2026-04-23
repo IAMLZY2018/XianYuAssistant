@@ -1,1 +1,0 @@
-import{_ as e,g as n,c as r,a as t}from"./index-Fsied1pR.js";const s={},c={xmlns:"http://www.w3.org/2000/svg",viewBox:"0 0 24 24",fill:"none",stroke:"currentColor","stroke-width":"1.5","stroke-linecap":"round","stroke-linejoin":"round"};function l(a,o){return n(),r("svg",c,[...o[0]||(o[0]=[t("path",{d:"M6 9l6 6 6-6"},null,-1)])])}const _=e(s,[["render",l]]);export{_ as I};
