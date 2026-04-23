@@ -1,0 +1,1 @@
+import{h as o}from"./index-B8Q4PZsp.js";function e(){return o({url:"/login/checkUserExists",method:"post"})}function n(t){return o({url:"/login/login",method:"post",data:t})}function s(t){return o({url:"/login/register",method:"post",data:t})}function i(){return o({url:"/login/logout",method:"post"})}export{i as a,e as c,n as l,s as r};

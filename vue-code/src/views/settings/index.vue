@@ -697,6 +697,73 @@ function handleResetEmbeddingConfig() {
           </div>
         </div>
 
+        <!-- 更新教程 -->
+        <div class="settings__section">
+          <div class="settings__section-title">更新教程</div>
+          <p class="settings__desc">按照以下步骤更新到最新版本：</p>
+
+          <div class="settings__tutorial">
+            <div class="settings__tutorial-step">
+              <div class="settings__step-number">1</div>
+              <div class="settings__step-content">
+                <div class="settings__step-title">停止当前容器</div>
+                <div class="settings__code-block">
+                  <code>docker stop xianyu-assistant</code>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings__tutorial-step">
+              <div class="settings__step-number">2</div>
+              <div class="settings__step-content">
+                <div class="settings__step-title">删除旧容器</div>
+                <div class="settings__code-block">
+                  <code>docker rm xianyu-assistant</code>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings__tutorial-step">
+              <div class="settings__step-number">3</div>
+              <div class="settings__step-content">
+                <div class="settings__step-title">拉取最新镜像</div>
+                <div class="settings__code-block">
+                  <code>docker pull iamlzy/xianyuassistant:latest</code>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings__tutorial-step">
+              <div class="settings__step-number">4</div>
+              <div class="settings__step-content">
+                <div class="settings__step-title">启动新容器（使用之前的数据目录）</div>
+                <div class="settings__code-block">
+                  <pre><code>docker run -d \
+  --name xianyu-assistant \
+  -p 12400:12400 \
+  -v $(pwd)/data/dbdata:/app/dbdata \
+  -v $(pwd)/data/logs:/app/logs \
+  --restart unless-stopped \
+  iamlzy/xianyuassistant:latest</code></pre>
+                </div>
+                <p class="settings__step-tip">💡 提示：数据目录路径保持不变，数据会自动迁移</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings__warning-box">
+            <div class="settings__warning-icon">⚠️</div>
+            <div class="settings__warning-content">
+              <strong>重要提示：</strong>
+              <ul>
+                <li>更新前请确保数据目录路径与之前一致，否则数据会丢失</li>
+                <li>建议定期备份 <code>data/dbdata</code> 目录</li>
+                <li>Windows 用户请将 <code>$(pwd)</code> 替换为实际路径，如 <code>D:\data</code></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
         <!-- 开源地址 -->
         <div class="settings__section">
           <div class="settings__section-title">开源地址</div>
@@ -1206,5 +1273,127 @@ function handleResetEmbeddingConfig() {
   .settings__qrcode {
     max-width: 200px;
   }
+}
+
+/* 更新教程样式 */
+.settings__tutorial {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.settings__tutorial-step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.settings__step-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.settings__step-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings__step-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.settings__code-block {
+  background: #f5f5f7;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 12px 16px;
+  overflow-x: auto;
+}
+
+.settings__code-block pre {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  font-family: inherit;
+}
+
+.settings__code-block code {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+  font-size: 13px;
+  color: #1d1d1f;
+  display: block;
+}
+
+.settings__step-tip {
+  font-size: 12px;
+  color: #6e6e73;
+  margin: 0;
+  padding: 8px 12px;
+  background: #f0f9ff;
+  border-left: 3px solid #0ea5e9;
+  border-radius: 4px;
+}
+
+.settings__warning-box {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 16px;
+  background: #fff9f0;
+  border: 1px solid #ffedd5;
+  border-radius: 8px;
+}
+
+.settings__warning-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.settings__warning-content {
+  flex: 1;
+  font-size: 13px;
+  color: #1d1d1f;
+}
+
+.settings__warning-content strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #c2410c;
+}
+
+.settings__warning-content ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.settings__warning-content li {
+  margin-bottom: 6px;
+  color: #6e6e73;
+}
+
+.settings__warning-content li:last-child {
+  margin-bottom: 0;
+}
+
+.settings__warning-content code {
+  background: rgba(0, 0, 0, 0.06);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
 }
 </style>
