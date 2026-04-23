@@ -10,8 +10,16 @@ export interface AutoDeliveryConfig {
   type: number; // 1-文本，2-自定义
   autoDeliveryContent: string;
   autoConfirmShipment?: number; // 自动确认发货开关：0-关闭，1-开启
+  cardSecretCount?: number; // 卡密库存
   createTime: string;
   updateTime: string;
+}
+
+// 导入卡密请求
+export interface ImportCardSecretReq {
+  xianyuAccountId: number;
+  xyGoodsId: string;
+  content: string;
 }
 
 // 保存配置请求
@@ -63,5 +71,14 @@ export function deleteAutoDeliveryConfig(xianyuAccountId: number, xyGoodsId: str
     url: '/auto-delivery-config/delete',
     method: 'POST',
     params: { xianyuAccountId, xyGoodsId }
+  });
+}
+
+// 导入卡密
+export function importCardSecret(data: ImportCardSecretReq) {
+  return request<number>({
+    url: '/auto-delivery-config/import-card-secret',
+    method: 'POST',
+    data
   });
 }

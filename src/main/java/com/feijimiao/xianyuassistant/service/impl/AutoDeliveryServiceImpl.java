@@ -11,6 +11,7 @@ import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoReplyConfigMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoReplyRecordMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsConfigMapper;
 import com.feijimiao.xianyuassistant.service.AutoDeliveryService;
+import com.feijimiao.xianyuassistant.service.CardSecretService;
 import com.feijimiao.xianyuassistant.service.WebSocketService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,9 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
     @Lazy
     @Autowired
     private WebSocketService webSocketService;
+    
+    @Autowired
+    private CardSecretService cardSecretService;
     
     @Override
     public XianyuGoodsConfig getGoodsConfig(Long accountId, String xyGoodsId) {
@@ -141,6 +145,18 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             }
             
             String content = deliveryConfig.getAutoDeliveryContent();
+
+            // 处理卡密占位符
+            if (content.contains("{$卡密信息}")) {
+                String cardSecret = cardSecretService.useNextCardSecret(accountId, xyGoodsId, orderId);
+                if (cardSecret == null) {
+                    log.warn("【账号{}】卡密库存不足，无法自动发货: xyGoodsId={}", accountId, xyGoodsId);
+                    recordAutoDelivery(accountId, xyGoodsId, buyerUserId, buyerUserName, "卡密库存不足", 0, null, orderId);
+                    return;
+                }
+                content = content.replace("{$卡密信息}", cardSecret);
+            }
+
             log.info("【账号{}】准备发送自动发货消息: content={}", accountId, content);
 
             // 3. 模拟人工操作：阅读消息 + 思考 + 打字延迟

@@ -7,12 +7,15 @@ import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoDeliveryConfigMapper;
 import com.feijimiao.xianyuassistant.controller.dto.AutoDeliveryConfigReqDTO;
 import com.feijimiao.xianyuassistant.controller.dto.AutoDeliveryConfigRespDTO;
 import com.feijimiao.xianyuassistant.controller.dto.AutoDeliveryConfigQueryReqDTO;
+import com.feijimiao.xianyuassistant.controller.dto.ImportCardSecretReqDTO;
 import com.feijimiao.xianyuassistant.service.AutoDeliveryConfigService;
+import com.feijimiao.xianyuassistant.service.CardSecretService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +28,9 @@ public class AutoDeliveryConfigServiceImpl implements AutoDeliveryConfigService 
     
     @Autowired
     private XianyuGoodsAutoDeliveryConfigMapper autoDeliveryConfigMapper;
+    
+    @Autowired
+    private CardSecretService cardSecretService;
     
     @Override
     public ResultObject<AutoDeliveryConfigRespDTO> saveOrUpdateConfig(AutoDeliveryConfigReqDTO reqDTO) {
@@ -100,9 +106,13 @@ public class AutoDeliveryConfigServiceImpl implements AutoDeliveryConfigService 
             AutoDeliveryConfigRespDTO respDTO = new AutoDeliveryConfigRespDTO();
             BeanUtils.copyProperties(config, respDTO);
             
-            log.info("查询自动发货配置成功: id={}, type={}, hasContent={}", 
+            // 获取卡密库存
+            respDTO.setCardSecretCount(cardSecretService.getUnusedCount(respDTO.getXianyuAccountId(), respDTO.getXyGoodsId()));
+            
+            log.info("查询自动发货配置成功: id={}, type={}, hasContent={}, cardSecretCount={}", 
                     respDTO.getId(), respDTO.getType(), 
-                    respDTO.getAutoDeliveryContent() != null && !respDTO.getAutoDeliveryContent().isEmpty());
+                    respDTO.getAutoDeliveryContent() != null && !respDTO.getAutoDeliveryContent().isEmpty(),
+                    respDTO.getCardSecretCount());
             
             return ResultObject.success(respDTO);
         } catch (Exception e) {
@@ -150,6 +160,33 @@ public class AutoDeliveryConfigServiceImpl implements AutoDeliveryConfigService 
         } catch (Exception e) {
             log.error("删除自动发货配置失败", e);
             return ResultObject.failed("删除自动发货配置失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public ResultObject<Integer> importCardSecrets(ImportCardSecretReqDTO reqDTO) {
+        try {
+            String content = reqDTO.getContent();
+            if (content == null || content.trim().isEmpty()) {
+                return ResultObject.success(0);
+            }
+            
+            List<String> secrets = Arrays.stream(content.split("\n"))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toList());
+            
+            if (secrets.isEmpty()) {
+                return ResultObject.success(0);
+            }
+            
+            int count = cardSecretService.importCardSecrets(reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId(), secrets);
+            log.info("成功导入 {} 条卡密: accountId={}, xyGoodsId={}", count, reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId());
+            
+            return ResultObject.success(count);
+        } catch (Exception e) {
+            log.error("导入卡密失败", e);
+            return ResultObject.failed("导入卡密失败: " + e.getMessage());
         }
     }
 }

@@ -5,9 +5,11 @@ import { getGoodsList, updateAutoDeliveryStatus } from '@/api/goods'
 import {
   getAutoDeliveryConfig,
   saveOrUpdateAutoDeliveryConfig,
+  importCardSecret,
   type AutoDeliveryConfig,
   type SaveAutoDeliveryConfigReq,
-  type GetAutoDeliveryConfigReq
+  type GetAutoDeliveryConfigReq,
+  type ImportCardSecretReq
 } from '@/api/auto-delivery-config'
 import {
   getAutoDeliveryRecords,
@@ -56,6 +58,13 @@ export function useAutoDelivery() {
   // Goods detail dialog
   const detailDialogVisible = ref(false)
   const selectedGoodsId = ref<string>('')
+
+  // Card secret dialog
+  const importDialogVisible = ref(false)
+  const importForm = ref({
+    content: ''
+  })
+  const importing = ref(false)
 
   // Config form
   const configForm = ref({
@@ -539,6 +548,44 @@ export function useAutoDelivery() {
     confirmDialog.value.visible = false
   }
 
+  // Import card secret
+  const handleImportCardSecret = async () => {
+    if (!selectedGoods.value || !selectedAccountId.value) {
+      showInfo('请先选择商品')
+      return
+    }
+
+    if (!importForm.value.content.trim()) {
+      showInfo('请输入卡密内容')
+      return
+    }
+
+    importing.value = true
+    try {
+      const req: ImportCardSecretReq = {
+        xianyuAccountId: selectedAccountId.value,
+        xyGoodsId: selectedGoods.value.item.xyGoodId,
+        content: importForm.value.content.trim()
+      }
+
+      const response = await importCardSecret(req)
+      if (response.code === 0 || response.code === 200) {
+        showSuccess(`成功导入 ${response.data} 条卡密`)
+        importDialogVisible.value = false
+        importForm.value.content = ''
+        // 重新加载配置以更新库存数量
+        await loadConfig()
+      } else {
+        throw new Error(response.msg || '导入卡密失败')
+      }
+    } catch (error: any) {
+      console.error('导入卡密失败:', error)
+      showError(error.message || '导入卡密失败')
+    } finally {
+      importing.value = false
+    }
+  }
+
   // Records total pages
   const recordsTotalPages = computed(() => Math.ceil(recordsTotal.value / recordsPageSize.value))
 
@@ -578,6 +625,9 @@ export function useAutoDelivery() {
     isMobile,
     mobileView,
     confirmDialog,
+    importDialogVisible,
+    importForm,
+    importing,
     apiHintUrl,
     apiHintParams,
     apiHintParamsJson,
@@ -592,6 +642,7 @@ export function useAutoDelivery() {
     selectGoods,
     saveConfig,
     toggleAutoDelivery,
+    handleImportCardSecret,
     loadDeliveryRecords,
     handleRecordsPageChange,
     viewGoodsDetail,

@@ -401,6 +401,32 @@ AFTER UPDATE ON xianyu_sys_setting
 BEGIN
     UPDATE xianyu_sys_setting SET updated_time = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
+
+-- 商品卡密信息表
+CREATE TABLE IF NOT EXISTS xianyu_goods_card_secret (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    xianyu_account_id BIGINT NOT NULL,                -- 闲鱼账号ID
+    xy_goods_id VARCHAR(100) NOT NULL,                -- 闲鱼的商品ID
+    card_content TEXT NOT NULL,                       -- 卡密内容
+    is_used TINYINT DEFAULT 0,                        -- 是否已使用：0-未使用，1-已使用
+    order_id VARCHAR(100),                            -- 使用该卡密的订单ID
+    create_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 创建时间
+    update_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 更新时间
+    FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
+);
+
+-- 创建卡密信息表索引
+CREATE INDEX IF NOT EXISTS idx_card_secret_account_id ON xianyu_goods_card_secret(xianyu_account_id);
+CREATE INDEX IF NOT EXISTS idx_card_secret_xy_goods_id ON xianyu_goods_card_secret(xy_goods_id);
+CREATE INDEX IF NOT EXISTS idx_card_secret_is_used ON xianyu_goods_card_secret(is_used);
+
+-- 创建卡密信息表更新时间触发器
+CREATE TRIGGER IF NOT EXISTS update_xianyu_goods_card_secret_time
+AFTER UPDATE ON xianyu_goods_card_secret
+BEGIN
+    UPDATE xianyu_goods_card_secret SET update_time = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
 -- 初始化系统配置数据
 INSERT OR IGNORE INTO xianyu_sys_setting (setting_key, setting_value, setting_desc)
 VALUES ('sys_prompt', '你是一个闲鱼卖家，你叫肥极喵，不要回复的像AI，简短回答

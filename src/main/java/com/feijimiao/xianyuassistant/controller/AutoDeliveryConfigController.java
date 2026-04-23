@@ -4,6 +4,7 @@ import com.feijimiao.xianyuassistant.common.ResultObject;
 import com.feijimiao.xianyuassistant.controller.dto.AutoDeliveryConfigReqDTO;
 import com.feijimiao.xianyuassistant.controller.dto.AutoDeliveryConfigRespDTO;
 import com.feijimiao.xianyuassistant.controller.dto.AutoDeliveryConfigQueryReqDTO;
+import com.feijimiao.xianyuassistant.controller.dto.ImportCardSecretReqDTO;
 import com.feijimiao.xianyuassistant.service.AutoDeliveryConfigService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -93,6 +94,24 @@ public class AutoDeliveryConfigController {
         } catch (Exception e) {
             log.error("删除自动发货配置失败", e);
             return ResultObject.failed("删除自动发货配置失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 导入卡密
+     *
+     * @param reqDTO 导入请求DTO
+     * @return 导入结果
+     */
+    @PostMapping("/import-card-secret")
+    public ResultObject<Integer> importCardSecret(@Valid @RequestBody ImportCardSecretReqDTO reqDTO) {
+        try {
+            log.info("导入卡密请求: xianyuAccountId={}, xyGoodsId={}", 
+                    reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId());
+            return autoDeliveryConfigService.importCardSecrets(reqDTO);
+        } catch (Exception e) {
+            log.error("导入卡密失败", e);
+            return ResultObject.failed("导入卡密失败: " + e.getMessage());
         }
     }
 }

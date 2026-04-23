@@ -40,10 +40,14 @@ const {
   isMobile,
   mobileView,
   confirmDialog,
+  importDialogVisible,
+  importForm,
+  importing,
   handleAccountChange,
   selectGoods,
   saveConfig,
   toggleAutoDelivery,
+  handleImportCardSecret,
   loadDeliveryRecords,
   handleRecordsPageChange,
   viewGoodsDetail,
@@ -294,16 +298,24 @@ const {
 
             <!-- Content Section -->
             <div class="ad__config-section">
-              <div class="ad__config-section-title">发货内容</div>
+              <div class="ad__config-section-title">
+                <span>发货内容</span>
+                <div v-if="currentConfig?.cardSecretCount !== undefined" class="ad__stock-tag">
+                  库存: {{ currentConfig.cardSecretCount }}
+                </div>
+              </div>
 
               <textarea
                 v-model="configForm.autoDeliveryContent"
                 class="ad__textarea"
-                placeholder="请输入自动发货内容，买家下单后将自动发送此内容"
+                placeholder="请输入自动发货内容，买家下单后将自动发送此内容。支持变量 {$卡密信息}"
                 maxlength="1000"
               ></textarea>
               <div class="ad__textarea-footer">
-                <span class="ad__textarea-hint">支持文本、链接、卡密等内容</span>
+                <div class="ad__textarea-hints">
+                  <span class="ad__textarea-hint">支持文本、链接、卡密等内容</span>
+                  <button class="ad__link-btn" @click="importDialogVisible = true">导入卡密</button>
+                </div>
                 <span class="ad__textarea-count">{{ configForm.autoDeliveryContent.length }} / 1000</span>
               </div>
 
@@ -574,6 +586,48 @@ const {
       :goods-id="selectedGoodsId"
       :account-id="selectedAccountId"
     />
+
+    <!-- Import Card Secret Dialog -->
+    <Transition name="overlay-fade">
+      <div
+        v-if="importDialogVisible"
+        class="ad__dialog-overlay"
+        @click.self="importDialogVisible = false"
+      >
+        <div class="ad__dialog ad__dialog--lg">
+          <div class="ad__dialog-header">
+            <h3 class="ad__dialog-title">导入卡密</h3>
+          </div>
+          <div class="ad__dialog-body">
+            <div class="ad__form-item">
+              <label class="ad__label">卡密内容 (一行一个)</label>
+              <textarea
+                v-model="importForm.content"
+                class="ad__textarea ad__textarea--tall"
+                placeholder="在此粘贴卡密信息，每行一个。导入后将按照顺序发放给买家。"
+              ></textarea>
+            </div>
+          </div>
+          <div class="ad__dialog-footer">
+            <button
+              class="ad__dialog-btn ad__dialog-btn--cancel"
+              @click="importDialogVisible = false"
+            >
+              取消
+            </button>
+            <button
+              class="ad__dialog-btn ad__dialog-btn--primary"
+              :class="{ 'ad__dialog-btn--loading': importing }"
+              :disabled="importing"
+              @click="handleImportCardSecret"
+            >
+              <IconCheck v-if="!importing" />
+              {{ importing ? '导入中...' : '开始导入' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
 
     <!-- Confirm Dialog -->
     <Transition name="overlay-fade">

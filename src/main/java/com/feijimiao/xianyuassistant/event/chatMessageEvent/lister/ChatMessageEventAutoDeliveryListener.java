@@ -11,6 +11,7 @@ import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoDeliveryConfigMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoDeliveryRecordMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsConfigMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsInfoMapper;
+import com.feijimiao.xianyuassistant.service.CardSecretService;
 import com.feijimiao.xianyuassistant.service.OrderService;
 import com.feijimiao.xianyuassistant.service.WebSocketService;
 import com.feijimiao.xianyuassistant.utils.HumanLikeDelayUtils;
@@ -66,6 +67,9 @@ public class ChatMessageEventAutoDeliveryListener {
     
     @Autowired
     private OrderService orderService;
+    
+    @Autowired
+    private CardSecretService cardSecretService;
     
     /**
      * 处理聊天消息接收事件 - 判断并执行自动发货
@@ -211,6 +215,18 @@ public class ChatMessageEventAutoDeliveryListener {
             }
             
             String content = deliveryConfig.getAutoDeliveryContent();
+
+            // 处理卡密占位符
+            if (content.contains("{$卡密信息}")) {
+                String cardSecret = cardSecretService.useNextCardSecret(accountId, xyGoodsId, orderId);
+                if (cardSecret == null) {
+                    log.warn("【账号{}】卡密库存不足，无法自动发货: xyGoodsId={}", accountId, xyGoodsId);
+                    updateRecordState(recordId, -1, "卡密库存不足");
+                    return;
+                }
+                content = content.replace("{$卡密信息}", cardSecret);
+            }
+
             log.info("【账号{}】准备发送自动发货消息: content={}", accountId, content);
             
             // 3. 模拟人工操作：阅读消息 + 思考 + 打字延迟
