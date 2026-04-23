@@ -79,7 +79,8 @@ const aiStatus = ref({
 const menuItems = [
   { key: 'account', label: '系统账号', icon: '👤' },
   { key: 'ai', label: 'AI 服务配置', icon: '🤖' },
-  { key: 'prompt', label: 'AI客服配置', icon: '💬' }
+  { key: 'prompt', label: 'AI客服配置', icon: '💬' },
+  { key: 'about', label: '关于', icon: 'ℹ️' }
 ]
 
 onMounted(async () => {
@@ -511,7 +512,10 @@ function handleResetEmbeddingConfig() {
           <p class="settings__desc">配置 AI 对话服务，配置后立即生效，无需重启服务</p>
           <div class="settings__form">
             <div class="settings__field">
-              <label class="settings__label">API Key</label>
+              <label class="settings__label">
+                API Key
+                <span class="settings__label-hint">（本项目默认使用 AliApiKey，请从这里获取：<a href="https://bailian.console.aliyun.com/" target="_blank" class="settings__link">https://bailian.console.aliyun.com/</a>）</span>
+              </label>
               <div class="settings__input-wrap">
                 <input
                   v-model="aiApiKey"
@@ -676,6 +680,31 @@ function handleResetEmbeddingConfig() {
                 {{ sysPromptSaving ? '保存中...' : '保存' }}
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 关于 -->
+      <div v-if="activeMenu === 'about'" class="settings__panel">
+        <div class="settings__panel-title">关于</div>
+
+        <!-- 交流群 -->
+        <div class="settings__section">
+          <div class="settings__section-title">交流群</div>
+          <p class="settings__desc">扫描下方二维码加入微信交流群</p>
+          <div class="settings__qrcode-wrapper">
+            <img src="/fjm/wx.png" alt="微信交流群二维码" class="settings__qrcode" />
+          </div>
+        </div>
+
+        <!-- 开源地址 -->
+        <div class="settings__section">
+          <div class="settings__section-title">开源地址</div>
+          <p class="settings__desc">本项目已开源，欢迎 Star 支持</p>
+          <div class="settings__github-link">
+            <a href="https://github.com/IAMLZY2018/XianYuAssistant" target="_blank" class="settings__link">
+              https://github.com/IAMLZY2018/XianYuAssistant
+            </a>
           </div>
         </div>
       </div>
@@ -894,6 +923,25 @@ function handleResetEmbeddingConfig() {
   color: #86868b;
 }
 
+.settings__link {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.settings__link:hover {
+  text-decoration: underline;
+}
+
+.settings__github-link {
+  padding: 12px 0;
+  font-size: 14px;
+}
+
+.settings__github-link .settings__link {
+  font-weight: 500;
+  word-break: break-all;
+}
+
 .settings__input-wrap {
   position: relative;
   display: flex;
@@ -1087,6 +1135,21 @@ function handleResetEmbeddingConfig() {
   margin: 0 0 12px 0;
 }
 
+/* QR Code */
+.settings__qrcode-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.settings__qrcode {
+  max-width: 300px;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .settings {
@@ -1118,6 +1181,10 @@ function handleResetEmbeddingConfig() {
   .settings__content {
     padding: 16px;
   }
+
+  .settings__qrcode {
+    max-width: 250px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1134,6 +1201,10 @@ function handleResetEmbeddingConfig() {
 
   .settings__btn {
     width: 100%;
+  }
+
+  .settings__qrcode {
+    max-width: 200px;
   }
 }
 </style>
