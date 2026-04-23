@@ -289,7 +289,7 @@ const {
           <template v-if="rightTab === 'data'">
             <!-- Upload view -->
             <div v-if="!ragDataVisible" class="ar__config-section">
-              <div class="ar__config-section-title">上传资料</div>
+              <div class="ar__config-section-title">添加资料</div>
               <div class="ar__toggle-hint" style="margin-bottom: 8px;">
                 上传商品相关资料到AI知识库，AI将基于这些资料自动回复买家咨询
               </div>
@@ -313,7 +313,7 @@ const {
                   @click="handleUploadData"
                 >
                   <IconCheck />
-                  上传资料
+                  添加资料
                 </button>
                 <button
                   class="btn btn--secondary"

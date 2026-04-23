@@ -338,24 +338,35 @@ export function useAutoReply() {
       })
       if (!response.ok) {
         if (response.status === 405 || response.status === 404) {
-          throw new Error('AI 功能未开启，请在后端配置 ai.enabled=true 并确保 Chroma 数据库可用')
+          throw new Error('请前往系统设置->AI服务配置中完成配置')
         }
         throw new Error(`上传资料失败: ${response.status}`)
       }
       const result = await response.json()
       if (result.code === 0 || result.code === 200) {
-        showSuccess('资料上传成功')
+        showSuccess('添加成功')
         dataContent.value = ''
         // 上传成功后如果正在查看资料列表，自动刷新
         if (ragDataVisible.value) {
           handleQueryRAGData()
         }
       } else {
-        throw new Error(result.msg || '上传资料失败')
+        // 检查是否是AI未配置的错误
+        const errorMsg = result.msg || '上传资料失败'
+        if (errorMsg.includes('AI') || errorMsg.includes('API') || errorMsg.includes('配置')) {
+          throw new Error('请前往系统设置->AI服务配置中完成配置')
+        }
+        throw new Error(errorMsg)
       }
     } catch (error: any) {
       console.error('上传资料失败:', error)
-      showError(error.message || '上传资料失败')
+      // 如果错误消息包含配置相关提示，使用友好提示
+      const errorMsg = error.message || '上传资料失败'
+      if (errorMsg.includes('配置') || errorMsg.includes('AI') || errorMsg.includes('API')) {
+        showError('请前往系统设置->AI服务配置中完成配置')
+      } else {
+        showError(errorMsg)
+      }
     } finally {
       uploading.value = false
     }
@@ -375,7 +386,7 @@ export function useAutoReply() {
       })
       if (!response.ok) {
         if (response.status === 405 || response.status === 404) {
-          throw new Error('AI 功能未开启，请在后端配置 ai.enabled=true 并确保 Chroma 数据库可用')
+          throw new Error('AI 功能未开启，请前往系统设置->AI服务配置中完成配置')
         }
         throw new Error(`查询资料失败: ${response.status}`)
       }
@@ -383,11 +394,22 @@ export function useAutoReply() {
       if (result.code === 0 || result.code === 200) {
         ragDataList.value = result.data || []
       } else {
-        throw new Error(result.msg || '查询资料失败')
+        // 检查是否是AI未配置的错误
+        const errorMsg = result.msg || '查询资料失败'
+        if (errorMsg.includes('AI') || errorMsg.includes('API') || errorMsg.includes('配置')) {
+          throw new Error('请前往系统设置->AI服务配置中完成配置')
+        }
+        throw new Error(errorMsg)
       }
     } catch (error: any) {
       console.error('查询资料失败:', error)
-      showError(error.message || '查询资料失败')
+      // 如果错误消息包含配置相关提示，使用友好提示
+      const errorMsg = error.message || '查询资料失败'
+      if (errorMsg.includes('配置') || errorMsg.includes('AI') || errorMsg.includes('API')) {
+        showError('请前往系统设置->AI服务配置中完成配置')
+      } else {
+        showError(errorMsg)
+      }
       ragDataList.value = []
     } finally {
       ragDataLoading.value = false
@@ -407,7 +429,7 @@ export function useAutoReply() {
           const response = await deleteRAGData({ documentId })
           if (!response.ok) {
             if (response.status === 405 || response.status === 404) {
-              throw new Error('AI 功能未开启，请在后端配置 ai.enabled=true 并确保 Chroma 数据库可用')
+              throw new Error('请前往系统设置->AI服务配置中完成配置')
             }
             throw new Error(`删除资料失败: ${response.status}`)
           }
@@ -417,11 +439,22 @@ export function useAutoReply() {
             // 从列表中移除已删除项
             ragDataList.value = ragDataList.value.filter(item => item.documentId !== documentId)
           } else {
-            throw new Error(result.msg || '删除资料失败')
+            // 检查是否是AI未配置的错误
+            const errorMsg = result.msg || '删除资料失败'
+            if (errorMsg.includes('AI') || errorMsg.includes('API') || errorMsg.includes('配置')) {
+              throw new Error('请前往系统设置->AI服务配置中完成配置')
+            }
+            throw new Error(errorMsg)
           }
         } catch (error: any) {
           console.error('删除资料失败:', error)
-          showError(error.message || '删除资料失败')
+          // 如果错误消息包含配置相关提示，使用友好提示
+          const errorMsg = error.message || '删除资料失败'
+          if (errorMsg.includes('配置') || errorMsg.includes('AI') || errorMsg.includes('API')) {
+            showError('请前往系统设置->AI服务配置中完成配置')
+          } else {
+            showError(errorMsg)
+          }
         }
       }
     }
@@ -479,7 +512,7 @@ export function useAutoReply() {
 
       if (!response.ok) {
         if (response.status === 405 || response.status === 404) {
-          throw new Error('AI 功能未开启，请在后端配置 ai.enabled=true 并确保 Chroma 数据库可用')
+          throw new Error('请前往系统设置->AI服务配置中完成配置')
         }
         throw new Error(`请求失败: ${response.status}`)
       }
