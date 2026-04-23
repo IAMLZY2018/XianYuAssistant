@@ -64,8 +64,8 @@
 支持为商品单独配置知识库，根据知识库回答用户问题：
 
 <div align="center">
-  <img src="docs/images/5.png" alt="商品管理" width="800"/>
-  <p><i>商品管理 - 商品列表与配置</i></p>
+  <img src="docs/images/5.png" alt="自动回复配置" width="800"/>
+  <p><i>自动回复 - 商品知识库配置</i></p>
 </div>
 ---
 
@@ -99,133 +99,119 @@
 
 ### Docker 部署（推荐）
 
-使用 Docker Compose 一键部署，包含应用服务和 Chroma 向量数据库。
+使用 Docker 一键部署，所有配置已数据库化，无需配置文件。
 
 #### 环境要求
 
 - **Docker**: 20.10+
-- **Docker Compose**: 2.0+
 
 #### 快速启动
 
-1. **创建部署目录并下载配置文件**
+**Linux/Mac**:
 
-   ```bash
-   mkdir xianyu-assistant && cd xianyu-assistant
-   ```
+```bash
+docker run -d \
+  --name xianyu-assistant \
+  -p 12400:12400 \
+  -v $(pwd)/data/dbdata:/app/dbdata \
+  -v $(pwd)/data/logs:/app/logs \
+  --restart unless-stopped \
+  iamlzy/xianyuassistant:latest
+```
 
-   下载 [docker-compose.yml](https://raw.githubusercontent.com/IAMLZY2018/XianYuAssistant/master/docker-compose.yml) 和 [.env](https://raw.githubusercontent.com/IAMLZY2018/XianYuAssistant/master/.env) 到该目录：
+**Windows PowerShell**:
 
-   ```bash
-   # Linux/Mac
-   curl -O https://raw.githubusercontent.com/IAMLZY2018/XianYuAssistant/master/docker-compose.yml
-   curl -O https://raw.githubusercontent.com/IAMLZY2018/XianYuAssistant/master/.env
+```powershell
+docker run -d `
+  --name xianyu-assistant `
+  -p 12400:12400 `
+  -v ${PWD}/data/dbdata:/app/dbdata `
+  -v ${PWD}/data/logs:/app/logs `
+  --restart unless-stopped `
+  iamlzy/xianyuassistant:latest
+```
 
-   # Windows PowerShell
-   Invoke-WebRequest -Uri https://raw.githubusercontent.com/IAMLZY2018/XianYuAssistant/master/docker-compose.yml -OutFile docker-compose.yml
-   Invoke-WebRequest -Uri https://raw.githubusercontent.com/IAMLZY2018/XianYuAssistant/master/.env -OutFile .env
-   ```
+> **数据目录说明**:
+> - `dbdata/` - 数据库数据目录，包含：
+>   - `xianyu_assistant.db` - SQLite数据库（账号、商品、订单、配置等）
+>   - `vectorstore.json` - 向量数据库（AI知识库向量数据）
+> - `logs/` - 应用日志目录
+>
+> ⚠️ **重要警告**:
+> - **容器内路径（`/app/dbdata` 和 `/app/logs`）不能修改**，这是应用固定的数据存储路径
+> - **物理机路径可以自定义**，但一旦设置后不要随意更改，否则会导致数据丢失
+> - **升级版本时请使用相同的物理机路径**，确保数据能够正确迁移
+> - **建议定期备份 `dbdata/` 目录**，防止意外数据丢失
 
-2. **配置阿里云 API Key**（启用 AI 智能客服必需，目前不配置无法启动）
-
-   编辑 `.env` 文件，将 `ALI_API_KEY` 设置为你的阿里云 API Key：
-
-   ```env
-   ALI_API_KEY=sk-your-actual-api-key-here
-   ```
-
-   > **提示**: 如果不需要 AI 智能客服功能，可跳过此步，但 AI 相关功能将不可用。
-
-3. **启动服务**
-
-   ```bash
-   docker compose up -d
-   ```
-
-4. **访问应用**
-
-   打开浏览器访问: `http://localhost:12400`
+启动后访问: `http://localhost:12400`
 
 #### 自定义配置
 
-通过 `.env` 文件或环境变量自定义数据存储路径和其他配置：
+通过环境变量自定义配置：
 
-**方式一：编辑 `.env` 文件**（推荐）
+> ⚠️ **数据路径警告**: 修改物理机路径前请先备份 `dbdata/` 目录，避免数据丢失！
 
-在 `docker-compose.yml` 同目录下编辑 `.env` 文件（快速启动时已下载，如未下载可手动创建）：
-
-```env
-# 端口配置
-APP_PORT=12400                            # 应用服务端口
-CHROMA_PORT=8321                          # Chroma向量数据库端口
-
-# 数据存储路径
-SQLITE_DATA_PATH=/data/xianyu/sqlite      # SQLite数据库文件路径
-LOGS_PATH=/data/xianyu/logs               # 应用日志路径
-CHROMA_DATA_PATH=/data/xianyu/chroma      # Chroma向量数据库路径
-
-# API配置
-ALI_API_KEY=your_ali_api_key              # 阿里云API Key（AI功能必需）
-CHROMA_AUTH_TOKEN=your_chroma_token       # Chroma认证Token
-```
-
-**方式二：命令行指定**
+**Linux/Mac**:
 
 ```bash
-# Linux/Mac
-SQLITE_DATA_PATH=/data/xianyu/sqlite \
-LOGS_PATH=/data/xianyu/logs \
-CHROMA_DATA_PATH=/data/xianyu/chroma \
-ALI_API_KEY=your_ali_api_key \
-docker compose up -d
+docker run -d \
+  --name xianyu-assistant \
+  -p 12400:12400 \
+  -e JAVA_OPTS="-Xms256m -Xmx512m" \
+  -v /your/path/dbdata:/app/dbdata \
+  -v /your/path/logs:/app/logs \
+  --restart unless-stopped \
+  iamlzy/xianyuassistant:latest
+```
 
-# Windows PowerShell
-$env:SQLITE_DATA_PATH="D:\xianyu\data\sqlite"
-$env:LOGS_PATH="D:\xianyu\data\logs"
-$env:CHROMA_DATA_PATH="D:\xianyu\data\chroma"
-$env:ALI_API_KEY="your_ali_api_key"
-docker compose up -d
+**Windows PowerShell**:
+
+```powershell
+docker run -d `
+  --name xianyu-assistant `
+  -p 12400:12400 `
+  -e JAVA_OPTS="-Xms256m -Xmx512m" `
+  -v D:\your\path\dbdata:/app/dbdata `
+  -v D:\your\path\logs:/app/logs `
+  --restart unless-stopped `
+  iamlzy/xianyuassistant:latest
 ```
 
 #### 配置项说明
 
-| 变量 | 默认值 | 说明 |
+| 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `APP_PORT` | `12400` | 应用服务端口 |
-| `CHROMA_PORT` | `8321` | Chroma 向量数据库端口 |
-| `SQLITE_DATA_PATH` | `./data/sqlite` | SQLite 数据库文件存储路径 |
-| `LOGS_PATH` | `./data/logs` | 应用日志存储路径 |
-| `CHROMA_DATA_PATH` | `./data/chroma` | Chroma 向量数据库存储路径 |
-| `ALI_API_KEY` | 空 | 阿里云 API Key（启用 AI 功能必需） |
-| `CHROMA_AUTH_TOKEN` | `xianyu-chroma-token` | Chroma 认证 Token |
+| 端口映射 | `12400:12400` | 应用服务端口（物理机端口:容器端口） |
+| 数据卷 `/app/dbdata` | - | 数据库数据目录，包含：<br>- `xianyu_assistant.db`：SQLite数据库（账号、商品、订单、配置等）<br>- `vectorstore.json`：向量数据库（AI知识库向量数据） |
+| 数据卷 `/app/logs` | - | 应用日志目录 |
+| 环境变量 `JAVA_OPTS` | `-Xms256m -Xmx512m` | JVM 内存参数 |
+| 环境变量 `SERVER_PORT` | `12400` | Spring Boot 服务端口（容器内部） |
 
-#### 服务端口
-
-| 服务 | 物理机端口 | 容器端口 | 说明 |
-|------|-----------|---------|------|
-| xianyu-assistant | 12400 | 12400 | 应用主服务 |
-| chroma | 8321 | 8000 | Chroma 向量数据库 |
+> **提示**: 所有业务配置（如阿里云 API Key、AI 模型等）已数据库化，可在系统设置页面直接配置，无需修改环境变量。
 
 #### 常用命令
 
 ```bash
 # 启动服务
-docker compose up -d
+docker start xianyu-assistant
 
 # 停止服务
-docker compose down
+docker stop xianyu-assistant
 
 # 查看日志
-docker compose logs -f
-
-# 查看应用日志
-docker compose logs -f xianyu-assistant
+docker logs -f xianyu-assistant
 
 # 重启服务
-docker compose restart
+docker restart xianyu-assistant
 
 # 更新到最新版本
-docker compose pull && docker compose up -d
+docker pull iamlzy/xianyuassistant:latest
+docker stop xianyu-assistant
+docker rm xianyu-assistant
+# 然后重新执行 docker run 命令
+
+# 进入容器
+docker exec -it xianyu-assistant sh
 ```
 
 #### 服务器部署示例
@@ -238,26 +224,19 @@ ssh username@your-server-ip
 curl -fsSL https://get.docker.com | sh
 sudo systemctl start docker && sudo systemctl enable docker
 
-# 3. 创建部署目录
-mkdir -p /opt/xianyu-assistant && cd /opt/xianyu-assistant
+# 3. 创建数据目录
+mkdir -p /opt/xianyu-assistant/data
 
-# 4. 下载 docker-compose.yml
-curl -O https://raw.githubusercontent.com/IAMLZY2018/XianYuAssistant/master/docker-compose.yml
+# 4. 启动服务
+docker run -d \
+  --name xianyu-assistant \
+  -p 12400:12400 \
+  -v /opt/xianyu-assistant/data/dbdata:/app/dbdata \
+  -v /opt/xianyu-assistant/data/logs:/app/logs \
+  --restart unless-stopped \
+  iamlzy/xianyuassistant:latest
 
-# 5. 创建 .env 配置
-cat > .env << 'EOF'
-APP_PORT=12400
-CHROMA_PORT=8321
-SQLITE_DATA_PATH=/opt/xianyu-assistant/data/sqlite
-LOGS_PATH=/opt/xianyu-assistant/data/logs
-CHROMA_DATA_PATH=/opt/xianyu-assistant/data/chroma
-ALI_API_KEY=your_ali_api_key
-EOF
-
-# 6. 启动服务
-docker compose up -d
-
-# 7. 访问应用
+# 5. 访问应用
 # 浏览器打开 http://your-server-ip:12400
 ```
 
@@ -343,10 +322,9 @@ docker compose up -d
 集成通义千问大模型，通过RAG知识库实现智能回复。
 
 **配置步骤**:
-1. 在 `.env` 中设置 `ALI_API_KEY`（阿里云API Key）
-2. Chroma向量数据库已随Docker自动部署
-3. 在AI对话页面上传商品知识库数据
-4. 开启AI自动回复
+1. 在系统设置页面配置阿里云 API Key
+2. 在AI对话页面上传商品知识库数据
+3. 开启AI自动回复
 
 #### Token刷新策略
 
@@ -439,22 +417,47 @@ docker compose up -d
 
 ### 7. AI智能客服如何配置？
 
-1. 在 `.env` 中设置 `ALI_API_KEY`（阿里云API Key）
-2. Chroma向量数据库已随Docker自动部署，无需额外配置
-3. 在AI对话页面上传商品知识库数据
-4. 系统将自动使用RAG检索相关知识并生成智能回复
+1. 在系统设置页面配置阿里云 API Key
+2. 在AI对话页面上传商品知识库数据
+3. 系统将自动使用RAG检索相关知识并生成智能回复
 
 ### 8. Docker部署数据存在哪里？
 
-默认存储在 `./data/` 目录下，可通过环境变量自定义：
-- `SQLITE_DATA_PATH` - SQLite数据库
-- `LOGS_PATH` - 应用日志
-- `CHROMA_DATA_PATH` - Chroma向量数据
+默认存储在容器的 `/app/dbdata` 和 `/app/logs` 目录，通过数据卷映射到物理机：
+
+**数据目录结构**:
+```
+data/
+├── dbdata/                          # 数据库数据目录
+│   ├── xianyu_assistant.db          # SQLite数据库
+│   │   - 账号信息
+│   │   - 商品数据
+│   │   - 订单记录
+│   │   - 系统配置
+│   │   - 自动化规则
+│   │   - 操作日志
+│   └── vectorstore.json             # 向量数据库
+│       - AI知识库向量数据
+│       - RAG检索索引
+└── logs/                            # 应用日志目录
+    └── xianyu-assistant.log         # 应用运行日志
+```
+
+**重要提示**:
+- ⚠️ **容器内路径（`/app/dbdata` 和 `/app/logs`）不能修改**
+- ⚠️ **物理机路径一旦设置不要随意更改**，否则会导致数据丢失
+- ⚠️ **升级版本时请使用相同的物理机路径**，确保数据能够正确迁移
+- 定期备份 `dbdata/` 目录，避免数据丢失
+- 向量数据库文件 `vectorstore.json` 会随着知识库数据增加而变大
+- 日志文件会持续增长，建议定期清理或配置日志轮转
 
 ### 9. 如何更新到最新版本？
 
 ```bash
-docker compose pull && docker compose up -d
+docker pull iamlzy/xianyuassistant:latest
+docker stop xianyu-assistant
+docker rm xianyu-assistant
+# 然后重新执行 docker run 命令
 ```
 
 ---
@@ -470,7 +473,7 @@ https://github.com/zhinianboke/xianyu-auto-reply
 **仓库地址:**
 
 - 🇨🇳 Gitee: https://gitee.com/lzy2018cn/xian-yu-assistant
-- 🌍 GitHub: https://github.com/IAMLZY2018/-XianYuAssistant
+- 🌍 GitHub: https://github.com/IAMLZY2018/XianYuAssistant
 
 **贡献步骤:**
 
@@ -498,7 +501,7 @@ https://github.com/zhinianboke/xianyu-auto-reply
 
 如有问题或建议，欢迎通过以下方式联系：
 
-- 提交 [Issue](https://github.com/IAMLZY2018/-XianYuAssistant/issues)
+- 提交 [Issue](https://github.com/IAMLZY2018/XianYuAssistant/issues)
 - **联系作者:** https://www.feijimiao.cn/contact
 
 ---
