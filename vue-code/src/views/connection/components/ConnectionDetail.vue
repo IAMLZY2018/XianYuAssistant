@@ -6,6 +6,7 @@ import { showSuccess, showError, showInfo } from '@/utils'
 import ManualUpdateCookieDialog from './ManualUpdateCookieDialog.vue'
 import ManualUpdateTokenDialog from './ManualUpdateTokenDialog.vue'
 import QRUpdateDialog from './QRUpdateDialog.vue'
+import CaptchaGuideDialog from './CaptchaGuideDialog.vue'
 
 import IconWifi from '@/components/icons/IconWifi.vue'
 import IconWifiOff from '@/components/icons/IconWifiOff.vue'
@@ -53,6 +54,7 @@ let statusInterval: number | null = null
 const showManualUpdateCookieDialog = ref(false)
 const showManualUpdateTokenDialog = ref(false)
 const showQRUpdateDialog = ref(false)
+const showCaptchaGuideDialog = ref(false)
 
 // Mobile detail as overlay
 const showMobileDetail = ref(false)
@@ -89,25 +91,7 @@ const handleStartConnection = async () => {
       await loadConnectionStatus()
     } else if (response.code === 1001 && response.data?.needCaptcha) {
       addLog('检测到需要滑块验证', true)
-      await ElMessageBox.confirm(
-        `检测到账号需要完成滑块验证才能启动连接。\n\n` +
-        `操作步骤：\n\n` +
-        `1. 点击"访问闲鱼IM"按钮，打开闲鱼消息页面\n\n` +
-        `2. 在闲鱼页面完成滑块验证\n\n` +
-        `3. 使用帮助按钮获取 Cookie 和 Token\n\n` +
-        `4. 手动更新后重新启动连接`,
-        '需要滑块验证',
-        {
-          confirmButtonText: '访问闲鱼IM',
-          cancelButtonText: '取消',
-          type: 'warning',
-          distinguishCancelAndClose: true,
-          customClass: 'captcha-guide-dialog'
-        }
-      )
-      window.open('https://www.goofish.com/im', '_blank')
-      addLog('已打开闲鱼IM页面')
-      showInfo('请完成验证后使用帮助按钮获取凭证')
+      showCaptchaGuideDialog.value = true
     } else {
       throw new Error(response.msg || '启动连接失败')
     }
@@ -234,6 +218,12 @@ const handleManualUpdateTokenSuccess = async () => {
 const handleQRUpdateSuccess = async () => {
   addLog('Cookie和Token已通过扫码更新')
   await loadConnectionStatus()
+}
+
+const handleCaptchaConfirm = () => {
+  window.open('https://www.goofish.com/im', '_blank')
+  addLog('已打开闲鱼IM页面')
+  showInfo('请完成验证后使用帮助按钮获取凭证')
 }
 
 // Helpers
@@ -509,6 +499,10 @@ onBeforeUnmount(() => {
       :account-id="accountId || 0"
       @success="handleQRUpdateSuccess"
     />
+    <CaptchaGuideDialog
+      v-model="showCaptchaGuideDialog"
+      @confirm="handleCaptchaConfirm"
+    />
   </div>
 
   <!-- Mobile: Overlay Detail -->
@@ -650,6 +644,10 @@ onBeforeUnmount(() => {
       v-model="showQRUpdateDialog"
       :account-id="accountId || 0"
       @success="handleQRUpdateSuccess"
+    />
+    <CaptchaGuideDialog
+      v-model="showCaptchaGuideDialog"
+      @confirm="handleCaptchaConfirm"
     />
   </template>
 </template>

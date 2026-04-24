@@ -159,8 +159,9 @@ onUnmounted(() => {
 }
 
 .connection__list {
-  flex: 1;
-  min-width: 0;
+  flex: 0 0 320px;
+  min-width: 280px;
+  max-width: 400px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
@@ -180,8 +181,8 @@ onUnmounted(() => {
 }
 
 .connection__detail {
-  width: 420px;
-  flex-shrink: 0;
+  flex: 1;
+  min-width: 0;
   border-left: 1px solid rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
