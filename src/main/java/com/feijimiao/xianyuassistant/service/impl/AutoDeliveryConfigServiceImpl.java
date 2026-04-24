@@ -91,8 +91,14 @@ public class AutoDeliveryConfigServiceImpl implements AutoDeliveryConfigService 
             }
             
             if (config == null) {
-                log.info("未找到匹配的配置，返回null");
-                return ResultObject.success(null);
+                log.info("未找到匹配的配置，返回带有库存信息的空对象: xianyuAccountId={}, xyGoodsId={}", 
+                        reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId());
+                AutoDeliveryConfigRespDTO emptyConfig = new AutoDeliveryConfigRespDTO();
+                emptyConfig.setXianyuAccountId(reqDTO.getXianyuAccountId());
+                emptyConfig.setXyGoodsId(reqDTO.getXyGoodsId());
+                emptyConfig.setType(1); // 默认文本类型
+                emptyConfig.setCardSecretCount(cardSecretService.getUnusedCount(reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId()));
+                return ResultObject.success(emptyConfig);
             }
             
             // 检查时间字段是否为null

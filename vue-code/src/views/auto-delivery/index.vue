@@ -301,19 +301,19 @@ const {
               <div class="ad__config-section-title">
                 <span>发货内容</span>
                 <div v-if="currentConfig?.cardSecretCount !== undefined" class="ad__stock-tag">
-                  库存: {{ currentConfig.cardSecretCount }}
+                  卡密库存: {{ currentConfig.cardSecretCount }}
                 </div>
               </div>
 
               <textarea
                 v-model="configForm.autoDeliveryContent"
                 class="ad__textarea"
-                placeholder="请输入自动发货内容，买家下单后将自动发送此内容。支持变量 {$卡密信息}"
+                placeholder="请输入自动发货内容，买家下单后将自动发送。使用 {$卡密信息} 代表一个自动提取的卡密。"
                 maxlength="1000"
               ></textarea>
               <div class="ad__textarea-footer">
                 <div class="ad__textarea-hints">
-                  <span class="ad__textarea-hint">支持文本、链接、卡密等内容</span>
+                  <span class="ad__textarea-hint">支持文本、链接、变量</span>
                   <button class="ad__link-btn" @click="importDialogVisible = true">导入卡密</button>
                 </div>
                 <span class="ad__textarea-count">{{ configForm.autoDeliveryContent.length }} / 1000</span>
