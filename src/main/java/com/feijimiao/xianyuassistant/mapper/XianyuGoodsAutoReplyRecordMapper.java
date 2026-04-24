@@ -14,8 +14,8 @@ public interface XianyuGoodsAutoReplyRecordMapper {
     /**
      * 插入记录
      */
-    @Insert("INSERT INTO xianyu_goods_auto_reply_record (xianyu_account_id, xianyu_goods_id, xy_goods_id, s_id, pnm_id, buyer_user_id, buyer_user_name, buyer_message, reply_content, reply_type, matched_keyword, state) " +
-            "VALUES (#{xianyuAccountId}, #{xianyuGoodsId}, #{xyGoodsId}, #{sId}, #{pnmId}, #{buyerUserId}, #{buyerUserName}, #{buyerMessage}, #{replyContent}, #{replyType}, #{matchedKeyword}, #{state})")
+    @Insert("INSERT INTO xianyu_goods_auto_reply_record (xianyu_account_id, xianyu_goods_id, xy_goods_id, s_id, pnm_id, buyer_user_id, buyer_user_name, buyer_message, reply_content, reply_type, matched_keyword, trigger_context, state) " +
+            "VALUES (#{xianyuAccountId}, #{xianyuGoodsId}, #{xyGoodsId}, #{sId}, #{pnmId}, #{buyerUserId}, #{buyerUserName}, #{buyerMessage}, #{replyContent}, #{replyType}, #{matchedKeyword}, #{triggerContext}, #{state})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(XianyuGoodsAutoReplyRecord record);
     
@@ -24,6 +24,12 @@ public interface XianyuGoodsAutoReplyRecordMapper {
      */
     @Update("UPDATE xianyu_goods_auto_reply_record SET state = #{state}, reply_content = #{replyContent} WHERE id = #{id}")
     int updateStateAndContent(@Param("id") Long id, @Param("state") Integer state, @Param("replyContent") String replyContent);
+    
+    /**
+     * 更新触发上下文
+     */
+    @Update("UPDATE xianyu_goods_auto_reply_record SET trigger_context = #{triggerContext} WHERE id = #{id}")
+    int updateTriggerContext(@Param("id") Long id, @Param("triggerContext") String triggerContext);
     
     /**
      * 根据账号ID查询记录
@@ -42,4 +48,16 @@ public interface XianyuGoodsAutoReplyRecordMapper {
      */
     @Delete("DELETE FROM xianyu_goods_auto_reply_record WHERE xianyu_account_id = #{accountId}")
     int deleteByAccountId(@Param("accountId") Long accountId);
+    
+    /**
+     * 根据账号ID和商品ID分页查询记录
+     */
+    @Select("SELECT * FROM xianyu_goods_auto_reply_record WHERE xianyu_account_id = #{accountId} AND xy_goods_id = #{xyGoodsId} ORDER BY create_time DESC LIMIT #{limit} OFFSET #{offset}")
+    List<XianyuGoodsAutoReplyRecord> selectByAccountIdAndGoodsId(@Param("accountId") Long accountId, @Param("xyGoodsId") String xyGoodsId, @Param("limit") int limit, @Param("offset") int offset);
+    
+    /**
+     * 根据账号ID和商品ID查询记录总数
+     */
+    @Select("SELECT COUNT(*) FROM xianyu_goods_auto_reply_record WHERE xianyu_account_id = #{accountId} AND xy_goods_id = #{xyGoodsId}")
+    int countByAccountIdAndGoodsId(@Param("accountId") Long accountId, @Param("xyGoodsId") String xyGoodsId);
 }

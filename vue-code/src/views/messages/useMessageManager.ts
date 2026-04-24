@@ -53,6 +53,8 @@ export function useMessageManager() {
 
   // 消息类型
   const getContentTypeText = (contentType: number, row: ChatMessage) => {
+    if (contentType === 999) return '手动回复'
+    if (contentType === 888) return '自动回复'
     if (!isUserMessage(row)) return '我发送的'
     if (contentType === 1) return '用户消息'
     return `系统消息(${contentType})`
@@ -60,12 +62,16 @@ export function useMessageManager() {
 
   // 消息类型颜色
   const getContentTypeColor = (contentType: number, row: ChatMessage) => {
+    if (contentType === 999) return '#5856d6'
+    if (contentType === 888) return '#af52de'
     if (!isUserMessage(row)) return '#007aff'
     if (contentType === 1) return '#34c759'
     return '#ff9500'
   }
 
   const getContentTypeBg = (contentType: number, row: ChatMessage) => {
+    if (contentType === 999) return 'rgba(88, 86, 214, 0.1)'
+    if (contentType === 888) return 'rgba(175, 82, 222, 0.1)'
     if (!isUserMessage(row)) return 'rgba(0, 122, 255, 0.1)'
     if (contentType === 1) return 'rgba(52, 199, 89, 0.1)'
     return 'rgba(255, 149, 0, 0.1)'
@@ -265,7 +271,8 @@ export function useMessageManager() {
         xianyuAccountId: selectedAccountId.value,
         cid: currentReplyMessage.value.sid,
         toId: currentReplyMessage.value.senderUserId,
-        text: quickReplyMessage.value.trim()
+        text: quickReplyMessage.value.trim(),
+        xyGoodsId: currentReplyMessage.value.xyGoodsId
       })
       if (response.code === 0 || response.code === 200) {
         showSuccess('消息发送成功')

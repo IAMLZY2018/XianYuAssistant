@@ -5,6 +5,7 @@ import com.feijimiao.xianyuassistant.config.rag.DynamicVectorStoreManager;
 import com.feijimiao.xianyuassistant.service.AIService;
 import com.feijimiao.xianyuassistant.service.SysSettingService;
 import com.feijimiao.xianyuassistant.service.bo.RAGDataRespBO;
+import com.feijimiao.xianyuassistant.service.bo.RAGReplyResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
@@ -139,6 +140,95 @@ public class AIServiceImpl implements AIService {
                         log.info("[AI Chat] 首 token 耗时: {}ms (从请求到LLM开始输出)", firstTokenCost);
                     }
                 });
+    }
+
+    @Override
+    public RAGReplyResult chatByRAGWithDetails(String msg, String goodsId) {
+        RAGReplyResult result = new RAGReplyResult();
+        
+        // 1. 检查AI是否可用
+        ChatClient chatClient = dynamicAIChatClientManager.getChatClient();
+        if (chatClient == null) {
+            result.setReplyContent(AI_NOT_AVAILABLE_MSG);
+            return result;
+        }
+
+        // 2. 获取向量库
+        VectorStore vectorStore = dynamicVectorStoreManager.getVectorStore();
+        
+        // 3. 搜索RAG命中资料
+        List<RAGReplyResult.RAGHitDetail> hitDetails = new java.util.ArrayList<>();
+        String context = "";
+        
+        if (vectorStore != null) {
+            try {
+                double similarityThreshold = getSimilarityThreshold();
+                List<Document> documents = vectorStore.similaritySearch(
+                        SearchRequest.builder()
+                                .query(msg)
+                                .topK(5)
+                                .similarityThreshold(similarityThreshold)
+                                .filterExpression(String.format("goodsId == '%s'", goodsId))
+                                .build()
+                );
+                
+                // 构建命中详情
+                for (Document doc : documents) {
+                    RAGReplyResult.RAGHitDetail detail = new RAGReplyResult.RAGHitDetail();
+                    detail.setDocumentId(doc.getId());
+                    detail.setContent(doc.getText());
+                    // 尝试获取score
+                    Object score = doc.getMetadata().get("distance");
+                    if (score instanceof Number) {
+                        detail.setScore(((Number) score).doubleValue());
+                    }
+                    hitDetails.add(detail);
+                }
+                
+                context = documents.stream()
+                        .map(Document::getText)
+                        .collect(Collectors.joining("\n---\n"));
+                
+                log.info("[AI Chat WithDetails] 向量搜索命中文档数: {}", documents.size());
+            } catch (Exception e) {
+                log.warn("[AI Chat WithDetails] 向量搜索失败，使用无上下文模式: {}", e.getMessage());
+            }
+        }
+
+        // 4. 获取系统提示词
+        String sysPrompt = sysSettingService.getSettingValue(SYS_PROMPT_KEY);
+        if (sysPrompt == null || sysPrompt.trim().isEmpty()) {
+            sysPrompt = DEFAULT_SYS_PROMPT;
+        }
+
+        // 5. 构建用户消息
+        String userMessage;
+        if (!context.isEmpty()) {
+            userMessage = String.format("""
+                    参考资料：
+                    %s
+
+                    用户问题：%s
+                    """, context, msg);
+        } else {
+            userMessage = msg;
+        }
+
+        // 6. 请求大模型，阻塞等待完整响应
+        try {
+            String replyContent = chatClient.prompt()
+                    .system(sysPrompt)
+                    .user(userMessage)
+                    .call()
+                    .content();
+            result.setReplyContent(replyContent);
+        } catch (Exception e) {
+            log.error("[AI Chat WithDetails] 调用LLM失败: {}", e.getMessage());
+            result.setReplyContent("AI回复生成失败：" + e.getMessage());
+        }
+
+        result.setHitDetails(hitDetails);
+        return result;
     }
 
     /**

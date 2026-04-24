@@ -1,9 +1,10 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getAccountList } from '@/api/account'
-import { getGoodsList, updateAutoReplyStatus, getRagAutoReplyConfig, updateRagAutoReplyConfig } from '@/api/goods'
+import { getGoodsList, updateAutoReplyStatus, getAutoReplyConfig, updateAutoReplyConfig, getAutoReplyRecords } from '@/api/goods'
 import { chatWithAI, putNewDataToRAG, queryRAGData, deleteRAGData } from '@/api/ai'
 import type { RAGDataItem } from '@/api/ai'
+import type { AutoReplyRecord } from '@/api/goods'
 import { showSuccess, showError, showInfo } from '@/utils'
 import type { Account } from '@/types'
 import type { GoodsItemWithConfig } from '@/api/goods'
@@ -43,10 +44,10 @@ export function useAutoReply() {
   const dataContent = ref('')
   const uploading = ref(false)
 
-  // Query existing RAG data
-  const ragDataList = ref<RAGDataItem[]>([])
-  const ragDataLoading = ref(false)
-  const ragDataVisible = ref(false)
+  // Query existing knowledge data
+  const dataList = ref<RAGDataItem[]>([])
+  const dataLoading = ref(false)
+  const dataVisible = ref(false)
 
   // Chat
   const chatMessages = ref<ChatMessage[]>([])
@@ -67,10 +68,20 @@ export function useAutoReply() {
     onConfirm: () => {}
   })
 
-  // RAG config
-  const ragDelaySeconds = ref(15)
-  const ragConfigLoading = ref(false)
-  const ragConfigSaving = ref(false)
+  // Auto reply config
+  const delaySeconds = ref(15)
+  const configLoading = ref(false)
+  const configSaving = ref(false)
+
+  // Auto reply records
+  const recordsVisible = ref(false)
+  const recordsList = ref<AutoReplyRecord[]>([])
+  const recordsLoading = ref(false)
+  const recordsTotal = ref(0)
+  const recordsPage = ref(1)
+  const recordsPageSize = ref(20)
+  const recordDetailVisible = ref(false)
+  const recordDetail = ref<AutoReplyRecord | null>(null)
 
   // Check screen size
   const checkScreenSize = () => {
@@ -224,50 +235,50 @@ export function useAutoReply() {
     chatMessages.value = []
     dataContent.value = ''
     rightTab.value = 'data'
-    ragDataVisible.value = false
-    ragDataList.value = []
+    dataVisible.value = false
+    dataList.value = []
 
     if (isMobile.value) {
       mobileView.value = 'config'
     }
 
-    // 加载RAG配置
-    loadRagConfig()
+    // 加载自动回复配置
+    loadConfig()
   }
 
-  // Load RAG config
-  const loadRagConfig = async () => {
+  // Load auto reply config
+  const loadConfig = async () => {
     if (!selectedGoods.value || !selectedAccountId.value) return
 
-    ragConfigLoading.value = true
+    configLoading.value = true
     try {
-      const response = await getRagAutoReplyConfig({
+      const response = await getAutoReplyConfig({
         xianyuAccountId: selectedAccountId.value,
         xyGoodsId: selectedGoods.value.item.xyGoodId
       })
       if (response.code === 0 || response.code === 200) {
-        ragDelaySeconds.value = response.data?.ragDelaySeconds ?? 15
+        delaySeconds.value = response.data?.ragDelaySeconds ?? 15
       }
     } catch (error: any) {
-      console.error('加载RAG配置失败:', error)
+      console.error('加载自动回复配置失败:', error)
     } finally {
-      ragConfigLoading.value = false
+      configLoading.value = false
     }
   }
 
-  // Update RAG delay seconds
-  const updateRagDelaySeconds = async () => {
+  // Update delay seconds
+  const updateDelaySeconds = async () => {
     if (!selectedGoods.value || !selectedAccountId.value) return
 
     // 验证范围
-    let seconds = ragDelaySeconds.value
+    let seconds = delaySeconds.value
     if (seconds < 5) seconds = 5
     if (seconds > 120) seconds = 120
-    ragDelaySeconds.value = seconds
+    delaySeconds.value = seconds
 
-    ragConfigSaving.value = true
+    configSaving.value = true
     try {
-      const response = await updateRagAutoReplyConfig({
+      const response = await updateAutoReplyConfig({
         xianyuAccountId: selectedAccountId.value,
         xyGoodsId: selectedGoods.value.item.xyGoodId,
         ragDelaySeconds: seconds
@@ -278,10 +289,10 @@ export function useAutoReply() {
         throw new Error(response.msg || '操作失败')
       }
     } catch (error: any) {
-      console.error('更新RAG延时失败:', error)
+      console.error('更新延时失败:', error)
       showError(error.message || '操作失败')
     } finally {
-      ragConfigSaving.value = false
+      configSaving.value = false
     }
   }
 
@@ -319,7 +330,7 @@ export function useAutoReply() {
     }
   }
 
-  // Upload data to RAG
+  // Upload knowledge data
   const handleUploadData = async () => {
     if (!selectedGoods.value) {
       showInfo('请先选择商品')
@@ -347,8 +358,8 @@ export function useAutoReply() {
         showSuccess('添加成功')
         dataContent.value = ''
         // 上传成功后如果正在查看资料列表，自动刷新
-        if (ragDataVisible.value) {
-          handleQueryRAGData()
+        if (dataVisible.value) {
+          handleQueryData()
         }
       } else {
         // 检查是否是AI未配置的错误
@@ -372,14 +383,14 @@ export function useAutoReply() {
     }
   }
 
-  // Query existing RAG data
-  const handleQueryRAGData = async () => {
+  // Query existing knowledge data
+  const handleQueryData = async () => {
     if (!selectedGoods.value) {
       showInfo('请先选择商品')
       return
     }
 
-    ragDataLoading.value = true
+    dataLoading.value = true
     try {
       const response = await queryRAGData({
         goodsId: selectedGoods.value.item.xyGoodId
@@ -392,7 +403,7 @@ export function useAutoReply() {
       }
       const result = await response.json()
       if (result.code === 0 || result.code === 200) {
-        ragDataList.value = result.data || []
+        dataList.value = result.data || []
       } else {
         // 检查是否是AI未配置的错误
         const errorMsg = result.msg || '查询资料失败'
@@ -410,14 +421,14 @@ export function useAutoReply() {
       } else {
         showError(errorMsg)
       }
-      ragDataList.value = []
+      dataList.value = []
     } finally {
-      ragDataLoading.value = false
+      dataLoading.value = false
     }
   }
 
-  // Delete RAG data
-  const handleDeleteRAGData = (documentId: string) => {
+  // Delete knowledge data
+  const handleDeleteData = (documentId: string) => {
     confirmDialog.value = {
       visible: true,
       title: '删除资料',
@@ -437,7 +448,7 @@ export function useAutoReply() {
           if (result.code === 0 || result.code === 200) {
             showSuccess('资料删除成功')
             // 从列表中移除已删除项
-            ragDataList.value = ragDataList.value.filter(item => item.documentId !== documentId)
+            dataList.value = dataList.value.filter(item => item.documentId !== documentId)
           } else {
             // 检查是否是AI未配置的错误
             const errorMsg = result.msg || '删除资料失败'
@@ -604,6 +615,61 @@ export function useAutoReply() {
     detailDialogVisible.value = true
   }
 
+  // Load auto reply records
+  const loadRecords = async () => {
+    if (!selectedGoods.value || !selectedAccountId.value) return
+
+    recordsLoading.value = true
+    try {
+      const response = await getAutoReplyRecords({
+        xianyuAccountId: selectedAccountId.value,
+        xyGoodsId: selectedGoods.value.item.xyGoodId,
+        pageNum: recordsPage.value,
+        pageSize: recordsPageSize.value
+      })
+      if (response.code === 0 || response.code === 200) {
+        recordsList.value = response.data?.list || []
+        recordsTotal.value = response.data?.totalCount || 0
+      }
+    } catch (error: any) {
+      console.error('加载自动回复记录失败:', error)
+      recordsList.value = []
+    } finally {
+      recordsLoading.value = false
+    }
+  }
+
+  // Toggle records panel
+  const toggleRecords = () => {
+    recordsVisible.value = !recordsVisible.value
+    if (recordsVisible.value) {
+      recordsPage.value = 1
+      loadRecords()
+    }
+  }
+
+  // View record detail
+  const viewRecordDetail = (record: AutoReplyRecord) => {
+    recordDetail.value = record
+    recordDetailVisible.value = true
+  }
+
+  // Records page change
+  const handleRecordsPageChange = (page: number) => {
+    recordsPage.value = page
+    loadRecords()
+  }
+
+  // Parse trigger context JSON
+  const parseTriggerContext = (jsonStr: string | null | undefined) => {
+    if (!jsonStr) return null
+    try {
+      return JSON.parse(jsonStr)
+    } catch {
+      return null
+    }
+  }
+
   // Confirm dialog actions
   const handleDialogConfirm = () => {
     confirmDialog.value.onConfirm()
@@ -639,9 +705,9 @@ export function useAutoReply() {
     rightTab,
     dataContent,
     uploading,
-    ragDataList,
-    ragDataLoading,
-    ragDataVisible,
+    dataList,
+    dataLoading,
+    dataVisible,
     chatMessages,
     chatInput,
     chatSending,
@@ -649,17 +715,25 @@ export function useAutoReply() {
     isMobile,
     mobileView,
     confirmDialog,
-    ragDelaySeconds,
-    ragConfigLoading,
-    ragConfigSaving,
+    delaySeconds,
+    configLoading,
+    configSaving,
+    recordsVisible,
+    recordsList,
+    recordsLoading,
+    recordsTotal,
+    recordsPage,
+    recordsPageSize,
+    recordDetailVisible,
+    recordDetail,
 
     // Methods
     handleAccountChange,
     selectGoods,
     toggleAutoReply,
     handleUploadData,
-    handleQueryRAGData,
-    handleDeleteRAGData,
+    handleQueryData,
+    handleDeleteData,
     handleSendChat,
     handleChatKeydown,
     handleGoodsScroll,
@@ -672,7 +746,12 @@ export function useAutoReply() {
     getStatusText,
     getStatusClass,
     checkScreenSize,
-    loadRagConfig,
-    updateRagDelaySeconds
+    loadConfig,
+    updateDelaySeconds,
+    toggleRecords,
+    loadRecords,
+    viewRecordDetail,
+    handleRecordsPageChange,
+    parseTriggerContext
   }
 }

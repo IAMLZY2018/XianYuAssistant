@@ -72,8 +72,17 @@ public class AuthInterceptor implements HandlerInterceptor {
         String username = jwtUtil.getUsernameFromToken(token);
         request.setAttribute("currentUserId", userId);
         request.setAttribute("currentUsername", username);
+        
+        // 同时设置到UserContext（ThreadLocal），供任意位置获取
+        com.feijimiao.xianyuassistant.context.UserContext.set(userId, username);
 
         return true;
+    }
+    
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+        // 请求结束后清理UserContext，防止内存泄漏
+        com.feijimiao.xianyuassistant.context.UserContext.clear();
     }
 
     private void writeUnauthorized(HttpServletResponse response, String message) throws Exception {

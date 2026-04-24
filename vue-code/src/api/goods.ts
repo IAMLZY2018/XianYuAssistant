@@ -117,31 +117,72 @@ export function deleteItem(data: {
   });
 }
 
-// RAG自动回复配置响应
-export interface RagAutoReplyConfigResponse {
+// 自动回复配置响应
+export interface AutoReplyConfigResponse {
   ragDelaySeconds: number;
 }
 
-// 获取RAG自动回复配置
-export function getRagAutoReplyConfig(data: {
+// 获取自动回复配置
+export function getAutoReplyConfig(data: {
   xianyuAccountId: number;
   xyGoodsId: string;
 }) {
-  return request<RagAutoReplyConfigResponse>({
+  return request<AutoReplyConfigResponse>({
     url: '/items/getRagAutoReplyConfig',
     method: 'POST',
     data
   });
 }
 
-// 更新RAG自动回复配置
-export function updateRagAutoReplyConfig(data: {
+// 更新自动回复配置
+export function updateAutoReplyConfig(data: {
   xianyuAccountId: number;
   xyGoodsId: string;
   ragDelaySeconds: number;
 }) {
   return request({
     url: '/items/updateRagAutoReplyConfig',
+    method: 'POST',
+    data
+  });
+}
+
+// 自动回复记录
+export interface AutoReplyRecord {
+  id: number;
+  xianyuAccountId: number;
+  xianyuGoodsId: number;
+  xyGoodsId: string;
+  sId: string;
+  pnmId: string;
+  buyerUserId: string;
+  buyerUserName: string;
+  buyerMessage: string;
+  replyContent: string;
+  replyType: number;
+  matchedKeyword: string;
+  triggerContext: string;
+  state: number;
+  createTime: string;
+}
+
+// 自动回复记录列表响应
+export interface AutoReplyRecordListResponse {
+  list: AutoReplyRecord[];
+  totalCount: number;
+  pageNum: number;
+  pageSize: number;
+}
+
+// 获取自动回复记录
+export function getAutoReplyRecords(data: {
+  xianyuAccountId: number;
+  xyGoodsId: string;
+  pageNum?: number;
+  pageSize?: number;
+}) {
+  return request<AutoReplyRecordListResponse>({
+    url: '/items/autoReplyRecords',
     method: 'POST',
     data
   });

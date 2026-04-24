@@ -276,6 +276,7 @@ CREATE TABLE IF NOT EXISTS xianyu_goods_auto_reply_record (
     reply_content TEXT,                               -- 回复消息内容
     reply_type TINYINT DEFAULT 1,                     -- 回复类型：1-关键词匹配，2-RAG智能回复
     matched_keyword VARCHAR(200),                     -- 匹配的关键词
+    trigger_context TEXT,                             -- 触发上下文JSON（包含触发消息列表和RAG命中资料列表）
     state TINYINT DEFAULT 0,                          -- 状态：0-待回复，1-成功，-1-失败
     create_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 创建时间
     FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)

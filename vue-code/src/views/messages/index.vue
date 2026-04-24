@@ -9,6 +9,7 @@ import IconChevronDown from '@/components/icons/IconChevronDown.vue'
 import IconChevronLeft from '@/components/icons/IconChevronLeft.vue'
 import IconChevronRight from '@/components/icons/IconChevronRight.vue'
 import IconSend from '@/components/icons/IconSend.vue'
+import IconImage from '@/components/icons/IconImage.vue'
 
 import GoodsSidebar from './components/GoodsSidebar.vue'
 import MessageList from './components/MessageList.vue'
