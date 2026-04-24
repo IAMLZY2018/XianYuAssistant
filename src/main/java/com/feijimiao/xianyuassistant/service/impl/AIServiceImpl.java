@@ -39,8 +39,14 @@ public class AIServiceImpl implements AIService {
     /** 系统提示词配置键 */
     private static final String SYS_PROMPT_KEY = "sys_prompt";
 
+    /** 相似度阈值配置键 */
+    private static final String SIMILARITY_THRESHOLD_KEY = "similarity_threshold";
+
     /** 默认系统提示词 */
     private static final String DEFAULT_SYS_PROMPT = "你是一个闲鱼卖家，你叫肥极喵，不要回复的像AI，简短回答\n参考相关信息回答,不要乱回答,不知道就换不同语气回复提示用户详细点询问";
+
+    /** 默认相似度阈值 */
+    private static final double DEFAULT_SIMILARITY_THRESHOLD = 0.1;
 
     /** AI不可用时的降级提示 */
     private static final String AI_NOT_AVAILABLE_MSG = "AI服务暂未配置，请在系统设置中配置API Key后再试";
@@ -77,11 +83,14 @@ public class AIServiceImpl implements AIService {
         long searchStart = System.currentTimeMillis();
         List<Document> documents;
         try {
+            // 从系统配置中获取相似度阈值
+            double similarityThreshold = getSimilarityThreshold();
+            
             documents = vectorStore.similaritySearch(
                     SearchRequest.builder()
                             .query(prompt)
                             .topK(5)
-                            .similarityThreshold(0.1)
+                            .similarityThreshold(similarityThreshold)
                             .filterExpression(String.format("goodsId == '%s'", goodsId))
                             .build()
             );
@@ -233,5 +242,24 @@ public class AIServiceImpl implements AIService {
         dynamicVectorStoreManager.saveToFile();
 
         log.info("[AI RAG] 删除SimpleVectorStore数据完成, documentId={}", documentId);
+    }
+
+    /**
+     * 获取相似度阈值
+     * 从系统配置中读取，如果未配置则使用默认值
+     */
+    private double getSimilarityThreshold() {
+        try {
+            String thresholdStr = sysSettingService.getSettingValue(SIMILARITY_THRESHOLD_KEY);
+            if (thresholdStr != null && !thresholdStr.isEmpty()) {
+                double threshold = Double.parseDouble(thresholdStr);
+                log.debug("[AI Chat] 使用配置的相似度阈值: {}", threshold);
+                return threshold;
+            }
+        } catch (NumberFormatException e) {
+            log.warn("[AI Chat] 相似度阈值配置格式错误，使用默认值: {}", DEFAULT_SIMILARITY_THRESHOLD);
+        }
+        log.debug("[AI Chat] 使用默认相似度阈值: {}", DEFAULT_SIMILARITY_THRESHOLD);
+        return DEFAULT_SIMILARITY_THRESHOLD;
     }
 }
