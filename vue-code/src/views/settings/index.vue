@@ -39,6 +39,12 @@ const sysPromptValue = ref('')
 const sysPromptSaving = ref(false)
 const sysPromptLoaded = ref(false)
 
+// 相似度阈值
+const SIMILARITY_THRESHOLD_KEY = 'similarity_threshold'
+const DEFAULT_SIMILARITY_THRESHOLD = 0.1
+const similarityThreshold = ref(DEFAULT_SIMILARITY_THRESHOLD)
+const similarityThresholdSaving = ref(false)
+
 // AI API Key 配置
 const AI_API_KEY_SETTING = 'ai_api_key'
 const AI_BASE_URL_SETTING = 'ai_base_url'
@@ -106,6 +112,16 @@ onMounted(async () => {
     }
   } catch (e) {
     console.error('获取系统提示词配置失败:', e)
+  }
+
+  // 加载相似度阈值配置
+  try {
+    const res = await getSetting({ settingKey: SIMILARITY_THRESHOLD_KEY })
+    if (res.code === 200 && res.data && res.data.settingValue) {
+      similarityThreshold.value = parseFloat(res.data.settingValue) || DEFAULT_SIMILARITY_THRESHOLD
+    }
+  } catch (e) {
+    console.error('获取相似度阈值配置失败:', e)
   }
 
   // 加载 AI 配置
@@ -258,6 +274,33 @@ async function handleSaveSysPrompt() {
 
 function handleResetSysPrompt() {
   sysPromptValue.value = DEFAULT_SYS_PROMPT
+}
+
+async function handleSaveSimilarityThreshold() {
+  if (similarityThreshold.value < 0 || similarityThreshold.value > 1) {
+    ElMessage.warning('相似度阈值必须在 0 到 1 之间')
+    return
+  }
+  similarityThresholdSaving.value = true
+  try {
+    const res = await saveSetting({
+      settingKey: SIMILARITY_THRESHOLD_KEY,
+      settingValue: similarityThreshold.value.toString(),
+      settingDesc: 'RAG向量搜索的相似度阈值（0-1之间，值越小匹配越宽松）'
+    })
+    if (res.code === 200) {
+      ElMessage.success('相似度阈值保存成功')
+    }
+  } catch (e) {
+    console.error('保存相似度阈值失败:', e)
+    ElMessage.error('保存相似度阈值失败')
+  } finally {
+    similarityThresholdSaving.value = false
+  }
+}
+
+function handleResetSimilarityThreshold() {
+  similarityThreshold.value = DEFAULT_SIMILARITY_THRESHOLD
 }
 
 async function handleSaveAIConfig() {
@@ -678,6 +721,46 @@ function handleResetEmbeddingConfig() {
                 @click="handleSaveSysPrompt"
               >
                 {{ sysPromptSaving ? '保存中...' : '保存' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 相似度阈值 -->
+        <div class="settings__section">
+          <div class="settings__section-title">相似度阈值</div>
+          <p class="settings__desc">
+            配置 RAG 向量搜索的相似度阈值。值越小，匹配越宽松，会返回更多相关度较低的结果；值越大，匹配越严格，只返回高度相关的结果。
+          </p>
+          <div class="settings__form">
+            <div class="settings__field">
+              <label class="settings__label">相似度阈值 (0-1)</label>
+              <input
+                v-model.number="similarityThreshold"
+                type="number"
+                class="settings__input"
+                placeholder="0.1"
+                :disabled="similarityThresholdSaving"
+                min="0"
+                max="1"
+                step="0.01"
+              />
+              <p class="settings__hint">推荐值：0.1（宽松）到 0.5（严格）之间</p>
+            </div>
+            <div class="settings__actions">
+              <button
+                class="settings__btn settings__btn--secondary"
+                :disabled="similarityThresholdSaving"
+                @click="handleResetSimilarityThreshold"
+              >
+                恢复默认
+              </button>
+              <button
+                class="settings__btn settings__btn--primary"
+                :disabled="similarityThresholdSaving"
+                @click="handleSaveSimilarityThreshold"
+              >
+                {{ similarityThresholdSaving ? '保存中...' : '保存' }}
               </button>
             </div>
           </div>
