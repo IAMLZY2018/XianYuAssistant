@@ -80,19 +80,19 @@ onMounted(() => {
         
         <div class="step-item">
           <div class="step-number">3</div>
-          <div class="step-text">使用帮助按钮获取凭证</div>
+          <div class="step-text">按F12打开开发者工具，复制Cookie</div>
         </div>
         
         <div class="step-item">
           <div class="step-number">4</div>
-          <div class="step-text">手动更新后重新启动</div>
+          <div class="step-text">返回本页面，点击"手动更新"粘贴Cookie</div>
         </div>
       </div>
       
       <!-- 提示 -->
       <div class="captcha-tip">
         <span class="tip-icon">💡</span>
-        <span class="tip-text">帮助按钮中有详细教程</span>
+        <span class="tip-text">更新Cookie后点击"启动连接"即可</span>
       </div>
     </div>
 
