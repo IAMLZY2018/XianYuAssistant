@@ -1,0 +1,263 @@
+2026-04-23 02:58:19.326 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.3.Final
+2026-04-23 02:58:19.413 [main] INFO  c.f.xianyuassistant.XianYuAssistantApplication - Starting XianYuAssistantApplication v0.0.1-SNAPSHOT using Java 21.0.10 with PID 1 (/app/app.jar started by root in /app)
+2026-04-23 02:58:19.414 [main] INFO  c.f.xianyuassistant.XianYuAssistantApplication - No active profile set, falling back to 1 default profile: "default"
+2026-04-23 02:58:21.419 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 12400 (http)
+2026-04-23 02:58:21.432 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-12400"]
+2026-04-23 02:58:21.434 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-23 02:58:21.434 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.48]
+2026-04-23 02:58:21.465 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-23 02:58:21.466 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1986 ms
+2026-04-23 02:58:21.556 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 初始化SQLite数据库...
+2026-04-23 02:58:21.562 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 数据库文件路径: /app/dbdata/xianyu_assistant.db
+2026-04-23 02:58:21.563 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 数据库文件不存在，将创建新数据库: /app/dbdata/xianyu_assistant.db
+2026-04-23 02:58:22.076 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 数据库表结构创建成功，执行了 79 条SQL语句
+2026-04-23 02:58:22.079 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 数据库表列表:
+2026-04-23 02:58:22.081 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - sys_user
+2026-04-23 02:58:22.081 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - sys_login_token
+2026-04-23 02:58:22.081 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_account
+2026-04-23 02:58:22.081 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_cookie
+2026-04-23 02:58:22.082 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods
+2026-04-23 02:58:22.082 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_chat_message
+2026-04-23 02:58:22.082 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_config
+2026-04-23 02:58:22.082 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_delivery_config
+2026-04-23 02:58:22.082 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_delivery_record
+2026-04-23 02:58:22.082 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_reply_config
+2026-04-23 02:58:22.082 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_reply_record
+2026-04-23 02:58:22.082 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_order
+2026-04-23 02:58:22.082 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_operation_log
+2026-04-23 02:58:22.082 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_sys_setting
+2026-04-23 02:58:22.083 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - SQLite数据库初始化完成
+2026-04-23 02:58:24.304 [main] INFO  c.f.x.service.impl.AutoReplyDelayServiceImpl - 自动回复延时调度器初始化完成
+2026-04-23 02:58:24.351 [main] INFO  c.feijimiao.xianyuassistant.utils.DatabaseChecker - 自动发货配置表数据检查:
+2026-04-23 02:58:24.351 [main] INFO  c.feijimiao.xianyuassistant.utils.DatabaseChecker -   表中暂无数据
+2026-04-23 02:58:24.575 [main] INFO  o.s.b.a.web.servlet.WelcomePageHandlerMapping - Adding welcome page: class path resource [static/index.html]
+2026-04-23 02:58:25.044 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-12400"]
+2026-04-23 02:58:25.056 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 12400 (http) with context path '/'
+2026-04-23 02:58:25.071 [main] INFO  c.f.xianyuassistant.XianYuAssistantApplication - Started XianYuAssistantApplication in 6.402 seconds (process running for 6.992)
+2026-04-23 02:58:25.079 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 数据库文件路径: /app/dbdata/xianyu_assistant.db
+2026-04-23 02:58:25.079 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-23 02:58:25.080 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 开始检查数据库表和字段（基于schema.sql）...
+2026-04-23 02:58:25.080 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-23 02:58:25.080 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 📄 解析Schema文件: sql/schema.sql
+2026-04-23 02:58:25.080 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 开始解析Schema文件: sql/schema.sql
+2026-04-23 02:58:25.092 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 解析到 14 个表定义
+2026-04-23 02:58:25.095 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 解析到 54 个索引定义
+2026-04-23 02:58:25.096 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 解析到 10 个触发器定义
+2026-04-23 02:58:25.096 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查数据库表...
+2026-04-23 02:58:25.097 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: sys_user
+2026-04-23 02:58:25.097 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: sys_login_token
+2026-04-23 02:58:25.098 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_account
+2026-04-23 02:58:25.098 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_cookie
+2026-04-23 02:58:25.098 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods
+2026-04-23 02:58:25.098 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_chat_message
+2026-04-23 02:58:25.098 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_config
+2026-04-23 02:58:25.098 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_delivery_config
+2026-04-23 02:58:25.098 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_delivery_record
+2026-04-23 02:58:25.098 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_reply_config
+2026-04-23 02:58:25.098 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_reply_record
+2026-04-23 02:58:25.098 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_order
+2026-04-23 02:58:25.098 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_operation_log
+2026-04-23 02:58:25.099 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_sys_setting
+2026-04-23 02:58:25.099 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查表字段...
+2026-04-23 02:58:25.102 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 📊 字段检查统计: 检查 155 个字段, 添加 0 个新字段
+2026-04-23 02:58:25.102 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✓ 所有字段都已存在
+2026-04-23 02:58:25.103 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查数据库索引...
+2026-04-23 02:58:25.103 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✓ 所有索引都已存在
+2026-04-23 02:58:25.103 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查数据库触发器...
+2026-04-23 02:58:25.104 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✓ 所有触发器都已存在
+2026-04-23 02:58:25.104 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-23 02:58:25.104 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 数据库表和字段已完善，开始检查数据库完整性...
+2026-04-23 02:58:25.104 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-23 02:58:25.104 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 📊 数据库表列表:
+2026-04-23 02:58:25.105 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ sys_login_token (记录数: 0)
+2026-04-23 02:58:25.105 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-23 02:58:25.105 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✅ 数据库完整性检查完成，系统就绪！
+2026-04-23 02:58:25.105 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-23 02:58:25.106 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-23 02:58:25.106 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🚀 程序已经启动，可以通过以下地址访问：
+2026-04-23 02:58:25.106 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-23 02:58:25.106 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   🌐 http://localhost:12400
+2026-04-23 02:58:25.106 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   🌐 http://127.0.0.1:12400
+2026-04-23 02:58:25.107 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   🌐 http://172.23.0.3:12400
+2026-04-23 02:58:25.107 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-23 02:58:52.531 [http-nio-12400-exec-1] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-23 02:58:52.531 [http-nio-12400-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-23 02:58:52.533 [http-nio-12400-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 2 ms
+2026-04-23 02:59:12.227 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.service.impl.AuthServiceImpl - [Auth] 注册成功: username=linjie608
+2026-04-23 02:59:12.426 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.service.impl.AuthServiceImpl - [Auth] 登录成功: username=linjie608, ip=null
+2026-04-23 02:59:12.846 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.controller.DashboardController - 获取首页统计数据
+2026-04-23 02:59:22.418 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.OrderController - 查询订单列表请求: xianyuAccountId=null, xyGoodsId=null, orderStatus=null, pageNum=1, pageSize=20
+2026-04-23 02:59:22.484 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.service.impl.OrderServiceImpl - 查询订单列表成功: total=0, current=1, size=20
+2026-04-23 02:59:24.833 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.DashboardController - 获取首页统计数据
+2026-04-23 02:59:32.129 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.QRLoginServiceImpl - 开始获取_m_h5_tk token...
+2026-04-23 02:59:34.977 [http-nio-12400-exec-7] WARN  c.f.x.service.impl.QRLoginServiceImpl - 未找到_m_h5_tk，当前cookies: [cookie2]
+2026-04-23 02:59:35.844 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.QRLoginServiceImpl - _m_h5_tk获取成功: sessionId=1f25e570-a55c-4194-bc45-6dec11af6a8c, cookies包含: [_m_h5_tk_enc, mtop_partitioned_detect, _m_h5_tk, cookie2]
+2026-04-23 02:59:38.225 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.QRLoginServiceImpl - 获取登录参数成功: 1f25e570-a55c-4194-bc45-6dec11af6a8c, 参数数量: 12
+2026-04-23 02:59:38.564 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.QRLoginServiceImpl - 二维码生成成功: 1f25e570-a55c-4194-bc45-6dec11af6a8c
+2026-04-23 02:59:38.564 [Thread-1] INFO  c.f.x.service.impl.QRLoginServiceImpl - 开始监控二维码状态: 1f25e570-a55c-4194-bc45-6dec11af6a8c
+2026-04-23 03:03:25.069 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 03:03:25.071 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 03:04:39.454 [Thread-1] INFO  c.f.x.service.impl.QRLoginServiceImpl - 二维码监控超时，标记为过期: 1f25e570-a55c-4194-bc45-6dec11af6a8c
+2026-04-23 03:08:25.069 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始刷新所有账号的_m_h5_tk token...
+2026-04-23 03:08:25.071 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ _m_h5_tk token刷新完成: 成功0个, 失败0个
+2026-04-23 03:17:34.008 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.service.impl.AuthServiceImpl - [Auth] 登录成功: username=linjie608, ip=217.142.185.239
+2026-04-23 03:17:34.371 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.controller.DashboardController - 获取首页统计数据
+2026-04-23 03:17:44.178 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.QRLoginServiceImpl - 开始获取_m_h5_tk token...
+2026-04-23 03:17:46.128 [http-nio-12400-exec-7] WARN  c.f.x.service.impl.QRLoginServiceImpl - 未找到_m_h5_tk，当前cookies: [cookie2]
+2026-04-23 03:17:46.598 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.QRLoginServiceImpl - _m_h5_tk获取成功: sessionId=7f359fc4-7a35-48f0-b823-03e5c8d069f2, cookies包含: [_m_h5_tk_enc, mtop_partitioned_detect, _m_h5_tk, cookie2]
+2026-04-23 03:17:55.353 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.QRLoginServiceImpl - 获取登录参数成功: 7f359fc4-7a35-48f0-b823-03e5c8d069f2, 参数数量: 12
+2026-04-23 03:17:56.248 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.QRLoginServiceImpl - 二维码生成成功: 7f359fc4-7a35-48f0-b823-03e5c8d069f2
+2026-04-23 03:17:56.250 [Thread-2] INFO  c.f.x.service.impl.QRLoginServiceImpl - 开始监控二维码状态: 7f359fc4-7a35-48f0-b823-03e5c8d069f2
+2026-04-23 03:18:00.487 [Thread-2] INFO  c.f.x.service.impl.QRLoginServiceImpl - 二维码已扫描，等待确认: 7f359fc4-7a35-48f0-b823-03e5c8d069f2
+2026-04-23 03:18:03.015 [Thread-2] WARN  c.f.x.service.impl.QRLoginServiceImpl - ⚠️ 账号被风控，需要手机验证
+2026-04-23 03:18:03.015 [Thread-2] WARN  c.f.x.service.impl.QRLoginServiceImpl -    - 会话ID: 7f359fc4-7a35-48f0-b823-03e5c8d069f2
+2026-04-23 03:18:03.015 [Thread-2] WARN  c.f.x.service.impl.QRLoginServiceImpl -    - 验证URL: https://passport.goofish.com/iv/remote/pc/mini_login_check.htm?havana_iv_token=CN-SPLIT-AQjE3prLjkAQ2AQiDWhhdmFuYV9hcHBfaXYyAQE4xPPgwtszQAFKEKjBoVtW9x9Fnjz3eEQRPPlTwDLDdxFgwintL-Pjg5qWg4D7RA
+2026-04-23 03:18:03.015 [Thread-2] INFO  c.f.x.service.impl.QRLoginServiceImpl - 扫码登录成功: 7f359fc4-7a35-48f0-b823-03e5c8d069f2, UNB: null
+2026-04-23 03:18:19.799 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.QRLoginServiceImpl - 开始获取_m_h5_tk token...
+2026-04-23 03:18:20.037 [http-nio-12400-exec-7] WARN  c.f.x.service.impl.QRLoginServiceImpl - 未找到_m_h5_tk，当前cookies: [cookie2]
+2026-04-23 03:18:20.275 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.QRLoginServiceImpl - _m_h5_tk获取成功: sessionId=8cbb20c3-9627-4026-8763-e4c5afc32dc8, cookies包含: [_m_h5_tk_enc, mtop_partitioned_detect, _m_h5_tk, cookie2]
+2026-04-23 03:18:20.484 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.QRLoginServiceImpl - 获取登录参数成功: 8cbb20c3-9627-4026-8763-e4c5afc32dc8, 参数数量: 12
+2026-04-23 03:18:20.674 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.QRLoginServiceImpl - 二维码生成成功: 8cbb20c3-9627-4026-8763-e4c5afc32dc8
+2026-04-23 03:18:20.675 [Thread-3] INFO  c.f.x.service.impl.QRLoginServiceImpl - 开始监控二维码状态: 8cbb20c3-9627-4026-8763-e4c5afc32dc8
+2026-04-23 03:18:25.265 [Thread-3] INFO  c.f.x.service.impl.QRLoginServiceImpl - 二维码已扫描，等待确认: 8cbb20c3-9627-4026-8763-e4c5afc32dc8
+2026-04-23 03:18:26.700 [Thread-3] WARN  c.f.x.service.impl.QRLoginServiceImpl - ⚠️ 账号被风控，需要手机验证
+2026-04-23 03:18:26.700 [Thread-3] WARN  c.f.x.service.impl.QRLoginServiceImpl -    - 会话ID: 8cbb20c3-9627-4026-8763-e4c5afc32dc8
+2026-04-23 03:18:26.700 [Thread-3] WARN  c.f.x.service.impl.QRLoginServiceImpl -    - 验证URL: https://passport.goofish.com/iv/remote/pc/mini_login_check.htm?havana_iv_token=CN-SPLIT-AQjE3prLjkAQ2AQiDWhhdmFuYV9hcHBfaXYyAQE4yKziwtszQAFKEFfZFGFWEHPXj5_NO7zcWdPgTPpIcbA9ZA1qg8-jL5IfX_x6rw
+2026-04-23 03:18:26.700 [Thread-3] INFO  c.f.x.service.impl.QRLoginServiceImpl - 扫码登录成功: 8cbb20c3-9627-4026-8763-e4c5afc32dc8, UNB: null
+2026-04-23 03:33:25.071 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 03:33:25.074 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 04:03:25.074 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 04:03:25.078 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 04:33:25.078 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 04:33:25.080 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 05:03:25.081 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 05:03:25.083 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 05:08:25.071 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始刷新所有账号的_m_h5_tk token...
+2026-04-23 05:08:25.073 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ _m_h5_tk token刷新完成: 成功0个, 失败0个
+2026-04-23 05:33:25.083 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 05:33:25.085 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 06:03:25.086 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 06:03:25.088 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 06:33:25.088 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 06:33:25.090 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 07:03:25.091 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 07:03:25.092 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 07:08:25.074 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始刷新所有账号的_m_h5_tk token...
+2026-04-23 07:08:25.076 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ _m_h5_tk token刷新完成: 成功0个, 失败0个
+2026-04-23 07:33:25.093 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 07:33:25.095 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 08:03:25.095 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 08:03:25.097 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 08:33:25.097 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 08:33:25.099 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 09:03:25.099 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 09:03:25.101 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 09:08:25.076 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始刷新所有账号的_m_h5_tk token...
+2026-04-23 09:08:25.079 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ _m_h5_tk token刷新完成: 成功0个, 失败0个
+2026-04-23 09:33:25.102 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 09:33:25.103 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 10:03:25.104 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 10:03:25.106 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 10:33:25.106 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 10:33:25.108 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 11:03:25.108 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 11:03:25.110 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 11:08:25.079 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始刷新所有账号的_m_h5_tk token...
+2026-04-23 11:08:25.081 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ _m_h5_tk token刷新完成: 成功0个, 失败0个
+2026-04-23 11:33:25.110 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 11:33:25.112 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 12:03:25.112 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 12:03:25.114 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 12:33:25.114 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 12:33:25.116 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 13:03:25.116 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 13:03:25.118 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 13:08:25.081 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始刷新所有账号的_m_h5_tk token...
+2026-04-23 13:08:25.083 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ _m_h5_tk token刷新完成: 成功0个, 失败0个
+2026-04-23 13:33:25.119 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 13:33:25.121 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 14:03:25.121 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 14:03:25.123 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 14:33:25.123 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 14:33:25.125 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 15:03:25.125 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 15:03:25.127 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 15:08:25.083 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始刷新所有账号的_m_h5_tk token...
+2026-04-23 15:08:25.085 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ _m_h5_tk token刷新完成: 成功0个, 失败0个
+2026-04-23 15:33:25.127 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 15:33:25.129 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 16:03:25.129 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 16:03:25.131 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 16:33:25.131 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 16:33:25.133 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 17:03:25.133 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 17:03:25.135 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 17:08:25.085 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始刷新所有账号的_m_h5_tk token...
+2026-04-23 17:08:25.087 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ _m_h5_tk token刷新完成: 成功0个, 失败0个
+2026-04-23 17:33:25.135 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 17:33:25.137 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 18:03:25.137 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 18:03:25.139 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 18:33:25.139 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 18:33:25.141 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 19:03:25.141 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 19:03:25.142 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 19:08:25.087 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始刷新所有账号的_m_h5_tk token...
+2026-04-23 19:08:25.088 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ _m_h5_tk token刷新完成: 成功0个, 失败0个
+2026-04-23 19:33:25.143 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 19:33:25.144 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 20:03:25.145 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 20:03:25.146 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 20:30:36.411 [http-nio-12400-exec-3] INFO  org.apache.coyote.http11.Http11Processor - Error parsing HTTP request header
+ Note: further occurrences of HTTP request parsing errors will be logged at DEBUG level.
+java.lang.IllegalArgumentException: Invalid character found in method name [0x160x030x010x000xee0x010x000x000xea0x030x03I0x060xb20xf90xbc0x99i0xc0Y0xfb0xf80xbae-0x83Ud]0x0e0x8d0xb7b80xb4g0xc60xdd9dZ8f ]. HTTP method names must be tokens
+	at org.apache.coyote.http11.Http11InputBuffer.parseRequestLine(Http11InputBuffer.java:402)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:272)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1774)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:973)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:491)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Unknown Source)
+2026-04-23 20:33:25.146 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 20:33:25.148 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 21:03:25.148 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 21:03:25.150 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 21:08:25.089 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始刷新所有账号的_m_h5_tk token...
+2026-04-23 21:08:25.090 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ _m_h5_tk token刷新完成: 成功0个, 失败0个
+2026-04-23 21:33:25.150 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 21:33:25.152 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 22:03:25.152 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 22:03:25.154 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 22:33:25.154 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 22:33:25.156 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 23:03:25.156 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 23:03:25.158 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-23 23:08:25.091 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始刷新所有账号的_m_h5_tk token...
+2026-04-23 23:08:25.092 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ _m_h5_tk token刷新完成: 成功0个, 失败0个
+2026-04-23 23:33:25.158 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-23 23:33:25.160 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-24 00:03:25.160 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-24 00:03:25.162 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-24 00:33:25.169 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-24 00:33:25.170 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-24 01:03:25.171 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-24 01:03:25.172 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-24 01:08:25.093 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始刷新所有账号的_m_h5_tk token...
+2026-04-24 01:08:25.094 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ _m_h5_tk token刷新完成: 成功0个, 失败0个
+2026-04-24 01:33:25.173 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-24 01:33:25.174 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-24 02:03:25.175 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-24 02:03:25.176 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-24 02:33:25.176 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-24 02:33:25.178 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-24 03:03:25.178 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-24 03:03:25.180 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-24 03:06:16.417 [SpringApplicationShutdownHook] INFO  o.s.boot.web.embedded.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-04-24 03:06:16.420 [tomcat-shutdown] INFO  o.s.boot.web.embedded.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-04-24 03:06:16.424 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.AutoReplyDelayServiceImpl - 关闭自动回复延时调度器...
+2026-04-24 03:06:16.425 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.AutoReplyDelayServiceImpl - 自动回复延时调度器已关闭
+2026-04-24 03:06:16.425 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.WebSocketServiceImpl - 应用关闭，清理WebSocket资源
+2026-04-24 03:06:16.426 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.WebSocketServiceImpl - 停止所有WebSocket连接

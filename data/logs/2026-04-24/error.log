@@ -1,0 +1,194 @@
+2026-04-24 04:24:15.395 [WebSocketConnectReadThread-132] ERROR c.f.x.websocket.XianyuWebSocketClient - 【sadf（1）】WebSocket发生错误
+java.net.UnknownHostException: wss-goofish.dingtalk.com: Try again
+	at java.base/java.net.Inet6AddressImpl.lookupAllHostAddr(Native Method)
+	at java.base/java.net.Inet6AddressImpl.lookupAllHostAddr(Unknown Source)
+	at java.base/java.net.InetAddress$PlatformResolver.lookupByName(Unknown Source)
+	at java.base/java.net.InetAddress.getAddressesFromNameService(Unknown Source)
+	at java.base/java.net.InetAddress$NameServiceAddresses.get(Unknown Source)
+	at java.base/java.net.InetAddress.getAllByName0(Unknown Source)
+	at java.base/java.net.InetAddress.getAllByName(Unknown Source)
+	at java.base/java.net.InetAddress.getByName(Unknown Source)
+	at org.java_websocket.client.WebSocketClient$1.resolve(WebSocketClient.java:224)
+	at org.java_websocket.client.WebSocketClient.run(WebSocketClient.java:472)
+	at java.base/java.lang.Thread.run(Unknown Source)
+2026-04-24 04:24:15.398 [WebSocketConnectReadThread-132] ERROR c.f.x.websocket.DefaultWebSocketMessageHandler - 【账号1】消息处理错误: wss-goofish.dingtalk.com: Try again
+java.net.UnknownHostException: wss-goofish.dingtalk.com: Try again
+	at java.base/java.net.Inet6AddressImpl.lookupAllHostAddr(Native Method)
+	at java.base/java.net.Inet6AddressImpl.lookupAllHostAddr(Unknown Source)
+	at java.base/java.net.InetAddress$PlatformResolver.lookupByName(Unknown Source)
+	at java.base/java.net.InetAddress.getAddressesFromNameService(Unknown Source)
+	at java.base/java.net.InetAddress$NameServiceAddresses.get(Unknown Source)
+	at java.base/java.net.InetAddress.getAllByName0(Unknown Source)
+	at java.base/java.net.InetAddress.getAllByName(Unknown Source)
+	at java.base/java.net.InetAddress.getByName(Unknown Source)
+	at org.java_websocket.client.WebSocketClient$1.resolve(WebSocketClient.java:224)
+	at org.java_websocket.client.WebSocketClient.run(WebSocketClient.java:472)
+	at java.base/java.lang.Thread.run(Unknown Source)
+2026-04-24 04:24:15.401 [pool-3-thread-1] ERROR c.f.x.service.impl.WebSocketServiceImpl - WebSocket连接失败: accountId=1
+2026-04-24 04:24:15.401 [pool-3-thread-1] ERROR c.f.x.service.impl.WebSocketServiceImpl - 连接状态: isOpen=false, isClosed=true
+2026-04-24 04:24:15.401 [pool-3-thread-1] ERROR c.f.x.service.impl.WebSocketServiceImpl - 【账号1】❌ Token刷新并重连失败，将在300秒后重试
+2026-04-24 04:24:23.730 [WebSocketConnectReadThread-137] ERROR c.f.x.websocket.XianyuWebSocketClient - 【sadf（1）】WebSocket发生错误
+java.net.UnknownHostException: wss-goofish.dingtalk.com
+	at java.base/java.net.InetAddress$CachedLookup.get(Unknown Source)
+	at java.base/java.net.InetAddress.getAllByName0(Unknown Source)
+	at java.base/java.net.InetAddress.getAllByName(Unknown Source)
+	at java.base/java.net.InetAddress.getByName(Unknown Source)
+	at org.java_websocket.client.WebSocketClient$1.resolve(WebSocketClient.java:224)
+	at org.java_websocket.client.WebSocketClient.run(WebSocketClient.java:472)
+	at java.base/java.lang.Thread.run(Unknown Source)
+2026-04-24 04:24:23.730 [WebSocketConnectReadThread-137] ERROR c.f.x.websocket.DefaultWebSocketMessageHandler - 【账号1】消息处理错误: wss-goofish.dingtalk.com
+java.net.UnknownHostException: wss-goofish.dingtalk.com
+	at java.base/java.net.InetAddress$CachedLookup.get(Unknown Source)
+	at java.base/java.net.InetAddress.getAllByName0(Unknown Source)
+	at java.base/java.net.InetAddress.getAllByName(Unknown Source)
+	at java.base/java.net.InetAddress.getByName(Unknown Source)
+	at org.java_websocket.client.WebSocketClient$1.resolve(WebSocketClient.java:224)
+	at org.java_websocket.client.WebSocketClient.run(WebSocketClient.java:472)
+	at java.base/java.lang.Thread.run(Unknown Source)
+2026-04-24 04:24:23.730 [pool-4-thread-1] ERROR c.f.x.service.impl.WebSocketServiceImpl - WebSocket连接失败: accountId=1
+2026-04-24 04:24:23.730 [pool-4-thread-1] ERROR c.f.x.service.impl.WebSocketServiceImpl - 连接状态: isOpen=false, isClosed=true
+2026-04-24 04:24:23.730 [pool-4-thread-1] ERROR c.f.x.service.impl.WebSocketServiceImpl - 【账号1】❌ 重连失败（第1次），将继续尝试...
+2026-04-24 05:16:38.266 [scheduling-1] ERROR c.f.x.service.impl.TokenRefreshServiceImpl - 【账号1】hasLogin刷新重试次数已达上限，_m_h5_tk获取持续失败
+2026-04-24 05:16:38.274 [scheduling-1] ERROR c.f.x.service.impl.TokenRefreshServiceImpl - 【账号1】hasLogin刷新重试次数已达上限，_m_h5_tk获取持续失败
+2026-04-24 05:29:18.976 [pool-3-thread-1] ERROR c.f.x.service.impl.WebSocketServiceImpl - 未找到账号Cookie: accountId=1
+2026-04-24 05:29:18.976 [pool-3-thread-1] ERROR c.f.x.service.impl.WebSocketServiceImpl - 启动WebSocket失败: accountId=1
+com.feijimiao.xianyuassistant.exception.CookieNotFoundException: 未找到账号Cookie，请先配置Cookie
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketServiceImpl.startWebSocket(WebSocketServiceImpl.java:123)
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketServiceImpl.refreshTokenAndReconnect(WebSocketServiceImpl.java:573)
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketServiceImpl.lambda$startTokenRefresh$5(WebSocketServiceImpl.java:539)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source)
+	at java.base/java.util.concurrent.FutureTask.runAndReset(Unknown Source)
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
+	at java.base/java.lang.Thread.run(Unknown Source)
+2026-04-24 05:29:18.977 [pool-3-thread-1] ERROR c.f.x.service.impl.WebSocketServiceImpl - 【账号1】❌ Token刷新并重连失败，将在300秒后重试
+2026-04-24 05:34:18.986 [pool-4-thread-2] ERROR c.f.x.service.impl.WebSocketServiceImpl - 未找到账号Cookie: accountId=1
+2026-04-24 05:34:18.986 [pool-4-thread-2] ERROR c.f.x.service.impl.WebSocketServiceImpl - 启动WebSocket失败: accountId=1
+com.feijimiao.xianyuassistant.exception.CookieNotFoundException: 未找到账号Cookie，请先配置Cookie
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketServiceImpl.startWebSocket(WebSocketServiceImpl.java:123)
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketServiceImpl.refreshTokenAndReconnect(WebSocketServiceImpl.java:573)
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketServiceImpl.lambda$refreshTokenAndReconnect$6(WebSocketServiceImpl.java:591)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source)
+	at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
+	at java.base/java.lang.Thread.run(Unknown Source)
+2026-04-24 05:34:18.986 [pool-4-thread-2] ERROR c.f.x.service.impl.WebSocketServiceImpl - 【账号1】❌ Token刷新并重连失败，将在300秒后重试
+2026-04-24 05:39:18.995 [pool-4-thread-1] ERROR c.f.x.service.impl.WebSocketServiceImpl - 未找到账号Cookie: accountId=1
+2026-04-24 05:39:18.995 [pool-4-thread-1] ERROR c.f.x.service.impl.WebSocketServiceImpl - 启动WebSocket失败: accountId=1
+com.feijimiao.xianyuassistant.exception.CookieNotFoundException: 未找到账号Cookie，请先配置Cookie
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketServiceImpl.startWebSocket(WebSocketServiceImpl.java:123)
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketServiceImpl.refreshTokenAndReconnect(WebSocketServiceImpl.java:573)
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketServiceImpl.lambda$refreshTokenAndReconnect$6(WebSocketServiceImpl.java:591)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source)
+	at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
+	at java.base/java.lang.Thread.run(Unknown Source)
+2026-04-24 05:39:18.995 [pool-4-thread-1] ERROR c.f.x.service.impl.WebSocketServiceImpl - 【账号1】❌ Token刷新并重连失败，将在300秒后重试
+2026-04-24 05:43:00.894 [http-nio-12400-exec-7] ERROR c.f.xianyuassistant.service.impl.ItemServiceImpl - 业务异常: cookieId=1, message=令牌已过期，请重新登录
+2026-04-24 05:43:00.905 [http-nio-12400-exec-7] ERROR c.f.xianyuassistant.service.impl.ItemServiceImpl - 刷新商品数据异常: xianyuAccountId=1
+com.feijimiao.xianyuassistant.exception.BusinessException: 令牌已过期，请重新登录
+	at com.feijimiao.xianyuassistant.service.impl.ItemServiceImpl.parseItemListResponse(ItemServiceImpl.java:640)
+	at com.feijimiao.xianyuassistant.service.impl.ItemServiceImpl.getItemList(ItemServiceImpl.java:92)
+	at com.feijimiao.xianyuassistant.service.impl.ItemServiceImpl.refreshItems(ItemServiceImpl.java:182)
+	at com.feijimiao.xianyuassistant.controller.ItemController.refreshItems(ItemController.java:36)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source)
+	at java.base/java.lang.reflect.Method.invoke(Unknown Source)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:258)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:191)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:991)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:896)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:162)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:138)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:88)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:342)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:399)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1774)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:973)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:491)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Unknown Source)
+2026-04-24 05:44:19.006 [pool-4-thread-1] ERROR c.f.x.service.impl.WebSocketServiceImpl - 未找到账号Cookie: accountId=1
+2026-04-24 05:44:19.006 [pool-4-thread-1] ERROR c.f.x.service.impl.WebSocketServiceImpl - 启动WebSocket失败: accountId=1
+com.feijimiao.xianyuassistant.exception.CookieNotFoundException: 未找到账号Cookie，请先配置Cookie
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketServiceImpl.startWebSocket(WebSocketServiceImpl.java:123)
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketServiceImpl.refreshTokenAndReconnect(WebSocketServiceImpl.java:573)
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketServiceImpl.lambda$refreshTokenAndReconnect$6(WebSocketServiceImpl.java:591)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source)
+	at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
+	at java.base/java.lang.Thread.run(Unknown Source)
+2026-04-24 05:44:19.007 [pool-4-thread-1] ERROR c.f.x.service.impl.WebSocketServiceImpl - 【账号1】❌ Token刷新并重连失败，将在300秒后重试
+2026-04-24 05:45:09.933 [scheduling-1] ERROR c.f.x.service.impl.WebSocketTokenServiceImpl - 【账号1】获取accessToken失败：{"api":"mtop.taobao.idlemessage.pc.login.token","data":{},"ret":["FAIL_SYS_TOKEN_EXOIRED::令牌过期"],"v":"1.0"}
+2026-04-24 05:48:02.856 [http-nio-12400-exec-5] ERROR c.feijimiao.xianyuassistant.utils.ItemDetailUtils - 解析商品详情JSON失败，返回原始JSON: Unrecognized token '洛克王国奇遇8只全收集': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 12]
+2026-04-24 05:48:03.504 [http-nio-12400-exec-2] ERROR c.f.xianyuassistant.service.impl.ItemServiceImpl - API返回失败: FAIL_SYS_USER_VALIDATE, itemId=1047497664989
+2026-04-24 05:48:03.504 [http-nio-12400-exec-2] ERROR c.f.xianyuassistant.service.impl.ItemServiceImpl - 完整响应内容: {"ret":["FAIL_SYS_USER_VALIDATE","RGV587_ERROR::SM::哎哟喂,被挤爆啦,请稍后重试"],"data":{"url":"https://h5api.m.goofish.com:443//h5/mtop.taobao.idle.pc.detail/1.0/_____tmd_____/punish?x5secdata=xgf7e8d7a4b3f9cfc3ja4cf70204d29f04e28aabde9a71c45fba1777009683a-717315356a-2091428694abaac3en2202939076420a33bcca3cf1a7afbbed78076e75d36dd76e1__bx__h5api.m.goofish.com:443/h5/mtop.taobao.idle.pc.detail/1.0&x5step=2&action=captcha&pureCaptcha="}}
+2026-04-24 05:48:03.504 [http-nio-12400-exec-2] ERROR c.f.xianyuassistant.service.impl.ItemServiceImpl - 无法获取商品详情，且没有可用的缓存: itemId=1047497664989
+2026-04-24 05:48:44.488 [http-nio-12400-exec-4] ERROR c.f.xianyuassistant.service.impl.ItemServiceImpl - API返回失败: FAIL_SYS_USER_VALIDATE, itemId=1045627540710
+2026-04-24 05:48:44.488 [http-nio-12400-exec-4] ERROR c.f.xianyuassistant.service.impl.ItemServiceImpl - 完整响应内容: {"ret":["FAIL_SYS_USER_VALIDATE","RGV587_ERROR::SM::哎哟喂,被挤爆啦,请稍后重试"],"data":{"url":"https://h5api.m.goofish.com:443//h5/mtop.taobao.idle.pc.detail/1.0/_____tmd_____/punish?x5secdata=xgf927f7e611b16f4eja436d6a5d87fea116f200e47ec30184b81777009724a-717315356a-2091428694abaac3en2202939076420a33b3acda44ae111af65f637c15e37c23709__bx__h5api.m.goofish.com:443/h5/mtop.taobao.idle.pc.detail/1.0&x5step=2&action=captcha&pureCaptcha="}}
+2026-04-24 05:48:44.488 [http-nio-12400-exec-4] ERROR c.f.xianyuassistant.service.impl.ItemServiceImpl - 无法获取商品详情，且没有可用的缓存: itemId=1045627540710
+2026-04-24 05:49:19.945 [pool-4-thread-1] ERROR c.f.x.service.impl.WebSocketServiceImpl - 【账号1】Token刷新并重连异常，将在300秒后重试
+com.feijimiao.xianyuassistant.exception.CaptchaRequiredException: 需要完成滑块验证
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketTokenServiceImpl.getAccessTokenWithRetry(WebSocketTokenServiceImpl.java:380)
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketTokenServiceImpl.getAccessToken(WebSocketTokenServiceImpl.java:132)
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketServiceImpl.startWebSocket(WebSocketServiceImpl.java:145)
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketServiceImpl.refreshTokenAndReconnect(WebSocketServiceImpl.java:573)
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketServiceImpl.lambda$refreshTokenAndReconnect$6(WebSocketServiceImpl.java:591)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source)
+	at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
+	at java.base/java.lang.Thread.run(Unknown Source)
+2026-04-24 05:54:23.484 [pool-4-thread-1] ERROR c.f.x.service.impl.WebSocketServiceImpl - 【账号1】Token刷新并重连异常，将在300秒后重试
+com.feijimiao.xianyuassistant.exception.CaptchaRequiredException: 需要完成滑块验证
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketTokenServiceImpl.getAccessTokenWithRetry(WebSocketTokenServiceImpl.java:380)
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketTokenServiceImpl.getAccessToken(WebSocketTokenServiceImpl.java:132)
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketServiceImpl.startWebSocket(WebSocketServiceImpl.java:145)
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketServiceImpl.refreshTokenAndReconnect(WebSocketServiceImpl.java:573)
+	at com.feijimiao.xianyuassistant.service.impl.WebSocketServiceImpl.lambda$refreshTokenAndReconnect$7(WebSocketServiceImpl.java:601)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source)
+	at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
+	at java.base/java.lang.Thread.run(Unknown Source)
