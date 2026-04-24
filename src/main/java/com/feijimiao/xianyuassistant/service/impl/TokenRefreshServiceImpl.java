@@ -25,13 +25,22 @@ import java.util.Map;
 
 /**
  * Token刷新服务实现
- * 
+ *
  * <p>功能：</p>
  * <ul>
- *   <li>定期刷新_m_h5_tk token（每2小时）</li>
- *   <li>定期刷新websocket_token（每12小时）</li>
+ *   <li>定期刷新_m_h5_tk token（每4小时，作为兜底机制）</li>
+ *   <li>定期Cookie保活检查（每2小时）</li>
+ *   <li>定期刷新websocket_token（每分钟检查，1小时刷新）</li>
  *   <li>监控token过期时间</li>
  *   <li>自动重新获取过期的token</li>
+ * </ul>
+ *
+ * <p>优化策略（参考Python实现）：</p>
+ * <ul>
+ *   <li>Python采用"按需刷新"策略：只在token获取失败时才调用hasLogin</li>
+ *   <li>Java延长刷新间隔，减少频繁请求：_m_h5_tk从2小时延长至4小时，Cookie保活从30分钟延长至2小时</li>
+ *   <li>主要依赖token刷新失败时的自动重试机制来触发hasLogin</li>
+ *   <li>WebSocket token保持每分钟检查，1小时刷新的策略</li>
  * </ul>
  */
 @Slf4j
@@ -321,11 +330,18 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
     
     /**
      * 定时任务：刷新所有账号的_m_h5_tk token
-     * 与Python保持一致：Python没有单独的_m_h5_tk定时刷新，而是在API调用时处理
-     * 这里保留定时刷新作为兜底机制，间隔设置为较长的时间
-     * 基础间隔2小时（120分钟）
+     *
+     * 参考Python逻辑优化：
+     * - Python没有单独的_m_h5_tk定时刷新，而是在get_token失败时才调用hasLogin
+     * - Python的token_refresh_interval默认为1小时（3600秒）
+     * - 为了减少不必要的刷新，将间隔延长至4小时，作为兜底机制
+     *
+     * 优化策略：
+     * 1. 延长刷新间隔至4小时（240分钟），减少频繁刷新
+     * 2. 主要依赖WebSocket token刷新失败时的自动重试机制
+     * 3. 只有在真正需要时才调用hasLogin刷新Cookie
      */
-    @Scheduled(fixedDelay = 120 * 60 * 1000, initialDelay = 10 * 60 * 1000)
+    @Scheduled(fixedDelay = 240 * 60 * 1000, initialDelay = 30 * 60 * 1000)
     public void scheduledRefreshMh5tk() {
         try {
             log.info("🔄 开始刷新所有账号的_m_h5_tk token...");
@@ -338,20 +354,26 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
 
     /**
      * 定时任务：通过hasLogin检查并刷新Cookie
-     * 参考Python逻辑：每次get_token前都会检查Cookie是否有效
-     * Python通过hasLogin来保持Cookie活跃，防止Cookie过期导致WebSocket掉线
-     * 
-     * 间隔30分钟，在_m_h5_tk刷新间隔（2小时）之间提供额外的Cookie保活
+     *
+     * 参考Python逻辑优化：
+     * - Python中hasLogin只在get_token失败时才被调用（按需刷新）
+     * - Python没有单独的定期Cookie保活检查
+     * - 为了减少频繁请求，将间隔延长至2小时
+     *
+     * 优化策略：
+     * 1. 延长保活检查间隔至2小时（120分钟）
+     * 2. 减少对hasLogin接口的调用频率
+     * 3. 主要依赖token刷新失败时的自动重试机制来触发hasLogin
      */
-    @Scheduled(fixedDelay = 30 * 60 * 1000, initialDelay = 5 * 60 * 1000)
+    @Scheduled(fixedDelay = 120 * 60 * 1000, initialDelay = 60 * 60 * 1000)
     public void scheduledCookieKeepAlive() {
         try {
             log.info("🔄 开始定期Cookie保活检查...");
-            
+
             List<XianyuAccount> accounts = accountMapper.selectList(null);
             int successCount = 0;
             int failCount = 0;
-            
+
             for (XianyuAccount account : accounts) {
                 if (account.getStatus() == 1) { // 只检查正常状态的账号
                     try {
@@ -368,15 +390,15 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
                         failCount++;
                         log.warn("【账号{}】Cookie保活异常: {}", account.getId(), e.getMessage());
                     }
-                    
-                    // 随机间隔2-5秒，避免频繁请求
-                    int randomInterval = 2000 + new java.util.Random().nextInt(3001);
+
+                    // 随机间隔3-6秒，避免频繁请求
+                    int randomInterval = 3000 + new java.util.Random().nextInt(3001);
                     Thread.sleep(randomInterval);
                 }
             }
-            
+
             log.info("✅ Cookie保活检查完成: 成功{}个, 失败{}个", successCount, failCount);
-            
+
         } catch (Exception e) {
             log.error("定期Cookie保活检查失败", e);
         }

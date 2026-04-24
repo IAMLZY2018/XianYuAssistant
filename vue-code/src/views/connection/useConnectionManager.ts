@@ -113,13 +113,14 @@ export function useConnectionManager() {
   }
 
   // Start auto refresh
+  // 优化：将刷新间隔从5秒延长到10秒，减少不必要的频繁查询
   const startAutoRefresh = () => {
     stopAutoRefresh()
     statusInterval = window.setInterval(() => {
       if (selectedAccountId.value) {
         loadConnectionStatus(selectedAccountId.value, true)
       }
-    }, 5000)
+    }, 10000) // 从5000ms延长到10000ms（10秒）
   }
 
   // Stop auto refresh

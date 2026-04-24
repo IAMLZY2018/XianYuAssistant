@@ -231,47 +231,48 @@ public class WebSocketController {
     @PostMapping("/status")
     public ResultObject<WebSocketStatusRespDTO> getWebSocketStatus(@RequestBody GetWebSocketStatusReqDTO reqDTO) {
         try {
-            log.info("查询WebSocket状态: xianyuAccountId={}", reqDTO.getXianyuAccountId());
-            
+            // 优化：将日志级别从INFO降为DEBUG，减少日志刷屏
+            log.debug("查询WebSocket状态: xianyuAccountId={}", reqDTO.getXianyuAccountId());
+
             if (reqDTO.getXianyuAccountId() == null) {
                 return ResultObject.failed("账号ID不能为空");
             }
-            
+
             boolean connected = webSocketService.isConnected(reqDTO.getXianyuAccountId());
-            
+
             WebSocketStatusRespDTO respDTO = new WebSocketStatusRespDTO();
             respDTO.setXianyuAccountId(reqDTO.getXianyuAccountId());
             respDTO.setConnected(connected);
             respDTO.setStatus(connected ? "已连接" : "未连接");
-            
+
             // 获取Cookie状态和Cookie值
-            com.feijimiao.xianyuassistant.service.AccountService accountService = 
+            com.feijimiao.xianyuassistant.service.AccountService accountService =
                     applicationContext.getBean(com.feijimiao.xianyuassistant.service.AccountService.class);
-            
+
             // 查询Cookie信息
-            com.feijimiao.xianyuassistant.mapper.XianyuCookieMapper cookieMapper = 
+            com.feijimiao.xianyuassistant.mapper.XianyuCookieMapper cookieMapper =
                     applicationContext.getBean(com.feijimiao.xianyuassistant.mapper.XianyuCookieMapper.class);
-            
-            com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<com.feijimiao.xianyuassistant.entity.XianyuCookie> cookieQuery = 
+
+            com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<com.feijimiao.xianyuassistant.entity.XianyuCookie> cookieQuery =
                     new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
             cookieQuery.eq(com.feijimiao.xianyuassistant.entity.XianyuCookie::getXianyuAccountId, reqDTO.getXianyuAccountId())
                     .orderByDesc(com.feijimiao.xianyuassistant.entity.XianyuCookie::getCreatedTime)
                     .last("LIMIT 1");
             com.feijimiao.xianyuassistant.entity.XianyuCookie cookie = cookieMapper.selectOne(cookieQuery);
-            
+
             if (cookie != null) {
                 respDTO.setCookieStatus(cookie.getCookieStatus());
                 respDTO.setCookieText(cookie.getCookieText());
                 respDTO.setWebsocketToken(cookie.getWebsocketToken());
                 respDTO.setTokenExpireTime(cookie.getTokenExpireTime());
-                
+
                 // 构建简洁的状态信息
                 StringBuilder statusInfo = new StringBuilder();
                 statusInfo.append("账号ID=").append(reqDTO.getXianyuAccountId());
                 statusInfo.append(", 连接=").append(connected ? "✅" : "❌");
                 statusInfo.append(", Cookie=").append(getCookieStatusText(cookie.getCookieStatus()));
                 statusInfo.append(", Token=").append(cookie.getWebsocketToken() != null ? "✅" : "❌");
-                
+
                 if (cookie.getTokenExpireTime() != null) {
                     long now = System.currentTimeMillis();
                     long remaining = cookie.getTokenExpireTime() - now;
@@ -281,20 +282,21 @@ public class WebSocketController {
                         statusInfo.append(", Token已过期");
                     }
                 }
-                
-                log.info("✅ WebSocket状态: {}", statusInfo);
+
+                // 优化：将日志级别从INFO降为DEBUG，减少日志刷屏
+                log.debug("✅ WebSocket状态: {}", statusInfo);
             } else {
                 respDTO.setCookieStatus(null);
                 respDTO.setCookieText(null);
                 respDTO.setWebsocketToken(null);
                 respDTO.setTokenExpireTime(null);
-                
-                log.warn("⚠️ WebSocket状态: 账号ID={}, 连接={}, Cookie=未找到", 
+
+                log.warn("⚠️ WebSocket状态: 账号ID={}, 连接={}, Cookie=未找到",
                         reqDTO.getXianyuAccountId(), connected ? "✅" : "❌");
             }
-            
+
             return ResultObject.success(respDTO);
-            
+
         } catch (Exception e) {
             log.error("查询WebSocket状态失败", e);
             return ResultObject.failed("查询WebSocket状态失败: " + e.getMessage());
