@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -41,11 +43,11 @@ public class AutoReplyDelayServiceImpl implements AutoReplyDelayService {
     private final Map<String, ScheduledFuture<?>> pendingTasks = new ConcurrentHashMap<>();
     
     /**
-     * 待处理的消息数据映射（用于延时任务执行时获取消息数据）
+     * 待处理的消息数据列表映射（用于延时任务执行时获取所有触发消息）
      * Key: accountId_sId
-     * Value: 最新的消息数据
+     * Value: 延时期间收到的所有消息列表
      */
-    private final Map<String, ChatMessageData> pendingMessages = new ConcurrentHashMap<>();
+    private final Map<String, List<ChatMessageData>> pendingMessages = new ConcurrentHashMap<>();
     
     /**
      * 默认延时秒数
@@ -113,20 +115,26 @@ public class AutoReplyDelayServiceImpl implements AutoReplyDelayService {
         // 先取消该会话之前的延时任务
         cancelDelayTask(accountId, sId);
         
-        // 保存最新的消息数据
-        pendingMessages.put(taskKey, messageData);
+        // 追加消息到列表（延时期间可能收到多条消息）
+        pendingMessages.compute(taskKey, (key, existingList) -> {
+            if (existingList == null) {
+                existingList = new ArrayList<>();
+            }
+            existingList.add(messageData);
+            return existingList;
+        });
         
         // 提交新的延时任务
         ScheduledFuture<?> future = scheduler.schedule(() -> {
             try {
                 // 从映射中移除（任务开始执行）
                 pendingTasks.remove(taskKey);
-                ChatMessageData data = pendingMessages.remove(taskKey);
+                List<ChatMessageData> messageList = pendingMessages.remove(taskKey);
                 
-                if (data != null) {
-                    log.info("【账号{}】延时任务到期，开始执行RAG自动回复: sId={}", accountId, sId);
-                    // 执行RAG自动回复
-                    autoReplyService.executeRagAutoReply(data);
+                if (messageList != null && !messageList.isEmpty()) {
+                    log.info("【账号{}】延时任务到期，开始执行自动回复: sId={}, 触发消息数={}", accountId, sId, messageList.size());
+                    // 执行自动回复，传入消息列表
+                    autoReplyService.executeAutoReply(messageList);
                 }
             } catch (Exception e) {
                 log.error("【账号{}】执行延时回复任务异常: sId={}", accountId, sId, e);
@@ -147,7 +155,7 @@ public class AutoReplyDelayServiceImpl implements AutoReplyDelayService {
         
         String taskKey = buildTaskKey(accountId, sId);
         ScheduledFuture<?> future = pendingTasks.remove(taskKey);
-        pendingMessages.remove(taskKey);
+        // 注意：不清除pendingMessages，因为新消息到来时需要保留之前收集的消息继续追加
         
         if (future != null && !future.isDone()) {
             boolean cancelled = future.cancel(false);

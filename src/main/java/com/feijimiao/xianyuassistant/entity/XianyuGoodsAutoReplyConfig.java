@@ -44,7 +44,7 @@ public class XianyuGoodsAutoReplyConfig {
     private Integer matchType;
     
     /**
-     * RAG回复延时秒数（默认15秒）
+     * 回复延时秒数（默认15秒）
      */
     private Integer ragDelaySeconds;
     

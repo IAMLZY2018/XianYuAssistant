@@ -47,6 +47,9 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
     @Autowired
     private WebSocketService webSocketService;
     
+    @Autowired
+    private com.feijimiao.xianyuassistant.service.SentMessageSaveService sentMessageSaveService;
+    
     @Override
     public XianyuGoodsConfig getGoodsConfig(Long accountId, String xyGoodsId) {
         return goodsConfigMapper.selectByAccountAndGoodsId(accountId, xyGoodsId);
@@ -168,6 +171,8 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             if (success) {
                 log.info("【账号{}】自动发货成功: xyGoodsId={}, buyerUserName={}, content={}", 
                         accountId, xyGoodsId, buyerUserName, content);
+                // 自动发货消息入库（contentType=888，AI助手回复）
+                sentMessageSaveService.saveAiAssistantReply(accountId, cid, toId, content, xyGoodsId);
             } else {
                 log.error("【账号{}】自动发货失败: xyGoodsId={}", accountId, xyGoodsId);
             }
@@ -276,6 +281,8 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             if (success) {
                 log.info("【账号{}】自动回复成功: xyGoodsId={}, keyword={}, reply={}", 
                         accountId, xyGoodsId, matchedKeyword, replyContent);
+                // 关键词自动回复消息入库（contentType=888，AI助手回复）
+                sentMessageSaveService.saveAiAssistantReply(accountId, cid, toId, replyContent, xyGoodsId);
             } else {
                 log.error("【账号{}】自动回复失败: xyGoodsId={}", accountId, xyGoodsId);
             }

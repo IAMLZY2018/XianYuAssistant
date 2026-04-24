@@ -67,6 +67,9 @@ public class ChatMessageEventAutoDeliveryListener {
     @Autowired
     private OrderService orderService;
     
+    @Autowired
+    private com.feijimiao.xianyuassistant.service.SentMessageSaveService sentMessageSaveService;
+    
     /**
      * 处理聊天消息接收事件 - 判断并执行自动发货
      * 
@@ -231,6 +234,9 @@ public class ChatMessageEventAutoDeliveryListener {
                 log.info("【账号{}】✅ 自动发货成功: recordId={}, xyGoodsId={}, content={}", 
                         accountId, recordId, xyGoodsId, content);
                 updateRecordState(recordId, 1, content);
+                
+                // 自动发货消息入库（contentType=888，AI助手回复）
+                sentMessageSaveService.saveAiAssistantReply(accountId, cid, toId, content, xyGoodsId);
                 
                 // 7. 检查是否需要自动确认发货
                 if (deliveryConfig.getAutoConfirmShipment() != null && deliveryConfig.getAutoConfirmShipment() == 1) {

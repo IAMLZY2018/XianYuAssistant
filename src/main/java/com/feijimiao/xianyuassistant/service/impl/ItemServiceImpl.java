@@ -933,7 +933,7 @@ public class ItemServiceImpl implements ItemService {
     private com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoReplyConfigMapper autoReplyConfigMapper;
     
     /**
-     * 获取RAG自动回复配置
+     * 获取自动回复配置
      */
     @Override
     public ResultObject<RagAutoReplyConfigRespDTO> getRagAutoReplyConfig(RagAutoReplyConfigReqDTO reqDTO) {
@@ -951,13 +951,13 @@ public class ItemServiceImpl implements ItemService {
             
             return ResultObject.success(respDTO);
         } catch (Exception e) {
-            log.error("获取RAG自动回复配置失败", e);
-            return ResultObject.failed("获取RAG自动回复配置失败: " + e.getMessage());
+            log.error("获取自动回复配置失败", e);
+            return ResultObject.failed("获取自动回复配置失败: " + e.getMessage());
         }
     }
     
     /**
-     * 更新RAG自动回复配置
+     * 更新自动回复配置
      */
     @Override
     public ResultObject<?> updateRagAutoReplyConfig(UpdateRagAutoReplyConfigReqDTO reqDTO) {
@@ -973,20 +973,20 @@ public class ItemServiceImpl implements ItemService {
                 config.setXyGoodsId(reqDTO.getXyGoodsId());
                 config.setRagDelaySeconds(reqDTO.getRagDelaySeconds());
                 autoReplyConfigMapper.insert(config);
-                log.info("创建RAG自动回复配置: accountId={}, goodsId={}", 
+                log.info("创建自动回复配置: accountId={}, goodsId={}", 
                         reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId());
             } else {
                 // 更新现有配置
                 config.setRagDelaySeconds(reqDTO.getRagDelaySeconds());
                 autoReplyConfigMapper.update(config);
-                log.info("更新RAG自动回复配置: accountId={}, goodsId={}", 
+                log.info("更新自动回复配置: accountId={}, goodsId={}", 
                         reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId());
             }
             
             return ResultObject.success(null);
         } catch (Exception e) {
-            log.error("更新RAG自动回复配置失败", e);
-            return ResultObject.failed("更新RAG自动回复配置失败: " + e.getMessage());
+            log.error("更新自动回复配置失败", e);
+            return ResultObject.failed("更新自动回复配置失败: " + e.getMessage());
         }
     }
 }

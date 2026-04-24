@@ -30,9 +30,9 @@ const {
   rightTab,
   dataContent,
   uploading,
-  ragDataList,
-  ragDataLoading,
-  ragDataVisible,
+  dataList,
+  dataLoading,
+  dataVisible,
   chatMessages,
   chatInput,
   chatSending,
@@ -40,15 +40,23 @@ const {
   isMobile,
   mobileView,
   confirmDialog,
-  ragDelaySeconds,
-  ragConfigLoading,
-  ragConfigSaving,
+  delaySeconds,
+  configLoading,
+  configSaving,
+  recordsVisible,
+  recordsList,
+  recordsLoading,
+  recordsTotal,
+  recordsPage,
+  recordsPageSize,
+  recordDetailVisible,
+  recordDetail,
   handleAccountChange,
   selectGoods,
   toggleAutoReply,
   handleUploadData,
-  handleQueryRAGData,
-  handleDeleteRAGData,
+  handleQueryData,
+  handleDeleteData,
   handleSendChat,
   handleChatKeydown,
   handleGoodsScroll,
@@ -60,7 +68,12 @@ const {
   formatPrice,
   getStatusText,
   getStatusClass,
-  updateRagDelaySeconds
+  updateDelaySeconds,
+  toggleRecords,
+  loadRecords,
+  viewRecordDetail,
+  handleRecordsPageChange,
+  parseTriggerContext
 } = useAutoReply()
 </script>
 
@@ -246,18 +259,18 @@ const {
               <div class="ar__delay-input-wrap">
                 <input
                   type="number"
-                  v-model.number="ragDelaySeconds"
+                  v-model.number="delaySeconds"
                   class="ar__delay-input"
                   min="5"
                   max="120"
-                  :disabled="ragConfigSaving"
+                  :disabled="configSaving"
                 />
                 <span class="ar__delay-unit">秒</span>
               </div>
               <button
                 class="ar__delay-save-btn"
-                :disabled="ragConfigSaving"
-                @click="updateRagDelaySeconds"
+                :disabled="configSaving"
+                @click="updateDelaySeconds"
               >
                 保存
               </button>
@@ -288,7 +301,7 @@ const {
           <!-- ====== 知识资料视图 ====== -->
           <template v-if="rightTab === 'data'">
             <!-- Upload view -->
-            <div v-if="!ragDataVisible" class="ar__config-section">
+            <div v-if="!dataVisible" class="ar__config-section">
               <div class="ar__config-section-title">添加资料</div>
               <div class="ar__toggle-hint" style="margin-bottom: 8px;">
                 上传商品相关资料到AI知识库，AI将基于这些资料自动回复买家咨询
@@ -317,70 +330,77 @@ const {
                 </button>
                 <button
                   class="btn btn--secondary"
-                  :class="{ 'btn--loading': ragDataLoading }"
-                  :disabled="ragDataLoading"
-                  @click="ragDataVisible = true; handleQueryRAGData()"
+                  :class="{ 'btn--loading': dataLoading }"
+                  :disabled="dataLoading"
+                  @click="dataVisible = true; handleQueryData()"
                 >
                   <IconSearch />
                   查看现有资料
                 </button>
+                <button
+                  class="btn btn--secondary"
+                  @click="toggleRecords"
+                >
+                  <IconSearch />
+                  查看回复记录
+                </button>
               </div>
             </div>
 
-            <!-- Existing RAG Data view (replaces upload view) -->
-            <div v-else class="ar__rag-section">
-              <div class="ar__rag-section-header">
-                <span class="ar__rag-section-title">现有资料</span>
-                <span v-if="!ragDataLoading && ragDataList.length > 0" class="ar__rag-section-count">共 {{ ragDataList.length }} 条</span>
-                <button class="btn btn--ghost btn--sm" style="margin-left: auto;" @click="ragDataVisible = false">
+            <!-- Existing data view (replaces upload view) -->
+            <div v-else class="ar__data-section">
+              <div class="ar__data-section-header">
+                <span class="ar__data-section-title">现有资料</span>
+                <span v-if="!dataLoading && dataList.length > 0" class="ar__data-section-count">共 {{ dataList.length }} 条</span>
+                <button class="btn btn--ghost btn--sm" style="margin-left: auto;" @click="dataVisible = false">
                   返回上传
                 </button>
               </div>
 
-              <div class="ar__rag-scroll">
-                <div v-if="ragDataLoading" class="ar__loading">
+              <div class="ar__data-scroll">
+                <div v-if="dataLoading" class="ar__loading">
                   <div class="ar__spinner"></div>
                   <span>加载中...</span>
                 </div>
 
-                <div v-else-if="ragDataList.length === 0" class="ar__rag-empty">
-                  <span class="ar__rag-empty-text">暂无资料</span>
+                <div v-else-if="dataList.length === 0" class="ar__data-empty">
+                  <span class="ar__data-empty-text">暂无资料</span>
                 </div>
 
                 <!-- Desktop: Table view -->
-                <table v-else-if="!isMobile" class="ar__rag-table">
-                  <thead class="ar__rag-table-head">
+                <table v-else-if="!isMobile" class="ar__data-table">
+                  <thead class="ar__data-table-head">
                     <tr>
-                      <th class="ar__rag-table-th ar__rag-table-th--index">#</th>
-                      <th class="ar__rag-table-th ar__rag-table-th--content">资料内容</th>
-                      <th class="ar__rag-table-th ar__rag-table-th--time">创建时间</th>
-                      <th class="ar__rag-table-th ar__rag-table-th--action">操作</th>
+                      <th class="ar__data-table-th ar__data-table-th--index">#</th>
+                      <th class="ar__data-table-th ar__data-table-th--content">资料内容</th>
+                      <th class="ar__data-table-th ar__data-table-th--time">创建时间</th>
+                      <th class="ar__data-table-th ar__data-table-th--action">操作</th>
                     </tr>
                   </thead>
-                  <tbody class="ar__rag-table-body">
-                    <tr v-for="(item, index) in ragDataList" :key="item.documentId" class="ar__rag-table-tr">
-                      <td class="ar__rag-table-td ar__rag-table-td--index">{{ index + 1 }}</td>
-                      <td class="ar__rag-table-td ar__rag-table-td--content">
-                        <span class="ar__rag-content-text">{{ item.content }}</span>
+                  <tbody class="ar__data-table-body">
+                    <tr v-for="(item, index) in dataList" :key="item.documentId" class="ar__data-table-tr">
+                      <td class="ar__data-table-td ar__data-table-td--index">{{ index + 1 }}</td>
+                      <td class="ar__data-table-td ar__data-table-td--content">
+                        <span class="ar__data-content-text">{{ item.content }}</span>
                       </td>
-                      <td class="ar__rag-table-td ar__rag-table-td--time">{{ formatTime(item.createTime) }}</td>
-                      <td class="ar__rag-table-td ar__rag-table-td--action">
-                        <button class="ar__rag-del-btn" @click="handleDeleteRAGData(item.documentId)">删除</button>
+                      <td class="ar__data-table-td ar__data-table-td--time">{{ formatTime(item.createTime) }}</td>
+                      <td class="ar__data-table-td ar__data-table-td--action">
+                        <button class="ar__data-del-btn" @click="handleDeleteData(item.documentId)">删除</button>
                       </td>
                     </tr>
                   </tbody>
                 </table>
 
                 <!-- Mobile: Card view -->
-                <div v-else class="ar__rag-card-list">
-                  <div v-for="(item, index) in ragDataList" :key="item.documentId" class="ar__rag-card">
-                    <div class="ar__rag-card-header">
-                      <span class="ar__rag-card-index">#{{ index + 1 }}</span>
-                      <span class="ar__rag-card-time">{{ formatTime(item.createTime) }}</span>
+                <div v-else class="ar__data-card-list">
+                  <div v-for="(item, index) in dataList" :key="item.documentId" class="ar__data-card">
+                    <div class="ar__data-card-header">
+                      <span class="ar__data-card-index">#{{ index + 1 }}</span>
+                      <span class="ar__data-card-time">{{ formatTime(item.createTime) }}</span>
                     </div>
-                    <div class="ar__rag-card-content">{{ item.content }}</div>
-                    <div class="ar__rag-card-footer">
-                      <button class="ar__rag-del-btn" @click="handleDeleteRAGData(item.documentId)">删除</button>
+                    <div class="ar__data-card-content">{{ item.content }}</div>
+                    <div class="ar__data-card-footer">
+                      <button class="ar__data-del-btn" @click="handleDeleteData(item.documentId)">删除</button>
                     </div>
                   </div>
                 </div>
@@ -455,6 +475,193 @@ const {
       :goods-id="selectedGoodsId"
       :account-id="selectedAccountId"
     />
+
+    <!-- Records List Dialog -->
+    <Transition name="overlay-fade">
+      <div
+        v-if="recordsVisible"
+        class="ar__dialog-overlay"
+        @click.self="recordsVisible = false"
+      >
+        <div class="ar__records-dialog">
+          <div class="ar__records-dialog-header">
+            <h3 class="ar__records-dialog-title">自动回复记录</h3>
+            <span v-if="!recordsLoading" class="ar__records-dialog-count">共 {{ recordsTotal }} 条</span>
+            <button class="ar__detail-dialog-close" @click="recordsVisible = false">&times;</button>
+          </div>
+          <div class="ar__records-dialog-body">
+            <div v-if="recordsLoading" class="ar__loading">
+              <div class="ar__spinner"></div>
+              <span>加载中...</span>
+            </div>
+
+            <div v-else-if="recordsList.length === 0" class="ar__records-empty">
+              <span>暂无回复记录</span>
+            </div>
+
+            <template v-else>
+              <div
+                v-for="record in recordsList"
+                :key="record.id"
+                class="ar__record-card"
+              >
+                <div class="ar__record-card-header">
+                  <span class="ar__record-time">{{ formatTime(record.createTime) }}</span>
+                  <span
+                    class="ar__record-state"
+                    :class="{
+                      'ar__record-state--success': record.state === 1,
+                      'ar__record-state--fail': record.state === -1,
+                      'ar__record-state--pending': record.state === 0
+                    }"
+                  >
+                    {{ record.state === 1 ? '成功' : record.state === -1 ? '失败' : '待回复' }}
+                  </span>
+                </div>
+
+                <!-- User questions (max 3) -->
+                <div class="ar__record-questions">
+                  <template v-if="parseTriggerContext(record.triggerContext)?.triggerMessages?.length">
+                    <div
+                      v-for="(msg, idx) in parseTriggerContext(record.triggerContext).triggerMessages.slice(0, 3)"
+                      :key="idx"
+                      class="ar__record-question"
+                    >
+                      <span class="ar__record-question-label">Q{{ idx + 1 }}</span>
+                      <span class="ar__record-question-text">{{ msg.msgContent }}</span>
+                    </div>
+                    <div
+                      v-if="parseTriggerContext(record.triggerContext).triggerMessages.length > 3"
+                      class="ar__record-more"
+                    >
+                      还有 {{ parseTriggerContext(record.triggerContext).triggerMessages.length - 3 }} 条消息，点击详情查看
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="ar__record-question">
+                      <span class="ar__record-question-label">Q</span>
+                      <span class="ar__record-question-text">{{ record.buyerMessage }}</span>
+                    </div>
+                  </template>
+                </div>
+
+                <!-- AI reply -->
+                <div class="ar__record-reply">
+                  <span class="ar__record-reply-label">A</span>
+                  <span class="ar__record-reply-text">{{ record.replyContent || '—' }}</span>
+                </div>
+
+                <!-- Detail button -->
+                <div class="ar__record-card-footer">
+                  <button class="btn btn--ghost btn--sm" @click="viewRecordDetail(record)">
+                    详情
+                  </button>
+                </div>
+              </div>
+
+              <!-- Pagination -->
+              <div v-if="recordsTotal > recordsPageSize" class="ar__records-pagination">
+                <button
+                  class="ar__records-page-btn"
+                  :disabled="recordsPage <= 1"
+                  @click="handleRecordsPageChange(recordsPage - 1)"
+                >上一页</button>
+                <span class="ar__records-page-info">{{ recordsPage }} / {{ Math.ceil(recordsTotal / recordsPageSize) }}</span>
+                <button
+                  class="ar__records-page-btn"
+                  :disabled="recordsPage >= Math.ceil(recordsTotal / recordsPageSize)"
+                  @click="handleRecordsPageChange(recordsPage + 1)"
+                >下一页</button>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- Record Detail Dialog -->
+    <Transition name="overlay-fade">
+      <div
+        v-if="recordDetailVisible"
+        class="ar__dialog-overlay"
+        @click.self="recordDetailVisible = false"
+      >
+        <div class="ar__detail-dialog">
+          <div class="ar__detail-dialog-header">
+            <h3 class="ar__detail-dialog-title">回复记录详情</h3>
+            <button class="ar__detail-dialog-close" @click="recordDetailVisible = false">&times;</button>
+          </div>
+          <div class="ar__detail-dialog-body" v-if="recordDetail">
+            <div class="ar__detail-row">
+              <span class="ar__detail-label">回复时间</span>
+              <span class="ar__detail-value">{{ formatTime(recordDetail.createTime) }}</span>
+            </div>
+            <div class="ar__detail-row">
+              <span class="ar__detail-label">状态</span>
+              <span
+                class="ar__detail-value"
+                :class="{
+                  'ar__record-state--success': recordDetail.state === 1,
+                  'ar__record-state--fail': recordDetail.state === -1,
+                  'ar__record-state--pending': recordDetail.state === 0
+                }"
+              >{{ recordDetail.state === 1 ? '成功' : recordDetail.state === -1 ? '失败' : '待回复' }}</span>
+            </div>
+            <div class="ar__detail-row">
+              <span class="ar__detail-label">买家</span>
+              <span class="ar__detail-value">{{ recordDetail.buyerUserName || recordDetail.buyerUserId }}</span>
+            </div>
+
+            <!-- All user questions -->
+            <div class="ar__detail-section">
+              <div class="ar__detail-section-title">用户问题</div>
+              <template v-if="parseTriggerContext(recordDetail.triggerContext)?.triggerMessages?.length">
+                <div
+                  v-for="(msg, idx) in parseTriggerContext(recordDetail.triggerContext).triggerMessages"
+                  :key="idx"
+                  class="ar__detail-msg-item"
+                >
+                  <div class="ar__detail-msg-meta">
+                    <span class="ar__detail-msg-sender">{{ msg.senderUserName || msg.senderUserId }}</span>
+                    <span v-if="msg.messageTime" class="ar__detail-msg-time">{{ new Date(msg.messageTime).toLocaleString('zh-CN') }}</span>
+                  </div>
+                  <div class="ar__detail-msg-content">{{ msg.msgContent }}</div>
+                </div>
+              </template>
+              <template v-else>
+                <div class="ar__detail-msg-item">
+                  <div class="ar__detail-msg-content">{{ recordDetail.buyerMessage }}</div>
+                </div>
+              </template>
+            </div>
+
+            <!-- AI reply -->
+            <div class="ar__detail-section">
+              <div class="ar__detail-section-title">AI 回复</div>
+              <div class="ar__detail-reply-content">{{ recordDetail.replyContent || '—' }}</div>
+            </div>
+
+            <!-- RAG hit details -->
+            <template v-if="parseTriggerContext(recordDetail.triggerContext)?.ragHitDetails?.length">
+              <div class="ar__detail-section">
+                <div class="ar__detail-section-title">RAG 命中资料</div>
+                <div
+                  v-for="(hit, idx) in parseTriggerContext(recordDetail.triggerContext).ragHitDetails"
+                  :key="idx"
+                  class="ar__detail-hit-item"
+                >
+                  <div class="ar__detail-hit-meta">
+                    <span class="ar__detail-hit-doc">文档 #{{ idx + 1 }}</span>
+                    <span v-if="hit.score" class="ar__detail-hit-score">相似度: {{ (hit.score * 100).toFixed(1) }}%</span>
+                  </div>
+                  <div class="ar__detail-hit-content">{{ hit.content }}</div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </Transition>
 
     <!-- Confirm Dialog -->
     <Transition name="overlay-fade">

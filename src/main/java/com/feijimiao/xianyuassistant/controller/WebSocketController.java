@@ -31,6 +31,9 @@ public class WebSocketController {
     
     @Autowired
     private CookieRefreshService cookieRefreshService;
+    
+    @Autowired
+    private com.feijimiao.xianyuassistant.service.SentMessageSaveService sentMessageSaveService;
 
     /**
      * 启动WebSocket连接
@@ -214,6 +217,14 @@ public class WebSocketController {
             );
             
             if (success) {
+                // 发送成功后，将消息入库（contentType=999，手动回复）
+                sentMessageSaveService.saveManualReply(
+                        reqDTO.getXianyuAccountId(),
+                        reqDTO.getCid(),
+                        reqDTO.getToId(),
+                        reqDTO.getText(),
+                        reqDTO.getXyGoodsId()
+                );
                 return ResultObject.success("消息发送成功");
             } else {
                 return ResultObject.failed("消息发送失败");
@@ -642,6 +653,7 @@ public class WebSocketController {
         private String cid;            // 会话ID（不带@goofish后缀）
         private String toId;           // 接收方用户ID（不带@goofish后缀）
         private String text;           // 消息文本内容
+        private String xyGoodsId;      // 闲鱼商品ID
     }
     
     /**
