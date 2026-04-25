@@ -185,15 +185,17 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
     private boolean handleMh5tkRefreshFailure(Long accountId, int retryCount, boolean hasLoginAttempted, String reason) {
         // 参考Python: retry_count < 2 时直接重试
         if (retryCount < 2) {
-            log.warn("【账号{}】_m_h5_tk刷新失败({})，准备重试... (重试次数: {}/2)", 
+            log.warn("【账号{}】_m_h5_tk刷新失败({})，准备重试... (重试次数: {}/2)",
                     accountId, reason, retryCount + 1);
-            
+
             try {
-                Thread.sleep(500);
+                // 随机间隔500-1500ms，避免固定间隔被识别为机器人
+                long randomInterval = 500 + new java.util.Random().nextLong(1001);
+                Thread.sleep(randomInterval);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-            
+
             return refreshMh5tkTokenWithRetry(accountId, retryCount + 1, hasLoginAttempted);
         }
         
@@ -267,13 +269,15 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
             
             if (refreshSuccess) {
                 log.info("【账号{}】hasLogin成功，登录态有效，准备重新获取_m_h5_tk（重置重试计数）", accountId);
-                
+
                 try {
-                    Thread.sleep(500);
+                    // 随机间隔500-1500ms，避免固定间隔被识别为机器人
+                    long randomInterval = 500 + new java.util.Random().nextLong(1001);
+                    Thread.sleep(randomInterval);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
-                
+
                 // 重置retryCount为0，重新开始获取_m_h5_tk流程
                 // 标记hasLoginAttempted=true，防止无限循环
                 return refreshMh5tkTokenWithRetry(accountId, 0, true);
@@ -361,14 +365,15 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
      * 参考Python逻辑优化：
      * - Python没有单独的_m_h5_tk定时刷新，而是在get_token失败时才调用hasLogin
      * - Python的token_refresh_interval默认为1小时（3600秒）
-     * - 为了减少不必要的刷新，将间隔延长至4小时，作为兜底机制
+     * - 为了减少不必要的刷新，将间隔延长至6小时，作为兜底机制
      *
      * 优化策略：
-     * 1. 延长刷新间隔至4小时（240分钟），减少频繁刷新
+     * 1. 延长刷新间隔至6小时（360分钟），大幅减少频繁刷新
      * 2. 主要依赖WebSocket token刷新失败时的自动重试机制
      * 3. 只有在真正需要时才调用hasLogin刷新Cookie
+     * 4. 添加随机间隔（5-10秒），避免多账号同时请求被识别为机器人
      */
-    @Scheduled(fixedDelay = 240 * 60 * 1000, initialDelay = 30 * 60 * 1000)
+    @Scheduled(fixedDelay = 360 * 60 * 1000, initialDelay = 60 * 60 * 1000)
     public void scheduledRefreshMh5tk() {
         try {
             log.info("🔄 开始刷新所有账号的_m_h5_tk token...");
@@ -385,14 +390,15 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
      * 参考Python逻辑优化：
      * - Python中hasLogin只在get_token失败时才被调用（按需刷新）
      * - Python没有单独的定期Cookie保活检查
-     * - 为了减少频繁请求，将间隔延长至2小时
+     * - 为了减少频繁请求，将间隔延长至3小时
      *
      * 优化策略：
-     * 1. 延长保活检查间隔至2小时（120分钟）
+     * 1. 延长保活检查间隔至3小时（180分钟）
      * 2. 减少对hasLogin接口的调用频率
      * 3. 主要依赖token刷新失败时的自动重试机制来触发hasLogin
+     * 4. 添加随机间隔（5-15秒），避免多账号同时请求被识别为机器人
      */
-    @Scheduled(fixedDelay = 120 * 60 * 1000, initialDelay = 60 * 60 * 1000)
+    @Scheduled(fixedDelay = 180 * 60 * 1000, initialDelay = 90 * 60 * 1000)
     public void scheduledCookieKeepAlive() {
         try {
             log.info("🔄 开始定期Cookie保活检查...");
@@ -418,8 +424,8 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
                         log.warn("【账号{}】Cookie保活异常: {}", account.getId(), e.getMessage());
                     }
 
-                    // 随机间隔3-6秒，避免频繁请求
-                    int randomInterval = 3000 + new java.util.Random().nextInt(3001);
+                    // 随机间隔5-15秒，避免频繁请求和被识别为机器人
+                    int randomInterval = 5000 + new java.util.Random().nextInt(10001);
                     Thread.sleep(randomInterval);
                 }
             }
@@ -434,6 +440,10 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
     /**
      * 定时任务：检查并刷新WebSocket token
      * 与Python完全一致：每分钟检查一次，1小时刷新一次
+     *
+     * 优化策略：
+     * 1. 保持每分钟检查一次（与Python一致）
+     * 2. 添加随机间隔（3-8秒），避免多账号同时请求
      */
     @Scheduled(fixedDelay = 60 * 1000, initialDelay = 60 * 1000)
     public void scheduledRefreshWebSocketToken() {
@@ -456,8 +466,8 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
                             log.warn("⚠️ 账号{}的WebSocket token刷新失败，将在下次检查时重试", account.getId());
                         }
 
-                        // 间隔2-5秒，避免频繁请求
-                        int randomInterval = 2000 + new java.util.Random().nextInt(3001);
+                        // 随机间隔3-8秒，避免频繁请求
+                        int randomInterval = 3000 + new java.util.Random().nextInt(5001);
                         Thread.sleep(randomInterval);
                     }
                 }
@@ -470,15 +480,18 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
     
     /**
      * 刷新所有账号的token
+     *
+     * 优化策略：
+     * 1. 添加随机间隔（5-10秒），避免多账号同时请求被识别为机器人
      */
     @Override
     public void refreshAllAccountsTokens() {
         try {
             List<XianyuAccount> accounts = accountMapper.selectList(null);
-            
+
             int successCount = 0;
             int failCount = 0;
-            
+
             for (XianyuAccount account : accounts) {
                 if (account.getStatus() == 1) { // 只刷新正常状态的账号
                     boolean success = refreshMh5tkToken(account.getId());
@@ -487,15 +500,15 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
                     } else {
                         failCount++;
                     }
-                    
-                    // 随机间隔2-5秒，避免频繁请求被检测
-                    int randomInterval = 2000 + new java.util.Random().nextInt(3001);
+
+                    // 随机间隔5-10秒，避免频繁请求被检测
+                    int randomInterval = 5000 + new java.util.Random().nextInt(5001);
                     Thread.sleep(randomInterval);
                 }
             }
-            
+
             log.info("✅ _m_h5_tk token刷新完成: 成功{}个, 失败{}个", successCount, failCount);
-            
+
         } catch (Exception e) {
             log.error("刷新所有账号token失败", e);
         }

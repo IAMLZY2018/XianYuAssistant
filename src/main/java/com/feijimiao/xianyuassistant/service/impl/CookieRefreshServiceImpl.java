@@ -161,6 +161,10 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
 
                     log.info("【账号{}】hasLogin响应Set-Cookie数量: {}", accountId, setCookieHeaders.size());
 
+                    // 【关键修复】参考Python：无论是否有Set-Cookie，都要清理重复Cookie
+                    String oldCookieStr = cookie.getCookieText();
+                    String newCookieStr = oldCookieStr;
+
                     if (!setCookieHeaders.isEmpty()) {
                         // 打印包含_m_h5_tk的Set-Cookie
                         for (String sc : setCookieHeaders) {
@@ -170,42 +174,42 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
                             }
                         }
 
-                        String oldCookieStr = cookie.getCookieText();
-                        String newCookieStr = mergeCookies(oldCookieStr, setCookieHeaders);
+                        // 合并Cookie
+                        newCookieStr = mergeCookies(oldCookieStr, setCookieHeaders);
+                    }
 
-                        // 清理重复Cookie
-                        newCookieStr = clearDuplicateCookies(newCookieStr);
+                    // 【关键】参考Python：无论是否有Set-Cookie，都要清理重复Cookie
+                    newCookieStr = clearDuplicateCookies(newCookieStr);
 
-                        // 更新Cookie到数据库
-                        boolean cookieChanged = !newCookieStr.equals(oldCookieStr);
-                        if (cookieChanged) {
-                            // 检查_m_h5_tk是否更新了
-                            Map<String, String> oldCookieMap = XianyuSignUtils.parseCookies(oldCookieStr);
-                            Map<String, String> newCookieMap = XianyuSignUtils.parseCookies(newCookieStr);
-                            String oldMh5tk = oldCookieMap.get("_m_h5_tk");
-                            String newMh5tk = newCookieMap.get("_m_h5_tk");
-                            boolean mh5tkUpdated = (newMh5tk != null && !newMh5tk.equals(oldMh5tk));
+                    // 更新Cookie到数据库
+                    boolean cookieChanged = !newCookieStr.equals(oldCookieStr);
+                    if (cookieChanged) {
+                        // 检查_m_h5_tk是否更新了
+                        Map<String, String> oldCookieMap = XianyuSignUtils.parseCookies(oldCookieStr);
+                        Map<String, String> newCookieMap = XianyuSignUtils.parseCookies(newCookieStr);
+                        String oldMh5tk = oldCookieMap.get("_m_h5_tk");
+                        String newMh5tk = newCookieMap.get("_m_h5_tk");
+                        boolean mh5tkUpdated = (newMh5tk != null && !newMh5tk.equals(oldMh5tk));
 
-                            // 更新数据库
-                            cookieMapper.update(null,
-                                    new LambdaUpdateWrapper<XianyuCookie>()
-                                            .eq(XianyuCookie::getXianyuAccountId, accountId)
-                                            .set(XianyuCookie::getCookieText, newCookieStr)
-                                            .set(XianyuCookie::getCookieStatus, 1)
-                                            .set(mh5tkUpdated && newMh5tk != null, XianyuCookie::getMH5Tk, newMh5tk)
-                            );
+                        // 更新数据库
+                        cookieMapper.update(null,
+                                new LambdaUpdateWrapper<XianyuCookie>()
+                                        .eq(XianyuCookie::getXianyuAccountId, accountId)
+                                        .set(XianyuCookie::getCookieText, newCookieStr)
+                                        .set(XianyuCookie::getCookieStatus, 1)
+                                        .set(mh5tkUpdated && newMh5tk != null, XianyuCookie::getMH5Tk, newMh5tk)
+                        );
 
-                            if (mh5tkUpdated) {
-                                log.info("【账号{}】✅ _m_h5_tk已从hasLogin响应中更新: {} -> {}",
-                                        accountId,
-                                        oldMh5tk != null ? oldMh5tk.substring(0, Math.min(20, oldMh5tk.length())) + "..." : "null",
-                                        newMh5tk.substring(0, Math.min(20, newMh5tk.length())) + "...");
-                            }
-
-                            log.info("【账号{}】✅ Cookie已从hasLogin响应Set-Cookie更新到数据库", accountId);
+                        if (mh5tkUpdated) {
+                            log.info("【账号{}】✅ _m_h5_tk已从hasLogin响应中更新: {} -> {}",
+                                    accountId,
+                                    oldMh5tk != null ? oldMh5tk.substring(0, Math.min(20, oldMh5tk.length())) + "..." : "null",
+                                    newMh5tk.substring(0, Math.min(20, newMh5tk.length())) + "...");
                         }
+
+                        log.info("【账号{}】✅ Cookie已从hasLogin响应Set-Cookie更新到数据库", accountId);
                     } else {
-                        // 即使没有Set-Cookie，也要确保Cookie状态为有效
+                        // 即使Cookie内容未变，也要确保Cookie状态为有效
                         if (cookie.getCookieStatus() != 1) {
                             cookieMapper.update(null,
                                     new LambdaUpdateWrapper<XianyuCookie>()
