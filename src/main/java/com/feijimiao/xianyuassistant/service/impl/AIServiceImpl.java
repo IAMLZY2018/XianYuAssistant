@@ -231,6 +231,89 @@ public class AIServiceImpl implements AIService {
         return result;
     }
 
+    @Override
+    public RAGReplyResult chatByRAGWithDetails(String msg, String goodsId, String contextMessages) {
+        RAGReplyResult result = new RAGReplyResult();
+        
+        ChatClient chatClient = dynamicAIChatClientManager.getChatClient();
+        if (chatClient == null) {
+            result.setReplyContent(AI_NOT_AVAILABLE_MSG);
+            return result;
+        }
+
+        VectorStore vectorStore = dynamicVectorStoreManager.getVectorStore();
+        
+        List<RAGReplyResult.RAGHitDetail> hitDetails = new java.util.ArrayList<>();
+        String context = "";
+        
+        if (vectorStore != null) {
+            try {
+                double similarityThreshold = getSimilarityThreshold();
+                List<Document> documents = vectorStore.similaritySearch(
+                        SearchRequest.builder()
+                                .query(msg)
+                                .topK(5)
+                                .similarityThreshold(similarityThreshold)
+                                .filterExpression(String.format("goodsId == '%s'", goodsId))
+                                .build()
+                );
+                
+                for (Document doc : documents) {
+                    RAGReplyResult.RAGHitDetail detail = new RAGReplyResult.RAGHitDetail();
+                    detail.setDocumentId(doc.getId());
+                    detail.setContent(doc.getText());
+                    Object score = doc.getMetadata().get("distance");
+                    if (score instanceof Number) {
+                        detail.setScore(((Number) score).doubleValue());
+                    }
+                    hitDetails.add(detail);
+                }
+                
+                context = documents.stream()
+                        .map(Document::getText)
+                        .collect(Collectors.joining("\n---\n"));
+                
+                log.info("[AI Chat WithDetails+Context] 向量搜索命中文档数: {}", documents.size());
+            } catch (Exception e) {
+                log.warn("[AI Chat WithDetails+Context] 向量搜索失败，使用无上下文模式: {}", e.getMessage());
+            }
+        }
+
+        String sysPrompt = sysSettingService.getSettingValue(SYS_PROMPT_KEY);
+        if (sysPrompt == null || sysPrompt.trim().isEmpty()) {
+            sysPrompt = DEFAULT_SYS_PROMPT;
+        }
+
+        String userMessage;
+        StringBuilder userMsgBuilder = new StringBuilder();
+        
+        if (!context.isEmpty()) {
+            userMsgBuilder.append("参考资料：\n").append(context).append("\n\n");
+        }
+        
+        if (contextMessages != null && !contextMessages.isEmpty()) {
+            userMsgBuilder.append("历史对话：\n").append(contextMessages).append("\n\n");
+        }
+        
+        userMsgBuilder.append("用户问题：").append(msg);
+        userMessage = userMsgBuilder.toString();
+
+        try {
+            String replyContent = chatClient.prompt()
+                    .system(sysPrompt)
+                    .user(userMessage)
+                    .call()
+                    .content();
+            result.setReplyContent(replyContent);
+        } catch (Exception e) {
+            log.error("[AI Chat WithDetails+Context] 调用LLM失败: {}", e.getMessage());
+            result.setReplyContent("AI回复生成失败：" + e.getMessage());
+        }
+
+        result.setHitDetails(hitDetails);
+        return result;
+    }
+
     /**
      * 无上下文模式聊天（向量库不可用时的降级方案）
      */

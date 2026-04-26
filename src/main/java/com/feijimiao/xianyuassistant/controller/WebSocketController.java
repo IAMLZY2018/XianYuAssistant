@@ -74,7 +74,7 @@ public class WebSocketController {
             CaptchaInfoDTO captchaInfo = new CaptchaInfoDTO();
             captchaInfo.setNeedCaptcha(true);
             captchaInfo.setCaptchaUrl(e.getCaptchaUrl());
-            captchaInfo.setMessage("检测到账号需要完成滑块验证。系统将自动打开验证页面，请完成验证后点击按钮重试。");
+            captchaInfo.setMessage("检测到账号需要完成滑块验证。请完成验证后更新Cookie，点击启动连接会自动更新Token，滑块校验生效会延迟，稍等片刻会自动连接。");
             
             log.info("📋 滑块验证信息:");
             log.info("   - 账号ID: {}", reqDTO.getXianyuAccountId());

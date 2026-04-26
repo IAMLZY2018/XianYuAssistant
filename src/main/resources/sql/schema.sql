@@ -170,6 +170,7 @@ CREATE TABLE IF NOT EXISTS xianyu_goods_config (
     xy_goods_id VARCHAR(100) NOT NULL,                -- 闲鱼的商品ID
     xianyu_auto_delivery_on TINYINT DEFAULT 0,        -- 自动发货开关：1-开启，0-关闭，默认关闭
     xianyu_auto_reply_on TINYINT DEFAULT 0,           -- 自动回复开关：1-开启，0-关闭，默认关闭
+    xianyu_auto_reply_context_on TINYINT DEFAULT 1,   -- 携带上下文开关：1-开启，0-关闭，默认开启，跟随自动回复开关
     create_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 创建时间
     update_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 更新时间
     FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)

@@ -82,6 +82,7 @@ export function useAutoReply() {
   const recordsPageSize = ref(20)
   const recordDetailVisible = ref(false)
   const recordDetail = ref<AutoReplyRecord | null>(null)
+  const contextExpanded = ref(false)
 
   // Check screen size
   const checkScreenSize = () => {
@@ -304,20 +305,29 @@ export function useAutoReply() {
     }
 
     try {
+      const requestContextOn = selectedGoods.value.xianyuAutoReplyContextOn ?? (value ? 1 : 0)
+
       const response = await updateAutoReplyStatus({
         xianyuAccountId: selectedAccountId.value,
         xyGoodsId: selectedGoods.value.item.xyGoodId,
-        xianyuAutoReplyOn: value ? 1 : 0
+        xianyuAutoReplyOn: value ? 1 : 0,
+        xianyuAutoReplyContextOn: requestContextOn
       })
 
       if (response.code === 0 || response.code === 200) {
         showSuccess(`自动回复${value ? '开启' : '关闭'}成功`)
         if (selectedGoods.value) {
           selectedGoods.value.xianyuAutoReplyOn = value ? 1 : 0
+          if (value && selectedGoods.value.xianyuAutoReplyContextOn == null) {
+            selectedGoods.value.xianyuAutoReplyContextOn = 1
+          }
         }
         const goodsItem = goodsList.value.find(item => item.item.xyGoodId === selectedGoods.value?.item.xyGoodId)
         if (goodsItem) {
           goodsItem.xianyuAutoReplyOn = value ? 1 : 0
+          if (value && goodsItem.xianyuAutoReplyContextOn == null) {
+            goodsItem.xianyuAutoReplyContextOn = 1
+          }
         }
       } else {
         throw new Error(response.msg || '操作失败')
@@ -326,6 +336,41 @@ export function useAutoReply() {
       console.error('操作失败:', error)
       if (selectedGoods.value) {
         selectedGoods.value.xianyuAutoReplyOn = value ? 0 : 1
+      }
+    }
+  }
+
+  // Toggle context switch
+  const toggleContextOn = async (value: boolean) => {
+    if (!selectedGoods.value || !selectedAccountId.value) {
+      showInfo('请先选择商品')
+      return
+    }
+
+    try {
+      const response = await updateAutoReplyStatus({
+        xianyuAccountId: selectedAccountId.value,
+        xyGoodsId: selectedGoods.value.item.xyGoodId,
+        xianyuAutoReplyOn: selectedGoods.value.xianyuAutoReplyOn,
+        xianyuAutoReplyContextOn: value ? 1 : 0
+      })
+
+      if (response.code === 0 || response.code === 200) {
+        showSuccess(`携带上下文${value ? '开启' : '关闭'}成功`)
+        if (selectedGoods.value) {
+          selectedGoods.value.xianyuAutoReplyContextOn = value ? 1 : 0
+        }
+        const goodsItem = goodsList.value.find(item => item.item.xyGoodId === selectedGoods.value?.item.xyGoodId)
+        if (goodsItem) {
+          goodsItem.xianyuAutoReplyContextOn = value ? 1 : 0
+        }
+      } else {
+        throw new Error(response.msg || '操作失败')
+      }
+    } catch (error: any) {
+      console.error('操作失败:', error)
+      if (selectedGoods.value) {
+        selectedGoods.value.xianyuAutoReplyContextOn = value ? 0 : 1
       }
     }
   }
@@ -652,6 +697,7 @@ export function useAutoReply() {
   const viewRecordDetail = (record: AutoReplyRecord) => {
     recordDetail.value = record
     recordDetailVisible.value = true
+    contextExpanded.value = false
   }
 
   // Records page change
@@ -726,11 +772,13 @@ export function useAutoReply() {
     recordsPageSize,
     recordDetailVisible,
     recordDetail,
+    contextExpanded,
 
     // Methods
     handleAccountChange,
     selectGoods,
     toggleAutoReply,
+    toggleContextOn,
     handleUploadData,
     handleQueryData,
     handleDeleteData,

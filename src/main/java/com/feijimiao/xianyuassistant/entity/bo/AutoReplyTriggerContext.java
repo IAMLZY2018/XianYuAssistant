@@ -25,6 +25,12 @@ public class AutoReplyTriggerContext {
     private List<RAGHitDetail> ragHitDetails;
     
     /**
+     * 携带的上下文消息
+     * 开启携带上下文时，包含会话中的历史对话（格式：role: content）
+     */
+    private String contextMessages;
+    
+    /**
      * 触发消息
      */
     @Data

@@ -63,19 +63,19 @@ onMounted(() => {
       <!-- 警告提示 -->
       <div class="captcha-alert">
         <div class="alert-icon">⚠️</div>
-        <div class="alert-text">需要完成滑块验证才能启动连接</div>
+        <div class="alert-text">检测到账号需要完成滑块验证</div>
       </div>
       
       <!-- 操作步骤 -->
       <div class="captcha-steps">
         <div class="step-item">
           <div class="step-number">1</div>
-          <div class="step-text">点击下方按钮访问闲鱼IM</div>
+          <div class="step-text">点击下方按钮访问闲鱼IM页面</div>
         </div>
         
         <div class="step-item">
           <div class="step-number">2</div>
-          <div class="step-text">完成滑块验证</div>
+          <div class="step-text">在闲鱼页面完成滑块验证</div>
         </div>
         
         <div class="step-item">
@@ -92,7 +92,7 @@ onMounted(() => {
       <!-- 提示 -->
       <div class="captcha-tip">
         <span class="tip-icon">💡</span>
-        <span class="tip-text">更新Cookie后点击"启动连接"即可</span>
+        <span class="tip-text">更新Cookie后点击"启动连接"，会自动更新WebSocket Token，滑块校验生效会延迟，稍等片刻会自动连接闲鱼服务器</span>
       </div>
     </div>
 

@@ -22,6 +22,7 @@ export interface GoodsItemWithConfig {
   item: GoodsItem;
   xianyuAutoDeliveryOn: number;
   xianyuAutoReplyOn: number;
+  xianyuAutoReplyContextOn: number;
 }
 
 // 商品列表响应
@@ -97,6 +98,7 @@ export function updateAutoReplyStatus(data: {
   xianyuAccountId: number;
   xyGoodsId: string;
   xianyuAutoReplyOn: number;
+  xianyuAutoReplyContextOn?: number;
 }) {
   return request({
     url: '/items/updateAutoReplyStatus',

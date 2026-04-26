@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCurrentUser, changePassword } from '@/api/system'
 import { logout } from '@/api/auth'
-import { getSetting, saveSetting } from '@/api/setting'
+import { getSetting, saveSetting, testEmail } from '@/api/setting'
 import { getAIStatus } from '@/api/ai'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { clearAuthToken } from '@/utils/request'
@@ -71,6 +71,28 @@ const embeddingSaving = ref(false)
 const showEmbeddingApiKey = ref(false)
 const showEmbeddingConfig = ref(false)
 
+// 邮箱通知配置
+const EMAIL_SMTP_HOST_KEY = 'email_smtp_host'
+const EMAIL_SMTP_PORT_KEY = 'email_smtp_port'
+const EMAIL_SMTP_USERNAME_KEY = 'email_smtp_username'
+const EMAIL_SMTP_PASSWORD_KEY = 'email_smtp_password'
+const EMAIL_SMTP_FROM_KEY = 'email_smtp_from'
+const EMAIL_SMTP_SSL_KEY = 'email_smtp_ssl'
+const EMAIL_CAPTCHA_NOTIFY_KEY = 'email_notify_captcha_enabled'
+
+const emailSmtpHost = ref('')
+const emailSmtpPort = ref('465')
+const emailSmtpUsername = ref('')
+const emailSmtpPassword = ref('')
+const emailSmtpFrom = ref('')
+const emailSmtpSsl = ref(true)
+const emailSaving = ref(false)
+const emailTesting = ref(false)
+const showEmailPassword = ref(false)
+const emailConfigured = ref(false)
+const emailConfigExpanded = ref(true)
+const captchaNotifyEnabled = ref(false)
+
 // AI 状态
 const aiStatus = ref({
   enabled: false,
@@ -86,6 +108,7 @@ const menuItems = [
   { key: 'account', label: '系统账号', icon: '👤' },
   { key: 'ai', label: 'AI 服务配置', icon: '🤖' },
   { key: 'prompt', label: 'AI客服配置', icon: '💬' },
+  { key: 'email', label: '邮箱通知', icon: '📧' },
   { key: 'about', label: '关于', icon: 'ℹ️' }
 ]
 
@@ -130,6 +153,8 @@ onMounted(async () => {
   await loadEmbeddingConfig()
   // 加载 AI 状态
   await loadAIStatus()
+  // 加载邮箱通知配置
+  await loadEmailConfig()
 })
 
 async function loadAIConfig() {
@@ -394,6 +419,95 @@ function handleResetEmbeddingConfig() {
   embeddingApiKey.value = ''
   embeddingBaseUrl.value = ''
   embeddingModel.value = DEFAULT_EMBEDDING_MODEL
+}
+
+async function loadEmailConfig() {
+  try {
+    const [hostRes, portRes, userRes, passRes, fromRes, sslRes, captchaRes] = await Promise.all([
+      getSetting({ settingKey: EMAIL_SMTP_HOST_KEY }),
+      getSetting({ settingKey: EMAIL_SMTP_PORT_KEY }),
+      getSetting({ settingKey: EMAIL_SMTP_USERNAME_KEY }),
+      getSetting({ settingKey: EMAIL_SMTP_PASSWORD_KEY }),
+      getSetting({ settingKey: EMAIL_SMTP_FROM_KEY }),
+      getSetting({ settingKey: EMAIL_SMTP_SSL_KEY }),
+      getSetting({ settingKey: EMAIL_CAPTCHA_NOTIFY_KEY })
+    ])
+
+    if (hostRes.code === 200 && hostRes.data) emailSmtpHost.value = hostRes.data.settingValue || ''
+    if (portRes.code === 200 && portRes.data && portRes.data.settingValue) emailSmtpPort.value = portRes.data.settingValue
+    if (userRes.code === 200 && userRes.data) emailSmtpUsername.value = userRes.data.settingValue || ''
+    if (passRes.code === 200 && passRes.data) emailSmtpPassword.value = passRes.data.settingValue || ''
+    if (fromRes.code === 200 && fromRes.data) emailSmtpFrom.value = fromRes.data.settingValue || ''
+    if (sslRes.code === 200 && sslRes.data && sslRes.data.settingValue !== undefined) {
+      emailSmtpSsl.value = sslRes.data.settingValue === '1' || sslRes.data.settingValue === 'true'
+    }
+    if (captchaRes.code === 200 && captchaRes.data && captchaRes.data.settingValue) {
+      captchaNotifyEnabled.value = captchaRes.data.settingValue === '1' || captchaRes.data.settingValue === 'true'
+    }
+
+    emailConfigured.value = !!(emailSmtpHost.value && emailSmtpPort.value && emailSmtpUsername.value && emailSmtpPassword.value && emailSmtpFrom.value)
+    emailConfigExpanded.value = !emailConfigured.value
+  } catch (e) {
+    console.error('加载邮箱配置失败:', e)
+  }
+}
+
+async function handleSaveEmailConfig() {
+  emailSaving.value = true
+  try {
+    const [hostRes, portRes, userRes, passRes, fromRes, sslRes] = await Promise.all([
+      saveSetting({ settingKey: EMAIL_SMTP_HOST_KEY, settingValue: emailSmtpHost.value.trim(), settingDesc: 'SMTP服务器地址' }),
+      saveSetting({ settingKey: EMAIL_SMTP_PORT_KEY, settingValue: emailSmtpPort.value.trim(), settingDesc: 'SMTP服务器端口' }),
+      saveSetting({ settingKey: EMAIL_SMTP_USERNAME_KEY, settingValue: emailSmtpUsername.value.trim(), settingDesc: 'SMTP登录用户名' }),
+      saveSetting({ settingKey: EMAIL_SMTP_PASSWORD_KEY, settingValue: emailSmtpPassword.value.trim(), settingDesc: 'SMTP登录密码/授权码' }),
+      saveSetting({ settingKey: EMAIL_SMTP_FROM_KEY, settingValue: emailSmtpFrom.value.trim(), settingDesc: '接收通知的收件人邮箱地址' }),
+      saveSetting({ settingKey: EMAIL_SMTP_SSL_KEY, settingValue: emailSmtpSsl.value ? '1' : '0', settingDesc: '是否启用SSL（1启用，0关闭）' })
+    ])
+
+    if (hostRes.code === 200 && portRes.code === 200 && userRes.code === 200 && passRes.code === 200 && fromRes.code === 200 && sslRes.code === 200) {
+      ElMessage.success('邮箱配置保存成功')
+      emailConfigured.value = !!(emailSmtpHost.value && emailSmtpPort.value && emailSmtpUsername.value && emailSmtpPassword.value && emailSmtpFrom.value)
+      emailConfigExpanded.value = !emailConfigured.value
+    }
+  } catch (e) {
+    console.error('保存邮箱配置失败:', e)
+    ElMessage.error('保存邮箱配置失败')
+  } finally {
+    emailSaving.value = false
+  }
+}
+
+async function handleSaveCaptchaNotify() {
+  try {
+    const res = await saveSetting({
+      settingKey: EMAIL_CAPTCHA_NOTIFY_KEY,
+      settingValue: captchaNotifyEnabled.value ? '1' : '0',
+      settingDesc: '触发人机验证时邮箱通知开关（1启用，0关闭）'
+    })
+    if (res.code === 200) {
+      ElMessage.success(`人机验证通知已${captchaNotifyEnabled.value ? '开启' : '关闭'}`)
+    }
+  } catch (e) {
+    console.error('保存通知开关失败:', e)
+    ElMessage.error('保存失败')
+  }
+}
+
+async function handleTestEmail() {
+  emailTesting.value = true
+  try {
+    const res = await testEmail()
+    if (res.code === 200) {
+      ElMessage.success('测试邮件发送成功，请检查收件箱')
+    } else {
+      ElMessage.error(res.msg || '测试邮件发送失败')
+    }
+  } catch (e: any) {
+    console.error('测试邮箱失败:', e)
+    ElMessage.error(e.message || '测试邮箱失败')
+  } finally {
+    emailTesting.value = false
+  }
 }
 </script>
 
@@ -763,6 +877,137 @@ function handleResetEmbeddingConfig() {
                 {{ similarityThresholdSaving ? '保存中...' : '保存' }}
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 邮箱通知 -->
+      <div v-if="activeMenu === 'email'" class="settings__panel">
+        <div class="settings__panel-title">邮箱通知</div>
+
+        <!-- 邮箱配置 -->
+        <div class="settings__section">
+          <div class="settings__section-header">
+            <div class="settings__section-title">邮箱配置</div>
+            <div class="settings__section-header-actions">
+              <span v-if="emailConfigured" class="settings__status-badge" :class="emailConfigured ? 'settings__status-badge--success' : ''">
+                {{ emailConfigured ? '已配置' : '未配置' }}
+              </span>
+              <button
+                v-if="emailConfigured"
+                class="settings__toggle-btn"
+                @click="emailConfigExpanded = !emailConfigExpanded"
+              >
+                {{ emailConfigExpanded ? '收起' : '展开' }}
+              </button>
+            </div>
+          </div>
+          <p class="settings__desc">配置SMTP邮箱服务，用于接收系统通知（如滑块验证提醒）。发件人固定使用SMTP用户名，收件人邮箱用于接收通知。</p>
+
+          <div v-if="emailConfigExpanded || !emailConfigured" class="settings__form">
+            <div class="settings__field">
+              <label class="settings__label">SMTP 服务器</label>
+              <input
+                v-model="emailSmtpHost"
+                type="text"
+                class="settings__input"
+                placeholder="如 smtp.qq.com"
+                :disabled="emailSaving"
+              />
+            </div>
+            <div class="settings__field">
+              <label class="settings__label">SMTP 端口</label>
+              <input
+                v-model="emailSmtpPort"
+                type="text"
+                class="settings__input"
+                placeholder="465"
+                :disabled="emailSaving"
+              />
+            </div>
+            <div class="settings__field">
+              <label class="settings__label">用户名</label>
+              <input
+                v-model="emailSmtpUsername"
+                type="text"
+                class="settings__input"
+                placeholder="邮箱账号"
+                :disabled="emailSaving"
+              />
+            </div>
+            <div class="settings__field">
+              <label class="settings__label">密码/授权码</label>
+              <div class="settings__input-wrap">
+                <input
+                  v-model="emailSmtpPassword"
+                  :type="showEmailPassword ? 'text' : 'password'"
+                  class="settings__input"
+                  placeholder="邮箱密码或SMTP授权码"
+                  :disabled="emailSaving"
+                />
+                <button class="settings__eye-btn" @click="showEmailPassword = !showEmailPassword" tabindex="-1">
+                  {{ showEmailPassword ? '隐藏' : '显示' }}
+                </button>
+              </div>
+              <p class="settings__hint">QQ邮箱需使用授权码，非登录密码</p>
+            </div>
+            <div class="settings__field">
+              <label class="settings__label">收件人邮箱</label>
+              <input
+                v-model="emailSmtpFrom"
+                type="text"
+                class="settings__input"
+                placeholder="接收通知的邮箱地址"
+                :disabled="emailSaving"
+              />
+            </div>
+            <div class="settings__field">
+              <label class="settings__label">启用 SSL</label>
+              <label class="settings__switch">
+                <input type="checkbox" v-model="emailSmtpSsl" :disabled="emailSaving" />
+                <span class="settings__switch-track"></span>
+                <span class="settings__switch-thumb"></span>
+              </label>
+            </div>
+            <div class="settings__actions">
+              <button
+                class="settings__btn settings__btn--secondary"
+                :disabled="emailTesting || !emailConfigured"
+                @click="handleTestEmail"
+              >
+                {{ emailTesting ? '发送中...' : '发送测试邮件' }}
+              </button>
+              <button
+                class="settings__btn settings__btn--primary"
+                :disabled="emailSaving"
+                @click="handleSaveEmailConfig"
+              >
+                {{ emailSaving ? '保存中...' : '保存' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 通知开关 -->
+        <div class="settings__section">
+          <div class="settings__section-title">通知开关</div>
+          <p class="settings__desc">选择哪些事件需要通过邮件通知您</p>
+
+          <div class="settings__form">
+            <div class="settings__field">
+              <label class="settings__label">触发人机验证邮箱通知</label>
+              <label class="settings__switch">
+                <input
+                  type="checkbox"
+                  v-model="captchaNotifyEnabled"
+                  :disabled="!emailConfigured"
+                  @change="handleSaveCaptchaNotify"
+                />
+                <span class="settings__switch-track"></span>
+                <span class="settings__switch-thumb"></span>
+              </label>
+            </div>
+            <p v-if="!emailConfigured" class="settings__hint" style="color:#e6a23c;">请先配置邮箱后再开启通知</p>
           </div>
         </div>
       </div>
@@ -1478,5 +1723,76 @@ function handleResetEmbeddingConfig() {
   border-radius: 3px;
   font-size: 12px;
   font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+}
+
+.settings__section-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings__status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.06);
+  color: #6e6e73;
+}
+
+.settings__status-badge--success {
+  background: rgba(52, 199, 89, 0.12);
+  color: #34c759;
+}
+
+.settings__switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.settings__switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.settings__switch-track {
+  width: 40px;
+  height: 22px;
+  background: #e5e5ea;
+  border-radius: 11px;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.settings__switch-thumb {
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: left 0.2s;
+}
+
+.settings__switch input:checked + .settings__switch-track {
+  background: #007aff;
+}
+
+.settings__switch input:checked + .settings__switch-track + .settings__switch-thumb {
+  left: 20px;
+}
+
+.settings__switch input:disabled + .settings__switch-track {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

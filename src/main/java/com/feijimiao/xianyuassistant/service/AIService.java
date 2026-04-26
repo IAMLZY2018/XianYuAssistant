@@ -22,6 +22,11 @@ public interface AIService {
      */
     RAGReplyResult chatByRAGWithDetails(String msg, String goodsId);
 
+    /**
+     * RAG聊天并返回命中资料详情（携带会话上下文）
+     */
+    RAGReplyResult chatByRAGWithDetails(String msg, String goodsId, String contextMessages);
+
     void putDataToRAG(String content,String goodsId);
 
     List<RAGDataRespBO> queryRAGDataBygoodsId(String goodsId);

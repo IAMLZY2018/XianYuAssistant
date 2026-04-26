@@ -430,9 +430,11 @@ public class ItemServiceImpl implements ItemService {
             if (config != null) {
                 itemWithConfig.setXianyuAutoDeliveryOn(config.getXianyuAutoDeliveryOn());
                 itemWithConfig.setXianyuAutoReplyOn(config.getXianyuAutoReplyOn());
+                itemWithConfig.setXianyuAutoReplyContextOn(config.getXianyuAutoReplyContextOn() != null ? config.getXianyuAutoReplyContextOn() : 1);
             } else {
                 itemWithConfig.setXianyuAutoDeliveryOn(0);
                 itemWithConfig.setXianyuAutoReplyOn(0);
+                itemWithConfig.setXianyuAutoReplyContextOn(1);
             }
             
             // 获取自动发货配置
@@ -446,6 +448,7 @@ public class ItemServiceImpl implements ItemService {
         } else {
             itemWithConfig.setXianyuAutoDeliveryOn(0);
             itemWithConfig.setXianyuAutoReplyOn(0);
+            itemWithConfig.setXianyuAutoReplyContextOn(1);
         }
         
         return itemWithConfig;
@@ -831,11 +834,21 @@ public class ItemServiceImpl implements ItemService {
                 goodsConfig.setXyGoodsId(reqDTO.getXyGoodsId());
                 goodsConfig.setXianyuAutoDeliveryOn(0); // 默认关闭自动发货
                 goodsConfig.setXianyuAutoReplyOn(reqDTO.getXianyuAutoReplyOn());
+                // 携带上下文开关：第一次跟随自动回复开关默认开启
+                if (reqDTO.getXianyuAutoReplyContextOn() != null) {
+                    goodsConfig.setXianyuAutoReplyContextOn(reqDTO.getXianyuAutoReplyContextOn());
+                } else {
+                    goodsConfig.setXianyuAutoReplyContextOn(1); // 默认开启
+                }
                 goodsConfig.setCreateTime(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date()));
                 goodsConfig.setUpdateTime(goodsConfig.getCreateTime());
             } else {
                 // 3. 更新配置
                 goodsConfig.setXianyuAutoReplyOn(reqDTO.getXianyuAutoReplyOn());
+                // 更新携带上下文开关
+                if (reqDTO.getXianyuAutoReplyContextOn() != null) {
+                    goodsConfig.setXianyuAutoReplyContextOn(reqDTO.getXianyuAutoReplyContextOn());
+                }
                 goodsConfig.setUpdateTime(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date()));
             }
             

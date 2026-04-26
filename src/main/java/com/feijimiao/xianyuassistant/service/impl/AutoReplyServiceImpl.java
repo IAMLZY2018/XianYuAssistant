@@ -6,6 +6,7 @@ import com.feijimiao.xianyuassistant.config.rag.DynamicAIChatClientManager;
 import com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoReplyConfig;
 import com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoReplyRecord;
 import com.feijimiao.xianyuassistant.entity.XianyuGoodsConfig;
+import com.feijimiao.xianyuassistant.entity.XianyuChatMessage;
 import com.feijimiao.xianyuassistant.entity.XianyuGoodsInfo;
 import com.feijimiao.xianyuassistant.entity.bo.AutoReplyTriggerContext;
 import com.feijimiao.xianyuassistant.event.chatMessageEvent.ChatMessageData;
@@ -13,6 +14,7 @@ import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoReplyConfigMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoReplyRecordMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsConfigMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsInfoMapper;
+import com.feijimiao.xianyuassistant.mapper.XianyuChatMessageMapper;
 import com.feijimiao.xianyuassistant.service.AIService;
 import com.feijimiao.xianyuassistant.service.AutoReplyService;
 import com.feijimiao.xianyuassistant.service.WebSocketService;
@@ -48,6 +50,9 @@ public class AutoReplyServiceImpl implements AutoReplyService {
     private XianyuGoodsInfoMapper goodsInfoMapper;
     
     @Autowired
+    private XianyuChatMessageMapper chatMessageMapper;
+    
+    @Autowired
     private WebSocketService webSocketService;
     
     @Autowired(required = false)
@@ -58,6 +63,9 @@ public class AutoReplyServiceImpl implements AutoReplyService {
     
     @Autowired
     private com.feijimiao.xianyuassistant.service.SentMessageSaveService sentMessageSaveService;
+    
+    @Autowired
+    private com.feijimiao.xianyuassistant.service.AccountService accountService;
     
     private final ObjectMapper objectMapper = new ObjectMapper();
     
@@ -168,8 +176,15 @@ public class AutoReplyServiceImpl implements AutoReplyService {
             
             log.info("【账号{}】创建回复记录成功: recordId={}", accountId, record.getId());
             
-            // 6. 调用AI服务生成回复（带命中资料）
-            RAGReplyResult ragResult = generateReplyWithDetails(buyerMessage, xyGoodsId, accountId);
+            // 6. 检查是否开启携带上下文
+            boolean useContext = isContextEnabled(accountId, xyGoodsId);
+            String contextMessages = null;
+            if (useContext) {
+                contextMessages = buildContextMessages(accountId, sId);
+            }
+            
+            // 7. 调用AI服务生成回复（带命中资料）
+            RAGReplyResult ragResult = generateReplyWithDetails(buyerMessage, xyGoodsId, accountId, contextMessages);
             
             String replyContent = ragResult != null ? ragResult.getReplyContent() : null;
             
@@ -195,14 +210,20 @@ public class AutoReplyServiceImpl implements AutoReplyService {
                 triggerContext.setRagHitDetails(ragHitDetails);
             }
             
+            // 7.1 保存携带的上下文消息到triggerContext
+            if (contextMessages != null && !contextMessages.isEmpty()) {
+                triggerContext.setContextMessages(contextMessages);
+            }
+            
             // 8. 序列化triggerContext为JSON并更新记录
             try {
                 String triggerContextJson = objectMapper.writeValueAsString(triggerContext);
                 record.setTriggerContext(triggerContextJson);
                 autoReplyRecordMapper.updateTriggerContext(record.getId(), triggerContextJson);
-                log.info("【账号{}】保存触发上下文成功: recordId={}, 触发消息数={}, RAG命中数={}", 
+                log.info("【账号{}】保存触发上下文成功: recordId={}, 触发消息数={}, RAG命中数={}, 携带上下文={}", 
                         accountId, record.getId(), triggerMessages.size(), 
-                        triggerContext.getRagHitDetails() != null ? triggerContext.getRagHitDetails().size() : 0);
+                        triggerContext.getRagHitDetails() != null ? triggerContext.getRagHitDetails().size() : 0,
+                        contextMessages != null ? "是" : "否");
             } catch (Exception e) {
                 log.warn("【账号{}】序列化触发上下文失败，跳过保存: {}", accountId, e.getMessage());
             }
@@ -254,12 +275,17 @@ public class AutoReplyServiceImpl implements AutoReplyService {
     /**
      * 调用AI服务生成回复（带RAG命中资料详情）
      */
-    private RAGReplyResult generateReplyWithDetails(String buyerMessage, String xyGoodsId, Long accountId) {
+    private RAGReplyResult generateReplyWithDetails(String buyerMessage, String xyGoodsId, Long accountId, String contextMessages) {
         try {
-            log.info("【账号{}】调用AI服务生成回复(带命中资料): xyGoodsId={}, message={}", accountId, xyGoodsId, buyerMessage);
+            log.info("【账号{}】调用AI服务生成回复(带命中资料): xyGoodsId={}, message={}, useContext={}", 
+                    accountId, xyGoodsId, buyerMessage, contextMessages != null);
             
-            // 调用AIService的chatByRAGWithDetails方法
-            RAGReplyResult result = aiService.chatByRAGWithDetails(buyerMessage, xyGoodsId);
+            RAGReplyResult result;
+            if (contextMessages != null && !contextMessages.isEmpty()) {
+                result = aiService.chatByRAGWithDetails(buyerMessage, xyGoodsId, contextMessages);
+            } else {
+                result = aiService.chatByRAGWithDetails(buyerMessage, xyGoodsId);
+            }
             
             if (result != null && result.getReplyContent() != null) {
                 log.info("【账号{}】响应完成，内容长度: {}, RAG命中数: {}", 
@@ -304,6 +330,80 @@ public class AutoReplyServiceImpl implements AutoReplyService {
             log.debug("更新回复记录状态: recordId={}, state={}", recordId, state);
         } catch (Exception e) {
             log.error("更新回复记录状态失败: recordId={}, state={}", recordId, state, e);
+        }
+    }
+    
+    /**
+     * 检查商品是否开启携带上下文
+     */
+    private boolean isContextEnabled(Long accountId, String xyGoodsId) {
+        if (accountId == null || xyGoodsId == null) {
+            return false;
+        }
+        try {
+            XianyuGoodsConfig goodsConfig = goodsConfigMapper.selectByAccountAndGoodsId(accountId, xyGoodsId);
+            if (goodsConfig == null) {
+                return true;
+            }
+            return goodsConfig.getXianyuAutoReplyContextOn() == null || goodsConfig.getXianyuAutoReplyContextOn() == 1;
+        } catch (Exception e) {
+            log.error("【账号{}】检查携带上下文开关异常: xyGoodsId={}", accountId, xyGoodsId, e);
+            return false;
+        }
+    }
+    
+    /**
+     * 根据会话ID构建上下文消息
+     * 将买家消息(contentType=1,非自己发送)标记为user，卖家消息(contentType=1,自己发送)和AI消息(contentType=888)标记为assistant
+     */
+    private String buildContextMessages(Long accountId, String sId) {
+        try {
+            List<XianyuChatMessage> messages = chatMessageMapper.findBySId(sId);
+            if (messages == null || messages.isEmpty()) {
+                log.debug("【账号{}】会话{}无历史消息", accountId, sId);
+                return null;
+            }
+            
+            String ownUserId = accountService.getXianyuUserId(accountId);
+            
+            StringBuilder sb = new StringBuilder();
+            int count = 0;
+            int maxContextMessages = 20;
+            
+            for (XianyuChatMessage msg : messages) {
+                if (count >= maxContextMessages) break;
+                if (msg.getMsgContent() == null || msg.getMsgContent().trim().isEmpty()) continue;
+                
+                String role;
+                if (msg.getContentType() != null && msg.getContentType() == 888) {
+                    role = "assistant";
+                } else if (msg.getContentType() != null && msg.getContentType() == 1) {
+                    if (ownUserId != null && ownUserId.equals(msg.getSenderUserId())) {
+                        role = "assistant";
+                    } else {
+                        role = "user";
+                    }
+                } else {
+                    continue;
+                }
+                
+                if (count > 0) {
+                    sb.append("\n");
+                }
+                sb.append(role).append(": ").append(msg.getMsgContent());
+                count++;
+            }
+            
+            String result = sb.toString();
+            if (result.isEmpty()) {
+                return null;
+            }
+            
+            log.info("【账号{}】构建上下文消息: sId={}, 消息数={}", accountId, sId, count);
+            return result;
+        } catch (Exception e) {
+            log.error("【账号{}】构建上下文消息异常: sId={}", accountId, sId, e);
+            return null;
         }
     }
 }

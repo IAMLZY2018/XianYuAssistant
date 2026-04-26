@@ -51,9 +51,11 @@ const {
   recordsPageSize,
   recordDetailVisible,
   recordDetail,
+  contextExpanded,
   handleAccountChange,
   selectGoods,
   toggleAutoReply,
+  toggleContextOn,
   handleUploadData,
   handleQueryData,
   handleDeleteData,
@@ -247,6 +249,22 @@ const {
                   type="checkbox"
                   :checked="selectedGoods.xianyuAutoReplyOn === 1"
                   @change="toggleAutoReply(($event.target as HTMLInputElement).checked)"
+                />
+                <span class="ar__switch-track"></span>
+                <span class="ar__switch-thumb"></span>
+              </label>
+            </div>
+
+            <div v-if="selectedGoods.xianyuAutoReplyOn === 1" class="ar__toggle-row">
+              <div class="ar__toggle-info">
+                <div class="ar__toggle-label">携带上下文</div>
+                <div class="ar__toggle-hint">将会话中买家和卖家的历史消息一起发送给大模型</div>
+              </div>
+              <label class="ar__switch">
+                <input
+                  type="checkbox"
+                  :checked="selectedGoods.xianyuAutoReplyContextOn === 1"
+                  @change="toggleContextOn(($event.target as HTMLInputElement).checked)"
                 />
                 <span class="ar__switch-track"></span>
                 <span class="ar__switch-thumb"></span>
@@ -655,6 +673,24 @@ const {
                     <span v-if="hit.score" class="ar__detail-hit-score">相似度: {{ (hit.score * 100).toFixed(1) }}%</span>
                   </div>
                   <div class="ar__detail-hit-content">{{ hit.content }}</div>
+                </div>
+              </div>
+            </template>
+
+            <!-- Context messages (collapsible) -->
+            <template v-if="parseTriggerContext(recordDetail.triggerContext)?.contextMessages">
+              <div class="ar__detail-section">
+                <div class="ar__detail-context-header" @click="(_e: Event) => { contextExpanded = !contextExpanded }">
+                  <span class="ar__detail-section-title" style="margin-bottom:0">携带上下文</span>
+                  <span class="ar__detail-context-toggle">{{ contextExpanded ? '收起' : '展开' }}</span>
+                </div>
+                <div v-if="contextExpanded" class="ar__detail-context-body">
+                  <div
+                    v-for="(line, idx) in parseTriggerContext(recordDetail.triggerContext).contextMessages.split('\n')"
+                    :key="idx"
+                    class="ar__detail-context-line"
+                    :class="{ 'ar__detail-context-line--user': line.startsWith('user:'), 'ar__detail-context-line--assistant': line.startsWith('assistant:') }"
+                  >{{ line }}</div>
                 </div>
               </div>
             </template>

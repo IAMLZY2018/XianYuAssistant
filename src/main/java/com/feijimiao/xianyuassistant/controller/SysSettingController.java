@@ -3,6 +3,7 @@ package com.feijimiao.xianyuassistant.controller;
 import com.feijimiao.xianyuassistant.common.ResultObject;
 import com.feijimiao.xianyuassistant.controller.dto.*;
 import com.feijimiao.xianyuassistant.service.SysSettingService;
+import com.feijimiao.xianyuassistant.service.EmailNotifyService;
 import com.feijimiao.xianyuassistant.service.bo.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,9 @@ public class SysSettingController {
 
     @Autowired
     private SysSettingService sysSettingService;
+
+    @Autowired(required = false)
+    private EmailNotifyService emailNotifyService;
 
     /**
      * 获取配置
@@ -119,6 +123,30 @@ public class SysSettingController {
         } catch (Exception e) {
             log.error("删除配置失败", e);
             return ResultObject.failed("删除配置失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 测试邮箱配置
+     */
+    @PostMapping("/testEmail")
+    public ResultObject<?> testEmail() {
+        try {
+            if (emailNotifyService == null) {
+                return ResultObject.failed("邮件服务未初始化");
+            }
+            if (!emailNotifyService.isEmailConfigured()) {
+                return ResultObject.failed("邮箱配置不完整，请先配置SMTP信息");
+            }
+            String error = emailNotifyService.sendTestEmail();
+            if (error == null) {
+                return ResultObject.success("测试邮件发送成功，请检查收件箱");
+            } else {
+                return ResultObject.failed(error);
+            }
+        } catch (Exception e) {
+            log.error("测试邮箱失败", e);
+            return ResultObject.failed("测试邮箱失败: " + e.getMessage());
         }
     }
 }

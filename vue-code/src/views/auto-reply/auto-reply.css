@@ -1939,3 +1939,42 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+.ar__detail-context-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  padding: var(--d-space-1) 0;
+}
+
+.ar__detail-context-toggle {
+  font-size: 11px;
+  color: var(--d-accent);
+  font-weight: 500;
+}
+
+.ar__detail-context-body {
+  margin-top: var(--d-space-2);
+  padding: var(--d-space-2) var(--d-space-3);
+  background: rgba(255, 149, 0, 0.04);
+  border-radius: 6px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.ar__detail-context-line {
+  font-size: 12px;
+  line-height: 1.5;
+  word-break: break-word;
+  padding: 2px 0;
+}
+
+.ar__detail-context-line--user {
+  color: #007aff;
+}
+
+.ar__detail-context-line--assistant {
+  color: #34c759;
+}
