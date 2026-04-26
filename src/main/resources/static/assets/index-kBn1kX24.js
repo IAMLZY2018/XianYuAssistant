@@ -1,0 +1,1 @@
+import{d as n,c as o,a as s,g as t,_ as a}from"./index-EMkycAVV.js";const _={class:"qrlogin-page"},r=n({__name:"index",setup(c){return(p,e)=>(t(),o("div",_,[...e[0]||(e[0]=[s("h1",null,"扫码登录",-1),s("p",null,"扫码登录功能开发中...",-1)])]))}}),l=a(r,[["__scopeId","data-v-83f57100"]]);export{l as default};
