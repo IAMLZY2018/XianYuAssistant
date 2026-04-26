@@ -24,20 +24,20 @@ public class EmailNotifyServiceImpl implements EmailNotifyService {
     private static final String KEY_SMTP_PASSWORD = "email_smtp_password";
     private static final String KEY_SMTP_FROM = "email_smtp_from";
     private static final String KEY_SMTP_SSL = "email_smtp_ssl";
-    private static final String KEY_CAPTCHA_NOTIFY_ENABLED = "email_notify_captcha_enabled";
+    private static final String KEY_WS_DISCONNECT_NOTIFY_ENABLED = "email_notify_ws_disconnect_enabled";
 
     @Autowired
     private SysSettingService sysSettingService;
 
     @Override
     @Async
-    public void sendCaptchaNotifyEmail(Long accountId, String accountNote, String captchaUrl) {
+    public void sendWsDisconnectNotifyEmail(Long accountId, String accountNote) {
         if (!isEmailConfigured()) {
-            log.warn("邮箱未配置，跳过发送滑块验证通知邮件");
+            log.warn("邮箱未配置，跳过发送WebSocket断开连接通知邮件");
             return;
         }
-        if (!isCaptchaNotifyEnabled()) {
-            log.debug("滑块验证邮件通知未启用，跳过");
+        if (!isWsDisconnectNotifyEnabled()) {
+            log.debug("WebSocket断开连接邮件通知未启用，跳过");
             return;
         }
 
@@ -47,8 +47,8 @@ public class EmailNotifyServiceImpl implements EmailNotifyService {
             String to = getSettingValue(KEY_SMTP_FROM);
 
             String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
-            String subject = "【闲鱼助手】需要滑块验证 - 账号" + accountId;
-            String content = buildCaptchaEmailContent(accountId, accountNote, time, captchaUrl);
+            String subject = "【闲鱼助手】服务器无法连接 - 账号" + accountId;
+            String content = buildWsDisconnectEmailContent(accountId, accountNote, time);
 
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -58,15 +58,15 @@ public class EmailNotifyServiceImpl implements EmailNotifyService {
             helper.setText(content, true);
 
             mailSender.send(message);
-            log.info("滑块验证通知邮件发送成功: accountId={}, to={}", accountId, to);
+            log.info("WebSocket断开连接通知邮件发送成功: accountId={}, to={}", accountId, to);
         } catch (Exception e) {
-            log.error("滑块验证通知邮件发送失败: accountId={}", accountId, e);
+            log.error("WebSocket断开连接通知邮件发送失败: accountId={}", accountId, e);
         }
     }
 
     @Override
-    public boolean isCaptchaNotifyEnabled() {
-        String value = getSettingValue(KEY_CAPTCHA_NOTIFY_ENABLED);
+    public boolean isWsDisconnectNotifyEnabled() {
+        String value = getSettingValue(KEY_WS_DISCONNECT_NOTIFY_ENABLED);
         return "1".equals(value) || "true".equalsIgnoreCase(value);
     }
 
@@ -150,11 +150,11 @@ public class EmailNotifyServiceImpl implements EmailNotifyService {
         return sender;
     }
 
-    private String buildCaptchaEmailContent(Long accountId, String accountNote, String time, String captchaUrl) {
+    private String buildWsDisconnectEmailContent(Long accountId, String accountNote, String time) {
         StringBuilder sb = new StringBuilder();
         sb.append("<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;'>");
-        sb.append("<h2 style='color:#e6a23c;border-bottom:2px solid #e6a23c;padding-bottom:10px;'>⚠️ 闲鱼助手 - 需要滑块验证</h2>");
-        sb.append("<div style='background:#fdf6ec;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<h2 style='color:#f56c6c;border-bottom:2px solid #f56c6c;padding-bottom:10px;'>🔴 闲鱼助手 - 服务器无法连接</h2>");
+        sb.append("<div style='background:#fef0f0;border-radius:8px;padding:16px;margin:16px 0;'>");
         sb.append("<p style='margin:8px 0;'><strong>账号ID：</strong>").append(accountId).append("</p>");
         if (accountNote != null && !accountNote.isEmpty()) {
             sb.append("<p style='margin:8px 0;'><strong>账号备注：</strong>").append(accountNote).append("</p>");
@@ -162,8 +162,8 @@ public class EmailNotifyServiceImpl implements EmailNotifyService {
         sb.append("<p style='margin:8px 0;'><strong>触发时间：</strong>").append(time).append("</p>");
         sb.append("</div>");
         sb.append("<div style='background:#f0f9ff;border-radius:8px;padding:16px;margin:16px 0;'>");
-        sb.append("<p style='margin:4px 0;color:#666;'>该账号检测到需要完成滑块验证才能继续连接闲鱼服务器。</p>");
-        sb.append("<p style='margin:4px 0;color:#666;'>请登录系统完成滑块验证后重新启动连接。</p>");
+        sb.append("<p style='margin:4px 0;color:#666;'>该账号的WebSocket连接已断开，且多次重连均失败，无法连接到闲鱼服务器。</p>");
+        sb.append("<p style='margin:4px 0;color:#666;'>请检查网络连接或Cookie是否有效，并尝试手动重新启动连接。</p>");
         sb.append("</div>");
         sb.append("<div style='color:#999;font-size:12px;margin-top:20px;border-top:1px solid #eee;padding-top:10px;'>");
         sb.append("此邮件由闲鱼助手自动发送，请勿回复");

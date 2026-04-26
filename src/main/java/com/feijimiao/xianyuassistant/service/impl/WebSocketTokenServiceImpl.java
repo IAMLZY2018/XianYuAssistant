@@ -60,9 +60,6 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
     @Autowired
     private OperationLogService operationLogService;
 
-    @Autowired(required = false)
-    private com.feijimiao.xianyuassistant.service.EmailNotifyService emailNotifyService;
-
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -384,9 +381,6 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
                             log.warn("【账号{}】检测到滑块验证，URL: {}", accountId, captchaUrl);
                             log.warn("【账号{}】需要人工完成滑块验证，请访问: http://localhost:8080/websocket-manual-captcha.html", accountId);
                             log.warn("【账号{}】账号状态已更新为-2（需要验证）", accountId);
-
-                            // 触发邮件通知
-                            triggerCaptchaEmailNotify(accountId, captchaUrl);
 
                             throw new CaptchaRequiredException(captchaUrl);
                         } else {
@@ -830,29 +824,6 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
             }
         } catch (Exception e) {
             log.error("【账号{}】保存Token到数据库失败", accountId, e);
-        }
-    }
-
-    /**
-     * 触发滑块验证邮件通知
-     */
-    private void triggerCaptchaEmailNotify(Long accountId, String captchaUrl) {
-        try {
-            if (emailNotifyService != null && emailNotifyService.isCaptchaNotifyEnabled()) {
-                String accountNote = "";
-                try {
-                    com.feijimiao.xianyuassistant.entity.XianyuAccount account =
-                            xianyuAccountMapper.selectById(accountId);
-                    if (account != null) {
-                        accountNote = account.getAccountNote() != null ? account.getAccountNote() : "";
-                    }
-                } catch (Exception e) {
-                    log.debug("获取账号备注失败: {}", e.getMessage());
-                }
-                emailNotifyService.sendCaptchaNotifyEmail(accountId, accountNote, captchaUrl);
-            }
-        } catch (Exception e) {
-            log.warn("触发滑块验证邮件通知异常: {}", e.getMessage());
         }
     }
 }

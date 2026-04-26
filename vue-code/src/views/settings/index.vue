@@ -78,7 +78,7 @@ const EMAIL_SMTP_USERNAME_KEY = 'email_smtp_username'
 const EMAIL_SMTP_PASSWORD_KEY = 'email_smtp_password'
 const EMAIL_SMTP_FROM_KEY = 'email_smtp_from'
 const EMAIL_SMTP_SSL_KEY = 'email_smtp_ssl'
-const EMAIL_CAPTCHA_NOTIFY_KEY = 'email_notify_captcha_enabled'
+const EMAIL_WS_DISCONNECT_NOTIFY_KEY = 'email_notify_ws_disconnect_enabled'
 
 const emailSmtpHost = ref('')
 const emailSmtpPort = ref('465')
@@ -91,7 +91,7 @@ const emailTesting = ref(false)
 const showEmailPassword = ref(false)
 const emailConfigured = ref(false)
 const emailConfigExpanded = ref(true)
-const captchaNotifyEnabled = ref(false)
+const wsDisconnectNotifyEnabled = ref(false)
 
 // AI 状态
 const aiStatus = ref({
@@ -423,14 +423,14 @@ function handleResetEmbeddingConfig() {
 
 async function loadEmailConfig() {
   try {
-    const [hostRes, portRes, userRes, passRes, fromRes, sslRes, captchaRes] = await Promise.all([
+    const [hostRes, portRes, userRes, passRes, fromRes, sslRes, wsDisconnectRes] = await Promise.all([
       getSetting({ settingKey: EMAIL_SMTP_HOST_KEY }),
       getSetting({ settingKey: EMAIL_SMTP_PORT_KEY }),
       getSetting({ settingKey: EMAIL_SMTP_USERNAME_KEY }),
       getSetting({ settingKey: EMAIL_SMTP_PASSWORD_KEY }),
       getSetting({ settingKey: EMAIL_SMTP_FROM_KEY }),
       getSetting({ settingKey: EMAIL_SMTP_SSL_KEY }),
-      getSetting({ settingKey: EMAIL_CAPTCHA_NOTIFY_KEY })
+      getSetting({ settingKey: EMAIL_WS_DISCONNECT_NOTIFY_KEY })
     ])
 
     if (hostRes.code === 200 && hostRes.data) emailSmtpHost.value = hostRes.data.settingValue || ''
@@ -441,8 +441,8 @@ async function loadEmailConfig() {
     if (sslRes.code === 200 && sslRes.data && sslRes.data.settingValue !== undefined) {
       emailSmtpSsl.value = sslRes.data.settingValue === '1' || sslRes.data.settingValue === 'true'
     }
-    if (captchaRes.code === 200 && captchaRes.data && captchaRes.data.settingValue) {
-      captchaNotifyEnabled.value = captchaRes.data.settingValue === '1' || captchaRes.data.settingValue === 'true'
+    if (wsDisconnectRes.code === 200 && wsDisconnectRes.data && wsDisconnectRes.data.settingValue) {
+      wsDisconnectNotifyEnabled.value = wsDisconnectRes.data.settingValue === '1' || wsDisconnectRes.data.settingValue === 'true'
     }
 
     emailConfigured.value = !!(emailSmtpHost.value && emailSmtpPort.value && emailSmtpUsername.value && emailSmtpPassword.value && emailSmtpFrom.value)
@@ -477,15 +477,15 @@ async function handleSaveEmailConfig() {
   }
 }
 
-async function handleSaveCaptchaNotify() {
+async function handleSaveWsDisconnectNotify() {
   try {
     const res = await saveSetting({
-      settingKey: EMAIL_CAPTCHA_NOTIFY_KEY,
-      settingValue: captchaNotifyEnabled.value ? '1' : '0',
-      settingDesc: '触发人机验证时邮箱通知开关（1启用，0关闭）'
+      settingKey: EMAIL_WS_DISCONNECT_NOTIFY_KEY,
+      settingValue: wsDisconnectNotifyEnabled.value ? '1' : '0',
+      settingDesc: 'WebSocket断开且无法重连时邮箱通知开关（1启用，0关闭）'
     })
     if (res.code === 200) {
-      ElMessage.success(`人机验证通知已${captchaNotifyEnabled.value ? '开启' : '关闭'}`)
+      ElMessage.success(`服务器无法连接通知已${wsDisconnectNotifyEnabled.value ? '开启' : '关闭'}`)
     }
   } catch (e) {
     console.error('保存通知开关失败:', e)
@@ -995,13 +995,13 @@ async function handleTestEmail() {
 
           <div class="settings__form">
             <div class="settings__field">
-              <label class="settings__label">触发人机验证邮箱通知</label>
+              <label class="settings__label">服务器无法连接邮箱通知</label>
               <label class="settings__switch">
                 <input
                   type="checkbox"
-                  v-model="captchaNotifyEnabled"
+                  v-model="wsDisconnectNotifyEnabled"
                   :disabled="!emailConfigured"
-                  @change="handleSaveCaptchaNotify"
+                  @change="handleSaveWsDisconnectNotify"
                 />
                 <span class="settings__switch-track"></span>
                 <span class="settings__switch-thumb"></span>

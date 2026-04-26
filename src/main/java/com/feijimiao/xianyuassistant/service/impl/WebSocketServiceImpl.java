@@ -57,6 +57,12 @@ public class WebSocketServiceImpl implements WebSocketService {
     @Autowired
     private com.feijimiao.xianyuassistant.service.CookieRefreshService cookieRefreshService;
 
+    @Autowired(required = false)
+    private com.feijimiao.xianyuassistant.service.EmailNotifyService emailNotifyService;
+
+    @Autowired
+    private com.feijimiao.xianyuassistant.mapper.XianyuAccountMapper xianyuAccountMapper;
+
     // 存储WebSocket客户端
     private final Map<Long, XianyuWebSocketClient> webSocketClients = new ConcurrentHashMap<>();
     
@@ -92,6 +98,15 @@ public class WebSocketServiceImpl implements WebSocketService {
     
     // 重连次数记录（参考Python的无限重连但有退避）
     private final Map<Long, AtomicInteger> reconnectAttemptCounts = new ConcurrentHashMap<>();
+
+    // 邮件通知防抖记录（避免频繁发送）
+    private final Map<Long, Long> lastDisconnectNotifyTimes = new ConcurrentHashMap<>();
+
+    // 重连失败达到此次数后触发邮件通知
+    private static final int RECONNECT_NOTIFY_THRESHOLD = 3;
+
+    // 邮件通知最小间隔（10分钟）
+    private static final long NOTIFY_INTERVAL_MS = 10 * 60 * 1000;
 
     /**
      * 闲鱼WebSocket URL
@@ -697,6 +712,11 @@ public class WebSocketServiceImpl implements WebSocketService {
                         String.valueOf(accountId),
                         null, null, null, null);
                     
+                    // 重连失败达到阈值时触发邮件通知
+                    if (currentAttempt >= RECONNECT_NOTIFY_THRESHOLD) {
+                        triggerWsDisconnectNotify(accountId);
+                    }
+                    
                     // 参考Python: 重连失败后继续尝试（while True循环）
                     scheduleReconnect(accountId, config.getReconnectDelay(), false);
                 }
@@ -789,5 +809,34 @@ public class WebSocketServiceImpl implements WebSocketService {
         
         // 关闭重连调度器
         reconnectExecutor.shutdown();
+    }
+
+    private void triggerWsDisconnectNotify(Long accountId) {
+        try {
+            if (emailNotifyService == null || !emailNotifyService.isWsDisconnectNotifyEnabled()) {
+                return;
+            }
+            // 防抖：10分钟内只发送一次
+            Long lastNotifyTime = lastDisconnectNotifyTimes.get(accountId);
+            long now = System.currentTimeMillis();
+            if (lastNotifyTime != null && (now - lastNotifyTime) < NOTIFY_INTERVAL_MS) {
+                log.debug("【账号{}】邮件通知防抖中，跳过本次发送", accountId);
+                return;
+            }
+            lastDisconnectNotifyTimes.put(accountId, now);
+
+            String accountNote = "";
+            try {
+                com.feijimiao.xianyuassistant.entity.XianyuAccount account = xianyuAccountMapper.selectById(accountId);
+                if (account != null) {
+                    accountNote = account.getAccountNote() != null ? account.getAccountNote() : "";
+                }
+            } catch (Exception e) {
+                log.debug("获取账号备注失败: {}", e.getMessage());
+            }
+            emailNotifyService.sendWsDisconnectNotifyEmail(accountId, accountNote);
+        } catch (Exception e) {
+            log.warn("触发WebSocket断开连接邮件通知异常: {}", e.getMessage());
+        }
     }
 }

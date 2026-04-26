@@ -6,20 +6,19 @@ package com.feijimiao.xianyuassistant.service;
 public interface EmailNotifyService {
 
     /**
-     * 发送滑块验证通知邮件
+     * 发送WebSocket断开连接且无法重连通知邮件
      *
      * @param accountId 闲鱼账号ID
      * @param accountNote 账号备注
-     * @param captchaUrl 验证URL
      */
-    void sendCaptchaNotifyEmail(Long accountId, String accountNote, String captchaUrl);
+    void sendWsDisconnectNotifyEmail(Long accountId, String accountNote);
 
     /**
-     * 检查滑块验证邮件通知是否启用
+     * 检查WebSocket断开连接邮件通知是否启用
      *
      * @return 是否启用
      */
-    boolean isCaptchaNotifyEnabled();
+    boolean isWsDisconnectNotifyEnabled();
 
     /**
      * 检查邮箱配置是否完整
