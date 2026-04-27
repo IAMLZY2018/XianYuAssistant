@@ -1,39 +1,35 @@
 import { request } from '@/utils/request'
 import type { ApiResponse } from '@/types'
 
-export interface OrderQueryReq {
+export interface DeliveryRecordQueryReq {
   xianyuAccountId?: number
   xyGoodsId?: string
-  orderStatus?: number
+  pageNum?: number
+  pageSize?: number
+}
+
+export interface DeliveryRecordVO {
+  id: number
+  xyGoodsId: string
+  goodsTitle?: string
+  buyerUserName?: string
+  content?: string
+  state: number
+  confirmState: number
+  orderId?: string
+  createTime: string
+}
+
+export interface DeliveryRecordPageResult {
+  records: DeliveryRecordVO[]
+  total: number
   pageNum: number
   pageSize: number
 }
 
-export interface OrderVO {
-  id: number
-  accountRemark: string
-  orderId: string
-  goodsTitle: string
-  sid: string
-  createTime: number
-  autoDeliverySuccess: boolean
-  orderStatus: number | null
-  orderStatusText: string | null
-  buyerUserName: string
-  xyGoodsId: string
-}
-
-export interface PageResult<T> {
-  records: T[]
-  total: number
-  size: number
-  current: number
-  pages: number
-}
-
-export function queryOrderList(data: OrderQueryReq) {
-  return request<PageResult<OrderVO>>({
-    url: '/order/list',
+export function queryDeliveryRecordList(data: DeliveryRecordQueryReq) {
+  return request<DeliveryRecordPageResult>({
+    url: '/items/autoDeliveryRecords',
     method: 'POST',
     data
   })

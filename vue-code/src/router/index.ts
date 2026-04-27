@@ -48,7 +48,7 @@ const router = createRouter({
       path: '/orders',
       name: 'orders',
       component: () => import('@/views/orders/index.vue'),
-      meta: { title: '订单管理', icon: '📋' }
+      meta: { title: '发货记录', icon: '📋' }
     },
     {
       path: '/messages',

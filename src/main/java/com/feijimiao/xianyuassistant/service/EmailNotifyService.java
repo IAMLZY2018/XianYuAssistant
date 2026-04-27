@@ -33,4 +33,14 @@ public interface EmailNotifyService {
      * @return 发送结果，成功返回null，失败返回错误信息
      */
     String sendTestEmail();
+
+    /**
+     * 发送卡密预警邮件
+     *
+     * @param toEmail 收件人邮箱
+     * @param configName 卡密配置名称
+     * @param availableCount 可用数量
+     * @param totalCount 总数量
+     */
+    void sendKamiAlertEmail(String toEmail, String configName, int availableCount, int totalCount);
 }

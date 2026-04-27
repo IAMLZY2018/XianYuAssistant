@@ -180,4 +180,63 @@ public class EmailNotifyServiceImpl implements EmailNotifyService {
     private boolean isNotEmpty(String str) {
         return str != null && !str.trim().isEmpty();
     }
+
+    @Override
+    @Async
+    public void sendKamiAlertEmail(String toEmail, String configName, int availableCount, int totalCount) {
+        if (!isEmailConfigured()) {
+            log.warn("邮箱未配置，跳过发送卡密预警邮件");
+            return;
+        }
+        String targetEmail = toEmail;
+        if (targetEmail == null || targetEmail.trim().isEmpty()) {
+            targetEmail = getSettingValue(KEY_SMTP_FROM);
+            if (targetEmail.isEmpty()) {
+                log.warn("预警邮箱为空且系统邮箱未配置，跳过发送卡密预警邮件");
+                return;
+            }
+        }
+
+        try {
+            JavaMailSenderImpl mailSender = buildMailSender();
+            String from = getSettingValue(KEY_SMTP_USERNAME);
+
+            String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
+            String subject = "【闲鱼助手】卡密库存预警 - " + (configName != null ? configName : "卡密配置");
+            String content = buildKamiAlertEmailContent(configName, availableCount, totalCount, time);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(from);
+            helper.setTo(targetEmail);
+            helper.setSubject(subject);
+            helper.setText(content, true);
+
+            mailSender.send(message);
+            log.info("卡密预警邮件发送成功: configName={}, to={}, available={}/{}", configName, targetEmail, availableCount, totalCount);
+        } catch (Exception e) {
+            log.error("卡密预警邮件发送失败: configName={}, to={}", configName, targetEmail, e);
+        }
+    }
+
+    private String buildKamiAlertEmailContent(String configName, int availableCount, int totalCount, String time) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;'>");
+        sb.append("<h2 style='color:#e6a23c;border-bottom:2px solid #e6a23c;padding-bottom:10px;'>⚠️ 闲鱼助手 - 卡密库存预警</h2>");
+        sb.append("<div style='background:#fdf6ec;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:8px 0;'><strong>卡密配置：</strong>").append(configName != null ? configName : "未命名").append("</p>");
+        sb.append("<p style='margin:8px 0;'><strong>可用数量：</strong><span style='color:#e6a23c;font-weight:bold;'>").append(availableCount).append("</span></p>");
+        sb.append("<p style='margin:8px 0;'><strong>总数量：</strong>").append(totalCount).append("</p>");
+        sb.append("<p style='margin:8px 0;'><strong>预警时间：</strong>").append(time).append("</p>");
+        sb.append("</div>");
+        sb.append("<div style='background:#f0f9ff;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:4px 0;color:#666;'>该卡密配置的可用库存已低于预设阈值，请及时补充卡密。</p>");
+        sb.append("<p style='margin:4px 0;color:#666;'>如需关闭预警通知，请在卡密配置页面调整预警设置。</p>");
+        sb.append("</div>");
+        sb.append("<div style='color:#999;font-size:12px;margin-top:20px;border-top:1px solid #eee;padding-top:10px;'>");
+        sb.append("此邮件由闲鱼助手自动发送，请勿回复");
+        sb.append("</div>");
+        sb.append("</div>");
+        return sb.toString();
+    }
 }

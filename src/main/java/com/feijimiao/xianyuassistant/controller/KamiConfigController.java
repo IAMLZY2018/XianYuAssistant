@@ -90,6 +90,16 @@ public class KamiConfigController {
         }
     }
 
+    @PostMapping("/item/query")
+    public ResultObject<List<KamiItemRespDTO>> queryKamiItems(@RequestBody KamiItemQueryReqDTO reqDTO) {
+        try {
+            return kamiConfigService.getKamiItemsByConfigIdWithFilter(reqDTO);
+        } catch (Exception e) {
+            log.error("查询卡密列表失败", e);
+            return ResultObject.failed("查询卡密列表失败: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/item/delete")
     public ResultObject<Void> deleteKamiItem(@RequestParam("id") Long id) {
         try {

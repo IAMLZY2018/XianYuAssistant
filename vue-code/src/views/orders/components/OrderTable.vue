@@ -1,26 +1,23 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { formatTime } from '@/utils'
-import { OrderStatus } from '@/constants/orderStatus'
-import type { OrderItem } from '../useOrderManager'
+import type { DeliveryRecordItem } from '../useOrderManager'
 
 import IconEmpty from '@/components/icons/IconEmpty.vue'
 import IconCopy from '@/components/icons/IconCopy.vue'
 import IconTruck from '@/components/icons/IconTruck.vue'
 import IconUser from '@/components/icons/IconUser.vue'
 import IconClock from '@/components/icons/IconClock.vue'
-import IconSend from '@/components/icons/IconSend.vue'
-import IconCheck from '@/components/icons/IconCheck.vue'
 import IconShoppingBag from '@/components/icons/IconShoppingBag.vue'
 
 interface Props {
-  orderList: OrderItem[]
+  orderList: DeliveryRecordItem[]
   loading?: boolean
 }
 
 interface Emits {
   (e: 'copySid', sid: string): void
-  (e: 'confirmShipment', item: OrderItem): void
+  (e: 'confirmShipment', item: DeliveryRecordItem): void
 }
 
 defineProps<Props>()
@@ -40,42 +37,44 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkScreenSize)
 })
 
-const getStatusColor = (status: number | null) => {
-  switch (status) {
-    case OrderStatus.WAITING_PAYMENT: return '#ff9500'
-    case OrderStatus.WAITING_DELIVERY: return '#007aff'
-    case OrderStatus.DELIVERED: return '#34c759'
-    case OrderStatus.COMPLETED: return '#34c759'
-    case OrderStatus.CLOSED: return '#86868b'
-    default: return '#86868b'
-  }
+const getStatusColor = (state: number) => {
+  return state === 1 ? '#34c759' : '#ff3b30'
 }
 
-const getStatusBg = (status: number | null) => {
-  switch (status) {
-    case OrderStatus.WAITING_PAYMENT: return 'rgba(255, 149, 0, 0.1)'
-    case OrderStatus.WAITING_DELIVERY: return 'rgba(0, 122, 255, 0.1)'
-    case OrderStatus.DELIVERED: return 'rgba(52, 199, 89, 0.1)'
-    case OrderStatus.COMPLETED: return 'rgba(52, 199, 89, 0.1)'
-    case OrderStatus.CLOSED: return 'rgba(134, 134, 139, 0.1)'
-    default: return 'rgba(134, 134, 139, 0.1)'
-  }
+const getStatusBg = (state: number) => {
+  return state === 1 ? 'rgba(52, 199, 89, 0.1)' : 'rgba(255, 59, 48, 0.1)'
 }
 
-const getStatusText = (status: number | null) => {
-  switch (status) {
-    case OrderStatus.WAITING_PAYMENT: return '待付款'
-    case OrderStatus.WAITING_DELIVERY: return '待发货'
-    case OrderStatus.DELIVERED: return '已发货'
-    case OrderStatus.COMPLETED: return '已完成'
-    case OrderStatus.CLOSED: return '已关闭'
-    default: return '未知'
-  }
+const getStatusText = (state: number) => {
+  return state === 1 ? '成功' : '失败'
+}
+
+const getDeliveryText = (state: number) => {
+  return state === 1 ? '已发货' : '未发货'
+}
+
+const getDeliveryColor = (state: number) => {
+  return state === 1 ? '#34c759' : '#ff9500'
+}
+
+const getDeliveryBg = (state: number) => {
+  return state === 1 ? 'rgba(52, 199, 89, 0.1)' : 'rgba(255, 149, 0, 0.1)'
+}
+
+const getConfirmText = (state: number) => {
+  return state === 1 ? '已确认' : '未确认'
+}
+
+const getConfirmColor = (state: number) => {
+  return state === 1 ? '#34c759' : '#86868b'
+}
+
+const getConfirmBg = (state: number) => {
+  return state === 1 ? 'rgba(52, 199, 89, 0.1)' : 'rgba(134, 134, 139, 0.1)'
 }
 </script>
 
 <template>
-  <!-- Mobile: Card View -->
   <div v-if="isMobile" class="card-list" :class="{ 'card-list--loading': loading }">
     <div
       v-for="order in orderList"
@@ -83,16 +82,27 @@ const getStatusText = (status: number | null) => {
       class="order-card"
     >
       <div class="order-card__header">
-        <span class="order-card__id">{{ order.orderId }}</span>
-        <span
-          class="order-card__status"
-          :style="{
-            color: getStatusColor(order.orderStatus),
-            background: getStatusBg(order.orderStatus)
-          }"
-        >
-          {{ order.orderStatusText || getStatusText(order.orderStatus) }}
-        </span>
+        <span class="order-card__id">{{ order.orderId || '-' }}</span>
+        <div class="order-card__status-group">
+          <span
+            class="order-card__status"
+            :style="{
+              color: getDeliveryColor(order.state),
+              background: getDeliveryBg(order.state)
+            }"
+          >
+            {{ getDeliveryText(order.state) }}
+          </span>
+          <span
+            class="order-card__status"
+            :style="{
+              color: getConfirmColor(order.confirmState || 0),
+              background: getConfirmBg(order.confirmState || 0)
+            }"
+          >
+            {{ getConfirmText(order.confirmState || 0) }}
+          </span>
+        </div>
       </div>
 
       <div class="order-card__body">
@@ -111,25 +121,15 @@ const getStatusText = (status: number | null) => {
           <span class="order-card__label">时间</span>
           <span class="order-card__value">{{ formatTime(order.createTime) }}</span>
         </div>
-        <div class="order-card__row">
-          <IconSend />
-          <span class="order-card__label">发货</span>
-          <span
-            class="order-card__delivery"
-            :class="{ 'order-card__delivery--success': order.autoDeliverySuccess }"
-          >
-            {{ order.autoDeliverySuccess ? '已自动发货' : '未发货' }}
-          </span>
-        </div>
       </div>
 
       <div class="order-card__footer">
-        <button class="order-card__action order-card__action--copy" @click="emit('copySid', order.sid)">
+        <button class="order-card__action order-card__action--copy" @click="emit('copySid', order.orderId || '')">
           <IconCopy />
-          <span>复制会话ID</span>
+          <span>复制订单ID</span>
         </button>
         <button
-          v-if="order.orderStatus !== 3"
+          v-if="order.orderId"
           class="order-card__action order-card__action--ship"
           :class="{ 'order-card__action--loading': order.confirming }"
           @click="emit('confirmShipment', order)"
@@ -140,14 +140,12 @@ const getStatusText = (status: number | null) => {
       </div>
     </div>
 
-    <!-- Empty State -->
     <div v-if="!loading && orderList.length === 0" class="empty-state">
       <div class="empty-state__icon"><IconEmpty /></div>
-      <p class="empty-state__text">暂无订单数据</p>
+      <p class="empty-state__text">暂无发货记录</p>
     </div>
   </div>
 
-  <!-- Desktop/Tablet: Table View -->
   <div v-else class="table-container" :class="{ 'table-container--loading': loading }">
     <table class="table" v-if="orderList.length > 0">
       <thead class="table__head">
@@ -155,58 +153,57 @@ const getStatusText = (status: number | null) => {
           <th class="table__th">订单ID</th>
           <th class="table__th">商品名称</th>
           <th class="table__th table__th--center">买家</th>
-          <th class="table__th table__th--center">会话ID</th>
+          <th class="table__th table__th--center">发货内容</th>
+          <th class="table__th table__th--center">发货状态</th>
+          <th class="table__th table__th--center">确认状态</th>
           <th class="table__th table__th--center">创建时间</th>
-          <th class="table__th table__th--center">自动发货</th>
-          <th class="table__th table__th--center">状态</th>
           <th class="table__th table__th--actions">操作</th>
         </tr>
       </thead>
       <tbody class="table__body">
         <tr v-for="order in orderList" :key="order.id" class="table__tr">
           <td class="table__td">
-            <span class="order-id">{{ order.orderId }}</span>
+            <span class="order-id">{{ order.orderId || '-' }}</span>
           </td>
           <td class="table__td table__td--title">
             <div class="order-title-cell">
               <span class="order-title-cell__name">{{ order.goodsTitle || '-' }}</span>
-              <span class="order-title-cell__remark">{{ order.accountRemark }}</span>
             </div>
           </td>
           <td class="table__td table__td--center">
             <span class="buyer-name">{{ order.buyerUserName || '-' }}</span>
           </td>
-          <td class="table__td table__td--center">
-            <button class="sid-btn" @click="emit('copySid', order.sid)" :title="order.sid">
-              <IconCopy />
-              <span>复制</span>
-            </button>
-          </td>
-          <td class="table__td table__td--center">
-            <span class="time-text">{{ formatTime(order.createTime) }}</span>
+          <td class="table__td">
+            <span class="content-text">{{ order.content || '-' }}</span>
           </td>
           <td class="table__td table__td--center">
             <span
-              class="delivery-tag"
-              :class="{ 'delivery-tag--success': order.autoDeliverySuccess }"
+              class="status-tag"
+              :style="{
+                color: getDeliveryColor(order.state),
+                background: getDeliveryBg(order.state)
+              }"
             >
-              {{ order.autoDeliverySuccess ? '成功' : '未发货' }}
+              {{ getDeliveryText(order.state) }}
             </span>
           </td>
           <td class="table__td table__td--center">
             <span
               class="status-tag"
               :style="{
-                color: getStatusColor(order.orderStatus),
-                background: getStatusBg(order.orderStatus)
+                color: getConfirmColor(order.confirmState || 0),
+                background: getConfirmBg(order.confirmState || 0)
               }"
             >
-              {{ order.orderStatusText || getStatusText(order.orderStatus) }}
+              {{ getConfirmText(order.confirmState || 0) }}
             </span>
+          </td>
+          <td class="table__td table__td--center">
+            <span class="time-text">{{ formatTime(order.createTime) }}</span>
           </td>
           <td class="table__td table__td--actions">
             <button
-              v-if="order.orderStatus !== 3"
+              v-if="order.orderId"
               class="table__action table__action--ship"
               :class="{ 'table__action--loading': order.confirming }"
               @click="emit('confirmShipment', order)"
@@ -220,18 +217,14 @@ const getStatusText = (status: number | null) => {
       </tbody>
     </table>
 
-    <!-- Empty State -->
     <div v-if="!loading && orderList.length === 0" class="empty-state">
       <div class="empty-state__icon"><IconEmpty /></div>
-      <p class="empty-state__text">暂无订单数据</p>
+      <p class="empty-state__text">暂无发货记录</p>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* ============================================================
-   Shared Tokens
-   ============================================================ */
 .card-list,
 .table-container {
   --c-bg: transparent;
@@ -249,9 +242,6 @@ const getStatusText = (status: number | null) => {
   --c-ease: 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
-/* ============================================================
-   Mobile Card View
-   ============================================================ */
 .card-list {
   display: flex;
   flex-direction: column;
@@ -287,6 +277,11 @@ const getStatusText = (status: number | null) => {
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 60%;
+}
+
+.order-card__status-group {
+  display: flex;
+  gap: 4px;
 }
 
 .order-card__status {
@@ -333,16 +328,6 @@ const getStatusText = (status: number | null) => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.order-card__delivery {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--c-text-3);
-}
-
-.order-card__delivery--success {
-  color: var(--c-success);
 }
 
 .order-card__footer {
@@ -405,9 +390,6 @@ const getStatusText = (status: number | null) => {
   transform: scale(0.97);
 }
 
-/* ============================================================
-   Desktop Table View
-   ============================================================ */
 .table-container {
   min-height: 100%;
 }
@@ -419,7 +401,6 @@ const getStatusText = (status: number | null) => {
   font-size: 13px;
 }
 
-/* Table Head */
 .table__head {
   position: sticky;
   top: 0;
@@ -448,7 +429,6 @@ const getStatusText = (status: number | null) => {
   text-align: center;
 }
 
-/* Table Body */
 .table__tr {
   transition: background var(--c-ease);
 }
@@ -480,14 +460,12 @@ const getStatusText = (status: number | null) => {
   text-align: center;
 }
 
-/* Order ID */
 .order-id {
   font-size: 12px;
   font-family: 'SF Mono', 'Menlo', monospace;
   color: var(--c-text-2);
 }
 
-/* Title Cell */
 .order-title-cell {
   display: flex;
   flex-direction: column;
@@ -504,77 +482,27 @@ const getStatusText = (status: number | null) => {
   max-width: 280px;
 }
 
-.order-title-cell__remark {
-  font-size: 11px;
-  color: var(--c-text-3);
-}
-
-/* Buyer */
 .buyer-name {
   font-size: 13px;
   color: var(--c-text-2);
 }
 
-/* Session ID Copy Button */
-.sid-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 28px;
-  padding: 0 8px;
+.content-text {
   font-size: 12px;
-  font-weight: 500;
-  color: var(--c-accent);
-  background: transparent;
-  border: 1px solid rgba(0, 122, 255, 0.15);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all var(--c-ease);
-  -webkit-tap-highlight-color: transparent;
+  color: var(--c-text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+  display: inline-block;
 }
 
-.sid-btn svg {
-  width: 12px;
-  height: 12px;
-}
-
-@media (hover: hover) {
-  .sid-btn:hover {
-    background: rgba(0, 122, 255, 0.06);
-    border-color: rgba(0, 122, 255, 0.3);
-  }
-}
-
-.sid-btn:active {
-  transform: scale(0.96);
-}
-
-/* Time */
 .time-text {
   font-size: 12px;
   color: var(--c-text-2);
   font-variant-numeric: tabular-nums;
 }
 
-/* Delivery Tag */
-.delivery-tag {
-  display: inline-flex;
-  align-items: center;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 3px 8px;
-  border-radius: 12px;
-  line-height: 1;
-  color: var(--c-text-3);
-  background: rgba(0, 0, 0, 0.04);
-}
-
-.delivery-tag--success {
-  color: var(--c-success);
-  background: rgba(52, 199, 89, 0.1);
-}
-
-/* Status Tag */
 .status-tag {
   display: inline-flex;
   align-items: center;
@@ -585,7 +513,6 @@ const getStatusText = (status: number | null) => {
   line-height: 1;
 }
 
-/* Table Action Buttons */
 .table__action {
   display: inline-flex;
   align-items: center;
@@ -628,9 +555,6 @@ const getStatusText = (status: number | null) => {
   color: var(--c-text-3);
 }
 
-/* ============================================================
-   Empty State
-   ============================================================ */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -660,18 +584,12 @@ const getStatusText = (status: number | null) => {
   color: var(--c-text-3);
 }
 
-/* ============================================================
-   Loading State
-   ============================================================ */
 .card-list--loading,
 .table-container--loading {
   opacity: 0.5;
   pointer-events: none;
 }
 
-/* ============================================================
-   Responsive
-   ============================================================ */
 @media screen and (max-width: 480px) {
   .card-list {
     padding: 12px;

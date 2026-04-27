@@ -205,7 +205,7 @@ export function useAutoDelivery() {
 
         if (accounts.value.length > 0 && !selectedAccountId.value) {
           selectedAccountId.value = accounts.value[0]?.id || null
-          loadGoods()
+          await loadGoods()
         }
       }
     } catch (error: any) {
@@ -247,7 +247,7 @@ export function useAutoDelivery() {
         }
 
         if (goodsCurrentPage.value === 1 && goodsList.value.length > 0 && !selectedGoods.value) {
-          selectGoods(goodsList.value[0]!)
+          await selectGoods(goodsList.value[0]!)
         }
 
         checkAndLoadMore()

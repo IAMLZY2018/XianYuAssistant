@@ -214,57 +214,35 @@ AFTER UPDATE ON xianyu_goods_auto_delivery_config
 BEGIN
     UPDATE xianyu_goods_auto_delivery_config SET update_time = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
--- 商品自动发货记录表 (优化版: 移除重复字段,通过关联xianyu_order表获取订单信息)
-CREATE TABLE IF NOT EXISTS xianyu_goods_auto_delivery_record (
+-- 商品订单表
+CREATE TABLE IF NOT EXISTS xianyu_goods_order (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     xianyu_account_id BIGINT NOT NULL,                -- 闲鱼账号ID
     xianyu_goods_id BIGINT,                           -- 本地闲鱼商品ID
     xy_goods_id VARCHAR(100) NOT NULL,                -- 闲鱼的商品ID
-    pnm_id VARCHAR(100) NOT NULL,                     -- 消息pnmid，用于防止重复发货
-    order_id VARCHAR(100),                            -- 订单ID (关联xianyu_order表)
+    pnm_id VARCHAR(100) NOT NULL,                     -- 消息pnmid，用于防止重复
+    order_id VARCHAR(100),                            -- 订单ID
+    buyer_user_id VARCHAR(100),                       -- 买家用户ID
+    buyer_user_name VARCHAR(256),                     -- 买家用户名
     content TEXT,                                     -- 发货消息内容
     state TINYINT DEFAULT 0,                          -- 发货是否成功: 1-成功, 0-失败
+    confirm_state TINYINT DEFAULT 0,                  -- 确认发货状态: 0-未确认, 1-已确认
     create_time DATETIME DEFAULT (datetime('now', 'localtime')),  -- 创建时间(本地时间)
     FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
 );
 
--- 创建自动发货记录表索引
-CREATE INDEX IF NOT EXISTS idx_auto_delivery_record_account_id ON xianyu_goods_auto_delivery_record(xianyu_account_id);
-CREATE INDEX IF NOT EXISTS idx_auto_delivery_record_xy_goods_id ON xianyu_goods_auto_delivery_record(xy_goods_id);
-CREATE INDEX IF NOT EXISTS idx_auto_delivery_record_state ON xianyu_goods_auto_delivery_record(state);
-CREATE INDEX IF NOT EXISTS idx_auto_delivery_record_create_time ON xianyu_goods_auto_delivery_record(create_time);
-CREATE INDEX IF NOT EXISTS idx_auto_delivery_record_pnm_id ON xianyu_goods_auto_delivery_record(pnm_id);
-CREATE INDEX IF NOT EXISTS idx_auto_delivery_record_order_id ON xianyu_goods_auto_delivery_record(order_id);
+-- 创建订单表索引
+CREATE INDEX IF NOT EXISTS idx_goods_order_account_id ON xianyu_goods_order(xianyu_account_id);
+CREATE INDEX IF NOT EXISTS idx_goods_order_xy_goods_id ON xianyu_goods_order(xy_goods_id);
+CREATE INDEX IF NOT EXISTS idx_goods_order_state ON xianyu_goods_order(state);
+CREATE INDEX IF NOT EXISTS idx_goods_order_create_time ON xianyu_goods_order(create_time);
+CREATE INDEX IF NOT EXISTS idx_goods_order_pnm_id ON xianyu_goods_order(pnm_id);
+CREATE INDEX IF NOT EXISTS idx_goods_order_order_id ON xianyu_goods_order(order_id);
 
--- 创建唯一索引，防止同一消息重复发货
-CREATE UNIQUE INDEX IF NOT EXISTS idx_auto_delivery_record_unique 
-ON xianyu_goods_auto_delivery_record(xianyu_account_id, pnm_id);
+-- 创建唯一索引，防止同一消息重复
+CREATE UNIQUE INDEX IF NOT EXISTS idx_goods_order_unique 
+ON xianyu_goods_order(xianyu_account_id, pnm_id);
 
--- 商品自动回复配置表
-CREATE TABLE IF NOT EXISTS xianyu_goods_auto_reply_config (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    xianyu_account_id BIGINT NOT NULL,                -- 闲鱼账号ID
-    xianyu_goods_id BIGINT,                           -- 本地闲鱼商品ID
-    xy_goods_id VARCHAR(100) NOT NULL,                -- 闲鱼的商品ID
-    keyword TEXT,                                     -- 关键词（支持多个，用逗号分隔）
-    reply_content TEXT,                               -- 回复内容
-    match_type TINYINT DEFAULT 1,                     -- 匹配类型（1-包含，2-完全匹配，3-正则）
-    rag_delay_seconds INTEGER DEFAULT 15,             -- RAG回复延时秒数（默认15秒）
-    create_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 创建时间
-    update_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 更新时间
-    FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
-);
-
--- 创建自动回复配置表索引
-CREATE INDEX IF NOT EXISTS idx_auto_reply_config_account_id ON xianyu_goods_auto_reply_config(xianyu_account_id);
-CREATE INDEX IF NOT EXISTS idx_auto_reply_config_xy_goods_id ON xianyu_goods_auto_reply_config(xy_goods_id);
-
--- 创建自动回复配置表更新时间触发器
-CREATE TRIGGER IF NOT EXISTS update_xianyu_goods_auto_reply_config_time
-AFTER UPDATE ON xianyu_goods_auto_reply_config
-BEGIN
-    UPDATE xianyu_goods_auto_reply_config SET update_time = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END;
 -- 商品自动回复记录表
 CREATE TABLE IF NOT EXISTS xianyu_goods_auto_reply_record (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -296,70 +274,7 @@ CREATE INDEX IF NOT EXISTS idx_auto_reply_record_pnm_id ON xianyu_goods_auto_rep
 CREATE UNIQUE INDEX IF NOT EXISTS idx_auto_reply_record_unique 
 ON xianyu_goods_auto_reply_record(xianyu_account_id, s_id, pnm_id);
 
--- 闲鱼订单表
-CREATE TABLE IF NOT EXISTS xianyu_order (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    
-    -- 关联信息
-    xianyu_account_id BIGINT NOT NULL,            -- 关联的闲鱼账号ID
-    
-    -- 订单基本信息
-    order_id VARCHAR(64) NOT NULL,                -- 订单ID
-    xy_goods_id VARCHAR(64),                      -- 闲鱼商品ID
-    goods_title VARCHAR(512),                     -- 商品标题
-    
-    -- 交易双方信息
-    buyer_user_id VARCHAR(64),                    -- 买家用户ID
-    buyer_user_name VARCHAR(256),                 -- 买家用户名
-    seller_user_id VARCHAR(64),                   -- 卖家用户ID
-    seller_user_name VARCHAR(256),                -- 危家用户名
-    
-    -- 订单状态信息
-    order_status INTEGER,                         -- 订单状态：1-待付款，2-待发货，3-已发货，4-已完成，5-已取消
-    order_status_text VARCHAR(128),               -- 订单状态文本
-    
-    -- 订单金额信息
-    order_amount BIGINT,                          -- 订单金额（单位：分）
-    order_amount_text VARCHAR(64),                -- 订单金额文本
-    
-    -- 关联消息信息
-    pnm_id VARCHAR(128),                          -- 关联的消息pnmid
-    s_id VARCHAR(128),                            -- 关联的会话ID
-    reminder_url TEXT,                            -- 消息链接
-    
-    -- 时间信息
-    order_create_time BIGINT,                     -- 订单创建时间戳（毫秒）
-    order_pay_time BIGINT,                        -- 订单支付时间戳（毫秒）
-    order_delivery_time BIGINT,                   -- 订单发货时间戳（毫秒）
-    order_complete_time BIGINT,                   -- 订单完成时间戳（毫秒）
-    create_time DATETIME DEFAULT (datetime('now', 'localtime')),  -- 记录创建时间
-    update_time DATETIME DEFAULT (datetime('now', 'localtime')),  -- 记录更新时间
-    
-    -- 扩展信息
-    complete_msg TEXT,                            -- 完整的消息体JSON
-    
-    -- 外键约束
-    FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
-);
 
--- 创建订单表索引
-CREATE INDEX IF NOT EXISTS idx_order_id ON xianyu_order(order_id);
-CREATE INDEX IF NOT EXISTS idx_order_account_id ON xianyu_order(xianyu_account_id);
-CREATE INDEX IF NOT EXISTS idx_order_xy_goods_id ON xianyu_order(xy_goods_id);
-CREATE INDEX IF NOT EXISTS idx_order_buyer_user_id ON xianyu_order(buyer_user_id);
-CREATE INDEX IF NOT EXISTS idx_order_status ON xianyu_order(order_status);
-CREATE INDEX IF NOT EXISTS idx_order_create_time ON xianyu_order(create_time);
-CREATE INDEX IF NOT EXISTS idx_order_order_create_time ON xianyu_order(order_create_time);
-
--- 创建唯一索引（同一订单ID在同一账号下唯一）
-CREATE UNIQUE INDEX IF NOT EXISTS uk_account_order ON xianyu_order(xianyu_account_id, order_id);
-
--- 创建订单表更新时间触发器
-CREATE TRIGGER IF NOT EXISTS update_xianyu_order_time
-AFTER UPDATE ON xianyu_order
-BEGIN
-    UPDATE xianyu_order SET update_time = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END;
 -- 操作日志表
 CREATE TABLE IF NOT EXISTS xianyu_operation_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -427,8 +342,10 @@ CREATE TABLE IF NOT EXISTS xianyu_kami_config (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     xianyu_account_id BIGINT NOT NULL,                -- 闲鱼账号ID
     alias_name VARCHAR(200),                          -- 别名
-    delivery_method TINYINT DEFAULT 1,                -- 发货方式：1-随机发货，2-顺序发货
-    allow_repeat TINYINT DEFAULT 0,                   -- 允许重复发货：0-不允许，1-允许
+    alert_enabled TINYINT DEFAULT 0,                  -- 预警开关：0-关闭，1-开启
+    alert_threshold_type TINYINT DEFAULT 1,           -- 预警阈值类型：1-数量，2-百分比
+    alert_threshold_value INTEGER DEFAULT 10,         -- 预警阈值数值
+    alert_email VARCHAR(200),                         -- 预警接收邮箱
     total_count INTEGER DEFAULT 0,                    -- 卡密总数（冗余计数，方便查询）
     used_count INTEGER DEFAULT 0,                     -- 已使用数量（冗余计数）
     create_time DATETIME DEFAULT (datetime('now', 'localtime')),

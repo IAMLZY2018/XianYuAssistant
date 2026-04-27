@@ -11,8 +11,7 @@ import com.feijimiao.xianyuassistant.mapper.XianyuChatMessageMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsInfoMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsConfigMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoDeliveryConfigMapper;
-import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoDeliveryRecordMapper;
-import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoReplyConfigMapper;
+import com.feijimiao.xianyuassistant.mapper.XianyuGoodsOrderMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoReplyRecordMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuOperationLogMapper;
 import com.feijimiao.xianyuassistant.service.AccountService;
@@ -50,10 +49,7 @@ public class AccountServiceImpl implements AccountService {
     private XianyuGoodsAutoDeliveryConfigMapper autoDeliveryConfigMapper;
     
     @Autowired
-    private XianyuGoodsAutoDeliveryRecordMapper autoDeliveryRecordMapper;
-    
-    @Autowired
-    private XianyuGoodsAutoReplyConfigMapper autoReplyConfigMapper;
+    private XianyuGoodsOrderMapper orderMapper;
     
     @Autowired
     private XianyuGoodsAutoReplyRecordMapper autoReplyRecordMapper;
@@ -449,23 +445,19 @@ public class AccountServiceImpl implements AccountService {
             int autoDeliveryConfigCount = autoDeliveryConfigMapper.deleteByAccountId(accountId);
             log.info("删除自动发货配置数据: accountId={}, 删除数量={}", accountId, autoDeliveryConfigCount);
             
-            // 5. 删除闲鱼商品自动发货记录表数据
-            int autoDeliveryRecordCount = autoDeliveryRecordMapper.deleteByAccountId(accountId);
-            log.info("删除自动发货记录数据: accountId={}, 删除数量={}", accountId, autoDeliveryRecordCount);
+            // 5. 删除订单数据
+            int orderCount = orderMapper.deleteByAccountId(accountId);
+            log.info("删除订单数据: accountId={}, 删除数量={}", accountId, orderCount);
             
-            // 6. 删除闲鱼商品自动回复配置表数据
-            int autoReplyConfigCount = autoReplyConfigMapper.deleteByAccountId(accountId);
-            log.info("删除自动回复配置数据: accountId={}, 删除数量={}", accountId, autoReplyConfigCount);
-            
-            // 7. 删除闲鱼商品自动回复记录表数据
+            // 6. 删除自动回复记录数据
             int autoReplyRecordCount = autoReplyRecordMapper.deleteByAccountId(accountId);
             log.info("删除自动回复记录数据: accountId={}, 删除数量={}", accountId, autoReplyRecordCount);
             
-            // 8. 删除操作记录表数据
+            // 7. 删除操作记录数据
             int operationLogCount = operationLogMapper.deleteByAccountId(accountId);
             log.info("删除操作记录数据: accountId={}, 删除数量={}", accountId, operationLogCount);
             
-            // 9. 删除闲鱼Cookie表数据
+            // 8. 删除Cookie数据
             LambdaQueryWrapper<XianyuCookie> cookieQuery = new LambdaQueryWrapper<>();
             cookieQuery.eq(XianyuCookie::getXianyuAccountId, accountId);
             int cookieCount = cookieMapper.delete(cookieQuery);

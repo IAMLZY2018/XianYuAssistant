@@ -1,21 +1,22 @@
-import { ref, reactive, computed } from 'vue'
-import { queryOrderList, confirmShipment } from '@/api/order'
-import type { OrderVO, OrderQueryReq } from '@/api/order'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { queryDeliveryRecordList, confirmShipment } from '@/api/order'
+import { getAccountList } from '@/api/account'
+import type { DeliveryRecordVO, DeliveryRecordQueryReq } from '@/api/order'
+import type { Account } from '@/types'
 import { showSuccess, showError, showConfirm } from '@/utils'
 import { formatTime } from '@/utils'
-import { OrderStatus } from '@/constants/orderStatus'
 
-// 扩展 OrderVO 添加运行时状态
-export interface OrderItem extends OrderVO {
+export interface DeliveryRecordItem extends DeliveryRecordVO {
   confirming?: boolean
 }
 
 export function useOrderManager() {
   const loading = ref(false)
-  const orderList = ref<OrderItem[]>([])
+  const orderList = ref<DeliveryRecordItem[]>([])
   const total = ref(0)
+  const accounts = ref<Account[]>([])
 
-  const queryParams = reactive<OrderQueryReq>({
+  const queryParams = reactive<DeliveryRecordQueryReq>({
     pageNum: 1,
     pageSize: 20
   })
@@ -25,74 +26,66 @@ export function useOrderManager() {
     filter: false
   })
 
-  const confirmTarget = ref<OrderItem | null>(null)
+  const confirmTarget = ref<DeliveryRecordItem | null>(null)
 
-  // 计算属性
-  const totalPages = computed(() => Math.ceil(total.value / queryParams.pageSize))
+  const totalPages = computed(() => Math.ceil(total.value / (queryParams.pageSize || 20)))
 
-  // 状态相关
-  const getStatusColor = (status: number | null) => {
-    switch (status) {
-      case OrderStatus.WAITING_PAYMENT: return '#ff9500'
-      case OrderStatus.WAITING_DELIVERY: return '#007aff'
-      case OrderStatus.DELIVERED: return '#34c759'
-      case OrderStatus.COMPLETED: return '#34c759'
-      case OrderStatus.CLOSED: return '#86868b'
-      default: return '#86868b'
+  const loadAccounts = async () => {
+    try {
+      const response = await getAccountList()
+      if (response.code === 0 || response.code === 200) {
+        accounts.value = response.data?.accounts || []
+        if (accounts.value.length > 0 && !queryParams.xianyuAccountId) {
+          queryParams.xianyuAccountId = accounts.value[0]?.id
+        }
+      }
+    } catch (error: any) {
+      console.error('加载账号列表失败:', error)
     }
   }
 
-  const getStatusBg = (status: number | null) => {
-    switch (status) {
-      case OrderStatus.WAITING_PAYMENT: return 'rgba(255, 149, 0, 0.1)'
-      case OrderStatus.WAITING_DELIVERY: return 'rgba(0, 122, 255, 0.1)'
-      case OrderStatus.DELIVERED: return 'rgba(52, 199, 89, 0.1)'
-      case OrderStatus.COMPLETED: return 'rgba(52, 199, 89, 0.1)'
-      case OrderStatus.CLOSED: return 'rgba(134, 134, 139, 0.1)'
-      default: return 'rgba(134, 134, 139, 0.1)'
-    }
+  const handleAccountChange = () => {
+    queryParams.pageNum = 1
+    loadOrders()
   }
 
-  const getStatusText = (status: number | null) => {
-    switch (status) {
-      case OrderStatus.WAITING_PAYMENT: return '待付款'
-      case OrderStatus.WAITING_DELIVERY: return '待发货'
-      case OrderStatus.DELIVERED: return '已发货'
-      case OrderStatus.COMPLETED: return '已完成'
-      case OrderStatus.CLOSED: return '已关闭'
-      default: return '未知'
-    }
+  const getStatusColor = (state: number) => {
+    return state === 1 ? '#34c759' : '#ff3b30'
   }
 
-  // 查询订单列表
+  const getStatusBg = (state: number) => {
+    return state === 1 ? 'rgba(52, 199, 89, 0.1)' : 'rgba(255, 59, 48, 0.1)'
+  }
+
+  const getStatusText = (state: number) => {
+    return state === 1 ? '成功' : '失败'
+  }
+
   const loadOrders = async () => {
     loading.value = true
     try {
-      const response = await queryOrderList(queryParams)
+      const response = await queryDeliveryRecordList(queryParams)
       orderList.value = (response.data?.records || []).map(item => ({
         ...item,
         confirming: false
       }))
       total.value = response.data?.total || 0
     } catch (error: any) {
-      console.error('查询订单列表失败:', error)
-      showError('查询订单列表失败: ' + (error.message || '未知错误'))
+      console.error('查询发货记录失败:', error)
+      showError('查询发货记录失败: ' + (error.message || '未知错误'))
       orderList.value = []
     } finally {
       loading.value = false
     }
   }
 
-  // 重置查询
   const handleReset = () => {
     queryParams.pageNum = 1
     queryParams.xyGoodsId = undefined
-    queryParams.orderStatus = undefined
     queryParams.xianyuAccountId = undefined
     loadOrders()
   }
 
-  // 分页
   const handlePageChange = (page: number) => {
     queryParams.pageNum = page
     loadOrders()
@@ -104,17 +97,19 @@ export function useOrderManager() {
     loadOrders()
   }
 
-  // 复制会话ID
   const copySId = (sid: string) => {
     navigator.clipboard.writeText(sid).then(() => {
-      showSuccess('会话ID已复制')
+      showSuccess('已复制')
     }).catch(() => {
       showError('复制失败')
     })
   }
 
-  // 确认发货
-  const handleConfirmShipment = async (row: OrderItem) => {
+  const handleConfirmShipment = async (row: DeliveryRecordItem) => {
+    if (!row.orderId) {
+      showError('订单ID为空')
+      return
+    }
     try {
       await showConfirm(
         `确认订单 ${row.orderId} 已发货吗？`,
@@ -128,8 +123,6 @@ export function useOrderManager() {
       })
 
       showSuccess('确认发货成功')
-      row.orderStatus = OrderStatus.DELIVERED
-      row.orderStatusText = '已发货'
       loadOrders()
     } catch (error: any) {
       if (error === 'cancel') return
@@ -143,11 +136,14 @@ export function useOrderManager() {
     loading,
     orderList,
     total,
+    accounts,
     queryParams,
     dialogs,
     confirmTarget,
     totalPages,
+    loadAccounts,
     loadOrders,
+    handleAccountChange,
     handleReset,
     handlePageChange,
     handleSizeChange,
@@ -156,7 +152,6 @@ export function useOrderManager() {
     getStatusColor,
     getStatusBg,
     getStatusText,
-    formatTime,
-    OrderStatus
+    formatTime
   }
 }

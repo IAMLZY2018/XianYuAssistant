@@ -20,7 +20,7 @@ const pageTitleMap: Record<string, string> = {
   '/accounts': '闲鱼账号',
   '/connection': '连接管理',
   '/goods': '商品管理',
-  '/orders': '订单管理',
+  '/orders': '发货记录',
   '/messages': '消息管理',
   '/auto-delivery': '自动发货',
   '/auto-reply': '自动回复',

@@ -5,7 +5,7 @@ import {
   getKamiConfigsByAccountId,
   saveKamiConfig,
   deleteKamiConfig,
-  getKamiItemsByConfigId,
+  queryKamiItems,
   addKamiItem,
   batchImportKamiItems,
   deleteKamiItem,
@@ -27,9 +27,7 @@ const itemsLoading = ref(false)
 
 const showCreateDialog = ref(false)
 const createForm = ref({
-  aliasName: '',
-  deliveryMethod: 1,
-  allowRepeat: 0
+  aliasName: ''
 })
 const createLoading = ref(false)
 
@@ -41,8 +39,20 @@ const showAddDialog = ref(false)
 const addContent = ref('')
 const addLoading = ref(false)
 
+const showAlertDialog = ref(false)
+const alertForm = ref({
+  alertEnabled: 0,
+  alertThresholdType: 1,
+  alertThresholdValue: 10,
+  alertEmail: ''
+})
+const alertLoading = ref(false)
+
 const isMobile = ref(false)
 const rulesExpanded = ref(false)
+
+const filterStatus = ref<number | undefined>(undefined)
+const filterKeyword = ref('')
 
 const checkScreenSize = () => {
   isMobile.value = window.innerWidth < 768
@@ -92,7 +102,11 @@ const loadKamiItems = async () => {
   if (!selectedConfigId.value) return
   itemsLoading.value = true
   try {
-    const res = await getKamiItemsByConfigId(selectedConfigId.value)
+    const res = await queryKamiItems({
+      kamiConfigId: selectedConfigId.value,
+      status: filterStatus.value,
+      keyword: filterKeyword.value || undefined
+    })
     if (res.code === 200) {
       kamiItems.value = res.data || []
     }
@@ -111,6 +125,8 @@ const handleAccountChange = () => {
 
 const selectConfig = (config: KamiConfig) => {
   selectedConfigId.value = config.id
+  filterStatus.value = undefined
+  filterKeyword.value = ''
   loadKamiItems()
 }
 
@@ -123,14 +139,12 @@ const handleCreate = async () => {
   try {
     const res = await saveKamiConfig({
       xianyuAccountId: selectedAccountId.value,
-      aliasName: createForm.value.aliasName || '未命名',
-      deliveryMethod: createForm.value.deliveryMethod,
-      allowRepeat: createForm.value.allowRepeat
+      aliasName: createForm.value.aliasName || '未命名'
     })
     if (res.code === 200) {
       ElMessage.success('创建成功')
       showCreateDialog.value = false
-      createForm.value = { aliasName: '', deliveryMethod: 1, allowRepeat: 0 }
+      createForm.value = { aliasName: '' }
       await loadKamiConfigs()
       if (res.data?.id) {
         selectedConfigId.value = res.data.id
@@ -249,25 +263,46 @@ const handleResetItem = async (item: KamiItem) => {
   } catch {}
 }
 
-const handleUpdateConfigField = async (field: 'deliveryMethod' | 'allowRepeat', value: number) => {
+const handleFilterChange = () => {
+  loadKamiItems()
+}
+
+const openAlertDialog = () => {
   if (!selectedConfig.value) return
-  const config = kamiConfigs.value.find(c => c.id === selectedConfigId.value)
-  if (config) {
-    (config as any)[field] = value
+  alertForm.value = {
+    alertEnabled: selectedConfig.value.alertEnabled || 0,
+    alertThresholdType: selectedConfig.value.alertThresholdType || 1,
+    alertThresholdValue: selectedConfig.value.alertThresholdValue || 10,
+    alertEmail: selectedConfig.value.alertEmail || ''
   }
+  showAlertDialog.value = true
+}
+
+const handleSaveAlert = async () => {
+  if (!selectedConfigId.value) return
+  alertLoading.value = true
   try {
     const res = await saveKamiConfig({
-      id: selectedConfig.value.id,
-      xianyuAccountId: selectedConfig.value.xianyuAccountId,
-      [field]: value
+      id: selectedConfigId.value,
+      xianyuAccountId: selectedAccountId.value!,
+      aliasName: selectedConfig.value?.aliasName,
+      alertEnabled: alertForm.value.alertEnabled,
+      alertThresholdType: alertForm.value.alertThresholdType,
+      alertThresholdValue: alertForm.value.alertThresholdValue,
+      alertEmail: alertForm.value.alertEmail
     })
-    if (res.code === 200 && res.data) {
-      const idx = kamiConfigs.value.findIndex(c => c.id === selectedConfigId.value)
-      if (idx !== -1) {
-        kamiConfigs.value[idx] = res.data
-      }
+    if (res.code === 200) {
+      ElMessage.success('设置保存成功')
+      showAlertDialog.value = false
+      loadKamiConfigs()
+    } else {
+      ElMessage.error(res.msg || '保存失败')
     }
-  } catch {}
+  } catch (e) {
+    ElMessage.error('保存失败')
+  } finally {
+    alertLoading.value = false
+  }
 }
 
 watch(selectedAccountId, () => {
@@ -325,10 +360,7 @@ onMounted(() => {
             <span class="config-card__stat">总量 {{ config.totalCount }}</span>
             <span class="config-card__stat used">已用 {{ config.usedCount }}</span>
             <span class="config-card__stat avail">可用 {{ config.availableCount }}</span>
-          </div>
-          <div class="config-card__meta">
-            {{ config.deliveryMethod === 1 ? '随机发货' : '顺序发货' }}
-            · {{ config.allowRepeat === 1 ? '非一次性' : '一次性' }}
+            <el-tag v-if="config.alertEnabled === 1" type="warning" size="small" style="margin-left: 4px;">预警</el-tag>
           </div>
           <el-button
             class="config-card__del"
@@ -348,42 +380,30 @@ onMounted(() => {
             <div class="kami-detail__actions">
               <el-button @click="showAddDialog = true">添加卡密</el-button>
               <el-button type="primary" @click="showImportDialog = true">批量导入</el-button>
+              <el-button type="warning" @click="openAlertDialog">预警配置</el-button>
             </div>
           </div>
 
-          <div class="rule-card" :class="{ 'rule-card--collapsed': !rulesExpanded }">
-            <div class="rule-card__header" @click="rulesExpanded = !rulesExpanded">
-              <span class="rule-card__icon">⚙️</span>
-              <span class="rule-card__title">规则配置</span>
-              <span class="rule-card__arrow">{{ rulesExpanded ? '▲' : '▼' }}</span>
-              <span v-if="!rulesExpanded" class="rule-card__summary">
-                {{ selectedConfig.deliveryMethod === 1 ? '随机' : '顺序' }}发货
-                ·
-                {{ selectedConfig.allowRepeat === 1 ? '非一次性' : '一次性' }}
-              </span>
-            </div>
-            <div v-show="rulesExpanded" class="rule-card__body">
-              <div class="rule-card__row">
-                <span class="rule-card__label">📦 发货方式</span>
-                <el-radio-group
-                  :model-value="selectedConfig.deliveryMethod"
-                  @change="(v: number) => handleUpdateConfigField('deliveryMethod', v)"
-                >
-                  <el-radio :value="1">随机发货</el-radio>
-                  <el-radio :value="2">顺序发货</el-radio>
-                </el-radio-group>
-              </div>
-              <div class="rule-card__row">
-                <span class="rule-card__label">🔑 卡密特性</span>
-                <el-radio-group
-                  :model-value="selectedConfig.allowRepeat"
-                  @change="(v: number) => handleUpdateConfigField('allowRepeat', v)"
-                >
-                  <el-radio :value="0">一次性卡密</el-radio>
-                  <el-radio :value="1">非一次性卡密</el-radio>
-                </el-radio-group>
-              </div>
-            </div>
+          <div class="kami-detail__filters">
+            <el-select
+              v-model="filterStatus"
+              placeholder="全部状态"
+              clearable
+              style="width: 120px; margin-right: 8px;"
+              @change="handleFilterChange"
+            >
+              <el-option :value="0" label="未使用" />
+              <el-option :value="1" label="已使用" />
+            </el-select>
+            <el-input
+              v-model="filterKeyword"
+              placeholder="搜索卡密内容"
+              clearable
+              style="width: 200px; margin-right: 8px;"
+              @keyup.enter="handleFilterChange"
+              @clear="handleFilterChange"
+            />
+            <el-button @click="handleFilterChange">搜索</el-button>
           </div>
 
           <div class="kami-detail__table">
@@ -424,18 +444,6 @@ onMounted(() => {
         <el-form-item label="别名">
           <el-input v-model="createForm.aliasName" placeholder="请输入别名" maxlength="50" />
         </el-form-item>
-        <el-form-item label="发货方式">
-          <el-radio-group v-model="createForm.deliveryMethod">
-            <el-radio :value="1">随机发货</el-radio>
-            <el-radio :value="2">顺序发货</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="卡密特性">
-          <el-radio-group v-model="createForm.allowRepeat">
-            <el-radio :value="0">一次性卡密</el-radio>
-            <el-radio :value="1">非一次性卡密</el-radio>
-          </el-radio-group>
-        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showCreateDialog = false">取消</el-button>
@@ -457,6 +465,33 @@ onMounted(() => {
       <template #footer>
         <el-button @click="showImportDialog = false">取消</el-button>
         <el-button type="primary" @click="handleBatchImport" :loading="importLoading">导入</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="showAlertDialog" title="预警配置" width="480" :close-on-click-modal="false">
+      <el-form label-width="90px">
+        <el-form-item label="开启预警">
+          <el-switch v-model="alertForm.alertEnabled" :active-value="1" :inactive-value="0" />
+        </el-form-item>
+        <el-form-item label="阈值类型">
+          <el-radio-group v-model="alertForm.alertThresholdType">
+            <el-radio :value="1">数量</el-radio>
+            <el-radio :value="2">百分比</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="阈值数值">
+          <el-input-number v-model="alertForm.alertThresholdValue" :min="1" :max="alertForm.alertThresholdType === 2 ? 100 : 99999" />
+          <span style="margin-left: 8px; color: #909399; font-size: 12px;">
+            {{ alertForm.alertThresholdType === 1 ? '可用卡密低于此数量时预警' : '可用比例低于此百分比时预警' }}
+          </span>
+        </el-form-item>
+        <el-form-item label="预警邮箱">
+          <el-input v-model="alertForm.alertEmail" placeholder="留空则使用系统设置的邮箱" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showAlertDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleSaveAlert" :loading="alertLoading">保存</el-button>
       </template>
     </el-dialog>
   </div>
@@ -551,10 +586,6 @@ onMounted(() => {
 }
 .config-card__stat.used { color: #ff9500; }
 .config-card__stat.avail { color: #34c759; }
-.config-card__meta {
-  font-size: 11px;
-  color: #86868b;
-}
 .config-card__del {
   position: absolute;
   top: 8px;
@@ -577,61 +608,11 @@ onMounted(() => {
   display: flex;
   gap: 8px;
 }
-.kami-detail__rules {
+.kami-detail__filters {
+  display: flex;
+  align-items: center;
   margin-bottom: 12px;
   flex-shrink: 0;
-}
-.rule-card {
-  padding: 10px 16px;
-  background: rgba(0,0,0,0.02);
-  border: 1px solid rgba(0,0,0,0.06);
-  border-radius: 10px;
-  margin-bottom: 12px;
-}
-.rule-card--collapsed {
-  margin-bottom: 8px;
-}
-.rule-card__header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  user-select: none;
-}
-.rule-card__icon {
-  font-size: 14px;
-}
-.rule-card__title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #1d1d1f;
-}
-.rule-card__arrow {
-  font-size: 10px;
-  color: #86868b;
-  margin-left: 4px;
-}
-.rule-card__summary {
-  font-size: 12px;
-  color: #86868b;
-  margin-left: auto;
-}
-.rule-card__body {
-  padding-top: 10px;
-}
-.rule-card__row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-.rule-card__row:last-child {
-  margin-bottom: 0;
-}
-.rule-card__label {
-  font-size: 13px;
-  color: #6e6e73;
-  white-space: nowrap;
 }
 .kami-detail__table {
   flex: 1;

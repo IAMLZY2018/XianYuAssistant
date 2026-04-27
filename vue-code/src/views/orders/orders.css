@@ -84,6 +84,54 @@
   align-items: center;
 }
 
+.orders__select-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.orders__select {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 36px;
+  padding: 0 32px 0 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--d-text-primary);
+  background: var(--d-surface);
+  border: 1px solid var(--d-border-strong);
+  border-radius: var(--d-radius-sm);
+  cursor: pointer;
+  transition: all var(--d-transition);
+  min-width: 120px;
+}
+
+.orders__select:hover {
+  background: var(--d-surface-hover);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.orders__select:focus {
+  outline: none;
+  border-color: var(--d-accent);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+}
+
+.orders__select-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--d-text-tertiary);
+  display: flex;
+  align-items: center;
+}
+
+.orders__select-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
 /* --- Buttons --- */
 .btn {
   display: inline-flex;

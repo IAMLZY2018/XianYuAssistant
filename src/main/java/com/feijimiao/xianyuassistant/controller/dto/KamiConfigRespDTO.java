@@ -13,9 +13,13 @@ public class KamiConfigRespDTO {
 
     private String aliasName;
 
-    private Integer deliveryMethod;
+    private Integer alertEnabled;
 
-    private Integer allowRepeat;
+    private Integer alertThresholdType;
+
+    private Integer alertThresholdValue;
+
+    private String alertEmail;
 
     private Integer totalCount;
 

@@ -3,7 +3,6 @@ package com.feijimiao.xianyuassistant.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.feijimiao.xianyuassistant.common.ResultObject;
 import com.feijimiao.xianyuassistant.controller.dto.*;
-import com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoReplyConfig;
 import com.feijimiao.xianyuassistant.entity.XianyuGoodsInfo;
 import com.feijimiao.xianyuassistant.service.ItemService;
 import com.feijimiao.xianyuassistant.utils.XianyuApiUtils;
@@ -951,31 +950,16 @@ public class ItemServiceImpl implements ItemService {
         }
     }
     
-    @Autowired
-    private com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoReplyConfigMapper autoReplyConfigMapper;
+
     
     /**
      * 获取自动回复配置
      */
     @Override
     public ResultObject<RagAutoReplyConfigRespDTO> getRagAutoReplyConfig(RagAutoReplyConfigReqDTO reqDTO) {
-        try {
-            XianyuGoodsAutoReplyConfig config = autoReplyConfigMapper.selectByAccountAndGoodsId(
-                    reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId());
-            
-            RagAutoReplyConfigRespDTO respDTO = new RagAutoReplyConfigRespDTO();
-            if (config != null) {
-                respDTO.setRagDelaySeconds(config.getRagDelaySeconds() != null ? config.getRagDelaySeconds() : 15);
-            } else {
-                // 默认值
-                respDTO.setRagDelaySeconds(15);
-            }
-            
-            return ResultObject.success(respDTO);
-        } catch (Exception e) {
-            log.error("获取自动回复配置失败", e);
-            return ResultObject.failed("获取自动回复配置失败: " + e.getMessage());
-        }
+        RagAutoReplyConfigRespDTO respDTO = new RagAutoReplyConfigRespDTO();
+        respDTO.setRagDelaySeconds(15);
+        return ResultObject.success(respDTO);
     }
     
     /**
@@ -983,32 +967,6 @@ public class ItemServiceImpl implements ItemService {
      */
     @Override
     public ResultObject<?> updateRagAutoReplyConfig(UpdateRagAutoReplyConfigReqDTO reqDTO) {
-        try {
-            // 查询现有配置
-            XianyuGoodsAutoReplyConfig config = autoReplyConfigMapper.selectByAccountAndGoodsId(
-                    reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId());
-            
-            if (config == null) {
-                // 创建新配置
-                config = new XianyuGoodsAutoReplyConfig();
-                config.setXianyuAccountId(reqDTO.getXianyuAccountId());
-                config.setXyGoodsId(reqDTO.getXyGoodsId());
-                config.setRagDelaySeconds(reqDTO.getRagDelaySeconds());
-                autoReplyConfigMapper.insert(config);
-                log.info("创建自动回复配置: accountId={}, goodsId={}", 
-                        reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId());
-            } else {
-                // 更新现有配置
-                config.setRagDelaySeconds(reqDTO.getRagDelaySeconds());
-                autoReplyConfigMapper.update(config);
-                log.info("更新自动回复配置: accountId={}, goodsId={}", 
-                        reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId());
-            }
-            
-            return ResultObject.success(null);
-        } catch (Exception e) {
-            log.error("更新自动回复配置失败", e);
-            return ResultObject.failed("更新自动回复配置失败: " + e.getMessage());
-        }
+        return ResultObject.success(null);
     }
 }

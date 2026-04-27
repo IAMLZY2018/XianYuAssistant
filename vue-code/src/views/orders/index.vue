@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { useOrderManager } from './useOrderManager'
-import { OrderStatus } from '@/constants/orderStatus'
 import './orders.css'
 
 import IconClipboard from '@/components/icons/IconClipboard.vue'
@@ -18,16 +17,18 @@ const {
   loading,
   orderList,
   total,
+  accounts,
   queryParams,
   totalPages,
+  loadAccounts,
   loadOrders,
+  handleAccountChange,
   handleReset,
   handlePageChange,
   copySId,
   handleConfirmShipment
 } = useOrderManager()
 
-// Mobile filter sheet
 const showFilterSheet = ref(false)
 const isMobile = ref(false)
 
@@ -35,25 +36,22 @@ const checkScreenSize = () => {
   isMobile.value = window.innerWidth < 768
 }
 
-onMounted(() => {
+onMounted(async () => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
+  await loadAccounts()
   loadOrders()
 })
 
-// Mobile filter fields (temporary)
 const filterGoodsId = ref('')
-const filterStatus = ref<number | undefined>(undefined)
 
 const openFilterSheet = () => {
   filterGoodsId.value = queryParams.xyGoodsId || ''
-  filterStatus.value = queryParams.orderStatus
   showFilterSheet.value = true
 }
 
 const applyFilter = () => {
   queryParams.xyGoodsId = filterGoodsId.value || undefined
-  queryParams.orderStatus = filterStatus.value
   queryParams.pageNum = 1
   showFilterSheet.value = false
   loadOrders()
@@ -61,25 +59,14 @@ const applyFilter = () => {
 
 const resetFilter = () => {
   filterGoodsId.value = ''
-  filterStatus.value = undefined
   handleReset()
   showFilterSheet.value = false
 }
 
-// Status filter chips
-const statusOptions = [
-  { value: 1, label: '待付款' },
-  { value: 2, label: '待发货' },
-  { value: 3, label: '已发货' },
-  { value: 4, label: '已完成' },
-  { value: 5, label: '已关闭' }
-]
-
-// Page buttons
 const getPageButtons = () => {
   const buttons: number[] = []
   const maxVisible = 5
-  let start = Math.max(1, queryParams.pageNum - Math.floor(maxVisible / 2))
+  let start = Math.max(1, queryParams.pageNum! - Math.floor(maxVisible / 2))
   const end = Math.min(totalPages.value, start + maxVisible - 1)
   start = Math.max(1, end - maxVisible + 1)
   for (let i = start; i <= end; i++) {
@@ -88,7 +75,6 @@ const getPageButtons = () => {
   return buttons
 }
 
-// Confirm shipment dialog
 const showConfirmDialog = ref(false)
 const confirmTargetOrder = ref<any>(null)
 
@@ -108,15 +94,29 @@ const executeConfirmShipment = async () => {
 
 <template>
   <div class="orders">
-    <!-- Header -->
     <div class="orders__header">
       <div class="orders__title-row">
         <div class="orders__title-icon">
           <IconClipboard />
         </div>
-        <h1 class="orders__title">订单管理</h1>
+        <h1 class="orders__title">发货记录</h1>
       </div>
       <div class="orders__actions">
+        <div class="orders__select-wrap">
+          <select
+            v-model="queryParams.xianyuAccountId"
+            class="orders__select"
+            @change="handleAccountChange"
+          >
+            <option :value="undefined" disabled>选择账号</option>
+            <option v-for="acc in accounts" :key="acc.id" :value="acc.id">
+              {{ acc.accountNote || acc.unb || `账号${acc.id}` }}
+            </option>
+          </select>
+          <span class="orders__select-icon">
+            <IconChevronDown />
+          </span>
+        </div>
         <button
           class="btn btn--secondary"
           :class="{ 'btn--loading': loading }"
@@ -133,7 +133,6 @@ const executeConfirmShipment = async () => {
       </div>
     </div>
 
-    <!-- Filter Bar (Desktop) -->
     <div v-if="!isMobile" class="orders__filter-bar">
       <div class="orders__input-wrap">
         <input
@@ -142,24 +141,6 @@ const executeConfirmShipment = async () => {
           placeholder="商品ID"
           @keyup.enter="loadOrders"
         />
-      </div>
-
-      <div class="orders__select-wrap">
-        <select
-          v-model="queryParams.orderStatus"
-          class="orders__select"
-          @change="loadOrders"
-        >
-          <option :value="undefined">全部状态</option>
-          <option :value="1">待付款</option>
-          <option :value="2">待发货</option>
-          <option :value="3">已发货</option>
-          <option :value="4">已完成</option>
-          <option :value="5">已关闭</option>
-        </select>
-        <span class="orders__select-icon">
-          <IconChevronDown />
-        </span>
       </div>
 
       <button class="btn btn--primary" @click="loadOrders">
@@ -176,17 +157,14 @@ const executeConfirmShipment = async () => {
       </span>
     </div>
 
-    <!-- Content Card -->
     <div class="orders__content">
-      <!-- Toolbar -->
       <div class="orders__toolbar">
-        <span class="orders__list-title">订单列表</span>
+        <span class="orders__list-title">发货列表</span>
         <span v-if="orderList.length > 0" class="orders__count">
-          {{ (queryParams.pageNum - 1) * queryParams.pageSize + 1 }}-{{ Math.min(queryParams.pageNum * queryParams.pageSize, total) }} / {{ total }}
+          {{ (queryParams.pageNum! - 1) * queryParams.pageSize! + 1 }}-{{ Math.min(queryParams.pageNum! * queryParams.pageSize!, total) }} / {{ total }}
         </span>
       </div>
 
-      <!-- Table/Cards -->
       <div class="orders__table-wrap">
         <OrderTable
           :order-list="orderList"
@@ -196,12 +174,11 @@ const executeConfirmShipment = async () => {
         />
       </div>
 
-      <!-- Pagination -->
       <div v-if="totalPages > 1" class="orders__pagination">
         <button
           class="orders__page-btn"
-          :class="{ 'orders__page-btn--disabled': queryParams.pageNum <= 1 }"
-          @click="handlePageChange(queryParams.pageNum - 1)"
+          :class="{ 'orders__page-btn--disabled': queryParams.pageNum! <= 1 }"
+          @click="handlePageChange(queryParams.pageNum! - 1)"
         >
           <IconChevronLeft />
         </button>
@@ -218,8 +195,8 @@ const executeConfirmShipment = async () => {
 
         <button
           class="orders__page-btn"
-          :class="{ 'orders__page-btn--disabled': queryParams.pageNum >= totalPages }"
-          @click="handlePageChange(queryParams.pageNum + 1)"
+          :class="{ 'orders__page-btn--disabled': queryParams.pageNum! >= totalPages }"
+          @click="handlePageChange(queryParams.pageNum! + 1)"
         >
           <IconChevronRight />
         </button>
@@ -228,7 +205,6 @@ const executeConfirmShipment = async () => {
       </div>
     </div>
 
-    <!-- Mobile Filter Sheet -->
     <Transition name="overlay-fade">
       <div v-if="showFilterSheet" class="orders__filter-overlay" @click="showFilterSheet = false">
         <div
@@ -248,21 +224,6 @@ const executeConfirmShipment = async () => {
             />
           </div>
 
-          <div class="orders__filter-group">
-            <label class="orders__filter-label">订单状态</label>
-            <div class="orders__filter-options">
-              <button
-                v-for="opt in statusOptions"
-                :key="opt.value"
-                class="orders__filter-chip"
-                :class="{ 'orders__filter-chip--active': filterStatus === opt.value }"
-                @click="filterStatus = filterStatus === opt.value ? undefined : opt.value"
-              >
-                {{ opt.label }}
-              </button>
-            </div>
-          </div>
-
           <div class="orders__filter-actions">
             <button class="btn btn--secondary" @click="resetFilter">重置</button>
             <button class="btn btn--primary" @click="applyFilter">查询</button>
@@ -271,7 +232,6 @@ const executeConfirmShipment = async () => {
       </div>
     </Transition>
 
-    <!-- Confirm Shipment Dialog -->
     <Transition name="overlay-fade">
       <div v-if="showConfirmDialog" class="orders__dialog-overlay" @click.self="showConfirmDialog = false">
         <div class="orders__dialog">

@@ -23,6 +23,8 @@ public interface KamiConfigService {
 
     ResultObject<List<KamiItemRespDTO>> getKamiItemsByConfigId(Long kamiConfigId);
 
+    ResultObject<List<KamiItemRespDTO>> getKamiItemsByConfigIdWithFilter(KamiItemQueryReqDTO reqDTO);
+
     ResultObject<Void> deleteKamiItem(Long id);
 
     ResultObject<Void> resetKamiItem(Long id);

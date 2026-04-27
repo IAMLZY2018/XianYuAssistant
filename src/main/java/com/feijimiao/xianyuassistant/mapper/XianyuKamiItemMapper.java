@@ -21,6 +21,21 @@ public interface XianyuKamiItemMapper extends BaseMapper<XianyuKamiItem> {
     @Select("SELECT * FROM xianyu_kami_item WHERE kami_config_id = #{kamiConfigId} ORDER BY sort_order ASC")
     List<XianyuKamiItem> findByConfigId(@Param("kamiConfigId") Long kamiConfigId);
 
+    @Select("<script>" +
+            "SELECT * FROM xianyu_kami_item WHERE kami_config_id = #{kamiConfigId} " +
+            "<if test='status != null'>" +
+            "AND status = #{status} " +
+            "</if>" +
+            "<if test='keyword != null and keyword != \"\"'>" +
+            "AND kami_content LIKE '%' || #{keyword} || '%' " +
+            "</if>" +
+            "ORDER BY sort_order ASC" +
+            "</script>")
+    List<XianyuKamiItem> findByConfigIdWithFilter(
+            @Param("kamiConfigId") Long kamiConfigId,
+            @Param("status") Integer status,
+            @Param("keyword") String keyword);
+
     @Select("SELECT COUNT(*) FROM xianyu_kami_item WHERE kami_config_id = #{kamiConfigId} AND status = 0")
     int countUnused(@Param("kamiConfigId") Long kamiConfigId);
 

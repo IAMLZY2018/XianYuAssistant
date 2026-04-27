@@ -3,11 +3,8 @@ package com.feijimiao.xianyuassistant.websocket.handler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.feijimiao.xianyuassistant.config.WebSocketConfig;
 import com.feijimiao.xianyuassistant.entity.XianyuChatMessage;
-import com.feijimiao.xianyuassistant.entity.XianyuOrder;
-import com.feijimiao.xianyuassistant.enums.OrderStatusEnum;
 import com.feijimiao.xianyuassistant.event.chatMessageEvent.ChatMessageData;
 import com.feijimiao.xianyuassistant.event.chatMessageEvent.ChatMessageReceivedEvent;
-import com.feijimiao.xianyuassistant.service.OrderService;
 import com.feijimiao.xianyuassistant.service.GoodsInfoService;
 import com.feijimiao.xianyuassistant.entity.XianyuGoodsInfo;
 import com.feijimiao.xianyuassistant.utils.MessageDecryptUtils;
@@ -39,9 +36,6 @@ public class SyncMessageHandler extends AbstractLwpHandler {
     
     @Autowired
     private ApplicationEventPublisher eventPublisher;
-    
-    @Autowired
-    private OrderService orderService;
     
     @Autowired
     private GoodsInfoService goodsInfoService;
@@ -309,11 +303,6 @@ public class SyncMessageHandler extends AbstractLwpHandler {
             ChatMessageReceivedEvent event = new ChatMessageReceivedEvent(this, messageData);
             eventPublisher.publishEvent(event);
             
-            // 如果有订单ID，保存订单信息
-            if (orderId != null && !orderId.isEmpty()) {
-                saveOrderInfo(message, orderId);
-            }
-            
             log.info("【账号{}】ChatMessageReceivedEvent事件已发布: pnmId={}, orderId={}", 
                     message.getXianyuAccountId(), message.getPnmId(), orderId);
         } catch (Exception e) {
@@ -525,63 +514,6 @@ public class SyncMessageHandler extends AbstractLwpHandler {
         } catch (Exception e) {
             // 如果格式化失败，返回原始字符串
             return json;
-        }
-    }
-    
-    /**
-     * 保存订单信息
-     * 只保存"等待卖家发货"状态的订单
-     */
-    private void saveOrderInfo(XianyuChatMessage message, String orderId) {
-        try {
-            // 根据消息内容判断订单状态
-            String msgContent = message.getMsgContent();
-            
-            // 只处理"等待卖家发货"的消息
-            if (msgContent == null || !msgContent.contains("等待卖家发货")) {
-                log.debug("📋 跳过非发货订单消息: orderId={}, msgContent={}", 
-                        orderId, msgContent);
-                return;
-            }
-            
-            XianyuOrder order = new XianyuOrder();
-            order.setXianyuAccountId(message.getXianyuAccountId());
-            order.setOrderId(orderId);
-            order.setXyGoodsId(message.getXyGoodsId());
-            order.setBuyerUserId(message.getSenderUserId());
-            order.setBuyerUserName(message.getSenderUserName());
-            order.setPnmId(message.getPnmId());
-            order.setSId(message.getSId());
-            order.setReminderUrl(message.getReminderUrl());
-            order.setOrderCreateTime(message.getMessageTime());
-            order.setCompleteMsg(message.getCompleteMsg());
-            
-            // 查询商品信息并设置商品标题
-            if (message.getXyGoodsId() != null && !message.getXyGoodsId().isEmpty()) {
-                try {
-                    XianyuGoodsInfo goodsInfo = goodsInfoService.getByXyGoodId(message.getXyGoodsId());
-                    if (goodsInfo != null && goodsInfo.getTitle() != null) {
-                        order.setGoodsTitle(goodsInfo.getTitle());
-                    }
-                } catch (Exception e) {
-                    log.warn("查询商品标题失败: xyGoodsId={}", message.getXyGoodsId(), e);
-                }
-            }
-            
-            // 设置订单状态为"等待卖家发货"
-            order.setOrderStatus(OrderStatusEnum.WAITING_DELIVERY.getCode());
-            order.setOrderStatusText(OrderStatusEnum.WAITING_DELIVERY.getDescription());
-            order.setOrderPayTime(message.getMessageTime());
-            
-            // 保存或更新订单
-            orderService.saveOrUpdateOrder(order);
-            
-            log.info("✅ 订单信息已保存: accountId={}, orderId={}, status={}", 
-                    order.getXianyuAccountId(), orderId, order.getOrderStatusText());
-            
-        } catch (Exception e) {
-            log.error("❌ 保存订单信息失败: accountId={}, orderId={}", 
-                    message.getXianyuAccountId(), orderId, e);
         }
     }
     

@@ -4,8 +4,10 @@ export interface KamiConfig {
   id: number;
   xianyuAccountId: number;
   aliasName: string;
-  deliveryMethod: number;
-  allowRepeat: number;
+  alertEnabled?: number;
+  alertThresholdType?: number;
+  alertThresholdValue?: number;
+  alertEmail?: string;
   totalCount: number;
   usedCount: number;
   availableCount: number;
@@ -28,8 +30,16 @@ export interface SaveKamiConfigReq {
   id?: number;
   xianyuAccountId: number;
   aliasName?: string;
-  deliveryMethod?: number;
-  allowRepeat?: number;
+  alertEnabled?: number;
+  alertThresholdType?: number;
+  alertThresholdValue?: number;
+  alertEmail?: string;
+}
+
+export interface QueryKamiItemsReq {
+  kamiConfigId: number;
+  status?: number;
+  keyword?: string;
 }
 
 export function saveKamiConfig(data: SaveKamiConfigReq) {
@@ -85,6 +95,14 @@ export function getKamiItemsByConfigId(kamiConfigId: number) {
     url: '/kami-config/item/list',
     method: 'POST',
     params: { kamiConfigId }
+  });
+}
+
+export function queryKamiItems(data: QueryKamiItemsReq) {
+  return request<KamiItem[]>({
+    url: '/kami-config/item/query',
+    method: 'POST',
+    data
   });
 }
 

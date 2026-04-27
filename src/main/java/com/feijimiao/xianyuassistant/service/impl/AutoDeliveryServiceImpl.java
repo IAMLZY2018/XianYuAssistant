@@ -1,13 +1,11 @@
 package com.feijimiao.xianyuassistant.service.impl;
 
 import com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoDeliveryConfig;
-import com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoDeliveryRecord;
-import com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoReplyConfig;
+import com.feijimiao.xianyuassistant.entity.XianyuGoodsOrder;
 import com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoReplyRecord;
 import com.feijimiao.xianyuassistant.entity.XianyuGoodsConfig;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoDeliveryConfigMapper;
-import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoDeliveryRecordMapper;
-import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoReplyConfigMapper;
+import com.feijimiao.xianyuassistant.mapper.XianyuGoodsOrderMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoReplyRecordMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsConfigMapper;
 import com.feijimiao.xianyuassistant.service.AutoDeliveryService;
@@ -35,10 +33,7 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
     private XianyuGoodsAutoDeliveryConfigMapper autoDeliveryConfigMapper;
     
     @Autowired
-    private XianyuGoodsAutoDeliveryRecordMapper autoDeliveryRecordMapper;
-    
-    @Autowired
-    private XianyuGoodsAutoReplyConfigMapper autoReplyConfigMapper;
+    private XianyuGoodsOrderMapper orderMapper;
     
     @Autowired
     private XianyuGoodsAutoReplyRecordMapper autoReplyRecordMapper;
@@ -97,17 +92,18 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
      */
     public void recordAutoDelivery(Long accountId, String xyGoodsId, String buyerUserId, String buyerUserName, 
                                    String content, Integer state, String pnmId, String orderId) {
-        XianyuGoodsAutoDeliveryRecord record = new XianyuGoodsAutoDeliveryRecord();
+        XianyuGoodsOrder record = new XianyuGoodsOrder();
         record.setXianyuAccountId(accountId);
         record.setXyGoodsId(xyGoodsId);
         record.setBuyerUserId(buyerUserId);
         record.setBuyerUserName(buyerUserName);
         record.setContent(content);
         record.setState(state);
-        record.setPnmId(pnmId != null ? pnmId : "");  // 设置默认值，避免 null
-        record.setOrderId(orderId != null ? orderId : "");  // 设置默认值，避免 null
+        record.setPnmId(pnmId != null ? pnmId : "");
+        record.setOrderId(orderId != null ? orderId : "");
+        record.setConfirmState(0);
         
-        autoDeliveryRecordMapper.insert(record);
+        orderMapper.insert(record);
     }
     
     /**
@@ -185,116 +181,9 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
     
     @Override
     public void handleAutoReply(Long accountId, String xyGoodsId, String sId, String buyerMessage) {
-        try {
-            log.info("【账号{}】处理自动回复: xyGoodsId={}, sId={}, buyerMessage={}", 
-                    accountId, xyGoodsId, sId, buyerMessage);
-            
-            // 1. 检查商品是否开启自动回复
-            XianyuGoodsConfig goodsConfig = getGoodsConfig(accountId, xyGoodsId);
-            if (goodsConfig == null || goodsConfig.getXianyuAutoReplyOn() != 1) {
-                log.info("【账号{}】商品未开启自动回复: xyGoodsId={}", accountId, xyGoodsId);
-                return;
-            }
-            
-            // 2. 获取自动回复配置列表
-            XianyuGoodsAutoReplyConfig replyConfig = autoReplyConfigMapper.selectByAccountAndGoodsId(accountId, xyGoodsId);
-            List<XianyuGoodsAutoReplyConfig> replyConfigs = new ArrayList<>();
-            if (replyConfig != null) {
-                replyConfigs.add(replyConfig);
-            }
-            if (replyConfigs.isEmpty()) {
-                log.info("【账号{}】商品未配置自动回复规则: xyGoodsId={}", accountId, xyGoodsId);
-                return;
-            }
-            
-            // 3. 匹配关键词
-            XianyuGoodsAutoReplyConfig matchedConfig = null;
-            String matchedKeyword = null;
-            
-            for (XianyuGoodsAutoReplyConfig config : replyConfigs) {
-                String[] keywords = config.getKeyword().split(",");
-                
-                for (String keyword : keywords) {
-                    keyword = keyword.trim();
-                    
-                    boolean matched = false;
-                    Integer matchType = config.getMatchType();
-                    
-                    if (matchType == null || matchType == 1) {
-                        // 包含匹配
-                        matched = buyerMessage.contains(keyword);
-                    } else if (matchType == 2) {
-                        // 完全匹配
-                        matched = buyerMessage.equals(keyword);
-                    } else if (matchType == 3) {
-                        // 正则匹配
-                        try {
-                            matched = Pattern.matches(keyword, buyerMessage);
-                        } catch (Exception e) {
-                            log.warn("【账号{}】正则表达式错误: {}", accountId, keyword, e);
-                        }
-                    }
-                    
-                    if (matched) {
-                        matchedConfig = config;
-                        matchedKeyword = keyword;
-                        log.info("【账号{}】匹配到关键词: {}, 匹配类型: {}", accountId, keyword, matchType);
-                        break;
-                    }
-                }
-                
-                if (matchedConfig != null) {
-                    break;
-                }
-            }
-            
-            // 4. 如果没有匹配到关键词，不回复
-            if (matchedConfig == null) {
-                log.info("【账号{}】买家消息未匹配到任何关键词: {}", accountId, buyerMessage);
-                return;
-            }
-            
-            String replyContent = matchedConfig.getReplyContent();
-            log.info("【账号{}】准备发送自动回复: content={}", accountId, replyContent);
-            
-            // 5. 模拟人工操作：阅读消息 + 思考 + 打字延迟
-
-            // 5.1 阅读买家消息的延迟
-            com.feijimiao.xianyuassistant.utils.HumanLikeDelayUtils.readingDelay(buyerMessage.length());
-
-            // 5.2 思考延迟（1-4秒）
-            com.feijimiao.xianyuassistant.utils.HumanLikeDelayUtils.thinkingDelay();
-
-            // 5.3 打字延迟（根据回复内容长度）
-            com.feijimiao.xianyuassistant.utils.HumanLikeDelayUtils.typingDelay(replyContent.length());
-            
-            // 6. 从sId中提取cid和toId
-            String cid = sId.replace("@goofish", "");
-            String toId = cid;
-            
-            // 7. 发送消息
-            boolean success = webSocketService.sendMessage(accountId, cid, toId, replyContent);
-            
-            // 8. 记录回复结果
-            recordAutoReply(accountId, xyGoodsId, buyerMessage, replyContent, matchedKeyword, success ? 1 : 0);
-            
-            if (success) {
-                log.info("【账号{}】自动回复成功: xyGoodsId={}, keyword={}, reply={}", 
-                        accountId, xyGoodsId, matchedKeyword, replyContent);
-                // 关键词自动回复消息入库（contentType=888，AI助手回复）
-                sentMessageSaveService.saveAiAssistantReply(accountId, cid, toId, replyContent, xyGoodsId);
-            } else {
-                log.error("【账号{}】自动回复失败: xyGoodsId={}", accountId, xyGoodsId);
-            }
-            
-        } catch (Exception e) {
-            log.error("【账号{}】自动回复异常: xyGoodsId={}", accountId, xyGoodsId, e);
-        }
+        log.info("【账号{}】自动回复功能已移除: xyGoodsId={}", accountId, xyGoodsId);
     }
     
-    /**
-     * 记录自动回复
-     */
     private void recordAutoReply(Long accountId, String xyGoodsId, String buyerMessage, 
                                   String replyContent, String matchedKeyword, Integer state) {
         try {
@@ -325,15 +214,15 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
         int offset = (pageNum - 1) * pageSize;
         
         // 查询记录
-        List<XianyuGoodsAutoDeliveryRecord> records = autoDeliveryRecordMapper.selectByAccountIdWithPage(
+        List<XianyuGoodsOrder> records = orderMapper.selectByAccountIdWithPage(
                 accountId, xyGoodsId, pageSize, offset);
         
         // 统计总数
-        long total = autoDeliveryRecordMapper.countByAccountId(accountId, xyGoodsId);
+        long total = orderMapper.countByAccountId(accountId, xyGoodsId);
         
         // 转换为DTO
         List<com.feijimiao.xianyuassistant.controller.dto.AutoDeliveryRecordDTO> recordDTOs = new ArrayList<>();
-        for (XianyuGoodsAutoDeliveryRecord record : records) {
+        for (XianyuGoodsOrder record : records) {
             com.feijimiao.xianyuassistant.controller.dto.AutoDeliveryRecordDTO dto = 
                     new com.feijimiao.xianyuassistant.controller.dto.AutoDeliveryRecordDTO();
             dto.setId(record.getId());
@@ -342,6 +231,7 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             dto.setBuyerUserName(record.getBuyerUserName());
             dto.setContent(record.getContent());
             dto.setState(record.getState());
+            dto.setConfirmState(record.getConfirmState());
             dto.setOrderId(record.getOrderId());
             dto.setCreateTime(record.getCreateTime());
             recordDTOs.add(dto);
@@ -368,27 +258,30 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
 
             log.info("【账号{}】触发自动发货: xyGoodsId={}, orderId={}", accountId, xyGoodsId, orderId);
 
-            // 1. 获取订单信息
-            com.feijimiao.xianyuassistant.entity.XianyuOrder order = 
-                    autoDeliveryRecordMapper.selectOrderByOrderId(accountId, orderId);
+            // 1. 获取订单记录
+            XianyuGoodsOrder record = orderMapper.selectByOrderId(accountId, orderId);
             
-            if (order == null) {
-                log.warn("【账号{}】订单不存在: orderId={}", accountId, orderId);
-                return com.feijimiao.xianyuassistant.common.ResultObject.failed("订单不存在");
+            if (record == null) {
+                log.warn("【账号{}】发货记录不存在: orderId={}", accountId, orderId);
+                return com.feijimiao.xianyuassistant.common.ResultObject.failed("发货记录不存在");
             }
 
-            // 2. 获取会话ID (sId)
-            String sId = order.getSId();
-            if (sId == null || sId.isEmpty()) {
-                log.warn("【账号{}】订单没有会话ID: orderId={}", accountId, orderId);
-                return com.feijimiao.xianyuassistant.common.ResultObject.failed("订单没有会话ID");
+            // 2. 获取会话ID (从pnmId中提取)
+            String pnmId = record.getPnmId();
+            if (pnmId == null || pnmId.isEmpty()) {
+                log.warn("【账号{}】发货记录没有pnmId: orderId={}", accountId, orderId);
+                return com.feijimiao.xianyuassistant.common.ResultObject.failed("发货记录没有pnmId");
             }
 
             // 3. 获取买家信息
-            String buyerUserId = order.getBuyerUserId();
-            String buyerUserName = order.getBuyerUserName();
+            String buyerUserId = record.getBuyerUserId();
+            String buyerUserName = record.getBuyerUserName();
 
-            // 4. 调用handleAutoDelivery触发自动发货（传入orderId）
+            // 4. 从pnmId提取sId（格式通常是 xxx.PNM，需要从消息记录中获取）
+            // 这里暂时用空字符串，实际应该从消息表查询
+            String sId = "";
+
+            // 5. 调用handleAutoDelivery触发自动发货（传入orderId）
             handleAutoDelivery(accountId, xyGoodsId, sId, buyerUserId, buyerUserName, orderId);
 
             return com.feijimiao.xianyuassistant.common.ResultObject.success("触发自动发货成功");
