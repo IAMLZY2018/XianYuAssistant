@@ -1,9 +1,12 @@
 server:
   port: 12400
 
-# AI功能开关（默认关闭，开启需要部署Chroma向量数据库并配置ALI_API_KEY）
+# AI功能开关（默认开启，API Key从数据库xianyu_sys_setting表读取，未配置时AI功能自动降级）
 ai:
-  enabled: false
+  enabled: true
+  vectorstore:
+    simple:
+          file-path: dbdata/vectorstore.json
 
 # JWT配置
 jwt:
@@ -14,26 +17,12 @@ jwt:
 spring:
   datasource:
     url: jdbc:sqlite:dbdata/xianyu_assistant.db
-  ai:
-    openai:
-      api-key: ${ALI_API_KEY}
-      base-url: https://dashscope.aliyuncs.com/compatible-mode
-      chat:
-        options:
-          model: deepseek-v3
-          temperature: 0.7
-      embedding:
-        base-url: https://dashscope.aliyuncs.com/compatible-mode
-        options:
-          model: text-embedding-v2
-    vectorstore:
-      chroma:
-        client:
-          host: http://iamlzy.home
-          port: 8321
-        initialize-schema: true
-        tenant-name: default_tenant
-        database-name: default_database
+  # AI配置说明：
+  # - ai_api_key、ai_base_url、ai_model 配置在数据库 xianyu_sys_setting 表中
+  # - 通过 DynamicAIChatClientManager 动态读取，支持热更新无需重启
+  # - 默认值：base_url=https://dashscope.aliyuncs.com/compatible-mode, model=deepseek-v3
+
+# SimpleVectorStore配置（本地文件持久化）
 
 # MyBatis配置
 mybatis-plus:

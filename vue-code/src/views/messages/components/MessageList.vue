@@ -37,18 +37,24 @@ onUnmounted(() => {
 // These will be injected from parent via provide/inject or props
 // For simplicity, we define them here and accept as part of the interface
 const getContentTypeColor = (contentType: number, isUser: boolean) => {
+  if (contentType === 999) return '#5856d6'
+  if (contentType === 888) return '#af52de'
   if (!isUser) return '#007aff'
   if (contentType === 1) return '#34c759'
   return '#ff9500'
 }
 
 const getContentTypeBg = (contentType: number, isUser: boolean) => {
+  if (contentType === 999) return 'rgba(88, 86, 214, 0.1)'
+  if (contentType === 888) return 'rgba(175, 82, 222, 0.1)'
   if (!isUser) return 'rgba(0, 122, 255, 0.1)'
   if (contentType === 1) return 'rgba(52, 199, 89, 0.1)'
   return 'rgba(255, 149, 0, 0.1)'
 }
 
 const getContentTypeText = (contentType: number, isUser: boolean) => {
+  if (contentType === 999) return '手动回复'
+  if (contentType === 888) return '自动回复'
   if (!isUser) return '我发送的'
   if (contentType === 1) return '用户消息'
   return `系统消息`

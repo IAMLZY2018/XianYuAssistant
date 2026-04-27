@@ -7,6 +7,7 @@ import { showSuccess, showError, showInfo } from '@/utils';
 import ManualUpdateCookieDialog from './ManualUpdateCookieDialog.vue';
 import ManualUpdateTokenDialog from './ManualUpdateTokenDialog.vue';
 import QRUpdateDialog from './QRUpdateDialog.vue';
+import CaptchaGuideDialog from './CaptchaGuideDialog.vue';
 
 interface ConnectionStatus {
   xianyuAccountId: number;
@@ -42,6 +43,8 @@ const showManualUpdateCookieDialog = ref(false);
 const showManualUpdateTokenDialog = ref(false);
 // 扫码更新对话框
 const showQRUpdateDialog = ref(false);
+// 滑块验证引导对话框
+const showCaptchaGuideDialog = ref(false);
 
 // 响应式检测
 const isMobile = ref(false);
@@ -95,31 +98,7 @@ const handleStartConnection = async () => {
       await loadConnectionStatus();
     } else if (response.code === 1001 && response.data?.needCaptcha) {
       addLog('⚠️ 检测到需要滑块验证', true);
-      
-      await ElMessageBox.confirm(
-        `检测到账号需要完成滑块验证才能启动连接。\n\n` +
-        `📋 操作步骤：\n\n` +
-        `1️⃣ 点击下方"访问闲鱼IM"按钮，打开闲鱼消息页面\n\n` +
-        `2️⃣ 在闲鱼页面完成滑块验证\n\n` +
-        `3️⃣ 验证成功后，点击本页面 Cookie 和 Token 区域的"❓ 如何获取？"按钮\n\n` +
-        `4️⃣ 按照帮助教程获取 Cookie 和 Token\n\n` +
-        `5️⃣ 点击"✏️ 手动更新"按钮，粘贴 Cookie 和 Token\n\n` +
-        `6️⃣ 更新完成后，重新点击"启动连接"即可\n\n` +
-        `💡 提示：帮助按钮中有详细的图文教程，非常简单！`,
-        '🔐 需要滑块验证',
-        {
-          confirmButtonText: '🌐 访问闲鱼IM',
-          cancelButtonText: '取消',
-          type: 'warning',
-          distinguishCancelAndClose: true,
-          customClass: 'captcha-guide-dialog'
-        }
-      );
-      
-      window.open('https://www.goofish.com/im', '_blank');
-      addLog('✅ 已打开闲鱼IM页面');
-      addLog('📌 完成验证后，请点击"❓ 如何获取？"按钮查看教程');
-      showInfo('请在闲鱼IM页面完成验证，然后使用帮助按钮获取Cookie和Token');
+      showCaptchaGuideDialog.value = true;
     } else {
       throw new Error(response.msg || '启动连接失败');
     }
@@ -337,6 +316,14 @@ const handleManualUpdateTokenSuccess = async () => {
 const handleQRUpdateSuccess = async () => {
   addLog('Cookie和Token已通过扫码更新');
   await loadConnectionStatus();
+};
+
+// 滑块验证确认回调
+const handleCaptchaConfirm = () => {
+  window.open('https://www.goofish.com/im', '_blank');
+  addLog('✅ 已打开闲鱼IM页面');
+  addLog('📌 完成验证后，请点击"❓ 如何获取？"按钮查看教程');
+  showInfo('请在闲鱼IM页面完成验证，然后使用帮助按钮获取Cookie和Token');
 };
 
 // 关闭对话框
@@ -608,6 +595,12 @@ onBeforeUnmount(() => {
       v-model="showQRUpdateDialog"
       :account-id="accountId || 0"
       @success="handleQRUpdateSuccess"
+    />
+
+    <!-- 滑块验证引导对话框 -->
+    <CaptchaGuideDialog
+      v-model="showCaptchaGuideDialog"
+      @confirm="handleCaptchaConfirm"
     />
   </el-dialog>
 </template>

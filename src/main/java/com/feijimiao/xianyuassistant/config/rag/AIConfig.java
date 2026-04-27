@@ -1,33 +1,18 @@
 package com.feijimiao.xianyuassistant.config.rag;
 
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.model.openai.autoconfigure.OpenAiChatAutoConfiguration;
-import org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration;
-import org.springframework.ai.vectorstore.chroma.autoconfigure.ChromaVectorStoreAutoConfiguration;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 
 /**
+ * AI配置类
+ * ChatClient的创建由DynamicAIChatClientManager管理，从数据库读取API Key动态创建
+ * 不再依赖Spring AI自动配置，系统启动时无需配置API Key
+ *
  * @author IAMLZY
  * @date 2026/4/10 22:43
- * @description AI配置，仅在ai.enabled=true时加载，并引入Spring AI自动配置
  */
 @Configuration
-@ConditionalOnProperty(name = "ai.enabled", havingValue = "true")
-@Import({
-    OpenAiChatAutoConfiguration.class,
-    OpenAiEmbeddingAutoConfiguration.class,
-    ChromaVectorStoreAutoConfiguration.class
-})
 public class AIConfig {
-    @Bean
-    @Qualifier("XianYuChatClient")
-    public ChatClient chatClient(ChatClient.Builder builder) {
-        return builder
-                .defaultSystem("你是一个闲鱼智能客服助手")
-                .build();
-    }
+    // ChatClient由DynamicAIChatClientManager动态管理
+    // API Key从数据库xianyu_sys_setting表读取
+    // 配置变更后自动重建，无需重启服务
 }

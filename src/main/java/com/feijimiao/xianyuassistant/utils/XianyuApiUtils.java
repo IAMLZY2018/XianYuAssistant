@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -100,52 +101,149 @@ public class XianyuApiUtils {
      * @param spmPre SPM前缀（可选）
      * @return API响应字符串
      */
-    public static String callApi(String apiName, Map<String, Object> dataMap, String cookiesStr, 
+    public static String callApi(String apiName, Map<String, Object> dataMap, String cookiesStr,
                                   String spmCnt, String spmPre) {
         try {
             // 1. 解析Cookie获取token
             Map<String, String> cookies = XianyuSignUtils.parseCookies(cookiesStr);
             String token = XianyuSignUtils.extractToken(cookies);
-            
+
             if (token == null || token.isEmpty()) {
                 log.error("无法从Cookie中提取token");
                 return null;
             }
-            
+
             // 2. 生成时间戳
             String timestamp = String.valueOf(System.currentTimeMillis());
-            
+
             // 3. 序列化数据
             String dataJson = objectMapper.writeValueAsString(dataMap);
-            
+
             // 4. 生成签名
             String sign = XianyuSignUtils.generateSign(timestamp, token, dataJson);
-            
+
             // 5. 构建URL参数
             Map<String, String> params = buildStandardParams(apiName, timestamp, sign);
-            
+
             // 6. 添加SPM参数（如果提供）
             if (spmCnt != null || spmPre != null) {
                 addSpmParams(params, spmCnt, spmPre);
             }
-            
+
             // 7. 构建完整URL
             String url = buildUrl(apiName, params);
-            
+
             // 8. 构建请求头
             Map<String, String> headers = buildStandardHeaders(cookiesStr);
-            
+
             // 9. 构建请求体
             Map<String, String> body = new HashMap<>();
             body.put("data", dataJson);
-            
+
             // 10. 发送请求
             log.info("调用闲鱼API: {}", apiName);
             return HttpClientUtils.post(url, headers, body);
-            
+
         } catch (Exception e) {
             log.error("调用闲鱼API失败: apiName={}", apiName, e);
             return null;
+        }
+    }
+
+    /**
+     * 调用闲鱼API（POST方法，返回包含响应头的结果）
+     * 【关键】参考Python：所有API调用都需要处理Set-Cookie
+     *
+     * @param apiName API名称
+     * @param dataMap 数据Map
+     * @param cookiesStr Cookie字符串
+     * @param spmCnt SPM计数（可选）
+     * @param spmPre SPM前缀（可选）
+     * @return ApiCallResultWithHeaders 包含响应体和响应头的结果
+     */
+    public static ApiCallResultWithHeaders callApiWithHeaders(String apiName, Map<String, Object> dataMap, String cookiesStr,
+                                                               String spmCnt, String spmPre) {
+        try {
+            // 1. 解析Cookie获取token
+            Map<String, String> cookies = XianyuSignUtils.parseCookies(cookiesStr);
+            String token = XianyuSignUtils.extractToken(cookies);
+
+            if (token == null || token.isEmpty()) {
+                log.error("无法从Cookie中提取token");
+                return new ApiCallResultWithHeaders(null, null);
+            }
+
+            // 2. 生成时间戳
+            String timestamp = String.valueOf(System.currentTimeMillis());
+
+            // 3. 序列化数据
+            String dataJson = objectMapper.writeValueAsString(dataMap);
+
+            // 4. 生成签名
+            String sign = XianyuSignUtils.generateSign(timestamp, token, dataJson);
+
+            // 5. 构建URL参数
+            Map<String, String> params = buildStandardParams(apiName, timestamp, sign);
+
+            // 6. 添加SPM参数（如果提供）
+            if (spmCnt != null || spmPre != null) {
+                addSpmParams(params, spmCnt, spmPre);
+            }
+
+            // 7. 构建完整URL
+            String url = buildUrl(apiName, params);
+
+            // 8. 构建请求头
+            Map<String, String> headers = buildStandardHeaders(cookiesStr);
+
+            // 9. 构建请求体
+            Map<String, String> body = new HashMap<>();
+            body.put("data", dataJson);
+
+            // 10. 发送请求（带响应头）
+            log.info("调用闲鱼API(带响应头): {}", apiName);
+            HttpClientUtils.HttpResponseResult result = HttpClientUtils.postWithHeaders(url, headers, body);
+
+            return new ApiCallResultWithHeaders(
+                result != null ? result.getBody() : null,
+                result != null ? result.getHeaders() : null
+            );
+
+        } catch (Exception e) {
+            log.error("调用闲鱼API失败: apiName={}", apiName, e);
+            return new ApiCallResultWithHeaders(null, null);
+        }
+    }
+
+    /**
+     * API调用结果（包含响应头）
+     */
+    public static class ApiCallResultWithHeaders {
+        private final String body;
+        private final Map<String, List<String>> headers;
+
+        public ApiCallResultWithHeaders(String body, Map<String, List<String>> headers) {
+            this.body = body;
+            this.headers = headers;
+        }
+
+        public String getBody() {
+            return body;
+        }
+
+        public Map<String, List<String>> getHeaders() {
+            return headers;
+        }
+
+        /**
+         * 获取Set-Cookie头
+         */
+        public List<String> getSetCookieHeaders() {
+            if (headers == null) {
+                return java.util.Collections.emptyList();
+            }
+            List<String> setCookies = headers.get("Set-Cookie");
+            return setCookies != null ? setCookies : java.util.Collections.emptyList();
         }
     }
     

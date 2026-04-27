@@ -100,9 +100,14 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
     private static final int MAX_COOKIE_RETRY_COUNT = 2;
 
     /**
-     * 重试间隔（毫秒）
+     * 重试间隔基础值（毫秒）
      */
-    private static final long RETRY_INTERVAL = 500;
+    private static final long RETRY_INTERVAL_BASE = 500;
+
+    /**
+     * 重试间隔随机范围（毫秒）
+     */
+    private static final long RETRY_INTERVAL_RANDOM = 1000;
 
     /**
      * 每个账号的Token获取锁，防止并发获取
@@ -463,7 +468,9 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
                     accountId, reason, retryCount + 1, MAX_TOKEN_RETRY_COUNT);
 
             try {
-                Thread.sleep(RETRY_INTERVAL);
+                // 随机间隔500-1500ms，避免固定间隔被识别为机器人
+                long randomInterval = RETRY_INTERVAL_BASE + new java.util.Random().nextLong(RETRY_INTERVAL_RANDOM);
+                Thread.sleep(randomInterval);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -517,7 +524,9 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
                 log.info("【账号{}】hasLogin成功，登录态有效，准备重新获取Token（重置重试计数）", accountId);
 
                 try {
-                    Thread.sleep(RETRY_INTERVAL);
+                    // 随机间隔500-1500ms，避免固定间隔被识别为机器人
+                    long randomInterval = RETRY_INTERVAL_BASE + new java.util.Random().nextLong(RETRY_INTERVAL_RANDOM);
+                    Thread.sleep(randomInterval);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }

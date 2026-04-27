@@ -171,6 +171,7 @@ CREATE TABLE IF NOT EXISTS xianyu_goods_config (
     xy_goods_id VARCHAR(100) NOT NULL,                -- 闲鱼的商品ID
     xianyu_auto_delivery_on TINYINT DEFAULT 0,        -- 自动发货开关：1-开启，0-关闭，默认关闭
     xianyu_auto_reply_on TINYINT DEFAULT 0,           -- 自动回复开关：1-开启，0-关闭，默认关闭
+    xianyu_auto_reply_context_on TINYINT DEFAULT 1,   -- 携带上下文开关：1-开启，0-关闭，默认开启，跟随自动回复开关
     create_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 创建时间
     update_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 更新时间
     FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
@@ -277,6 +278,7 @@ CREATE TABLE IF NOT EXISTS xianyu_goods_auto_reply_record (
     reply_content TEXT,                               -- 回复消息内容
     reply_type TINYINT DEFAULT 1,                     -- 回复类型：1-关键词匹配，2-RAG智能回复
     matched_keyword VARCHAR(200),                     -- 匹配的关键词
+    trigger_context TEXT,                             -- 触发上下文JSON（包含触发消息列表和RAG命中资料列表）
     state TINYINT DEFAULT 0,                          -- 状态：0-待回复，1-成功，-1-失败
     create_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 创建时间
     FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
@@ -432,4 +434,16 @@ END;
 INSERT OR IGNORE INTO xianyu_sys_setting (setting_key, setting_value, setting_desc)
 VALUES ('sys_prompt', '你是一个闲鱼卖家，你叫肥极喵，不要回复的像AI，简短回答
 参考相关信息回答,不要乱回答,不知道就换不同语气回复提示用户详细点询问', 'AI智能回复的系统提示词');
+
+-- AI API Key配置（初始为空，用户在前端设置页面配置后生效）
+INSERT OR IGNORE INTO xianyu_sys_setting (setting_key, setting_value, setting_desc)
+VALUES ('ai_api_key', '', 'AI服务的API Key（配置后立即生效，无需重启）');
+
+-- AI API Base URL配置
+INSERT OR IGNORE INTO xianyu_sys_setting (setting_key, setting_value, setting_desc)
+VALUES ('ai_base_url', 'https://dashscope.aliyuncs.com/compatible-mode', 'AI服务的API Base URL');
+
+-- AI 模型配置
+INSERT OR IGNORE INTO xianyu_sys_setting (setting_key, setting_value, setting_desc)
+VALUES ('ai_model', 'deepseek-v3', 'AI对话模型名称');
 

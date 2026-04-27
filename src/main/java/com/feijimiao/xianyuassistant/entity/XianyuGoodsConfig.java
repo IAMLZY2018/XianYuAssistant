@@ -39,6 +39,11 @@ public class XianyuGoodsConfig {
     private Integer xianyuAutoReplyOn;
     
     /**
+     * 携带上下文开关：1-开启，0-关闭，默认开启，跟随自动回复开关
+     */
+    private Integer xianyuAutoReplyContextOn;
+    
+    /**
      * 创建时间
      */
     private String createTime;

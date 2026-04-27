@@ -41,3 +41,12 @@ export function deleteSetting(data: { settingKey: string }) {
     data
   })
 }
+
+/** 测试邮箱配置 */
+export function testEmail() {
+  return request<string>({
+    url: '/setting/testEmail',
+    method: 'post',
+    data: {}
+  })
+}

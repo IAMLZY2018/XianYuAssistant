@@ -184,6 +184,12 @@ export function useOperationLog() {
     }
   }
 
+  // Handle account select change (for dropdown)
+  const handleAccountSelectChange = () => {
+    page.value = 1
+    loadLogs()
+  }
+
   // Load logs
   const loadLogs = async () => {
     if (!selectedAccountId.value) return
@@ -321,6 +327,7 @@ export function useOperationLog() {
 
     // Methods
     selectAccount,
+    handleAccountSelectChange,
     loadLogs,
     handleFilter,
     handleResetFilter,

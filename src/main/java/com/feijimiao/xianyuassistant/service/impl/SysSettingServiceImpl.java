@@ -1,18 +1,21 @@
 package com.feijimiao.xianyuassistant.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.feijimiao.xianyuassistant.config.rag.DynamicAIChatClientManager;
 import com.feijimiao.xianyuassistant.entity.XianyuSysSetting;
 import com.feijimiao.xianyuassistant.mapper.XianyuSysSettingMapper;
 import com.feijimiao.xianyuassistant.service.SysSettingService;
 import com.feijimiao.xianyuassistant.service.bo.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 系统配置服务实现
@@ -25,8 +28,15 @@ public class SysSettingServiceImpl implements SysSettingService {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
+    /** AI相关配置键，变更时需要触发ChatClient重建 */
+    private static final Set<String> AI_RELATED_KEYS = Set.of("ai_api_key", "ai_base_url", "ai_model");
+
     @Autowired
     private XianyuSysSettingMapper sysSettingMapper;
+
+    @Autowired
+    @Lazy
+    private DynamicAIChatClientManager dynamicAIChatClientManager;
 
     @Override
     public String getSettingValue(String settingKey) {
@@ -109,6 +119,12 @@ public class SysSettingServiceImpl implements SysSettingService {
             sysSettingMapper.insert(setting);
             log.info("[SysSetting] 新增配置成功: key={}", reqBO.getSettingKey());
         }
+
+        // 如果是AI相关配置，触发ChatClient重建
+        if (AI_RELATED_KEYS.contains(reqBO.getSettingKey().trim())) {
+            log.info("[SysSetting] AI配置变更，触发ChatClient重建: key={}", reqBO.getSettingKey());
+            dynamicAIChatClientManager.forceRebuild();
+        }
     }
 
     @Override
@@ -121,5 +137,11 @@ public class SysSettingServiceImpl implements SysSettingService {
         wrapper.eq(XianyuSysSetting::getSettingKey, settingKey.trim());
         sysSettingMapper.delete(wrapper);
         log.info("[SysSetting] 删除配置成功: key={}", settingKey);
+
+        // 如果是AI相关配置，触发ChatClient重建
+        if (AI_RELATED_KEYS.contains(settingKey.trim())) {
+            log.info("[SysSetting] AI配置删除，触发ChatClient重建: key={}", settingKey);
+            dynamicAIChatClientManager.forceRebuild();
+        }
     }
 }

@@ -9,7 +9,7 @@ import com.feijimiao.xianyuassistant.event.chatMessageEvent.ChatMessageData;
  * <ul>
  *   <li>用户发送消息后，启动15秒倒计时</li>
  *   <li>如果15秒内用户又发送新消息，取消之前的倒计时，重新开始</li>
- *   <li>15秒后无新消息，触发RAG自动回复</li>
+ *   <li>15秒后无新消息，触发自动回复</li>
  * </ul>
  * 
  * @author IAMLZY

@@ -8,7 +8,6 @@ import IconChevronLeft from '@/components/icons/IconChevronLeft.vue'
 import IconChevronRight from '@/components/icons/IconChevronRight.vue'
 import IconClock from '@/components/icons/IconClock.vue'
 import IconRefresh from '@/components/icons/IconRefresh.vue'
-import IconTrash from '@/components/icons/IconTrash.vue'
 import IconFilter from '@/components/icons/IconFilter.vue'
 import IconEmpty from '@/components/icons/IconEmpty.vue'
 import IconInfo from '@/components/icons/IconInfo.vue'
@@ -30,8 +29,6 @@ const {
   selectedAccountForMobile,
   detailDialogVisible,
   detailLog,
-  deleteDialogVisible,
-  deleteDays,
   operationTypes,
   operationModules,
   operationStatuses,
@@ -42,8 +39,6 @@ const {
   handleRefresh,
   viewDetail,
   closeDetail,
-  openDeleteDialog,
-  confirmDeleteOld,
   goBackToAccounts,
   getAccountAvatar,
   getAccountName,
@@ -52,7 +47,8 @@ const {
   getStatusText,
   getStatusClass,
   formatTime,
-  formatDuration
+  formatDuration,
+  handleAccountSelectChange
 } = useOperationLog()
 </script>
 
@@ -67,23 +63,40 @@ const {
         <h1 class="ol__title">操作记录</h1>
       </div>
       <div class="ol__actions">
+        <!-- Account Select -->
+        <div class="ol__header-select-wrap">
+          <select
+            v-model="selectedAccountId"
+            class="ol__header-select"
+            @change="handleAccountSelectChange"
+          >
+            <option :value="null" disabled>选择账号</option>
+            <option
+              v-for="account in accounts"
+              :key="account.id"
+              :value="account.id"
+            >
+              {{ getAccountName(account) }}
+            </option>
+          </select>
+          <span class="ol__select-icon">
+            <IconChevronDown />
+          </span>
+        </div>
         <button class="btn btn--secondary" @click="handleRefresh">
           <IconRefresh />
           <span class="mobile-hidden">刷新</span>
-        </button>
-        <button class="btn btn--danger" @click="openDeleteDialog">
-          <IconTrash />
-          <span class="mobile-hidden">删除旧日志</span>
         </button>
       </div>
     </div>
 
     <!-- Body -->
     <div class="ol__body">
-      <!-- Account Panel -->
+      <!-- Mobile: Account Panel -->
       <div
+        v-if="isMobile"
         class="ol__account-panel"
-        :class="{ 'ol__account-panel--hidden': isMobile && mobileView === 'logs' }"
+        :class="{ 'ol__account-panel--hidden': mobileView === 'logs' }"
       >
         <div class="ol__account-toolbar">
           <span class="ol__account-toolbar-title">闲鱼账号</span>
@@ -96,7 +109,7 @@ const {
           <span>加载中...</span>
         </div>
 
-        <!-- Account List -->
+        <!-- Mobile: Account List -->
         <div v-else class="ol__account-list">
           <div
             v-for="account in accounts"
@@ -423,52 +436,6 @@ const {
               <span class="ol__detail-label">错误信息</span>
               <pre class="ol__detail-pre ol__detail-pre--error">{{ detailLog.errorMessage }}</pre>
             </div>
-          </div>
-        </div>
-      </div>
-    </Transition>
-
-    <!-- Delete Dialog -->
-    <Transition name="overlay-fade">
-      <div
-        v-if="deleteDialogVisible"
-        class="ol__dialog-overlay"
-        @click.self="deleteDialogVisible = false"
-      >
-        <div class="ol__dialog" style="max-width:360px;">
-          <div class="ol__dialog-header">
-            <h3 class="ol__dialog-title">删除旧日志</h3>
-            <button class="ol__dialog-close" @click="deleteDialogVisible = false">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </div>
-          <div class="ol__dialog-body" style="text-align:center;">
-            <p style="font-size:14px;color:var(--d-text-secondary);margin:0;">请输入要删除多少天之前的日志</p>
-            <input
-              v-model="deleteDays"
-              class="ol__dialog-input"
-              type="number"
-              placeholder="输入天数"
-              min="1"
-              @keyup.enter="confirmDeleteOld"
-            />
-          </div>
-          <div class="ol__dialog-footer">
-            <button
-              class="ol__dialog-btn ol__dialog-btn--cancel"
-              @click="deleteDialogVisible = false"
-            >
-              取消
-            </button>
-            <button
-              class="ol__dialog-btn ol__dialog-btn--danger"
-              @click="confirmDeleteOld"
-            >
-              删除
-            </button>
           </div>
         </div>
       </div>

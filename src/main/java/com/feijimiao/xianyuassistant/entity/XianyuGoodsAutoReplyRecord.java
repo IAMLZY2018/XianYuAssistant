@@ -69,6 +69,11 @@ public class XianyuGoodsAutoReplyRecord {
     private String matchedKeyword;
     
     /**
+     * 触发上下文JSON（包含触发消息列表和RAG命中资料列表）
+     */
+    private String triggerContext;
+    
+    /**
      * 状态：0-待回复，1-成功，-1-失败
      */
     private Integer state;

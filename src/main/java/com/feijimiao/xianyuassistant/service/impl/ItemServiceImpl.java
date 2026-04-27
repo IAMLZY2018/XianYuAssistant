@@ -430,9 +430,11 @@ public class ItemServiceImpl implements ItemService {
             if (config != null) {
                 itemWithConfig.setXianyuAutoDeliveryOn(config.getXianyuAutoDeliveryOn());
                 itemWithConfig.setXianyuAutoReplyOn(config.getXianyuAutoReplyOn());
+                itemWithConfig.setXianyuAutoReplyContextOn(config.getXianyuAutoReplyContextOn() != null ? config.getXianyuAutoReplyContextOn() : 1);
             } else {
                 itemWithConfig.setXianyuAutoDeliveryOn(0);
                 itemWithConfig.setXianyuAutoReplyOn(0);
+                itemWithConfig.setXianyuAutoReplyContextOn(1);
             }
             
             // 获取自动发货配置
@@ -446,6 +448,7 @@ public class ItemServiceImpl implements ItemService {
         } else {
             itemWithConfig.setXianyuAutoDeliveryOn(0);
             itemWithConfig.setXianyuAutoReplyOn(0);
+            itemWithConfig.setXianyuAutoReplyContextOn(1);
         }
         
         return itemWithConfig;
@@ -831,11 +834,21 @@ public class ItemServiceImpl implements ItemService {
                 goodsConfig.setXyGoodsId(reqDTO.getXyGoodsId());
                 goodsConfig.setXianyuAutoDeliveryOn(0); // 默认关闭自动发货
                 goodsConfig.setXianyuAutoReplyOn(reqDTO.getXianyuAutoReplyOn());
+                // 携带上下文开关：第一次跟随自动回复开关默认开启
+                if (reqDTO.getXianyuAutoReplyContextOn() != null) {
+                    goodsConfig.setXianyuAutoReplyContextOn(reqDTO.getXianyuAutoReplyContextOn());
+                } else {
+                    goodsConfig.setXianyuAutoReplyContextOn(1); // 默认开启
+                }
                 goodsConfig.setCreateTime(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date()));
                 goodsConfig.setUpdateTime(goodsConfig.getCreateTime());
             } else {
                 // 3. 更新配置
                 goodsConfig.setXianyuAutoReplyOn(reqDTO.getXianyuAutoReplyOn());
+                // 更新携带上下文开关
+                if (reqDTO.getXianyuAutoReplyContextOn() != null) {
+                    goodsConfig.setXianyuAutoReplyContextOn(reqDTO.getXianyuAutoReplyContextOn());
+                }
                 goodsConfig.setUpdateTime(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date()));
             }
             
@@ -933,7 +946,7 @@ public class ItemServiceImpl implements ItemService {
     private com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoReplyConfigMapper autoReplyConfigMapper;
     
     /**
-     * 获取RAG自动回复配置
+     * 获取自动回复配置
      */
     @Override
     public ResultObject<RagAutoReplyConfigRespDTO> getRagAutoReplyConfig(RagAutoReplyConfigReqDTO reqDTO) {
@@ -951,13 +964,13 @@ public class ItemServiceImpl implements ItemService {
             
             return ResultObject.success(respDTO);
         } catch (Exception e) {
-            log.error("获取RAG自动回复配置失败", e);
-            return ResultObject.failed("获取RAG自动回复配置失败: " + e.getMessage());
+            log.error("获取自动回复配置失败", e);
+            return ResultObject.failed("获取自动回复配置失败: " + e.getMessage());
         }
     }
     
     /**
-     * 更新RAG自动回复配置
+     * 更新自动回复配置
      */
     @Override
     public ResultObject<?> updateRagAutoReplyConfig(UpdateRagAutoReplyConfigReqDTO reqDTO) {
@@ -973,20 +986,20 @@ public class ItemServiceImpl implements ItemService {
                 config.setXyGoodsId(reqDTO.getXyGoodsId());
                 config.setRagDelaySeconds(reqDTO.getRagDelaySeconds());
                 autoReplyConfigMapper.insert(config);
-                log.info("创建RAG自动回复配置: accountId={}, goodsId={}", 
+                log.info("创建自动回复配置: accountId={}, goodsId={}", 
                         reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId());
             } else {
                 // 更新现有配置
                 config.setRagDelaySeconds(reqDTO.getRagDelaySeconds());
                 autoReplyConfigMapper.update(config);
-                log.info("更新RAG自动回复配置: accountId={}, goodsId={}", 
+                log.info("更新自动回复配置: accountId={}, goodsId={}", 
                         reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId());
             }
             
             return ResultObject.success(null);
         } catch (Exception e) {
-            log.error("更新RAG自动回复配置失败", e);
-            return ResultObject.failed("更新RAG自动回复配置失败: " + e.getMessage());
+            log.error("更新自动回复配置失败", e);
+            return ResultObject.failed("更新自动回复配置失败: " + e.getMessage());
         }
     }
 }

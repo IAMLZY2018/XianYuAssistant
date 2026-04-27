@@ -85,6 +85,56 @@
   align-items: center;
 }
 
+/* --- Header Select --- */
+.ol__header-select-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ol__header-select {
+  height: 36px;
+  min-width: 140px;
+  padding: 0 32px 0 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--d-text-primary);
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--d-border);
+  border-radius: var(--d-radius-sm);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: all var(--d-transition);
+}
+
+.ol__header-select:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: var(--d-border-strong);
+}
+
+.ol__header-select:focus {
+  outline: none;
+  border-color: var(--d-accent);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.12);
+}
+
+.ol__select-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--d-text-tertiary);
+  display: flex;
+  align-items: center;
+}
+
+.ol__select-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
 /* --- Buttons --- */
 .btn {
   display: inline-flex;
@@ -194,10 +244,25 @@
 /* --- Main Layout --- */
 .ol__body {
   flex: 1;
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: var(--d-space-4);
+  display: flex;
+  flex-direction: column;
   min-height: 0;
+}
+
+/* Desktop: single panel */
+@media (min-width: 768px) {
+  .ol__body {
+    display: flex;
+  }
+}
+
+/* Mobile: two panels */
+@media (max-width: 767px) {
+  .ol__body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--d-space-4);
+  }
 }
 
 /* --- Account Panel --- */
@@ -232,6 +297,39 @@
 .ol__account-toolbar-count {
   font-size: 12px;
   color: var(--d-text-tertiary);
+}
+
+/* --- Account Select (Desktop) --- */
+.ol__account-select-wrap {
+  position: relative;
+  padding: var(--d-space-3) var(--d-space-4);
+}
+
+.ol__account-select {
+  width: 100%;
+  height: 40px;
+  padding: 0 36px 0 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--d-text-primary);
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--d-border);
+  border-radius: var(--d-radius-sm);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: all var(--d-transition);
+}
+
+.ol__account-select:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: var(--d-border-strong);
+}
+
+.ol__account-select:focus {
+  outline: none;
+  border-color: var(--d-accent);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.12);
 }
 
 .ol__account-list {
@@ -331,6 +429,7 @@
 
 /* --- Logs Panel --- */
 .ol__logs-panel {
+  flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;

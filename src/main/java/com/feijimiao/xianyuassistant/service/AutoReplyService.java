@@ -2,6 +2,8 @@ package com.feijimiao.xianyuassistant.service;
 
 import com.feijimiao.xianyuassistant.event.chatMessageEvent.ChatMessageData;
 
+import java.util.List;
+
 /**
  * 自动回复服务接口
  * 
@@ -11,20 +13,25 @@ import com.feijimiao.xianyuassistant.event.chatMessageEvent.ChatMessageData;
 public interface AutoReplyService {
     
     /**
-     * 执行RAG自动回复
-     * 
-     * <p>使用AIService的chatByRAG方法生成回复内容并发送</p>
+     * 执行自动回复（单条消息）
      * 
      * @param messageData 消息数据
      */
-    void executeRagAutoReply(ChatMessageData messageData);
+    void executeAutoReply(ChatMessageData messageData);
     
     /**
-     * 检查商品是否开启RAG自动回复
+     * 执行自动回复（多条消息，延时期间收集）
+     * 
+     * @param messageList 触发消息列表
+     */
+    void executeAutoReply(List<ChatMessageData> messageList);
+    
+    /**
+     * 检查商品是否开启自动回复
      * 
      * @param accountId 账号ID
      * @param xyGoodsId 商品ID
      * @return 是否开启
      */
-    boolean isRagAutoReplyEnabled(Long accountId, String xyGoodsId);
+    boolean isAutoReplyEnabled(Long accountId, String xyGoodsId);
 }

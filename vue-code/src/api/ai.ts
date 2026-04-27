@@ -70,3 +70,22 @@ export function deleteRAGData(data: { documentId: string }): Promise<Response> {
     body: JSON.stringify(data)
   })
 }
+
+// AI 状态信息
+export interface AIStatus {
+  enabled: boolean
+  available: boolean
+  apiKeyConfigured: boolean
+  message: string
+  baseUrl: string
+  model: string
+}
+
+// 获取 AI 状态
+export function getAIStatus(): Promise<Response> {
+  return fetch('/ai/status', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({})
+  })
+}

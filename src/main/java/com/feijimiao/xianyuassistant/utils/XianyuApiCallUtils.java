@@ -51,59 +51,69 @@ public class XianyuApiCallUtils {
     
     /**
      * 调用闲鱼API（带自动刷新机制，内部方法）
+     * 【关键修复】参考Python：所有API调用都需要处理Set-Cookie
      */
-    private ApiCallResult callApiWithRetry(Long accountId, String apiName, 
-                                           Map<String, Object> dataMap, String cookiesStr, 
+    private ApiCallResult callApiWithRetry(Long accountId, String apiName,
+                                           Map<String, Object> dataMap, String cookiesStr,
                                            int retryCount) {
         try {
-            // 1. 调用API
-            String response = XianyuApiUtils.callApi(apiName, dataMap, cookiesStr);
-            
+            // 1. 调用API（带响应头）
+            XianyuApiUtils.ApiCallResultWithHeaders result = XianyuApiUtils.callApiWithHeaders(apiName, dataMap, cookiesStr, null, null);
+
+            String response = result.getBody();
             if (response == null || response.isEmpty()) {
                 log.error("【账号{}】API调用失败：响应为空", accountId);
                 return new ApiCallResult(false, null, "响应为空", false);
             }
-            
-            // 2. 解析响应
+
+            // 2. 【关键】处理响应中的Set-Cookie（参考Python: session自动处理 + clear_duplicate_cookies）
+            List<String> setCookieHeaders = result.getSetCookieHeaders();
+            if (!setCookieHeaders.isEmpty()) {
+                log.info("【账号{}】检测到响应中的Set-Cookie，数量: {}", accountId, setCookieHeaders.size());
+                // 更新Cookie到数据库
+                updateCookiesFromResponse(accountId, cookiesStr, setCookieHeaders);
+            }
+
+            // 3. 解析响应
             @SuppressWarnings("unchecked")
             Map<String, Object> responseMap = objectMapper.readValue(response, Map.class);
-            
+
             @SuppressWarnings("unchecked")
             List<String> ret = (List<String>) responseMap.get("ret");
-            
+
             if (ret == null || ret.isEmpty()) {
                 log.error("【账号{}】API响应格式错误：缺少ret字段", accountId);
                 return new ApiCallResult(false, response, "响应格式错误", false);
             }
-            
+
             String retCode = ret.get(0);
-            
-            // 3. 检查是否成功
+
+            // 4. 检查是否成功
             if (retCode.contains("SUCCESS")) {
                 log.info("【账号{}】API调用成功: {}", accountId, apiName);
                 return new ApiCallResult(true, response, null, false);
             }
-            
-            // 4. 检查是否需要刷新Cookie（令牌过期）
+
+            // 5. 检查是否需要刷新Cookie（令牌过期）
             if (isTokenExpired(retCode)) {
-                log.warn("【账号{}】检测到令牌过期，尝试自动刷新... (重试次数: {}/{})", 
+                log.warn("【账号{}】检测到令牌过期，尝试自动刷新... (重试次数: {}/{})",
                         accountId, retryCount, MAX_RETRY_COUNT);
-                
+
                 // 检查是否超过最大重试次数
                 if (retryCount >= MAX_RETRY_COUNT) {
                     log.error("【账号{}】令牌刷新重试次数已达上限，停止重试", accountId);
                     return new ApiCallResult(false, response, "令牌过期且自动刷新失败", true);
                 }
-                
+
                 // 尝试刷新Cookie
                 boolean refreshSuccess = cookieRefreshService.refreshCookie(accountId);
-                
+
                 if (refreshSuccess) {
                     log.info("【账号{}】Cookie刷新成功，准备重试API调用...", accountId);
-                    
+
                     // 等待一小段时间
                     Thread.sleep(RETRY_INTERVAL);
-                    
+
                     // 获取新的Cookie
                     String newCookieStr = accountService.getCookieByAccountId(accountId);
                     if (newCookieStr != null && !newCookieStr.isEmpty()) {
@@ -115,24 +125,99 @@ public class XianyuApiCallUtils {
                 } else {
                     log.warn("【账号{}】Cookie自动刷新失败", accountId);
                 }
-                
+
                 return new ApiCallResult(false, response, "令牌过期，自动刷新失败", true);
             }
-            
-            // 5. 检查是否触发风控
+
+            // 6. 检查是否触发风控
             if (isRiskControl(retCode)) {
                 log.error("【账号{}】触发风控: {}", accountId, retCode);
                 return new ApiCallResult(false, response, "触发风控，需要人工处理", false);
             }
-            
-            // 6. 其他错误
+
+            // 7. 其他错误
             log.error("【账号{}】API调用失败: {}", accountId, retCode);
             return new ApiCallResult(false, response, retCode, false);
-            
+
         } catch (Exception e) {
             log.error("【账号{}】API调用异常: apiName={}", accountId, apiName, e);
             return new ApiCallResult(false, null, "调用异常: " + e.getMessage(), false);
         }
+    }
+
+    /**
+     * 从响应的Set-Cookie中更新Cookie
+     * 参考Python: requests.Session自动处理Set-Cookie + clear_duplicate_cookies
+     *
+     * @param accountId 账号ID
+     * @param currentCookieStr 当前Cookie字符串
+     * @param setCookieHeaders 响应中的Set-Cookie列表
+     */
+    private void updateCookiesFromResponse(Long accountId, String currentCookieStr, List<String> setCookieHeaders) {
+        try {
+            // 合并Cookie
+            String newCookieStr = mergeCookies(currentCookieStr, setCookieHeaders);
+
+            // 清理重复Cookie
+            newCookieStr = cookieRefreshService.clearDuplicateCookies(newCookieStr);
+
+            // 更新数据库中的Cookie
+            if (!newCookieStr.equals(currentCookieStr)) {
+                accountService.updateCookie(accountId, newCookieStr);
+                log.info("【账号{}】Cookie已从响应Set-Cookie更新到数据库", accountId);
+            }
+        } catch (Exception e) {
+            log.error("【账号{}】处理响应Set-Cookie失败", accountId, e);
+        }
+    }
+
+    /**
+     * 合并Cookie（新Cookie覆盖旧Cookie）
+     * 模拟Python requests.Session自动处理Set-Cookie的行为
+     */
+    private String mergeCookies(String oldCookieStr, List<String> newCookies) {
+        Map<String, String> cookies = new java.util.LinkedHashMap<>();
+
+        // 解析旧Cookie
+        if (oldCookieStr != null && !oldCookieStr.isEmpty()) {
+            String[] parts = oldCookieStr.split(";\\s*");
+            for (String part : parts) {
+                int idx = part.indexOf('=');
+                if (idx > 0) {
+                    String key = part.substring(0, idx);
+                    String value = part.substring(idx + 1);
+                    cookies.put(key, value);
+                }
+            }
+        }
+
+        // 解析新Cookie（Set-Cookie格式: name=value; Path=/; Domain=.goofish.com; ...）
+        for (String newCookie : newCookies) {
+            // 只提取第一个name=value对
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("^\\s*([^=;\\s]+)=([^;]*)");
+            java.util.regex.Matcher matcher = pattern.matcher(newCookie);
+            if (matcher.find()) {
+                String key = matcher.group(1).trim();
+                String value = matcher.group(2).trim();
+                // 跳过删除Cookie（值为空）
+                if (!value.isEmpty()) {
+                    cookies.put(key, value);
+                } else {
+                    cookies.remove(key);
+                }
+            }
+        }
+
+        // 重新构建Cookie字符串
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : cookies.entrySet()) {
+            if (sb.length() > 0) {
+                sb.append("; ");
+            }
+            sb.append(entry.getKey()).append("=").append(entry.getValue());
+        }
+
+        return sb.toString();
     }
     
     /**
