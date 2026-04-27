@@ -31,9 +31,6 @@ const onSelect = (index: string) => {
     <el-menu-item index="/goods">
       <span>📦 商品管理</span>
     </el-menu-item>
-    <el-menu-item index="/orders">
-      <span>📋 发货记录</span>
-    </el-menu-item>
     <el-menu-item index="/messages">
       <span>💬 消息管理</span>
     </el-menu-item>
@@ -45,6 +42,9 @@ const onSelect = (index: string) => {
     </el-menu-item>
     <el-menu-item index="/auto-delivery">
       <span>🤖 自动发货</span>
+    </el-menu-item>
+    <el-menu-item index="/orders">
+      <span>📋 发货记录</span>
     </el-menu-item>
     <el-menu-item index="/auto-reply">
       <span>💭 自动回复</span>
