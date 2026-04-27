@@ -523,12 +523,39 @@
 }
 
 .orders__dialog {
-  width: 100%;
-  max-width: 400px;
+  width: calc(100% - 32px);
+  max-width: 480px;
   background: #fff;
   border-radius: var(--d-radius-lg);
   box-shadow: var(--d-shadow-md);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.orders__dialog--wide {
+  max-width: 600px;
+}
+
+.orders__dialog-header {
+  padding: var(--d-space-4) var(--d-space-5) var(--d-space-2);
+  text-align: center;
+}
+
+.orders__dialog-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--d-text-primary);
+  margin: 0;
+}
+
+.orders__dialog-body {
+  padding: var(--d-space-2) var(--d-space-5) var(--d-space-4);
+}
+
+.orders__dialog-footer {
+  display: flex;
+  border-top: 1px solid var(--d-border);
 }
 
 .orders__dialog-header {

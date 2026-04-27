@@ -83,6 +83,8 @@ export interface AutoDeliveryConfig {
   xyGoodsId: string
   type: number
   autoDeliveryContent: string
+  autoConfirmShipment?: number
+  cardSecretCount?: number
 }
 
 // 自动回复配置

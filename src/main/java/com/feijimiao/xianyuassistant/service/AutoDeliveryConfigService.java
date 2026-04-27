@@ -4,6 +4,7 @@ import com.feijimiao.xianyuassistant.common.ResultObject;
 import com.feijimiao.xianyuassistant.controller.dto.AutoDeliveryConfigReqDTO;
 import com.feijimiao.xianyuassistant.controller.dto.AutoDeliveryConfigRespDTO;
 import com.feijimiao.xianyuassistant.controller.dto.AutoDeliveryConfigQueryReqDTO;
+import com.feijimiao.xianyuassistant.controller.dto.ImportCardSecretReqDTO;
 
 import java.util.List;
 
@@ -44,4 +45,12 @@ public interface AutoDeliveryConfigService {
      * @return 操作结果
      */
     ResultObject<Void> deleteConfig(Long xianyuAccountId, String xyGoodsId);
+
+    /**
+     * 导入卡密
+     *
+     * @param reqDTO 导入请求DTO
+     * @return 导入成功的数量
+     */
+    ResultObject<Integer> importCardSecrets(ImportCardSecretReqDTO reqDTO);
 }

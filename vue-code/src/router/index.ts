@@ -45,6 +45,12 @@ const router = createRouter({
       meta: { title: '商品管理', icon: '📦' }
     },
     {
+      path: '/card-secret',
+      name: 'card-secret',
+      component: () => import('@/views/card-secret/index.vue'),
+      meta: { title: '卡密管理', icon: '🔑' }
+    },
+    {
       path: '/orders',
       name: 'orders',
       component: () => import('@/views/orders/index.vue'),

@@ -54,4 +54,9 @@ public class AutoDeliveryConfigRespDTO {
      * 更新时间
      */
     private LocalDateTime updateTime;
+
+    /**
+     * 卡密库存
+     */
+    private Long cardSecretCount;
 }

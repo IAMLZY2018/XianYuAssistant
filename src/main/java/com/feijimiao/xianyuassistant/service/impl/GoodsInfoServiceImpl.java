@@ -54,7 +54,8 @@ public class GoodsInfoServiceImpl implements GoodsInfoService {
             
             // 查询是否已存在
             LambdaQueryWrapper<XianyuGoodsInfo> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.eq(XianyuGoodsInfo::getXyGoodId, xyGoodId);
+            queryWrapper.eq(XianyuGoodsInfo::getXyGoodId, xyGoodId)
+                        .eq(XianyuGoodsInfo::getXianyuAccountId, xianyuAccountId);
             XianyuGoodsInfo existingGoods = goodsInfoMapper.selectOne(queryWrapper);
             
             // 构建商品信息
