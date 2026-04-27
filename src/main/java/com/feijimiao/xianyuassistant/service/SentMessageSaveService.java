@@ -37,4 +37,16 @@ public interface SentMessageSaveService {
      * @param xyGoodsId 闲鱼商品ID
      */
     void saveAiAssistantReply(Long accountId, String cid, String toId, String text, String xyGoodsId);
+
+    /**
+     * 保存手动回复图片消息到数据库
+     * contentType = 997，中文标签："图片回复"
+     *
+     * @param accountId 闲鱼账号ID
+     * @param cid 会话ID
+     * @param toId 接收方用户ID
+     * @param imageUrl 图片URL
+     * @param xyGoodsId 闲鱼商品ID
+     */
+    void saveManualImageReply(Long accountId, String cid, String toId, String imageUrl, String xyGoodsId);
 }

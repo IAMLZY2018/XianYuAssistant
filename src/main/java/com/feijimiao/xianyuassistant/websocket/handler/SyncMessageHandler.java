@@ -232,7 +232,21 @@ public class SyncMessageHandler extends AbstractLwpHandler {
                 
                 // 提取各个字段
                 message.setMsgContent(extractString(field10Map, "reminderContent"));
-                message.setSenderUserName(extractString(field10Map, "reminderTitle"));
+                String reminderTitle = extractString(field10Map, "reminderTitle");
+                String reminderContent = extractString(field10Map, "reminderContent");
+                String senderUserName = reminderTitle;
+                if (reminderContent != null && !reminderContent.isEmpty()) {
+                    int nameEnd = reminderContent.indexOf(" 向你发送了一条新消息");
+                    if (nameEnd > 0) {
+                        senderUserName = reminderContent.substring(0, nameEnd);
+                    } else {
+                        nameEnd = reminderContent.indexOf(" ：");
+                        if (nameEnd > 0 && nameEnd < 20) {
+                            senderUserName = reminderContent.substring(0, nameEnd);
+                        }
+                    }
+                }
+                message.setSenderUserName(senderUserName);
                 message.setSenderUserId(extractString(field10Map, "senderUserId"));
                 
                 // 提取reminderUrl并解析商品ID

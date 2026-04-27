@@ -34,6 +34,7 @@ export function sendImageMessage(data: {
   imageUrl: string;
   width?: number;
   height?: number;
+  xyGoodsId?: string;
 }) {
   return request<string>({
     url: '/websocket/sendImageMessage',

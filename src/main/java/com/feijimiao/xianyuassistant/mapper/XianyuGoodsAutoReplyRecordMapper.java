@@ -60,4 +60,13 @@ public interface XianyuGoodsAutoReplyRecordMapper {
      */
     @Select("SELECT COUNT(*) FROM xianyu_goods_auto_reply_record WHERE xianyu_account_id = #{accountId} AND xy_goods_id = #{xyGoodsId}")
     int countByAccountIdAndGoodsId(@Param("accountId") Long accountId, @Param("xyGoodsId") String xyGoodsId);
+
+    @Select("SELECT COUNT(*) FROM xianyu_goods_auto_reply_record WHERE date(create_time) = date('now', '-1 day', 'localtime')")
+    int countYesterdayAiReplies();
+
+    @Select("SELECT COUNT(*) FROM xianyu_goods_auto_reply_record")
+    int countAllReplies();
+
+    @Select("SELECT COUNT(*) FROM xianyu_goods_auto_reply_record WHERE date(create_time) = #{date}")
+    int countAiRepliesByDate(@Param("date") String date);
 }

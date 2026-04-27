@@ -9,7 +9,7 @@ import IconUser from '@/components/icons/IconUser.vue'
 import IconEmpty from '@/components/icons/IconEmpty.vue'
 import IconSend from '@/components/icons/IconSend.vue'
 import IconImage from '@/components/icons/IconImage.vue'
-import ImageUploader from '@/components/ImageUploader.vue'
+import MultiImageUploader from '@/components/MultiImageUploader.vue'
 
 interface Props {
   visible: boolean
@@ -30,7 +30,7 @@ const loading = ref(false)
 const messages = ref<ChatMessage[]>([])
 const inputText = ref('')
 const sending = ref(false)
-const inputImageUrl = ref('')
+const inputImageUrls = ref('')
 const showImageUploader = ref(false)
 const messageListRef = ref<HTMLElement | null>(null)
 const hasMore = ref(true)
@@ -168,7 +168,8 @@ const getMessageType = (msg: ChatMessage) => {
 }
 
 const handleSend = async () => {
-  if (!inputText.value.trim() && !inputImageUrl.value.trim()) {
+  const hasImages = inputImageUrls.value.trim() && inputImageUrls.value.split(',').some((s: string) => s.trim())
+  if (!inputText.value.trim() && !hasImages) {
     ElMessage.warning('请输入消息内容或上传图片')
     return
   }
@@ -183,15 +184,19 @@ const handleSend = async () => {
     const cid = props.sid.replace('@goofish', '')
     const toId = props.senderUserId.replace('@goofish', '')
     
-    if (inputImageUrl.value.trim()) {
-      await sendImageMessageApi({
-        xianyuAccountId: props.xianyuAccountId,
-        cid,
-        toId,
-        imageUrl: inputImageUrl.value.trim(),
-        width: 800,
-        height: 800
-      })
+    if (hasImages) {
+      const urls = inputImageUrls.value.split(',').map((s: string) => s.trim()).filter((s: string) => s)
+      for (const url of urls) {
+        await sendImageMessageApi({
+          xianyuAccountId: props.xianyuAccountId,
+          cid,
+          toId,
+          imageUrl: url,
+          width: 800,
+          height: 800,
+          xyGoodsId: props.xyGoodsId
+        })
+      }
     }
     
     if (inputText.value.trim()) {
@@ -206,7 +211,7 @@ const handleSend = async () => {
     
     ElMessage.success('发送成功')
     inputText.value = ''
-    inputImageUrl.value = ''
+    inputImageUrls.value = ''
     showImageUploader.value = false
     await loadContext()
   } catch (error: any) {
@@ -284,10 +289,10 @@ const handleSend = async () => {
       
       <div class="context-input">
         <div class="context-input__left">
-          <ImageUploader
+          <MultiImageUploader
             v-if="showImageUploader && xianyuAccountId"
             :account-id="xianyuAccountId"
-            v-model="inputImageUrl"
+            v-model="inputImageUrls"
             class="context-input__uploader"
           />
           <el-input
@@ -301,7 +306,7 @@ const handleSend = async () => {
         <div class="context-input__actions">
           <button
             class="context-input__img-btn"
-            :class="{ 'context-input__img-btn--active': showImageUploader || inputImageUrl }"
+            :class="{ 'context-input__img-btn--active': showImageUploader || inputImageUrls }"
             @click="showImageUploader = !showImageUploader"
           >
             <IconImage />

@@ -279,6 +279,13 @@ public class WebSocketController {
             );
             
             if (success) {
+                sentMessageSaveService.saveManualImageReply(
+                        reqDTO.getXianyuAccountId(),
+                        reqDTO.getCid(),
+                        reqDTO.getToId(),
+                        reqDTO.getImageUrl(),
+                        reqDTO.getXyGoodsId()
+                );
                 return ResultObject.success("图片消息发送成功");
             } else {
                 return ResultObject.failed("图片消息发送失败");
@@ -721,6 +728,7 @@ public class WebSocketController {
         private String imageUrl;       // 图片URL
         private Integer width;         // 图片宽度（可选，默认800）
         private Integer height;        // 图片高度（可选，默认600）
+        private String xyGoodsId;      // 闲鱼商品ID（可选）
     }
     
     /**

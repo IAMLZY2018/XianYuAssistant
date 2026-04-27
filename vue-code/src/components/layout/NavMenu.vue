@@ -20,7 +20,7 @@ const onSelect = (index: string) => {
     @select="onSelect"
   >
     <el-menu-item index="/dashboard">
-      <span>📊 仪表板</span>
+      <span>📊 面板</span>
     </el-menu-item>
     <el-menu-item index="/accounts">
       <span>👤 闲鱼账号</span>

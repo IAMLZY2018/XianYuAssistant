@@ -26,6 +26,7 @@ const emit = defineEmits<Emits>()
 const uploading = ref(false)
 const uploadProgress = ref(0)
 const previewUrl = computed(() => props.modelValue)
+const fileInput = ref<HTMLInputElement | null>(null)
 
 const handleFileSelect = async (event: Event) => {
   const target = event.target as HTMLInputElement
@@ -130,7 +131,7 @@ const clearImage = () => {
       :class="{ 'image-upload-area--uploading': uploading }"
       @drop="handleDrop"
       @dragover="handleDragOver"
-      @click="$refs.fileInput?.click()"
+      @click="(fileInput as HTMLInputElement)?.click()"
     >
       <input
         ref="fileInput"

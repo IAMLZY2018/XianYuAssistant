@@ -78,4 +78,25 @@ public interface XianyuGoodsOrderMapper {
     
     @Select("SELECT * FROM xianyu_goods_order WHERE xianyu_account_id = #{accountId} AND pnm_id = #{pnmId}")
     XianyuGoodsOrder selectByPnmId(@Param("accountId") Long accountId, @Param("pnmId") String pnmId);
+
+    @Select("SELECT COUNT(*) FROM xianyu_goods_order WHERE date(create_time) = date('now', '-1 day', 'localtime')")
+    int countYesterdayOrders();
+
+    @Select("SELECT COUNT(*) FROM xianyu_goods_order WHERE state = 1")
+    int countDeliverySuccess();
+
+    @Select("SELECT COUNT(*) FROM xianyu_goods_order WHERE state = -1")
+    int countDeliveryFail();
+
+    @Select("SELECT COUNT(*) FROM xianyu_goods_order")
+    int countAllOrders();
+
+    @Select("SELECT COUNT(*) FROM xianyu_goods_order WHERE date(create_time) = #{date}")
+    int countOrdersByDate(@Param("date") String date);
+
+    @Select("SELECT COUNT(*) FROM xianyu_goods_order WHERE state = 1 AND date(create_time) = #{date}")
+    int countDeliverySuccessByDate(@Param("date") String date);
+
+    @Select("SELECT COUNT(*) FROM xianyu_goods_order WHERE state = -1 AND date(create_time) = #{date}")
+    int countDeliveryFailByDate(@Param("date") String date);
 }

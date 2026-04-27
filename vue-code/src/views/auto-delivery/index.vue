@@ -17,7 +17,7 @@ import IconPackage from '@/components/icons/IconPackage.vue'
 import IconCopy from '@/components/icons/IconCopy.vue'
 
 import GoodsDetailDialog from '../goods/components/GoodsDetailDialog.vue'
-import ImageUploader from '@/components/ImageUploader.vue'
+import MultiImageUploader from '@/components/MultiImageUploader.vue'
 
 const {
   saving,
@@ -321,7 +321,7 @@ const {
               <div class="ad__image-section">
                 <div class="ad__image-section-title">发货图片</div>
                 <div class="ad__image-section-hint">可选，买家下单后先发送图片再发送文本</div>
-                <ImageUploader
+                <MultiImageUploader
                   v-if="selectedAccountId"
                   :account-id="selectedAccountId"
                   v-model="configForm.autoDeliveryImageUrl"
@@ -435,7 +435,7 @@ const {
               <div class="ad__image-section">
                 <div class="ad__image-section-title">发货图片</div>
                 <div class="ad__image-section-hint">可选，买家下单后先发送图片再发送卡密</div>
-                <ImageUploader
+                <MultiImageUploader
                   v-if="selectedAccountId"
                   :account-id="selectedAccountId"
                   v-model="configForm.autoDeliveryImageUrl"

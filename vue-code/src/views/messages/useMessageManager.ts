@@ -285,15 +285,19 @@ export function useMessageManager() {
       }
       
       // 发送图片消息
-      if (quickReplyImage.value) {
-        const imageResponse = await sendImageMessage({
-          xianyuAccountId: selectedAccountId.value,
-          cid: currentReplyMessage.value.sid,
-          toId: currentReplyMessage.value.senderUserId,
-          imageUrl: quickReplyImage.value
-        })
-        if (imageResponse.code !== 0 && imageResponse.code !== 200) {
-          showError('图片消息发送失败')
+      if (quickReplyImage.value && quickReplyImage.value.split(',').some((s: string) => s.trim())) {
+        const urls = quickReplyImage.value.split(',').map((s: string) => s.trim()).filter((s: string) => s)
+        for (const url of urls) {
+          const imageResponse = await sendImageMessage({
+            xianyuAccountId: selectedAccountId.value,
+            cid: currentReplyMessage.value.sid,
+            toId: currentReplyMessage.value.senderUserId,
+            imageUrl: url,
+            xyGoodsId: currentReplyMessage.value.xyGoodsId
+          })
+          if (imageResponse.code !== 0 && imageResponse.code !== 200) {
+            showError('图片消息发送失败')
+          }
         }
       }
       

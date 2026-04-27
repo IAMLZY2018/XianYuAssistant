@@ -13,7 +13,7 @@ interface Props {
   messageList: ChatMessage[]
   loading?: boolean
   xianyuAccountId?: number
-  goodsList?: Array<{ xyGoodsId: string; title: string }>
+  goodsList?: Array<{ item: { xyGoodId: string; title: string }; xyGoodsId?: string; autoDeliveryContent?: string }>
   currentAccountUnb?: string
 }
 
@@ -50,8 +50,8 @@ const showContext = (msg: ChatMessage) => {
   currentXyGoodsId.value = msg.xyGoodsId || ''
   
   // 查找商品名称
-  const goods = props.goodsList?.find(g => g.xyGoodsId === msg.xyGoodsId)
-  currentGoodsName.value = goods?.title || ''
+  const goods = props.goodsList?.find(g => (g.xyGoodsId || g.item?.xyGoodId) === msg.xyGoodsId)
+  currentGoodsName.value = goods?.item?.title || goods?.item?.xyGoodId || ''
   
   contextDialogVisible.value = true
 }

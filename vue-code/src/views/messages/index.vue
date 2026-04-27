@@ -13,7 +13,7 @@ import IconImage from '@/components/icons/IconImage.vue'
 
 import GoodsSidebar from './components/GoodsSidebar.vue'
 import MessageList from './components/MessageList.vue'
-import ImageUploader from '@/components/ImageUploader.vue'
+import MultiImageUploader from '@/components/MultiImageUploader.vue'
 
 const {
   loading,
@@ -404,7 +404,7 @@ const checkScreenSize = () => {
               maxlength="500"
             ></textarea>
             <div class="messages__reply-image">
-              <ImageUploader
+              <MultiImageUploader
                 :account-id="selectedAccountId || 0"
                 v-model="quickReplyImage"
               />

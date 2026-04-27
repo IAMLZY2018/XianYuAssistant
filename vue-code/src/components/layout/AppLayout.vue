@@ -103,8 +103,8 @@ onUnmounted(() => {
       <div class="mobile-menu" @click.stop>
         <div class="mobile-menu-header">
           <div class="logo">
-            <div class="logo-icon">闲</div>
-            <div class="logo-text">自动化管理</div>
+            <div class="logo-icon">X</div>
+            <div class="logo-text">XianYuAssistant</div>
           </div>
         </div>
         <div class="mobile-menu-content">
@@ -117,8 +117,8 @@ onUnmounted(() => {
     <el-container v-if="isDesktop" class="layout-container">
       <el-aside width="240px" class="sidebar">
         <div class="logo">
-          <div class="logo-icon">闲</div>
-          <div class="logo-text">自动化管理</div>
+          <div class="logo-icon">X</div>
+          <div class="logo-text">XianYuAssistant</div>
         </div>
         <NavMenu />
       </el-aside>
@@ -135,8 +135,8 @@ onUnmounted(() => {
       <el-aside :width="isCollapsed ? '0px' : '240px'" class="sidebar tablet-sidebar" :class="{ collapsed: isCollapsed }">
         <div v-if="!isCollapsed" class="sidebar-content">
           <div class="logo">
-            <div class="logo-icon">闲</div>
-            <div class="logo-text">自动化管理</div>
+            <div class="logo-icon">X</div>
+            <div class="logo-text">XianYuAssistant</div>
           </div>
           <NavMenu @select="isCollapsed = true" />
         </div>
