@@ -356,8 +356,8 @@
 
 .ar__goods-meta {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 6px;
   margin-top: 2px;
 }
 
@@ -376,6 +376,7 @@
   font-weight: 500;
   border-radius: 4px;
   white-space: nowrap;
+  margin-left: auto;
 }
 
 .ar__goods-status--on-sale {
