@@ -68,11 +68,18 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
             .build();
 
     private volatile long nextCookieKeepAliveTime = 0;
+    private volatile long nextMh5tkRefreshTime = 0;
 
     private void scheduleNextCookieKeepAlive() {
-        long delayMinutes = 120 + ThreadLocalRandom.current().nextLong(61);
+        long delayMinutes = 15 + ThreadLocalRandom.current().nextLong(16);
         nextCookieKeepAliveTime = System.currentTimeMillis() + delayMinutes * 60 * 1000;
         log.info("📅 下次Cookie保活检查将在 {} 分钟后执行", delayMinutes);
+    }
+    
+    private void scheduleNextMh5tkRefresh() {
+        long delayMinutes = 15 + ThreadLocalRandom.current().nextLong(16);
+        nextMh5tkRefreshTime = System.currentTimeMillis() + delayMinutes * 60 * 1000;
+        log.info("📅 下次_m_h5_tk刷新将在 {} 分钟后执行", delayMinutes);
     }
     
     /**
@@ -370,20 +377,18 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
     
     /**
      * 定时任务：刷新所有账号的_m_h5_tk token
-     *
-     * 参考Python逻辑优化：
-     * - Python没有单独的_m_h5_tk定时刷新，而是在get_token失败时才调用hasLogin
-     * - Python的token_refresh_interval默认为1小时（3600秒）
-     * - 为了减少不必要的刷新，将间隔延长至6小时，作为兜底机制
-     *
+     * 
      * 优化策略：
-     * 1. 延长刷新间隔至6小时（360分钟），大幅减少频繁刷新
-     * 2. 主要依赖WebSocket token刷新失败时的自动重试机制
-     * 3. 只有在真正需要时才调用hasLogin刷新Cookie
-     * 4. 添加随机间隔（5-10秒），避免多账号同时请求被识别为机器人
+     * 1. 每15-30分钟随机刷新一次，避免固定间隔被识别
+     * 2. 失败时自动触发hasLogin刷新Cookie
+     * 3. 添加随机间隔（5-10秒），避免多账号同时请求
      */
-    @Scheduled(fixedDelay = 360 * 60 * 1000, initialDelay = 60 * 60 * 1000)
+    @Scheduled(fixedDelay = 60 * 1000, initialDelay = 5 * 60 * 1000)
     public void scheduledRefreshMh5tk() {
+        if (System.currentTimeMillis() < nextMh5tkRefreshTime) {
+            return;
+        }
+        scheduleNextMh5tkRefresh();
         try {
             log.info("🔄 开始刷新所有账号的_m_h5_tk token...");
             refreshAllAccountsTokens();
@@ -395,19 +400,13 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
 
     /**
      * 定时任务：通过hasLogin检查并刷新Cookie
-     *
-     * 参考Python逻辑优化：
-     * - Python中hasLogin只在get_token失败时才被调用（按需刷新）
-     * - Python没有单独的定期Cookie保活检查
-     * - 为了减少频繁请求，将间隔延长至3小时
-     *
+     * 
      * 优化策略：
-     * 1. 延长保活检查间隔至3小时（180分钟）
-     * 2. 减少对hasLogin接口的调用频率
-     * 3. 主要依赖token刷新失败时的自动重试机制来触发hasLogin
-     * 4. 添加随机间隔（5-15秒），避免多账号同时请求被识别为机器人
+     * 1. 每15-30分钟随机检查一次，避免固定间隔被识别
+     * 2. 保持Cookie活跃，防止过期
+     * 3. 添加随机间隔（5-15秒），避免多账号同时请求
      */
-    @Scheduled(fixedDelay = 60 * 1000, initialDelay = 90 * 60 * 1000)
+    @Scheduled(fixedDelay = 60 * 1000, initialDelay = 10 * 60 * 1000)
     public void scheduledCookieKeepAlive() {
         if (System.currentTimeMillis() < nextCookieKeepAliveTime) {
             return;
