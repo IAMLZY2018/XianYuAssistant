@@ -46,7 +46,7 @@ async function handleLogin() {
   loading.value = true
   try {
     const res = await login({ username: username.value.trim(), password: password.value })
-    if (res.code === 200) {
+    if (res.code === 200 && res.data) {
       setAuthToken(res.data.token, res.data.username)
       router.replace('/dashboard')
     }
@@ -68,7 +68,7 @@ async function handleRegister() {
       password: password.value,
       confirmPassword: confirmPassword.value
     })
-    if (res.code === 200) {
+    if (res.code === 200 && res.data) {
       setAuthToken(res.data.token, res.data.username)
       router.replace('/dashboard')
     }

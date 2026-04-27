@@ -1348,12 +1348,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   font-size: 17px;
   font-weight: 500;
   cursor: pointer;
   transition: background var(--d-transition);
   border: none;
   background: transparent;
+  white-space: nowrap;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -1370,6 +1372,35 @@
 .ad__dialog-btn--danger {
   color: var(--d-danger);
   font-weight: 600;
+}
+
+.ad__dialog--lg .ad__dialog-footer {
+  padding: var(--d-space-4);
+  justify-content: flex-end;
+  gap: var(--d-space-3);
+  border-top: 1px solid var(--d-border);
+}
+
+.ad__dialog--lg .ad__dialog-btn {
+  flex: none;
+  height: 38px;
+  padding: 0 var(--d-space-5);
+  font-size: 14px;
+  border-radius: var(--d-radius-sm);
+  background: var(--d-surface);
+  border: 1px solid var(--d-border-strong);
+}
+
+.ad__dialog--lg .ad__dialog-btn--primary {
+  color: #fff;
+  background: var(--d-accent);
+  border-color: var(--d-accent);
+}
+
+.ad__dialog--lg .ad__dialog-btn--cancel {
+  color: var(--d-text-secondary);
+  background: transparent;
+  border: 1px solid var(--d-border-strong);
 }
 
 .ad__dialog-btn--loading {

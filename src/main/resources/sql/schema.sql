@@ -102,7 +102,8 @@ CREATE TABLE IF NOT EXISTS xianyu_goods (
 );
 
 -- 创建商品表索引
-CREATE UNIQUE INDEX IF NOT EXISTS idx_goods_xy_good_id ON xianyu_goods(xy_good_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_goods_account_xy_id ON xianyu_goods(xianyu_account_id, xy_good_id);
+CREATE INDEX IF NOT EXISTS idx_goods_xy_good_id ON xianyu_goods(xy_good_id);
 CREATE INDEX IF NOT EXISTS idx_goods_status ON xianyu_goods(status);
 CREATE INDEX IF NOT EXISTS idx_goods_account_id ON xianyu_goods(xianyu_account_id);
 

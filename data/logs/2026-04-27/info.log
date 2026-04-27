@@ -1,0 +1,912 @@
+2026-04-27 02:57:46.657 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.3.Final
+2026-04-27 02:57:46.737 [main] INFO  c.f.xianyuassistant.XianYuAssistantApplication - Starting XianYuAssistantApplication v0.0.1-SNAPSHOT using Java 21.0.10 with PID 1 (/app/app.jar started by root in /app)
+2026-04-27 02:57:46.738 [main] INFO  c.f.xianyuassistant.XianYuAssistantApplication - No active profile set, falling back to 1 default profile: "default"
+2026-04-27 02:57:48.837 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 12400 (http)
+2026-04-27 02:57:48.859 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-12400"]
+2026-04-27 02:57:48.862 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-27 02:57:48.863 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.48]
+2026-04-27 02:57:48.898 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-27 02:57:48.900 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 2100 ms
+2026-04-27 02:57:48.987 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 初始化SQLite数据库...
+2026-04-27 02:57:48.993 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 数据库文件路径: /app/dbdata/xianyu_assistant.db
+2026-04-27 02:57:48.994 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 使用现有数据库文件: /app/dbdata/xianyu_assistant.db
+2026-04-27 02:57:49.206 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 数据库表结构检查完成，执行了 84 条SQL语句
+2026-04-27 02:57:49.210 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 数据库表列表:
+2026-04-27 02:57:49.211 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - sys_user
+2026-04-27 02:57:49.211 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - sys_login_token
+2026-04-27 02:57:49.212 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_account
+2026-04-27 02:57:49.212 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_cookie
+2026-04-27 02:57:49.212 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods
+2026-04-27 02:57:49.212 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_chat_message
+2026-04-27 02:57:49.212 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_config
+2026-04-27 02:57:49.212 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_delivery_config
+2026-04-27 02:57:49.212 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_delivery_record
+2026-04-27 02:57:49.213 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_reply_config
+2026-04-27 02:57:49.213 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_reply_record
+2026-04-27 02:57:49.213 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_order
+2026-04-27 02:57:49.213 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_operation_log
+2026-04-27 02:57:49.213 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_sys_setting
+2026-04-27 02:57:49.213 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_card_secret
+2026-04-27 02:57:49.214 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - SQLite数据库初始化完成
+2026-04-27 02:57:51.314 [main] INFO  c.f.x.service.impl.AutoReplyDelayServiceImpl - 自动回复延时调度器初始化完成
+2026-04-27 02:57:51.359 [main] INFO  c.feijimiao.xianyuassistant.utils.DatabaseChecker - 自动发货配置表数据检查:
+2026-04-27 02:57:51.359 [main] INFO  c.feijimiao.xianyuassistant.utils.DatabaseChecker -   ID: 1, 账号ID: 1, 商品ID: 1047497664989, 创建时间: 2026-04-24 03:26:35, 更新时间: 2026-04-24 03:26:35
+2026-04-27 02:57:51.359 [main] INFO  c.feijimiao.xianyuassistant.utils.DatabaseChecker -   ID: 2, 账号ID: 1, 商品ID: 1045627540710, 创建时间: 2026-04-24 05:48:54, 更新时间: 2026-04-24 05:49:44
+2026-04-27 02:57:51.538 [main] INFO  o.s.b.a.web.servlet.WelcomePageHandlerMapping - Adding welcome page: class path resource [static/index.html]
+2026-04-27 02:57:52.020 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-12400"]
+2026-04-27 02:57:52.033 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 12400 (http) with context path '/'
+2026-04-27 02:57:52.048 [main] INFO  c.f.xianyuassistant.XianYuAssistantApplication - Started XianYuAssistantApplication in 6.072 seconds (process running for 6.633)
+2026-04-27 02:57:52.055 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 数据库文件路径: /app/dbdata/xianyu_assistant.db
+2026-04-27 02:57:52.055 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 02:57:52.056 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 开始检查数据库表和字段（基于schema.sql）...
+2026-04-27 02:57:52.056 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 02:57:52.056 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 📄 解析Schema文件: sql/schema.sql
+2026-04-27 02:57:52.056 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 开始解析Schema文件: sql/schema.sql
+2026-04-27 02:57:52.067 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 解析到 15 个表定义
+2026-04-27 02:57:52.070 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 解析到 57 个索引定义
+2026-04-27 02:57:52.071 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 解析到 11 个触发器定义
+2026-04-27 02:57:52.072 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查数据库表...
+2026-04-27 02:57:52.073 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: sys_user
+2026-04-27 02:57:52.073 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: sys_login_token
+2026-04-27 02:57:52.073 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_account
+2026-04-27 02:57:52.073 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_cookie
+2026-04-27 02:57:52.073 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods
+2026-04-27 02:57:52.074 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_chat_message
+2026-04-27 02:57:52.074 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_config
+2026-04-27 02:57:52.074 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_delivery_config
+2026-04-27 02:57:52.074 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_delivery_record
+2026-04-27 02:57:52.074 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_reply_config
+2026-04-27 02:57:52.074 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_reply_record
+2026-04-27 02:57:52.074 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_order
+2026-04-27 02:57:52.074 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_operation_log
+2026-04-27 02:57:52.074 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_sys_setting
+2026-04-27 02:57:52.074 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_card_secret
+2026-04-27 02:57:52.075 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查表字段...
+2026-04-27 02:57:52.079 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 📊 字段检查统计: 检查 163 个字段, 添加 0 个新字段
+2026-04-27 02:57:52.079 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✓ 所有字段都已存在
+2026-04-27 02:57:52.079 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查数据库索引...
+2026-04-27 02:57:52.080 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✓ 所有索引都已存在
+2026-04-27 02:57:52.080 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查数据库触发器...
+2026-04-27 02:57:52.080 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✓ 所有触发器都已存在
+2026-04-27 02:57:52.080 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 02:57:52.080 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 数据库表和字段已完善，开始检查数据库完整性...
+2026-04-27 02:57:52.080 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 02:57:52.081 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 📊 数据库表列表:
+2026-04-27 02:57:52.082 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ sys_login_token (记录数: 1)
+2026-04-27 02:57:52.082 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 02:57:52.083 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✅ 数据库完整性检查完成，系统就绪！
+2026-04-27 02:57:52.083 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 02:57:52.083 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 02:57:52.084 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🚀 程序已经启动，可以通过以下地址访问：
+2026-04-27 02:57:52.084 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 02:57:52.084 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   🌐 http://localhost:12400
+2026-04-27 02:57:52.084 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   🌐 http://127.0.0.1:12400
+2026-04-27 02:57:52.084 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   🌐 http://172.23.0.3:12400
+2026-04-27 02:57:52.084 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 02:57:58.386 [http-nio-12400-exec-1] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-27 02:57:58.386 [http-nio-12400-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-27 02:57:58.388 [http-nio-12400-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 2 ms
+2026-04-27 02:58:00.143 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.DashboardController - 获取首页统计数据
+2026-04-27 02:58:04.955 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-27 02:58:04.962 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-27 02:58:06.036 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-27 02:58:06.038 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-27 02:58:06.040 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-27 02:58:06.041 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-27 02:58:08.237 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 02:58:08.237 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 02:58:08.259 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 02:58:08.260 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 02:58:13.851 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.ItemController - 刷新商品数据请求: xianyuAccountId=1
+2026-04-27 02:58:13.851 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 开始刷新商品数据: xianyuAccountId=1
+2026-04-27 02:58:13.851 [http-nio-12400-exec-4] INFO  c.f.x.service.impl.AccountServiceImpl - 根据账号ID获取Cookie: accountId=1
+2026-04-27 02:58:13.856 [http-nio-12400-exec-4] INFO  c.f.x.service.impl.AccountServiceImpl - 获取Cookie成功: accountId=1
+2026-04-27 02:58:13.856 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 获取账号Cookie成功: xianyuAccountId=1
+2026-04-27 02:58:13.856 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 开始获取商品列表: ItemListReqDTO(cookieId=1, pageNumber=1, pageSize=20)
+2026-04-27 02:58:13.857 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库查询Cookie: cookieId=1
+2026-04-27 02:58:13.857 [http-nio-12400-exec-4] INFO  c.f.x.service.impl.AccountServiceImpl - 根据账号ID获取Cookie: accountId=1
+2026-04-27 02:58:13.859 [http-nio-12400-exec-4] INFO  c.f.x.service.impl.AccountServiceImpl - 获取Cookie成功: accountId=1
+2026-04-27 02:58:13.860 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 通过账号ID获取Cookie成功: accountId=1
+2026-04-27 02:58:13.860 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - Cookie获取成功，长度: 735
+2026-04-27 02:58:13.860 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 调用商品列表API: pageNumber=1, pageSize=20
+2026-04-27 02:58:13.867 [http-nio-12400-exec-4] INFO  c.feijimiao.xianyuassistant.utils.XianyuApiUtils - 调用闲鱼API: mtop.idle.web.xyh.item.list
+2026-04-27 02:58:13.873 [http-nio-12400-exec-4] INFO  c.feijimiao.xianyuassistant.utils.HttpClientUtils - 发送POST请求: https://h5api.m.goofish.com/h5/mtop.idle.web.xyh.item.list/1.0/?spm_cnt=a21ybx.im.0.0&dataType=json&sign=e855ee27428583fdf4a472f86b14f08f&accountSite=xianyu&jsv=2.7.2&type=originaljson&spm_pre=a21ybx.collection.menu.1.272b5141NafCNK&timeout=20000&t=1777258693861&v=1.0&sessionOption=AutoLoginOnly&appKey=34839810&api=mtop.idle.web.xyh.item.list
+2026-04-27 02:58:13.874 [http-nio-12400-exec-4] INFO  c.feijimiao.xianyuassistant.utils.HttpClientUtils - 开始执行HTTP请求...
+2026-04-27 02:58:15.691 [http-nio-12400-exec-4] INFO  c.feijimiao.xianyuassistant.utils.HttpClientUtils - HTTP请求完成，状态码: 200 OK
+2026-04-27 02:58:15.691 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - API调用成功，响应长度: 139
+2026-04-27 02:58:15.691 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 开始解析响应JSON...
+2026-04-27 02:58:15.692 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - JSON解析成功，响应字段: [api, data, ret, traceId, v]
+2026-04-27 02:58:15.692 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 开始解析响应，responseMap keys: [api, data, ret, traceId, v]
+2026-04-27 02:58:15.693 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - ret字段: [FAIL_SYS_TOKEN_EXOIRED::令牌过期]
+2026-04-27 02:58:15.702 [http-nio-12400-exec-4] INFO  c.f.x.service.impl.AccountServiceImpl - 更新Cookie状态: accountId=1, cookieStatus=2
+2026-04-27 02:58:15.713 [http-nio-12400-exec-4] INFO  c.f.x.service.impl.AccountServiceImpl - 更新Cookie状态成功: accountId=1, cookieStatus=2
+2026-04-27 02:58:15.720 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 已更新Cookie状态为过期: accountId=1
+2026-04-27 02:58:17.916 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.controller.OrderController - 查询订单列表请求: xianyuAccountId=null, xyGoodsId=null, orderStatus=null, pageNum=1, pageSize=20
+2026-04-27 02:58:17.982 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.service.impl.OrderServiceImpl - 查询订单列表成功: total=0, current=1, size=20
+2026-04-27 02:58:29.459 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-27 02:58:29.463 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=⚠️ 已过期, Token=✅, Token已过期
+2026-04-27 02:58:31.855 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-27 02:58:31.859 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=⚠️ 已过期, Token=✅, Token已过期
+2026-04-27 02:58:33.679 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 02:58:33.679 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 02:58:33.694 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 02:58:33.694 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 02:58:33.995 [http-nio-12400-exec-9] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 02:58:33.995 [http-nio-12400-exec-9] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 02:58:33.999 [http-nio-12400-exec-9] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 02:58:34.005 [http-nio-12400-exec-9] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=16
+2026-04-27 02:58:34.239 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 03:02:52.046 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-27 03:02:52.048 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-27 03:07:52.046 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始刷新所有账号的_m_h5_tk token...
+2026-04-27 03:07:52.048 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ _m_h5_tk token刷新完成: 成功0个, 失败0个
+2026-04-27 03:11:14.133 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.service.impl.AuthServiceImpl - [Auth] 登录成功: username=linjie608, ip=172.23.0.1
+2026-04-27 03:11:15.605 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.DashboardController - 获取首页统计数据
+2026-04-27 03:11:26.103 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 03:11:26.103 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 03:11:26.118 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 03:11:26.119 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 03:11:28.769 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.controller.OrderController - 查询订单列表请求: xianyuAccountId=null, xyGoodsId=null, orderStatus=null, pageNum=1, pageSize=20
+2026-04-27 03:11:28.778 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.service.impl.OrderServiceImpl - 查询订单列表成功: total=0, current=1, size=20
+2026-04-27 03:11:31.365 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 03:11:31.366 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 03:11:31.380 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 03:11:31.380 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 03:11:37.499 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 03:11:37.499 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 03:11:37.513 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 03:11:37.513 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 03:11:37.749 [http-nio-12400-exec-8] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1045230852754
+2026-04-27 03:11:37.749 [http-nio-12400-exec-8] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1045230852754
+2026-04-27 03:11:37.751 [http-nio-12400-exec-8] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 未找到配置
+2026-04-27 03:11:37.751 [http-nio-12400-exec-8] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 未找到匹配的配置，返回带有库存信息的空对象: xianyuAccountId=1, xyGoodsId=1045230852754
+2026-04-27 03:11:37.988 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1045230852754, pageNum=1, pageSize=20
+2026-04-27 03:11:44.803 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 03:11:44.803 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 03:11:44.817 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 03:11:44.818 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 03:14:10.261 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 03:14:10.261 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 03:14:10.275 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 03:14:10.275 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 03:14:13.909 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 03:14:13.909 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 03:14:13.926 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 03:14:13.926 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 03:14:14.178 [http-nio-12400-exec-10] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:14:14.179 [http-nio-12400-exec-10] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:14:14.181 [http-nio-12400-exec-10] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 03:14:14.183 [http-nio-12400-exec-10] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=16
+2026-04-27 03:14:14.416 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 03:16:30.430 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 03:16:30.430 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 03:16:30.444 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 03:16:30.444 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 03:16:30.680 [http-nio-12400-exec-1] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:16:30.680 [http-nio-12400-exec-1] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:16:30.682 [http-nio-12400-exec-1] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 03:16:30.685 [http-nio-12400-exec-1] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=16
+2026-04-27 03:16:30.919 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 03:16:36.419 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.controller.MsgController - 查询消息列表请求: xianyuAccountId=1, xyGoodsId=null, filterCurrentAccount=false, pageNum=1, pageSize=20
+2026-04-27 03:16:36.662 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 03:16:36.662 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 03:16:36.675 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 03:16:36.675 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 03:16:36.914 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.MsgController - 查询消息列表请求: xianyuAccountId=1, xyGoodsId=null, filterCurrentAccount=false, pageNum=1, pageSize=20
+2026-04-27 03:16:37.152 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 03:16:37.152 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 03:16:37.165 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 03:16:37.166 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 03:16:50.895 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.controller.MsgController - 查询消息列表请求: xianyuAccountId=1, xyGoodsId=1042927267440, filterCurrentAccount=false, pageNum=1, pageSize=20
+2026-04-27 03:16:52.571 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.MsgController - 查询消息列表请求: xianyuAccountId=1, xyGoodsId=1047497664989, filterCurrentAccount=false, pageNum=1, pageSize=20
+2026-04-27 03:16:57.185 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.controller.OrderController - 查询订单列表请求: xianyuAccountId=null, xyGoodsId=null, orderStatus=null, pageNum=1, pageSize=20
+2026-04-27 03:16:57.193 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.service.impl.OrderServiceImpl - 查询订单列表成功: total=0, current=1, size=20
+2026-04-27 03:16:58.361 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 03:16:58.361 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 03:16:58.374 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 03:16:58.374 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 03:16:58.610 [http-nio-12400-exec-3] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:16:58.610 [http-nio-12400-exec-5] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:16:58.610 [http-nio-12400-exec-3] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:16:58.610 [http-nio-12400-exec-5] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:16:58.614 [http-nio-12400-exec-5] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 03:16:58.614 [http-nio-12400-exec-3] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 03:16:58.618 [http-nio-12400-exec-3] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=16
+2026-04-27 03:16:58.618 [http-nio-12400-exec-5] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=16
+2026-04-27 03:16:58.845 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 03:17:00.956 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 03:17:00.956 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 03:17:00.968 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 03:17:00.969 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 03:17:01.209 [http-nio-12400-exec-8] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:17:01.209 [http-nio-12400-exec-7] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:17:01.209 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:17:01.209 [http-nio-12400-exec-8] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:17:01.213 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 03:17:01.213 [http-nio-12400-exec-8] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 03:17:01.217 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=16
+2026-04-27 03:17:01.219 [http-nio-12400-exec-8] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=16
+2026-04-27 03:17:01.455 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 03:17:46.661 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 03:17:46.662 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 03:17:46.674 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 03:17:46.674 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 03:17:46.902 [http-nio-12400-exec-5] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:17:46.903 [http-nio-12400-exec-5] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:17:46.905 [http-nio-12400-exec-5] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 03:17:46.909 [http-nio-12400-exec-5] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=16
+2026-04-27 03:17:47.136 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 03:17:47.590 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 03:17:47.590 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 03:17:47.606 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 03:17:47.607 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 03:17:47.833 [http-nio-12400-exec-7] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:17:47.833 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:17:47.836 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 03:17:47.838 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=16
+2026-04-27 03:17:47.856 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 03:17:47.856 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 03:17:47.869 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 03:17:47.869 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 03:17:48.060 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 03:17:48.093 [http-nio-12400-exec-6] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:17:48.093 [http-nio-12400-exec-6] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:17:48.095 [http-nio-12400-exec-6] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 03:17:48.097 [http-nio-12400-exec-6] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=16
+2026-04-27 03:17:48.324 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 03:17:48.325 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 03:17:48.331 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 03:17:48.341 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 03:17:48.341 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 03:17:48.567 [http-nio-12400-exec-4] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:17:48.567 [http-nio-12400-exec-4] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:17:48.569 [http-nio-12400-exec-4] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 03:17:48.571 [http-nio-12400-exec-4] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=16
+2026-04-27 03:17:48.802 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 03:22:14.695 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 03:22:14.695 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 03:22:14.707 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 03:22:14.707 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 03:22:14.939 [http-nio-12400-exec-8] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:22:14.939 [http-nio-12400-exec-8] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:22:14.941 [http-nio-12400-exec-8] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 03:22:14.943 [http-nio-12400-exec-8] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=16
+2026-04-27 03:22:15.168 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 03:24:51.252 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 03:24:51.252 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 03:24:51.264 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 03:24:51.264 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 03:25:08.235 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 03:25:08.235 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 03:25:08.246 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 03:25:08.246 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 03:26:28.847 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.OrderController - 查询订单列表请求: xianyuAccountId=null, xyGoodsId=null, orderStatus=null, pageNum=1, pageSize=20
+2026-04-27 03:26:28.854 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.service.impl.OrderServiceImpl - 查询订单列表成功: total=0, current=1, size=20
+2026-04-27 03:26:30.603 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 03:26:30.603 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 03:26:30.616 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 03:26:30.616 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 03:26:34.598 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 03:26:34.598 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 03:26:34.612 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 03:26:34.612 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 03:26:34.844 [http-nio-12400-exec-6] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:26:34.845 [http-nio-12400-exec-6] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 03:26:34.847 [http-nio-12400-exec-6] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 03:26:34.849 [http-nio-12400-exec-6] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=16
+2026-04-27 03:26:35.081 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 03:26:37.866 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.controller.OrderController - 查询订单列表请求: xianyuAccountId=null, xyGoodsId=null, orderStatus=null, pageNum=1, pageSize=20
+2026-04-27 03:26:37.872 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.service.impl.OrderServiceImpl - 查询订单列表成功: total=0, current=1, size=20
+2026-04-27 03:29:39.338 [SpringApplicationShutdownHook] INFO  o.s.boot.web.embedded.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-04-27 03:29:39.340 [tomcat-shutdown] INFO  o.s.boot.web.embedded.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-04-27 03:29:39.345 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.AutoReplyDelayServiceImpl - 关闭自动回复延时调度器...
+2026-04-27 03:29:39.345 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.AutoReplyDelayServiceImpl - 自动回复延时调度器已关闭
+2026-04-27 03:29:39.346 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.WebSocketServiceImpl - 应用关闭，清理WebSocket资源
+2026-04-27 03:29:39.346 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.WebSocketServiceImpl - 停止所有WebSocket连接
+2026-04-27 03:29:41.369 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.3.Final
+2026-04-27 03:29:41.452 [main] INFO  c.f.xianyuassistant.XianYuAssistantApplication - Starting XianYuAssistantApplication v0.0.1-SNAPSHOT using Java 21.0.10 with PID 1 (/app/app.jar started by root in /app)
+2026-04-27 03:29:41.454 [main] INFO  c.f.xianyuassistant.XianYuAssistantApplication - No active profile set, falling back to 1 default profile: "default"
+2026-04-27 03:29:43.657 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 12400 (http)
+2026-04-27 03:29:43.671 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-12400"]
+2026-04-27 03:29:43.675 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-27 03:29:43.676 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.48]
+2026-04-27 03:29:43.715 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-27 03:29:43.716 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 2172 ms
+2026-04-27 03:29:43.823 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 初始化SQLite数据库...
+2026-04-27 03:29:43.831 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 数据库文件路径: /app/dbdata/xianyu_assistant.db
+2026-04-27 03:29:43.832 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 使用现有数据库文件: /app/dbdata/xianyu_assistant.db
+2026-04-27 03:29:43.985 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 数据库表结构检查完成，执行了 84 条SQL语句
+2026-04-27 03:29:43.988 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 数据库表列表:
+2026-04-27 03:29:43.989 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - sys_user
+2026-04-27 03:29:43.989 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - sys_login_token
+2026-04-27 03:29:43.990 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_account
+2026-04-27 03:29:43.990 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_cookie
+2026-04-27 03:29:43.990 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods
+2026-04-27 03:29:43.990 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_chat_message
+2026-04-27 03:29:43.990 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_config
+2026-04-27 03:29:43.990 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_delivery_config
+2026-04-27 03:29:43.990 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_delivery_record
+2026-04-27 03:29:43.990 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_reply_config
+2026-04-27 03:29:43.990 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_reply_record
+2026-04-27 03:29:43.990 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_order
+2026-04-27 03:29:43.990 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_operation_log
+2026-04-27 03:29:43.991 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_sys_setting
+2026-04-27 03:29:43.991 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_card_secret
+2026-04-27 03:29:43.991 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - SQLite数据库初始化完成
+2026-04-27 03:29:46.155 [main] INFO  c.f.x.service.impl.AutoReplyDelayServiceImpl - 自动回复延时调度器初始化完成
+2026-04-27 03:29:46.204 [main] INFO  c.feijimiao.xianyuassistant.utils.DatabaseChecker - 自动发货配置表数据检查:
+2026-04-27 03:29:46.204 [main] INFO  c.feijimiao.xianyuassistant.utils.DatabaseChecker -   ID: 1, 账号ID: 1, 商品ID: 1047497664989, 创建时间: 2026-04-24 03:26:35, 更新时间: 2026-04-24 03:26:35
+2026-04-27 03:29:46.204 [main] INFO  c.feijimiao.xianyuassistant.utils.DatabaseChecker -   ID: 2, 账号ID: 1, 商品ID: 1045627540710, 创建时间: 2026-04-24 05:48:54, 更新时间: 2026-04-24 05:49:44
+2026-04-27 03:29:46.401 [main] INFO  o.s.b.a.web.servlet.WelcomePageHandlerMapping - Adding welcome page: class path resource [static/index.html]
+2026-04-27 03:29:46.961 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-12400"]
+2026-04-27 03:29:46.979 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 12400 (http) with context path '/'
+2026-04-27 03:29:46.998 [main] INFO  c.f.xianyuassistant.XianYuAssistantApplication - Started XianYuAssistantApplication in 6.341 seconds (process running for 6.961)
+2026-04-27 03:29:47.010 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 数据库文件路径: /app/dbdata/xianyu_assistant.db
+2026-04-27 03:29:47.011 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 03:29:47.011 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 开始检查数据库表和字段（基于schema.sql）...
+2026-04-27 03:29:47.011 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 03:29:47.011 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 📄 解析Schema文件: sql/schema.sql
+2026-04-27 03:29:47.012 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 开始解析Schema文件: sql/schema.sql
+2026-04-27 03:29:47.028 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 解析到 15 个表定义
+2026-04-27 03:29:47.031 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 解析到 57 个索引定义
+2026-04-27 03:29:47.033 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 解析到 11 个触发器定义
+2026-04-27 03:29:47.033 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查数据库表...
+2026-04-27 03:29:47.034 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: sys_user
+2026-04-27 03:29:47.034 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: sys_login_token
+2026-04-27 03:29:47.034 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_account
+2026-04-27 03:29:47.034 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_cookie
+2026-04-27 03:29:47.034 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods
+2026-04-27 03:29:47.035 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_chat_message
+2026-04-27 03:29:47.035 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_config
+2026-04-27 03:29:47.035 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_delivery_config
+2026-04-27 03:29:47.035 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_delivery_record
+2026-04-27 03:29:47.035 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_reply_config
+2026-04-27 03:29:47.035 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_reply_record
+2026-04-27 03:29:47.035 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_order
+2026-04-27 03:29:47.035 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_operation_log
+2026-04-27 03:29:47.035 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_sys_setting
+2026-04-27 03:29:47.035 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_card_secret
+2026-04-27 03:29:47.036 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查表字段...
+2026-04-27 03:29:47.039 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 📊 字段检查统计: 检查 163 个字段, 添加 0 个新字段
+2026-04-27 03:29:47.039 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✓ 所有字段都已存在
+2026-04-27 03:29:47.039 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查数据库索引...
+2026-04-27 03:29:47.040 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✓ 所有索引都已存在
+2026-04-27 03:29:47.040 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查数据库触发器...
+2026-04-27 03:29:47.040 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✓ 所有触发器都已存在
+2026-04-27 03:29:47.040 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 03:29:47.040 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 数据库表和字段已完善，开始检查数据库完整性...
+2026-04-27 03:29:47.040 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 03:29:47.041 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 📊 数据库表列表:
+2026-04-27 03:29:47.042 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ sys_login_token (记录数: 1)
+2026-04-27 03:29:47.042 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 03:29:47.042 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✅ 数据库完整性检查完成，系统就绪！
+2026-04-27 03:29:47.042 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 03:29:47.043 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 03:29:47.043 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🚀 程序已经启动，可以通过以下地址访问：
+2026-04-27 03:29:47.043 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 03:29:47.043 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   🌐 http://localhost:12400
+2026-04-27 03:29:47.043 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   🌐 http://127.0.0.1:12400
+2026-04-27 03:29:47.043 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   🌐 http://172.23.0.3:12400
+2026-04-27 03:29:47.043 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 03:30:02.259 [http-nio-12400-exec-2] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-27 03:30:02.260 [http-nio-12400-exec-2] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-27 03:30:02.261 [http-nio-12400-exec-2] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-04-27 03:33:41.696 [SpringApplicationShutdownHook] INFO  o.s.boot.web.embedded.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-04-27 03:33:41.703 [tomcat-shutdown] INFO  o.s.boot.web.embedded.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-04-27 03:33:41.707 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.AutoReplyDelayServiceImpl - 关闭自动回复延时调度器...
+2026-04-27 03:33:41.707 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.AutoReplyDelayServiceImpl - 自动回复延时调度器已关闭
+2026-04-27 03:33:41.708 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.WebSocketServiceImpl - 应用关闭，清理WebSocket资源
+2026-04-27 03:33:41.708 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.WebSocketServiceImpl - 停止所有WebSocket连接
+2026-04-27 03:33:43.766 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.3.Final
+2026-04-27 03:33:43.857 [main] INFO  c.f.xianyuassistant.XianYuAssistantApplication - Starting XianYuAssistantApplication v0.0.1-SNAPSHOT using Java 21.0.10 with PID 1 (/app/app.jar started by root in /app)
+2026-04-27 03:33:43.858 [main] INFO  c.f.xianyuassistant.XianYuAssistantApplication - No active profile set, falling back to 1 default profile: "default"
+2026-04-27 03:33:46.213 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 12400 (http)
+2026-04-27 03:33:46.228 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-12400"]
+2026-04-27 03:33:46.231 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-27 03:33:46.231 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.48]
+2026-04-27 03:33:46.298 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-27 03:33:46.300 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 2334 ms
+2026-04-27 03:33:46.386 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 初始化SQLite数据库...
+2026-04-27 03:33:46.392 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 数据库文件路径: /app/dbdata/xianyu_assistant.db
+2026-04-27 03:33:46.393 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 使用现有数据库文件: /app/dbdata/xianyu_assistant.db
+2026-04-27 03:33:46.609 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 数据库表结构检查完成，执行了 84 条SQL语句
+2026-04-27 03:33:46.613 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 数据库表列表:
+2026-04-27 03:33:46.615 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - sys_user
+2026-04-27 03:33:46.616 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - sys_login_token
+2026-04-27 03:33:46.618 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_account
+2026-04-27 03:33:46.618 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_cookie
+2026-04-27 03:33:46.618 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods
+2026-04-27 03:33:46.618 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_chat_message
+2026-04-27 03:33:46.618 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_config
+2026-04-27 03:33:46.618 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_delivery_config
+2026-04-27 03:33:46.618 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_delivery_record
+2026-04-27 03:33:46.619 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_reply_config
+2026-04-27 03:33:46.619 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_reply_record
+2026-04-27 03:33:46.619 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_order
+2026-04-27 03:33:46.619 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_operation_log
+2026-04-27 03:33:46.619 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_sys_setting
+2026-04-27 03:33:46.619 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_card_secret
+2026-04-27 03:33:46.620 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - SQLite数据库初始化完成
+2026-04-27 03:33:48.849 [main] INFO  c.f.x.service.impl.AutoReplyDelayServiceImpl - 自动回复延时调度器初始化完成
+2026-04-27 03:33:48.897 [main] INFO  c.feijimiao.xianyuassistant.utils.DatabaseChecker - 自动发货配置表数据检查:
+2026-04-27 03:33:48.898 [main] INFO  c.feijimiao.xianyuassistant.utils.DatabaseChecker -   ID: 1, 账号ID: 1, 商品ID: 1047497664989, 创建时间: 2026-04-24 03:26:35, 更新时间: 2026-04-24 03:26:35
+2026-04-27 03:33:48.898 [main] INFO  c.feijimiao.xianyuassistant.utils.DatabaseChecker -   ID: 2, 账号ID: 1, 商品ID: 1045627540710, 创建时间: 2026-04-24 05:48:54, 更新时间: 2026-04-24 05:49:44
+2026-04-27 03:33:49.092 [main] INFO  o.s.b.a.web.servlet.WelcomePageHandlerMapping - Adding welcome page: class path resource [static/index.html]
+2026-04-27 03:33:49.585 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-12400"]
+2026-04-27 03:33:49.603 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 12400 (http) with context path '/'
+2026-04-27 03:33:49.619 [main] INFO  c.f.xianyuassistant.XianYuAssistantApplication - Started XianYuAssistantApplication in 6.531 seconds (process running for 7.199)
+2026-04-27 03:33:49.627 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 数据库文件路径: /app/dbdata/xianyu_assistant.db
+2026-04-27 03:33:49.627 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 03:33:49.627 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 开始检查数据库表和字段（基于schema.sql）...
+2026-04-27 03:33:49.628 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 03:33:49.628 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 📄 解析Schema文件: sql/schema.sql
+2026-04-27 03:33:49.629 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 开始解析Schema文件: sql/schema.sql
+2026-04-27 03:33:49.639 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 解析到 15 个表定义
+2026-04-27 03:33:49.642 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 解析到 57 个索引定义
+2026-04-27 03:33:49.644 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 解析到 11 个触发器定义
+2026-04-27 03:33:49.644 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查数据库表...
+2026-04-27 03:33:49.645 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: sys_user
+2026-04-27 03:33:49.646 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: sys_login_token
+2026-04-27 03:33:49.646 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_account
+2026-04-27 03:33:49.646 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_cookie
+2026-04-27 03:33:49.646 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods
+2026-04-27 03:33:49.646 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_chat_message
+2026-04-27 03:33:49.647 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_config
+2026-04-27 03:33:49.647 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_delivery_config
+2026-04-27 03:33:49.647 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_delivery_record
+2026-04-27 03:33:49.647 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_reply_config
+2026-04-27 03:33:49.648 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_reply_record
+2026-04-27 03:33:49.648 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_order
+2026-04-27 03:33:49.648 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_operation_log
+2026-04-27 03:33:49.648 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_sys_setting
+2026-04-27 03:33:49.648 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_card_secret
+2026-04-27 03:33:49.649 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查表字段...
+2026-04-27 03:33:49.653 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 📊 字段检查统计: 检查 163 个字段, 添加 0 个新字段
+2026-04-27 03:33:49.653 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✓ 所有字段都已存在
+2026-04-27 03:33:49.653 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查数据库索引...
+2026-04-27 03:33:49.654 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✓ 所有索引都已存在
+2026-04-27 03:33:49.654 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查数据库触发器...
+2026-04-27 03:33:49.655 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✓ 所有触发器都已存在
+2026-04-27 03:33:49.655 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 03:33:49.655 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 数据库表和字段已完善，开始检查数据库完整性...
+2026-04-27 03:33:49.655 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 03:33:49.656 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 📊 数据库表列表:
+2026-04-27 03:33:49.658 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ sys_login_token (记录数: 1)
+2026-04-27 03:33:49.658 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 03:33:49.658 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✅ 数据库完整性检查完成，系统就绪！
+2026-04-27 03:33:49.659 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 03:33:49.660 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 03:33:49.660 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🚀 程序已经启动，可以通过以下地址访问：
+2026-04-27 03:33:49.660 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 03:33:49.660 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   🌐 http://localhost:12400
+2026-04-27 03:33:49.661 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   🌐 http://127.0.0.1:12400
+2026-04-27 03:33:49.661 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   🌐 http://172.23.0.3:12400
+2026-04-27 03:33:49.661 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 03:38:49.617 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-27 03:38:49.620 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-27 03:43:49.617 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始刷新所有账号的_m_h5_tk token...
+2026-04-27 03:43:49.619 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ _m_h5_tk token刷新完成: 成功0个, 失败0个
+2026-04-27 04:08:49.620 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-27 04:08:49.623 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-27 04:38:49.623 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-27 04:38:49.626 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-27 05:08:49.626 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-27 05:08:49.628 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-27 05:38:49.629 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-27 05:38:49.631 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-27 05:41:26.136 [http-nio-12400-exec-1] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-27 05:41:26.137 [http-nio-12400-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-27 05:41:26.139 [http-nio-12400-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 2 ms
+2026-04-27 05:43:49.620 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始刷新所有账号的_m_h5_tk token...
+2026-04-27 05:43:49.622 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ _m_h5_tk token刷新完成: 成功0个, 失败0个
+2026-04-27 05:47:26.217 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 05:47:26.218 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 05:47:26.242 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 05:47:26.242 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 05:47:26.548 [http-nio-12400-exec-3] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 05:47:26.549 [http-nio-12400-exec-3] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 05:47:26.552 [http-nio-12400-exec-3] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 05:47:26.558 [http-nio-12400-exec-3] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=16
+2026-04-27 05:47:26.796 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 05:48:59.783 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.OrderController - 查询订单列表请求: xianyuAccountId=null, xyGoodsId=null, orderStatus=null, pageNum=1, pageSize=20
+2026-04-27 05:48:59.795 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.service.impl.OrderServiceImpl - 查询订单列表成功: total=0, current=1, size=20
+2026-04-27 05:50:01.056 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.controller.OrderController - 查询订单列表请求: xianyuAccountId=null, xyGoodsId=null, orderStatus=null, pageNum=1, pageSize=20
+2026-04-27 05:50:01.061 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.service.impl.OrderServiceImpl - 查询订单列表成功: total=0, current=1, size=20
+2026-04-27 05:50:02.021 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.OrderController - 查询订单列表请求: xianyuAccountId=null, xyGoodsId=null, orderStatus=null, pageNum=1, pageSize=20
+2026-04-27 05:50:02.027 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.OrderServiceImpl - 查询订单列表成功: total=0, current=1, size=20
+2026-04-27 05:50:04.164 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.controller.OrderController - 查询订单列表请求: xianyuAccountId=null, xyGoodsId=null, orderStatus=null, pageNum=1, pageSize=20
+2026-04-27 05:50:04.173 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.service.impl.OrderServiceImpl - 查询订单列表成功: total=0, current=1, size=20
+2026-04-27 05:51:08.929 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 05:51:08.929 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 05:51:08.943 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 05:51:08.943 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 05:52:34.031 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 05:52:34.032 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 05:52:34.045 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 05:52:34.045 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 05:52:34.288 [http-nio-12400-exec-5] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 05:52:34.288 [http-nio-12400-exec-5] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 05:52:34.291 [http-nio-12400-exec-5] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 05:52:34.293 [http-nio-12400-exec-5] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=16
+2026-04-27 05:52:34.520 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 05:53:01.833 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.OrderController - 查询订单列表请求: xianyuAccountId=null, xyGoodsId=null, orderStatus=null, pageNum=1, pageSize=20
+2026-04-27 05:53:01.842 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.OrderServiceImpl - 查询订单列表成功: total=0, current=1, size=20
+2026-04-27 05:53:03.088 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 05:53:03.089 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 05:53:03.101 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 05:53:03.101 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 06:03:24.910 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 06:03:24.911 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 06:03:24.923 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 06:03:24.924 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 06:03:57.156 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=1000
+2026-04-27 06:03:57.156 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=1000
+2026-04-27 06:03:57.170 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=1000, totalPage=1
+2026-04-27 06:03:57.171 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=1000, 总页数=1
+2026-04-27 06:08:49.632 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-27 06:08:49.635 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-27 06:24:55.825 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.controller.OrderController - 查询订单列表请求: xianyuAccountId=null, xyGoodsId=null, orderStatus=null, pageNum=1, pageSize=20
+2026-04-27 06:24:55.830 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.service.impl.OrderServiceImpl - 查询订单列表成功: total=0, current=1, size=20
+2026-04-27 06:25:22.419 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 06:25:22.419 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 06:25:22.431 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 06:25:22.431 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 06:25:26.459 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 06:25:26.459 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 06:25:26.471 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 06:25:26.471 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 06:25:26.720 [http-nio-12400-exec-5] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 06:25:26.720 [http-nio-12400-exec-5] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 06:25:26.722 [http-nio-12400-exec-5] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 06:25:26.724 [http-nio-12400-exec-5] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=16
+2026-04-27 06:25:26.958 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 06:25:36.213 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 06:25:36.213 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 06:25:36.225 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 06:25:36.225 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 06:25:36.470 [http-nio-12400-exec-9] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 06:25:36.471 [http-nio-12400-exec-9] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 06:25:36.473 [http-nio-12400-exec-9] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 06:25:36.475 [http-nio-12400-exec-9] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=16
+2026-04-27 06:25:36.710 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 06:27:37.585 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 06:27:37.585 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 06:27:37.597 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 06:27:37.598 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 06:27:37.851 [http-nio-12400-exec-3] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 06:27:37.851 [http-nio-12400-exec-3] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 06:27:37.853 [http-nio-12400-exec-3] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 06:27:37.855 [http-nio-12400-exec-3] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=16
+2026-04-27 06:27:38.093 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 06:28:53.127 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.controller.OrderController - 查询订单列表请求: xianyuAccountId=null, xyGoodsId=null, orderStatus=null, pageNum=1, pageSize=20
+2026-04-27 06:28:53.132 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.service.impl.OrderServiceImpl - 查询订单列表成功: total=0, current=1, size=20
+2026-04-27 06:28:54.683 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 06:28:54.684 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 06:28:54.696 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 06:28:54.696 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 06:28:54.928 [http-nio-12400-exec-1] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 06:28:54.928 [http-nio-12400-exec-1] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 06:28:54.930 [http-nio-12400-exec-1] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 06:28:54.932 [http-nio-12400-exec-1] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=16
+2026-04-27 06:28:55.158 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 06:38:49.635 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-27 06:38:49.637 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-27 06:54:22.453 [SpringApplicationShutdownHook] INFO  o.s.boot.web.embedded.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-04-27 06:54:22.458 [tomcat-shutdown] INFO  o.s.boot.web.embedded.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-04-27 06:54:22.463 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.AutoReplyDelayServiceImpl - 关闭自动回复延时调度器...
+2026-04-27 06:54:22.464 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.AutoReplyDelayServiceImpl - 自动回复延时调度器已关闭
+2026-04-27 06:54:22.464 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.WebSocketServiceImpl - 应用关闭，清理WebSocket资源
+2026-04-27 06:54:22.464 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.WebSocketServiceImpl - 停止所有WebSocket连接
+2026-04-27 06:54:24.512 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.3.Final
+2026-04-27 06:54:24.624 [main] INFO  c.f.xianyuassistant.XianYuAssistantApplication - Starting XianYuAssistantApplication v0.0.1-SNAPSHOT using Java 21.0.10 with PID 1 (/app/app.jar started by root in /app)
+2026-04-27 06:54:24.625 [main] INFO  c.f.xianyuassistant.XianYuAssistantApplication - No active profile set, falling back to 1 default profile: "default"
+2026-04-27 06:54:26.868 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 12400 (http)
+2026-04-27 06:54:26.883 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-12400"]
+2026-04-27 06:54:26.886 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-27 06:54:26.886 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.48]
+2026-04-27 06:54:26.917 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-27 06:54:26.919 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 2223 ms
+2026-04-27 06:54:27.023 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 初始化SQLite数据库...
+2026-04-27 06:54:27.029 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 数据库文件路径: /app/dbdata/xianyu_assistant.db
+2026-04-27 06:54:27.030 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 使用现有数据库文件: /app/dbdata/xianyu_assistant.db
+2026-04-27 06:54:27.245 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 数据库表结构检查完成，执行了 84 条SQL语句
+2026-04-27 06:54:27.249 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 数据库表列表:
+2026-04-27 06:54:27.251 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - sys_user
+2026-04-27 06:54:27.251 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - sys_login_token
+2026-04-27 06:54:27.251 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_account
+2026-04-27 06:54:27.251 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_cookie
+2026-04-27 06:54:27.251 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods
+2026-04-27 06:54:27.251 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_chat_message
+2026-04-27 06:54:27.252 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_config
+2026-04-27 06:54:27.252 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_delivery_config
+2026-04-27 06:54:27.252 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_delivery_record
+2026-04-27 06:54:27.252 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_reply_config
+2026-04-27 06:54:27.252 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_reply_record
+2026-04-27 06:54:27.252 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_order
+2026-04-27 06:54:27.252 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_operation_log
+2026-04-27 06:54:27.252 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_sys_setting
+2026-04-27 06:54:27.252 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_card_secret
+2026-04-27 06:54:27.253 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - SQLite数据库初始化完成
+2026-04-27 06:54:29.479 [main] INFO  c.f.x.service.impl.AutoReplyDelayServiceImpl - 自动回复延时调度器初始化完成
+2026-04-27 06:54:29.530 [main] INFO  c.feijimiao.xianyuassistant.utils.DatabaseChecker - 自动发货配置表数据检查:
+2026-04-27 06:54:29.530 [main] INFO  c.feijimiao.xianyuassistant.utils.DatabaseChecker -   ID: 1, 账号ID: 1, 商品ID: 1047497664989, 创建时间: 2026-04-24 03:26:35, 更新时间: 2026-04-24 03:26:35
+2026-04-27 06:54:29.531 [main] INFO  c.feijimiao.xianyuassistant.utils.DatabaseChecker -   ID: 2, 账号ID: 1, 商品ID: 1045627540710, 创建时间: 2026-04-24 05:48:54, 更新时间: 2026-04-24 05:49:44
+2026-04-27 06:54:29.741 [main] INFO  o.s.b.a.web.servlet.WelcomePageHandlerMapping - Adding welcome page: class path resource [static/index.html]
+2026-04-27 06:54:30.353 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-12400"]
+2026-04-27 06:54:30.374 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 12400 (http) with context path '/'
+2026-04-27 06:54:30.397 [main] INFO  c.f.xianyuassistant.XianYuAssistantApplication - Started XianYuAssistantApplication in 6.676 seconds (process running for 7.26)
+2026-04-27 06:54:30.407 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 数据库文件路径: /app/dbdata/xianyu_assistant.db
+2026-04-27 06:54:30.408 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 06:54:30.408 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 开始检查数据库表和字段（基于schema.sql）...
+2026-04-27 06:54:30.408 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 06:54:30.409 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 📄 解析Schema文件: sql/schema.sql
+2026-04-27 06:54:30.410 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 开始解析Schema文件: sql/schema.sql
+2026-04-27 06:54:30.438 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 解析到 15 个表定义
+2026-04-27 06:54:30.441 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 解析到 57 个索引定义
+2026-04-27 06:54:30.442 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 解析到 11 个触发器定义
+2026-04-27 06:54:30.443 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查数据库表...
+2026-04-27 06:54:30.444 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: sys_user
+2026-04-27 06:54:30.444 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: sys_login_token
+2026-04-27 06:54:30.444 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_account
+2026-04-27 06:54:30.444 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_cookie
+2026-04-27 06:54:30.444 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods
+2026-04-27 06:54:30.444 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_chat_message
+2026-04-27 06:54:30.444 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_config
+2026-04-27 06:54:30.444 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_delivery_config
+2026-04-27 06:54:30.445 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_delivery_record
+2026-04-27 06:54:30.445 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_reply_config
+2026-04-27 06:54:30.445 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_reply_record
+2026-04-27 06:54:30.445 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_order
+2026-04-27 06:54:30.445 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_operation_log
+2026-04-27 06:54:30.445 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_sys_setting
+2026-04-27 06:54:30.445 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_card_secret
+2026-04-27 06:54:30.445 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查表字段...
+2026-04-27 06:54:30.450 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 📊 字段检查统计: 检查 163 个字段, 添加 0 个新字段
+2026-04-27 06:54:30.450 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✓ 所有字段都已存在
+2026-04-27 06:54:30.450 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查数据库索引...
+2026-04-27 06:54:30.451 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✓ 所有索引都已存在
+2026-04-27 06:54:30.451 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查数据库触发器...
+2026-04-27 06:54:30.452 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✓ 所有触发器都已存在
+2026-04-27 06:54:30.452 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 06:54:30.452 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 数据库表和字段已完善，开始检查数据库完整性...
+2026-04-27 06:54:30.452 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 06:54:30.452 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 📊 数据库表列表:
+2026-04-27 06:54:30.453 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ sys_login_token (记录数: 1)
+2026-04-27 06:54:30.453 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 06:54:30.453 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✅ 数据库完整性检查完成，系统就绪！
+2026-04-27 06:54:30.453 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 06:54:30.454 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 06:54:30.455 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🚀 程序已经启动，可以通过以下地址访问：
+2026-04-27 06:54:30.455 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 06:54:30.455 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   🌐 http://localhost:12400
+2026-04-27 06:54:30.455 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   🌐 http://127.0.0.1:12400
+2026-04-27 06:54:30.455 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   🌐 http://172.23.0.3:12400
+2026-04-27 06:54:30.455 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 06:56:10.038 [http-nio-12400-exec-1] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-27 06:56:10.038 [http-nio-12400-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-27 06:56:10.040 [http-nio-12400-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 2 ms
+2026-04-27 06:59:30.394 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-27 06:59:30.397 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-27 07:03:12.586 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 07:03:12.586 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 07:03:12.607 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 07:03:12.608 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 07:03:12.769 [http-nio-12400-exec-7] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 07:03:12.769 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 07:03:12.773 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 07:03:12.779 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=17
+2026-04-27 07:03:12.873 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 07:03:23.489 [http-nio-12400-exec-1] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1045627540710
+2026-04-27 07:03:23.490 [http-nio-12400-exec-1] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1045627540710
+2026-04-27 07:03:23.492 [http-nio-12400-exec-1] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 07:03:23.495 [http-nio-12400-exec-1] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=2, type=1, hasContent=true, cardSecretCount=2
+2026-04-27 07:03:23.661 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1045627540710, pageNum=1, pageSize=20
+2026-04-27 07:03:25.011 [http-nio-12400-exec-3] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1045230852754
+2026-04-27 07:03:25.011 [http-nio-12400-exec-3] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1045230852754
+2026-04-27 07:03:25.013 [http-nio-12400-exec-3] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 未找到配置
+2026-04-27 07:03:25.014 [http-nio-12400-exec-3] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 未找到匹配的配置，返回带有库存信息的空对象: xianyuAccountId=1, xyGoodsId=1045230852754
+2026-04-27 07:03:25.187 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1045230852754, pageNum=1, pageSize=20
+2026-04-27 07:03:26.850 [http-nio-12400-exec-5] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 07:03:26.850 [http-nio-12400-exec-5] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 07:03:26.852 [http-nio-12400-exec-5] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 07:03:26.855 [http-nio-12400-exec-5] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=17
+2026-04-27 07:03:27.309 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 07:03:31.110 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.controller.OrderController - 查询订单列表请求: xianyuAccountId=null, xyGoodsId=null, orderStatus=null, pageNum=1, pageSize=20
+2026-04-27 07:03:31.120 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.service.impl.OrderServiceImpl - 查询订单列表成功: total=0, current=1, size=20
+2026-04-27 07:03:32.774 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 07:03:32.774 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 07:03:32.789 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 07:03:32.789 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 07:04:00.304 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 07:04:00.304 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 07:04:00.319 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 07:04:00.319 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 07:04:30.394 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始刷新所有账号的_m_h5_tk token...
+2026-04-27 07:04:30.397 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ _m_h5_tk token刷新完成: 成功0个, 失败0个
+2026-04-27 07:08:31.894 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 07:08:31.895 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 07:08:31.910 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 07:08:31.910 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 07:08:32.011 [http-nio-12400-exec-7] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 07:08:32.013 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 07:08:32.016 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 07:08:32.018 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=17
+2026-04-27 07:08:32.122 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 07:14:19.617 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.OrderController - 查询订单列表请求: xianyuAccountId=null, xyGoodsId=null, orderStatus=null, pageNum=1, pageSize=20
+2026-04-27 07:14:19.623 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.OrderServiceImpl - 查询订单列表成功: total=0, current=1, size=20
+2026-04-27 07:14:20.302 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 07:14:20.303 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 07:14:20.316 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 07:14:20.316 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 07:14:20.437 [http-nio-12400-exec-1] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 07:14:20.437 [http-nio-12400-exec-1] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 07:14:20.439 [http-nio-12400-exec-1] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 07:14:20.442 [http-nio-12400-exec-1] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=17
+2026-04-27 07:14:20.525 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 07:15:28.657 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 07:15:28.657 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 07:15:28.673 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 07:15:28.673 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 07:15:28.920 [http-nio-12400-exec-5] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 07:15:28.920 [http-nio-12400-exec-5] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 07:15:28.923 [http-nio-12400-exec-5] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 07:15:28.926 [http-nio-12400-exec-5] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=17
+2026-04-27 07:15:29.019 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 07:16:54.098 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 07:16:54.098 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 07:16:54.111 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 07:16:54.111 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 07:16:54.348 [http-nio-12400-exec-10] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 07:16:54.348 [http-nio-12400-exec-10] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 07:16:54.350 [http-nio-12400-exec-10] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 07:16:54.352 [http-nio-12400-exec-10] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=17
+2026-04-27 07:16:54.444 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 07:17:58.223 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 07:17:58.223 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 07:17:58.235 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 07:17:58.236 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 07:17:58.336 [http-nio-12400-exec-2] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 07:17:58.336 [http-nio-12400-exec-2] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 07:17:58.338 [http-nio-12400-exec-2] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 07:17:58.340 [http-nio-12400-exec-2] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=17
+2026-04-27 07:17:58.428 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 07:18:05.433 [http-nio-12400-exec-5] INFO  c.f.x.controller.AutoDeliveryConfigController - 导入卡密请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 07:18:05.454 [http-nio-12400-exec-5] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 成功导入 1 条卡密: accountId=1, xyGoodsId=1047497664989
+2026-04-27 07:18:05.614 [http-nio-12400-exec-9] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 07:18:05.614 [http-nio-12400-exec-9] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 07:18:05.616 [http-nio-12400-exec-9] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 07:18:05.618 [http-nio-12400-exec-9] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=18
+2026-04-27 07:18:08.417 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 07:18:08.418 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 07:18:08.430 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 07:18:08.430 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 07:26:15.334 [SpringApplicationShutdownHook] INFO  o.s.boot.web.embedded.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-04-27 07:26:15.336 [tomcat-shutdown] INFO  o.s.boot.web.embedded.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-04-27 07:26:15.340 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.AutoReplyDelayServiceImpl - 关闭自动回复延时调度器...
+2026-04-27 07:26:15.341 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.AutoReplyDelayServiceImpl - 自动回复延时调度器已关闭
+2026-04-27 07:26:15.341 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.WebSocketServiceImpl - 应用关闭，清理WebSocket资源
+2026-04-27 07:26:15.341 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.WebSocketServiceImpl - 停止所有WebSocket连接
+2026-04-27 07:26:18.668 [background-preinit] INFO  org.hibernate.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.3.Final
+2026-04-27 07:26:18.815 [main] INFO  c.f.xianyuassistant.XianYuAssistantApplication - Starting XianYuAssistantApplication v0.0.1-SNAPSHOT using Java 21.0.10 with PID 1 (/app/app.jar started by root in /app)
+2026-04-27 07:26:18.817 [main] INFO  c.f.xianyuassistant.XianYuAssistantApplication - No active profile set, falling back to 1 default profile: "default"
+2026-04-27 07:26:23.019 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 12400 (http)
+2026-04-27 07:26:23.081 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-12400"]
+2026-04-27 07:26:23.089 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-27 07:26:23.090 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.48]
+2026-04-27 07:26:23.163 [main] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-27 07:26:23.165 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 4140 ms
+2026-04-27 07:26:23.400 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 初始化SQLite数据库...
+2026-04-27 07:26:23.417 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 数据库文件路径: /app/dbdata/xianyu_assistant.db
+2026-04-27 07:26:23.418 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 使用现有数据库文件: /app/dbdata/xianyu_assistant.db
+2026-04-27 07:26:23.586 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 数据库表结构检查完成，执行了 84 条SQL语句
+2026-04-27 07:26:23.589 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - 数据库表列表:
+2026-04-27 07:26:23.590 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - sys_user
+2026-04-27 07:26:23.591 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - sys_login_token
+2026-04-27 07:26:23.591 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_account
+2026-04-27 07:26:23.591 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_cookie
+2026-04-27 07:26:23.591 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods
+2026-04-27 07:26:23.591 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_chat_message
+2026-04-27 07:26:23.591 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_config
+2026-04-27 07:26:23.591 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_delivery_config
+2026-04-27 07:26:23.591 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_delivery_record
+2026-04-27 07:26:23.591 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_reply_config
+2026-04-27 07:26:23.591 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_auto_reply_record
+2026-04-27 07:26:23.591 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_order
+2026-04-27 07:26:23.591 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_operation_log
+2026-04-27 07:26:23.591 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_sys_setting
+2026-04-27 07:26:23.592 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig -   - xianyu_goods_card_secret
+2026-04-27 07:26:23.596 [main] INFO  c.feijimiao.xianyuassistant.config.DatabaseConfig - SQLite数据库初始化完成
+2026-04-27 07:26:27.697 [main] INFO  c.f.x.service.impl.AutoReplyDelayServiceImpl - 自动回复延时调度器初始化完成
+2026-04-27 07:26:27.831 [main] INFO  c.feijimiao.xianyuassistant.utils.DatabaseChecker - 自动发货配置表数据检查:
+2026-04-27 07:26:27.832 [main] INFO  c.feijimiao.xianyuassistant.utils.DatabaseChecker -   ID: 1, 账号ID: 1, 商品ID: 1047497664989, 创建时间: 2026-04-24 03:26:35, 更新时间: 2026-04-24 03:26:35
+2026-04-27 07:26:27.832 [main] INFO  c.feijimiao.xianyuassistant.utils.DatabaseChecker -   ID: 2, 账号ID: 1, 商品ID: 1045627540710, 创建时间: 2026-04-24 05:48:54, 更新时间: 2026-04-24 05:49:44
+2026-04-27 07:26:28.054 [main] INFO  o.s.b.a.web.servlet.WelcomePageHandlerMapping - Adding welcome page: class path resource [static/index.html]
+2026-04-27 07:26:28.659 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-12400"]
+2026-04-27 07:26:28.686 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 12400 (http) with context path '/'
+2026-04-27 07:26:28.704 [main] INFO  c.f.xianyuassistant.XianYuAssistantApplication - Started XianYuAssistantApplication in 11.162 seconds (process running for 11.787)
+2026-04-27 07:26:28.712 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 数据库文件路径: /app/dbdata/xianyu_assistant.db
+2026-04-27 07:26:28.712 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 07:26:28.712 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 开始检查数据库表和字段（基于schema.sql）...
+2026-04-27 07:26:28.712 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 07:26:28.713 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 📄 解析Schema文件: sql/schema.sql
+2026-04-27 07:26:28.713 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 开始解析Schema文件: sql/schema.sql
+2026-04-27 07:26:28.722 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 解析到 15 个表定义
+2026-04-27 07:26:28.725 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 解析到 57 个索引定义
+2026-04-27 07:26:28.727 [main] INFO  c.feijimiao.xianyuassistant.config.SqlSchemaParser - 解析到 11 个触发器定义
+2026-04-27 07:26:28.727 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查数据库表...
+2026-04-27 07:26:28.728 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: sys_user
+2026-04-27 07:26:28.728 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: sys_login_token
+2026-04-27 07:26:28.728 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_account
+2026-04-27 07:26:28.728 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_cookie
+2026-04-27 07:26:28.728 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods
+2026-04-27 07:26:28.729 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_chat_message
+2026-04-27 07:26:28.729 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_config
+2026-04-27 07:26:28.729 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_delivery_config
+2026-04-27 07:26:28.729 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_delivery_record
+2026-04-27 07:26:28.729 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_reply_config
+2026-04-27 07:26:28.729 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_auto_reply_record
+2026-04-27 07:26:28.729 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_order
+2026-04-27 07:26:28.729 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_operation_log
+2026-04-27 07:26:28.729 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_sys_setting
+2026-04-27 07:26:28.729 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ 表已存在: xianyu_goods_card_secret
+2026-04-27 07:26:28.730 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查表字段...
+2026-04-27 07:26:28.734 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 📊 字段检查统计: 检查 163 个字段, 添加 0 个新字段
+2026-04-27 07:26:28.734 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✓ 所有字段都已存在
+2026-04-27 07:26:28.734 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查数据库索引...
+2026-04-27 07:26:28.734 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✓ 所有索引都已存在
+2026-04-27 07:26:28.735 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🔍 检查数据库触发器...
+2026-04-27 07:26:28.735 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✓ 所有触发器都已存在
+2026-04-27 07:26:28.735 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 07:26:28.735 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 数据库表和字段已完善，开始检查数据库完整性...
+2026-04-27 07:26:28.735 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 07:26:28.735 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 📊 数据库表列表:
+2026-04-27 07:26:28.740 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   ✓ sys_login_token (记录数: 1)
+2026-04-27 07:26:28.740 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 07:26:28.740 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ✅ 数据库完整性检查完成，系统就绪！
+2026-04-27 07:26:28.740 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 07:26:28.741 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 07:26:28.741 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - 🚀 程序已经启动，可以通过以下地址访问：
+2026-04-27 07:26:28.741 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 07:26:28.742 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   🌐 http://localhost:12400
+2026-04-27 07:26:28.742 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   🌐 http://127.0.0.1:12400
+2026-04-27 07:26:28.742 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener -   🌐 http://172.23.0.3:12400
+2026-04-27 07:26:28.742 [main] INFO  c.f.xianyuassistant.config.DatabaseInitListener - ============================================================
+2026-04-27 07:26:57.209 [http-nio-12400-exec-1] INFO  o.a.c.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-27 07:26:57.209 [http-nio-12400-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-27 07:26:57.211 [http-nio-12400-exec-1] INFO  org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-04-27 07:31:28.702 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-27 07:31:28.705 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-27 07:35:08.567 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 07:35:08.567 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 07:35:08.592 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 07:35:08.593 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 07:35:08.753 [http-nio-12400-exec-2] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 07:35:08.754 [http-nio-12400-exec-2] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 07:35:08.757 [http-nio-12400-exec-2] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 07:35:08.763 [http-nio-12400-exec-2] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=17
+2026-04-27 07:35:08.932 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 07:36:28.702 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始刷新所有账号的_m_h5_tk token...
+2026-04-27 07:36:28.705 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ _m_h5_tk token刷新完成: 成功0个, 失败0个
+2026-04-27 08:01:28.706 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - 🔄 开始定期Cookie保活检查...
+2026-04-27 08:01:28.708 [scheduling-1] INFO  c.f.x.service.impl.TokenRefreshServiceImpl - ✅ Cookie保活检查完成: 成功0个, 失败0个
+2026-04-27 08:12:34.970 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 08:12:34.971 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 08:12:34.983 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 08:12:34.984 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 08:12:35.089 [http-nio-12400-exec-7] INFO  c.f.x.controller.AutoDeliveryConfigController - 查询自动发货配置请求: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 08:12:35.089 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 开始查询自动发货配置: xianyuAccountId=1, xyGoodsId=1047497664989
+2026-04-27 08:12:35.091 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 根据账号ID和商品ID查询结果: 找到配置
+2026-04-27 08:12:35.094 [http-nio-12400-exec-7] INFO  c.f.x.service.impl.AutoDeliveryConfigServiceImpl - 查询自动发货配置成功: id=1, type=1, hasContent=true, cardSecretCount=17
+2026-04-27 08:12:35.194 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.controller.ItemController - 获取自动发货记录: xianyuAccountId=1, xyGoodsId=1047497664989, pageNum=1, pageSize=20
+2026-04-27 08:12:39.094 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-27 08:12:39.099 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=⚠️ 已过期, Token=✅, Token已过期
+2026-04-27 08:12:39.808 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 08:12:39.808 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 08:12:39.821 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 08:12:39.821 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1
+2026-04-27 08:12:43.463 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-27 08:12:43.466 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=⚠️ 已过期, Token=✅, Token已过期
+2026-04-27 08:12:44.493 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.ItemController - 从数据库获取商品列表: status=0, pageNum=1, pageSize=20
+2026-04-27 08:12:44.493 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表: status=0, xianyuAccountId=1, pageNum=1, pageSize=20
+2026-04-27 08:12:44.506 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 分页信息: totalCount=6, pageNum=1, pageSize=20, totalPage=1
+2026-04-27 08:12:44.506 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.service.impl.ItemServiceImpl - 从数据库获取商品列表成功: 总数=6, 当前页=1, 每页=20, 总页数=1

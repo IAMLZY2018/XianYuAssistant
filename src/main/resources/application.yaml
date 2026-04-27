@@ -3,7 +3,7 @@ server:
 
 # AI功能开关（默认关闭，开启需要部署Chroma向量数据库并配置ALI_API_KEY）
 ai:
-  enabled: true
+  enabled: false
 
 # JWT配置
 jwt:

@@ -5,8 +5,6 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
-import java.time.LocalDateTime;
-
 @Data
 @TableName("xianyu_goods_card_secret")
 public class XianyuGoodsCardSecret {
@@ -17,6 +15,6 @@ public class XianyuGoodsCardSecret {
     private String cardContent;
     private Integer isUsed;
     private String orderId;
-    private LocalDateTime createTime;
-    private LocalDateTime updateTime;
+    private String createTime;
+    private String updateTime;
 }

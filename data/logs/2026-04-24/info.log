@@ -1738,3 +1738,89 @@
 2026-04-24 05:56:34.443 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
 2026-04-24 05:56:34.443 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
 2026-04-24 05:56:34.445 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:56:39.426 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:56:39.428 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:56:39.429 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:56:39.431 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:56:44.434 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:56:44.436 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:56:44.445 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:56:44.446 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:56:49.423 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:56:49.425 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:56:49.425 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:56:49.426 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:56:54.587 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:56:54.587 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:56:54.590 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:56:54.590 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:56:59.426 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:56:59.426 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:56:59.429 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:56:59.429 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:15.969 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:15.969 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:15.973 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:15.973 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:19.429 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:19.429 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:19.432 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:19.432 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:24.657 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:24.657 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:24.660 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:24.660 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:29.698 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:29.698 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:29.701 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:29.701 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:34.628 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:34.628 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:34.632 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:34.632 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:39.674 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:39.676 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:39.677 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:39.679 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:39.941 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:39.941 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:39.944 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:39.944 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:44.556 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:44.556 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:44.558 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:44.560 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:49.573 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:49.575 [http-nio-12400-exec-2] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:49.578 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:49.580 [http-nio-12400-exec-1] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:54.567 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:54.567 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:54.570 [http-nio-12400-exec-6] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:54.570 [http-nio-12400-exec-3] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:59.565 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:59.565 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:57:59.568 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:57:59.568 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:58:04.555 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:58:04.556 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:58:04.559 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:58:04.559 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:58:09.564 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:58:09.566 [http-nio-12400-exec-5] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:58:09.564 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:58:09.569 [http-nio-12400-exec-7] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:58:14.555 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:58:14.555 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:58:14.558 [http-nio-12400-exec-10] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:58:14.558 [http-nio-12400-exec-4] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:58:34.563 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:58:34.563 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.controller.WebSocketController - 查询WebSocket状态: xianyuAccountId=1
+2026-04-24 05:58:34.566 [http-nio-12400-exec-9] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:58:34.566 [http-nio-12400-exec-8] INFO  c.f.xianyuassistant.controller.WebSocketController - ✅ WebSocket状态: 账号ID=1, 连接=❌, Cookie=✅ 有效, Token=✅, Token已过期
+2026-04-24 05:59:19.908 [SpringApplicationShutdownHook] INFO  o.s.boot.web.embedded.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-04-24 05:59:19.910 [tomcat-shutdown] INFO  o.s.boot.web.embedded.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-04-24 05:59:19.914 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.AutoReplyDelayServiceImpl - 关闭自动回复延时调度器...
+2026-04-24 05:59:19.914 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.AutoReplyDelayServiceImpl - 自动回复延时调度器已关闭
+2026-04-24 05:59:19.914 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.WebSocketServiceImpl - 应用关闭，清理WebSocket资源
+2026-04-24 05:59:19.914 [SpringApplicationShutdownHook] INFO  c.f.x.service.impl.WebSocketServiceImpl - 停止所有WebSocket连接
