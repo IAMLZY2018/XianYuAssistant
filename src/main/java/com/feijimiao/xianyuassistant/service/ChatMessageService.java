@@ -2,6 +2,7 @@ package com.feijimiao.xianyuassistant.service;
 
 import com.feijimiao.xianyuassistant.common.ResultObject;
 import com.feijimiao.xianyuassistant.entity.XianyuChatMessage;
+import com.feijimiao.xianyuassistant.controller.dto.MsgContextReqDTO;
 import com.feijimiao.xianyuassistant.controller.dto.MsgListReqDTO;
 import com.feijimiao.xianyuassistant.controller.dto.MsgListRespDTO;
 import java.util.List;
@@ -39,4 +40,12 @@ public interface ChatMessageService {
      * @return 消息列表响应
      */
     ResultObject<MsgListRespDTO> getMessageList(MsgListReqDTO reqDTO);
+    
+    /**
+     * 根据会话ID获取上下文消息（最近N条）
+     * 
+     * @param reqDTO 查询请求参数（sid, limit）
+     * @return 消息列表
+     */
+    ResultObject<?> getContextMessages(MsgContextReqDTO reqDTO);
 }

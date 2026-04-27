@@ -36,6 +36,7 @@ const {
   isMobile,
   mobileView,
   selectedGoodsForMobile,
+  getCurrentAccountUnb,
   loadAccounts,
   loadMessages,
   loadGoodsList,
@@ -188,6 +189,9 @@ const checkScreenSize = () => {
             <MessageList
               :message-list="messageList"
               :loading="loading"
+              :xianyu-account-id="selectedAccountId || undefined"
+              :goods-list="goodsList"
+              :current-account-unb="getCurrentAccountUnb"
               @reply="openQuickReply"
             />
           </div>
@@ -336,6 +340,9 @@ const checkScreenSize = () => {
           <MessageList
             :message-list="messageList"
             :loading="loading"
+            :xianyu-account-id="selectedAccountId || undefined"
+            :goods-list="goodsList"
+            :current-account-unb="getCurrentAccountUnb"
             @reply="openQuickReply"
           />
         </div>

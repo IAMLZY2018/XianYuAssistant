@@ -317,6 +317,7 @@ export function useMessageManager() {
     isMobile,
     mobileView,
     selectedGoodsForMobile,
+    getCurrentAccountUnb,
     loadAccounts,
     loadMessages,
     loadGoodsList,

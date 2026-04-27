@@ -23,6 +23,7 @@ import IconLog from '@/components/icons/IconLog.vue'
 import IconCheck from '@/components/icons/IconCheck.vue'
 import IconAlert from '@/components/icons/IconAlert.vue'
 import IconShield from '@/components/icons/IconShield.vue'
+import IconLink from '@/components/icons/IconLink.vue'
 
 interface ConnectionStatus {
   xianyuAccountId: number

@@ -7,17 +7,21 @@ import IconMessage from '@/components/icons/IconMessage.vue'
 import IconUser from '@/components/icons/IconUser.vue'
 import IconClock from '@/components/icons/IconClock.vue'
 import IconShoppingBag from '@/components/icons/IconShoppingBag.vue'
+import ContextDialog from './ContextDialog.vue'
 
 interface Props {
   messageList: ChatMessage[]
   loading?: boolean
+  xianyuAccountId?: number
+  goodsList?: Array<{ xyGoodsId: string; title: string }>
+  currentAccountUnb?: string
 }
 
 interface Emits {
   (e: 'reply', message: ChatMessage): void
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const isMobile = ref(false)
@@ -33,6 +37,24 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', checkScreenSize)
 })
+
+const contextDialogVisible = ref(false)
+const currentSid = ref('')
+const currentGoodsName = ref('')
+const currentSenderUserId = ref('')
+const currentXyGoodsId = ref('')
+
+const showContext = (msg: ChatMessage) => {
+  currentSid.value = msg.sid
+  currentSenderUserId.value = msg.senderUserId
+  currentXyGoodsId.value = msg.xyGoodsId || ''
+  
+  // 查找商品名称
+  const goods = props.goodsList?.find(g => g.xyGoodsId === msg.xyGoodsId)
+  currentGoodsName.value = goods?.title || ''
+  
+  contextDialogVisible.value = true
+}
 
 // These will be injected from parent via provide/inject or props
 // For simplicity, we define them here and accept as part of the interface
@@ -108,13 +130,22 @@ const formatMessageTime = (timestamp: number) => {
 
       <div class="msg-card__footer">
         <span class="msg-card__id">ID: {{ msg.id }}</span>
-        <button
-          class="msg-card__reply"
-          @click="emit('reply', msg)"
-        >
-          <IconSend />
-          <span>回复</span>
-        </button>
+        <div class="msg-card__actions">
+          <button
+            class="msg-card__btn msg-card__btn--context"
+            @click="showContext(msg)"
+          >
+            <IconMessage />
+            <span>上下文</span>
+          </button>
+          <button
+            class="msg-card__btn msg-card__btn--reply"
+            @click="emit('reply', msg)"
+          >
+            <IconSend />
+            <span>回复</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -135,7 +166,7 @@ const formatMessageTime = (timestamp: number) => {
           <th class="table__th">消息内容</th>
           <th class="table__th table__th--center" style="width:120px">商品ID</th>
           <th class="table__th table__th--center" style="width:120px">时间</th>
-          <th class="table__th table__th--actions" style="width:80px">操作</th>
+          <th class="table__th table__th--actions" style="width:120px">操作</th>
         </tr>
       </thead>
       <tbody class="table__body">
@@ -167,10 +198,16 @@ const formatMessageTime = (timestamp: number) => {
             <span class="time-text">{{ formatMessageTime(msg.messageTime) }}</span>
           </td>
           <td class="table__td table__td--actions">
-            <button class="table__action" @click="emit('reply', msg)">
-              <IconSend />
-              <span>回复</span>
-            </button>
+            <div class="table__actions">
+              <button class="table__action table__action--context" @click="showContext(msg)">
+                <IconMessage />
+                <span>上下文</span>
+              </button>
+              <button class="table__action table__action--reply" @click="emit('reply', msg)">
+                <IconSend />
+                <span>回复</span>
+              </button>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -181,6 +218,16 @@ const formatMessageTime = (timestamp: number) => {
       <p class="empty-state__text">暂无消息</p>
     </div>
   </div>
+
+  <ContextDialog
+    v-model:visible="contextDialogVisible"
+    :sid="currentSid"
+    :goods-name="currentGoodsName"
+    :xianyu-account-id="xianyuAccountId"
+    :sender-user-id="currentSenderUserId"
+    :xy-goods-id="currentXyGoodsId"
+    :current-account-unb="currentAccountUnb"
+  />
 </template>
 
 <style scoped>
@@ -285,7 +332,12 @@ const formatMessageTime = (timestamp: number) => {
   font-family: 'SF Mono', 'Menlo', monospace;
 }
 
-.msg-card__reply {
+.msg-card__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.msg-card__btn {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -293,22 +345,33 @@ const formatMessageTime = (timestamp: number) => {
   padding: 0 10px;
   font-size: 12px;
   font-weight: 500;
-  color: var(--c-accent);
   background: transparent;
-  border: 1px solid rgba(0, 122, 255, 0.2);
   border-radius: 14px;
   cursor: pointer;
   transition: all var(--c-ease);
   -webkit-tap-highlight-color: transparent;
 }
 
-.msg-card__reply svg {
+.msg-card__btn svg {
   width: 12px;
   height: 12px;
 }
 
+.msg-card__btn--context {
+  color: #5856d6;
+  border: 1px solid rgba(88, 86, 214, 0.2);
+}
+
+.msg-card__btn--reply {
+  color: var(--c-accent);
+  border: 1px solid rgba(0, 122, 255, 0.2);
+}
+
 @media (hover: hover) {
-  .msg-card__reply:hover {
+  .msg-card__btn--context:hover {
+    background: rgba(88, 86, 214, 0.06);
+  }
+  .msg-card__btn--reply:hover {
     background: rgba(0, 122, 255, 0.06);
   }
 }
@@ -417,6 +480,12 @@ const formatMessageTime = (timestamp: number) => {
   font-variant-numeric: tabular-nums;
 }
 
+.table__actions {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
 .table__action {
   display: inline-flex;
   align-items: center;
@@ -426,9 +495,7 @@ const formatMessageTime = (timestamp: number) => {
   padding: 0 8px;
   font-size: 12px;
   font-weight: 500;
-  color: var(--c-accent);
   background: transparent;
-  border: 1px solid rgba(0, 122, 255, 0.15);
   border-radius: 6px;
   cursor: pointer;
   transition: all var(--c-ease);
@@ -441,8 +508,21 @@ const formatMessageTime = (timestamp: number) => {
   height: 12px;
 }
 
+.table__action--context {
+  color: #5856d6;
+  border: 1px solid rgba(88, 86, 214, 0.15);
+}
+
+.table__action--reply {
+  color: var(--c-accent);
+  border: 1px solid rgba(0, 122, 255, 0.15);
+}
+
 @media (hover: hover) {
-  .table__action:hover {
+  .table__action--context:hover {
+    background: rgba(88, 86, 214, 0.06);
+  }
+  .table__action--reply:hover {
     background: rgba(0, 122, 255, 0.06);
   }
 }

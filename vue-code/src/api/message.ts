@@ -44,3 +44,31 @@ export function getMessageList(data: {
     data
   });
 }
+
+// 根据会话ID获取上下文消息
+export function getContextMessages(data: {
+  sid: string;
+  limit?: number;
+  offset?: number;
+}) {
+  return request<ChatMessage[]>({
+    url: '/msg/context',
+    method: 'POST',
+    data: { sid: data.sid, limit: data.limit || 20, offset: data.offset || 0 }
+  });
+}
+
+// 发送消息
+export function sendMessage(data: {
+  xianyuAccountId: number;
+  cid: string;
+  toId: string;
+  text: string;
+  xyGoodsId?: string;
+}) {
+  return request<string>({
+    url: '/sendMessage',
+    method: 'POST',
+    data
+  });
+}
