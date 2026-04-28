@@ -315,6 +315,76 @@ public class AIServiceImpl implements AIService {
     }
 
     @Override
+    public Flux<String> chatByRAGWithFixedMaterialStream(String msg, String goodsId, String fixedMaterial, String goodsDetail) {
+        long startTime = System.currentTimeMillis();
+        log.info("[AI Chat Test Stream] 开始流式对话: goodsId={}, msg={}, fixedMaterial={}, goodsDetail={}", 
+                goodsId, msg, fixedMaterial != null, goodsDetail != null);
+        
+        ChatClient chatClient = dynamicAIChatClientManager.getChatClient();
+        if (chatClient == null) {
+            return Flux.just(AI_NOT_AVAILABLE_MSG);
+        }
+
+        VectorStore vectorStore = dynamicVectorStoreManager.getVectorStore();
+        
+        String context = "";
+        if (vectorStore != null) {
+            try {
+                double similarityThreshold = getSimilarityThreshold();
+                List<Document> documents = vectorStore.similaritySearch(
+                        SearchRequest.builder()
+                                .query(msg)
+                                .topK(5)
+                                .similarityThreshold(similarityThreshold)
+                                .filterExpression(String.format("goodsId == '%s'", goodsId))
+                                .build()
+                );
+                
+                context = documents.stream()
+                        .map(Document::getText)
+                        .collect(Collectors.joining("\n---\n"));
+                
+                log.info("[AI Chat Test Stream] 向量搜索命中文档数: {}", documents.size());
+            } catch (Exception e) {
+                log.warn("[AI Chat Test Stream] 向量搜索失败: {}", e.getMessage());
+            }
+        }
+
+        String sysPrompt = sysSettingService.getSettingValue(SYS_PROMPT_KEY);
+        if (sysPrompt == null || sysPrompt.trim().isEmpty()) {
+            sysPrompt = DEFAULT_SYS_PROMPT;
+        }
+
+        StringBuilder systemMsgBuilder = new StringBuilder();
+        systemMsgBuilder.append(sysPrompt);
+        
+        if (fixedMaterial != null && !fixedMaterial.isEmpty()) {
+            systemMsgBuilder.append("\n\n固定资料：\n").append(fixedMaterial);
+        }
+        
+        String finalSystemPrompt = systemMsgBuilder.toString();
+
+        StringBuilder userMsgBuilder = new StringBuilder();
+        
+        if (!context.isEmpty()) {
+            userMsgBuilder.append("参考资料：\n").append(context).append("\n\n");
+        }
+        
+        if (goodsDetail != null && !goodsDetail.isEmpty()) {
+            userMsgBuilder.append("商品详情：\n").append(goodsDetail).append("\n\n");
+        }
+        
+        userMsgBuilder.append("用户问题：").append(msg);
+        String userMessage = userMsgBuilder.toString();
+
+        return chatClient.prompt()
+                .system(finalSystemPrompt)
+                .user(userMessage)
+                .stream()
+                .content();
+    }
+
+    @Override
     public RAGReplyResult chatByRAGWithFixedMaterial(String msg, String goodsId, String fixedMaterial, String goodsDetail) {
         return chatByRAGWithFixedMaterial(msg, goodsId, null, fixedMaterial, goodsDetail);
     }

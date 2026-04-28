@@ -44,6 +44,15 @@ export function chatWithAI(data: ChatWithAIReq): Promise<Response> {
   })
 }
 
+// AI 对话测试（与自动回复流程一致）
+export function chatTestWithAI(data: { accountId: number; goodsId: string; msg: string }): Promise<Response> {
+  return fetch('/ai/chatTest', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(data)
+  })
+}
+
 // 上传资料到 RAG 知识库
 export function putNewDataToRAG(data: PutNewDataReq): Promise<Response> {
   return fetch('/ai/putNewData', {

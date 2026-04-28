@@ -33,6 +33,11 @@ public interface AIService {
     RAGReplyResult chatByRAGWithFixedMaterial(String msg, String goodsId, String fixedMaterial, String goodsDetail);
 
     /**
+     * RAG聊天（流式）- 携带固定资料和商品详情
+     */
+    reactor.core.publisher.Flux<String> chatByRAGWithFixedMaterialStream(String msg, String goodsId, String fixedMaterial, String goodsDetail);
+
+    /**
      * RAG聊天并返回命中资料详情（携带会话上下文、固定资料和商品详情）
      */
     RAGReplyResult chatByRAGWithFixedMaterial(String msg, String goodsId, String contextMessages, String fixedMaterial, String goodsDetail);

@@ -2,7 +2,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getAccountList } from '@/api/account'
 import { getGoodsList, updateAutoReplyStatus, getAutoReplyConfig, updateAutoReplyConfig, getAutoReplyRecords } from '@/api/goods'
-import { chatWithAI, putNewDataToRAG, queryRAGData, deleteRAGData, saveFixedMaterial, getFixedMaterial, syncDetailToFixedMaterial } from '@/api/ai'
+import { chatWithAI, chatTestWithAI, putNewDataToRAG, queryRAGData, deleteRAGData, saveFixedMaterial, getFixedMaterial, syncDetailToFixedMaterial } from '@/api/ai'
 import type { RAGDataItem } from '@/api/ai'
 import type { AutoReplyRecord } from '@/api/goods'
 import { showSuccess, showError, showInfo } from '@/utils'
@@ -641,9 +641,10 @@ export function useAutoReply() {
 
     chatSending.value = true
     try {
-      const response = await chatWithAI({
+      const response = await chatTestWithAI({
         msg: inputText,
-        goodsId: selectedGoods.value.item.xyGoodId
+        goodsId: selectedGoods.value.item.xyGoodId,
+        accountId: selectedAccountId.value!
       })
 
       if (!response.ok) {

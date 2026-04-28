@@ -49,6 +49,30 @@ public class AIChatController {
     }
 
     /**
+     * AI对话测试接口（流式）- 与自动回复流程一致
+     * 携带固定资料和商品详情，用于测试提示词与资料效果
+     */
+    @PostMapping(path = "/chatTest", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> chatTestWithAi(@RequestBody ChatTestReqDTO req) {
+        String fixedMaterial = null;
+        String goodsDetail = null;
+        
+        if (req.getAccountId() != null && req.getGoodsId() != null) {
+            XianyuGoodsConfig config = goodsConfigMapper.selectByAccountAndGoodsId(req.getAccountId(), req.getGoodsId());
+            if (config != null) {
+                fixedMaterial = config.getFixedMaterial();
+            }
+            
+            String detailInfo = goodsInfoService.getDetailInfoByGoodsId(req.getGoodsId());
+            if (detailInfo != null && !detailInfo.isEmpty()) {
+                goodsDetail = detailInfo;
+            }
+        }
+        
+        return aiService.chatByRAGWithFixedMaterialStream(req.getMsg(), req.getGoodsId(), fixedMaterial, goodsDetail);
+    }
+
+    /**
      * AI状态检测接口
      * 返回AI服务是否可用、配置状态等信息
      */
@@ -130,6 +154,19 @@ public class AIChatController {
 
         public String getFixedMaterial() { return fixedMaterial; }
         public void setFixedMaterial(String fixedMaterial) { this.fixedMaterial = fixedMaterial; }
+    }
+
+    public static class ChatTestReqDTO {
+        private Long accountId;
+        private String goodsId;
+        private String msg;
+
+        public Long getAccountId() { return accountId; }
+        public void setAccountId(Long accountId) { this.accountId = accountId; }
+        public String getGoodsId() { return goodsId; }
+        public void setGoodsId(String goodsId) { this.goodsId = goodsId; }
+        public String getMsg() { return msg; }
+        public void setMsg(String msg) { this.msg = msg; }
     }
 
     /**

@@ -322,7 +322,7 @@ const {
               @click="rightTab = 'chat'"
             >
               <IconRobot />
-              AI 对话
+              AI回答测试
             </button>
           </div>
 
