@@ -371,9 +371,9 @@ public class AutoReplyServiceImpl implements AutoReplyService {
         try {
             XianyuGoodsConfig goodsConfig = goodsConfigMapper.selectByAccountAndGoodsId(accountId, xyGoodsId);
             if (goodsConfig == null) {
-                return true;
+                return false;
             }
-            return goodsConfig.getXianyuAutoReplyContextOn() == null || goodsConfig.getXianyuAutoReplyContextOn() == 1;
+            return goodsConfig.getXianyuAutoReplyContextOn() != null && goodsConfig.getXianyuAutoReplyContextOn() == 1;
         } catch (Exception e) {
             log.error("【账号{}】检查携带上下文开关异常: xyGoodsId={}", accountId, xyGoodsId, e);
             return false;
