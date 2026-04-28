@@ -463,6 +463,16 @@ https://github.com/zhinianboke/xianyu-auto-reply
 
 ---
 
+## 💬 交流群
+
+<div align="center">
+  <img src="docs/wx/wxq.png" alt="微信交流群" width="200"/>
+  <img src="docs/wx/wx.png" alt="微信好友" width="200"/>
+  <p><i>扫码加入微信交流群 &nbsp;&nbsp;|&nbsp;&nbsp; 群二维码失效可加好友拉进群</i></p>
+</div>
+
+---
+
 <div align="center">
 
 **如果这个项目对你有帮助，请给个 ⭐️ Star 支持一下！**
