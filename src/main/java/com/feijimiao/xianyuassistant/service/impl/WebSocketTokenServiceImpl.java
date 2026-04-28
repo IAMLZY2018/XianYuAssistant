@@ -3,12 +3,14 @@ package com.feijimiao.xianyuassistant.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.feijimiao.xianyuassistant.entity.XianyuAccount;
 import com.feijimiao.xianyuassistant.entity.XianyuCookie;
 import com.feijimiao.xianyuassistant.exception.CaptchaRequiredException;
 import com.feijimiao.xianyuassistant.mapper.XianyuCookieMapper;
 
 import com.feijimiao.xianyuassistant.service.AccountService;
 import com.feijimiao.xianyuassistant.service.CookieRefreshService;
+import com.feijimiao.xianyuassistant.service.EmailNotifyService;
 import com.feijimiao.xianyuassistant.service.OperationLogService;
 import com.feijimiao.xianyuassistant.service.WebSocketTokenService;
 import com.feijimiao.xianyuassistant.utils.XianyuSignUtils;
@@ -59,6 +61,9 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
 
     @Autowired
     private OperationLogService operationLogService;
+
+    @Autowired
+    private EmailNotifyService emailNotifyService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -798,6 +803,14 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
      */
     private void updateCookieStatus(Long accountId, Integer status) {
         try {
+            XianyuCookie currentCookie = xianyuCookieMapper.selectOne(
+                    new LambdaQueryWrapper<XianyuCookie>()
+                            .eq(XianyuCookie::getXianyuAccountId, accountId)
+                            .orderByDesc(XianyuCookie::getCreatedTime)
+                            .last("LIMIT 1")
+            );
+            Integer oldStatus = currentCookie != null ? currentCookie.getCookieStatus() : null;
+
             xianyuCookieMapper.update(null,
                     new LambdaUpdateWrapper<XianyuCookie>()
                             .eq(XianyuCookie::getXianyuAccountId, accountId)
@@ -805,6 +818,13 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
             );
             String statusText = status == 2 ? "过期" : status == 3 ? "失效" : "未知";
             log.info("【账号{}】Cookie状态已更新为{}({})", accountId, status, statusText);
+
+            if (Objects.equals(status, 2) && !Objects.equals(oldStatus, 2)) {
+                XianyuAccount account = xianyuAccountMapper.selectById(accountId);
+                String accountNote = account != null ? account.getAccountNote() : null;
+                log.info("【账号{}】Cookie首次被标记为过期，触发Cookie过期通知流程", accountId);
+                emailNotifyService.sendCookieExpireNotifyEmail(accountId, accountNote);
+            }
         } catch (Exception e) {
             log.error("【账号{}】更新Cookie状态失败", accountId, e);
         }

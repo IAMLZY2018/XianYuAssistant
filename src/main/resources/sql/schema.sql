@@ -339,6 +339,13 @@ VALUES ('ai_base_url', 'https://dashscope.aliyuncs.com/compatible-mode', 'AI服�
 INSERT OR IGNORE INTO xianyu_sys_setting (setting_key, setting_value, setting_desc)
 VALUES ('ai_model', 'deepseek-v3', 'AI对话模型名称');
 
+-- 邮件通知开关配置
+INSERT OR IGNORE INTO xianyu_sys_setting (setting_key, setting_value, setting_desc)
+VALUES ('email_notify_ws_disconnect_enabled', '0', 'WebSocket断连邮件通知开关：0-关闭，1-开启');
+
+INSERT OR IGNORE INTO xianyu_sys_setting (setting_key, setting_value, setting_desc)
+VALUES ('email_notify_cookie_expire_enabled', '0', 'Cookie过期邮件通知开关：0-关闭，1-开启');
+
 -- 卡密配置表
 CREATE TABLE IF NOT EXISTS xianyu_kami_config (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

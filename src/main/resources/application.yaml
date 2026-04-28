@@ -43,6 +43,9 @@ websocket:
   token-refresh-interval: 3600
   # Token重试间隔（秒，默认5分钟）
   token-retry-interval: 300
+  # 凭证刷新间隔（分钟），用于Cookie保活和_m_h5_tk兜底刷新
+  credential-refresh-min-minutes: 15
+  credential-refresh-max-minutes: 20
   # 消息过期时间（毫秒，默认5分钟）
   message-expire-time: 300000
   # 人工接管超时（秒，默认1小时）

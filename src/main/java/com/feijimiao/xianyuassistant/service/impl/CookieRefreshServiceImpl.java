@@ -2,9 +2,18 @@ package com.feijimiao.xianyuassistant.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.options.Cookie;
+import com.microsoft.playwright.options.WaitUntilState;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.feijimiao.xianyuassistant.constants.OperationConstants;
+import com.feijimiao.xianyuassistant.entity.XianyuAccount;
 import com.feijimiao.xianyuassistant.entity.XianyuCookie;
+import com.feijimiao.xianyuassistant.mapper.XianyuAccountMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuCookieMapper;
 import com.feijimiao.xianyuassistant.service.CookieRefreshService;
 import com.feijimiao.xianyuassistant.service.OperationLogService;
@@ -32,16 +41,21 @@ import java.util.regex.Pattern;
 @Slf4j
 @Service
 public class CookieRefreshServiceImpl implements CookieRefreshService {
+    private static final String HAS_LOGIN_URL = "https://passport.goofish.com/newlogin/hasLogin.do";
+    private static final String GOOFISH_IM_URL = "https://www.goofish.com/im";
+    private static final String GOOFISH_COOKIE_DOMAIN = ".goofish.com";
+    private static final String TAOBAO_COOKIE_DOMAIN = ".taobao.com";
 
     @Autowired
     private XianyuCookieMapper cookieMapper;
 
     @Autowired
+    private XianyuAccountMapper accountMapper;
+
+    @Autowired
     private OperationLogService operationLogService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
-
-    private static final String HAS_LOGIN_URL = "https://passport.goofish.com/newlogin/hasLogin.do";
 
     /**
      * 每个账号的刷新锁，防止并发刷新
@@ -274,9 +288,22 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
 
                 // 通过hasLogin接口刷新Cookie
                 boolean success = doCheckLoginStatus(accountId);
+                if (!success) {
+                    log.warn("【账号{}】hasLogin刷新失败，开始触发浏览器兜底刷新Cookie", accountId);
+                    operationLogService.log(accountId,
+                            OperationConstants.Type.REFRESH,
+                            OperationConstants.Module.COOKIE,
+                            "hasLogin刷新失败，开始触发浏览器兜底刷新Cookie",
+                            OperationConstants.Status.PARTIAL,
+                            OperationConstants.TargetType.COOKIE,
+                            String.valueOf(accountId),
+                            null, null, null, null);
+                    success = refreshCookieWithBrowser(accountId);
+                }
 
                 if (success) {
                     log.info("【账号{}】✅ Cookie刷新成功", accountId);
+                    updateAccountStatusToNormal(accountId, "Cookie刷新成功，账号状态恢复正常");
 
                     // 记录操作日志
                     operationLogService.log(accountId,
@@ -289,22 +316,24 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
                             null, null, null, null);
                 } else {
                     log.error("【账号{}】❌ Cookie刷新失败，需要手动更新", accountId);
+                    markAccountAsCookieRefreshAbnormal(accountId, "hasLogin和浏览器兜底刷新均失败，需要手动处理Cookie");
 
                     // 记录操作日志
                     operationLogService.log(accountId,
                             OperationConstants.Type.REFRESH,
                             OperationConstants.Module.COOKIE,
-                            "Cookie刷新失败，需要手动更新",
+                            "Cookie刷新失败，需要手动更新，账号已标记为异常待处理",
                             OperationConstants.Status.FAIL,
                             OperationConstants.TargetType.COOKIE,
                             String.valueOf(accountId),
-                            null, null, null, null);
+                            null, null, "hasLogin和浏览器兜底刷新均失败", null);
                 }
 
                 return success;
 
             } catch (Exception e) {
                 log.error("【账号{}】刷新Cookie失败", accountId, e);
+                markAccountAsCookieRefreshAbnormal(accountId, "刷新Cookie异常: " + e.getMessage());
 
                 // 记录操作日志
                 operationLogService.log(accountId,
@@ -319,6 +348,229 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
                 return false;
             }
         }
+    }
+
+    private boolean refreshCookieWithBrowser(Long accountId) {
+        XianyuCookie cookie = cookieMapper.selectOne(
+                new LambdaQueryWrapper<XianyuCookie>()
+                        .eq(XianyuCookie::getXianyuAccountId, accountId)
+                        .orderByDesc(XianyuCookie::getCreatedTime)
+                        .last("LIMIT 1")
+        );
+        if (cookie == null || cookie.getCookieText() == null || cookie.getCookieText().isBlank()) {
+            log.warn("【账号{}】浏览器兜底刷新失败，未找到可用Cookie", accountId);
+            markAccountAsCookieRefreshAbnormal(accountId, "浏览器兜底刷新失败：未找到可用Cookie");
+            operationLogService.log(accountId,
+                    OperationConstants.Type.REFRESH,
+                    OperationConstants.Module.COOKIE,
+                    "浏览器兜底刷新Cookie失败，账号已标记为异常待处理",
+                    OperationConstants.Status.FAIL,
+                    OperationConstants.TargetType.COOKIE,
+                    String.valueOf(accountId),
+                    null, null, "未找到可用Cookie", null);
+            return false;
+        }
+
+        Map<String, String> existingCookies = XianyuSignUtils.parseCookies(cookie.getCookieText());
+        if (existingCookies.isEmpty()) {
+            log.warn("【账号{}】浏览器兜底刷新失败，Cookie内容为空", accountId);
+            markAccountAsCookieRefreshAbnormal(accountId, "浏览器兜底刷新失败：Cookie内容为空");
+            operationLogService.log(accountId,
+                    OperationConstants.Type.REFRESH,
+                    OperationConstants.Module.COOKIE,
+                    "浏览器兜底刷新Cookie失败，账号已标记为异常待处理",
+                    OperationConstants.Status.FAIL,
+                    OperationConstants.TargetType.COOKIE,
+                    String.valueOf(accountId),
+                    null, null, "Cookie内容为空", null);
+            return false;
+        }
+
+        operationLogService.log(accountId,
+                OperationConstants.Type.REFRESH,
+                OperationConstants.Module.COOKIE,
+                "开始浏览器兜底刷新Cookie",
+                OperationConstants.Status.SUCCESS,
+                OperationConstants.TargetType.COOKIE,
+                String.valueOf(accountId),
+                null, null, null, null);
+
+        try (Playwright playwright = Playwright.create()) {
+            BrowserType.LaunchOptions launchOptions = new BrowserType.LaunchOptions().setHeadless(true);
+            try (Browser browser = playwright.chromium().launch(launchOptions)) {
+                Browser.NewContextOptions contextOptions = new Browser.NewContextOptions()
+                        .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+                try (BrowserContext context = browser.newContext(contextOptions)) {
+                    List<Cookie> browserCookies = buildBrowserCookies(existingCookies);
+                    context.addCookies(browserCookies);
+
+                    Page page = context.newPage();
+                    log.info("【账号{}】浏览器兜底刷新Cookie，开始访问 {}", accountId, GOOFISH_IM_URL);
+                    page.navigate(GOOFISH_IM_URL,
+                            new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
+                    page.reload(new Page.ReloadOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
+
+                    List<Cookie> refreshedCookies = context.cookies(List.of(
+                            GOOFISH_IM_URL,
+                            "https://passport.goofish.com",
+                            "https://h5api.m.goofish.com",
+                            "https://www.taobao.com"
+                    ));
+                    String refreshedCookieText = buildCookieText(refreshedCookies);
+                    if (refreshedCookieText.isBlank()) {
+                        log.warn("【账号{}】浏览器兜底刷新未获取到新的Cookie", accountId);
+                        markAccountAsCookieRefreshAbnormal(accountId, "浏览器兜底刷新失败：浏览器未返回Cookie");
+                        operationLogService.log(accountId,
+                                OperationConstants.Type.REFRESH,
+                                OperationConstants.Module.COOKIE,
+                                "浏览器兜底刷新Cookie失败，账号已标记为异常待处理",
+                                OperationConstants.Status.FAIL,
+                                OperationConstants.TargetType.COOKIE,
+                                String.valueOf(accountId),
+                                null, null, "浏览器未返回Cookie", null);
+                        return false;
+                    }
+
+                    Map<String, String> refreshedCookieMap = XianyuSignUtils.parseCookies(refreshedCookieText);
+                    String newMh5Tk = refreshedCookieMap.get("_m_h5_tk");
+
+                    cookieMapper.update(null,
+                            new LambdaUpdateWrapper<XianyuCookie>()
+                                    .eq(XianyuCookie::getXianyuAccountId, accountId)
+                                    .set(XianyuCookie::getCookieText, refreshedCookieText)
+                                    .set(XianyuCookie::getCookieStatus, 1)
+                                    .set(newMh5Tk != null && !newMh5Tk.isBlank(), XianyuCookie::getMH5Tk, newMh5Tk)
+                    );
+
+                    log.info("【账号{}】浏览器兜底刷新Cookie成功，Cookie长度: {}", accountId, refreshedCookieText.length());
+                    operationLogService.log(accountId,
+                            OperationConstants.Type.REFRESH,
+                            OperationConstants.Module.COOKIE,
+                            "浏览器兜底刷新Cookie成功",
+                            OperationConstants.Status.SUCCESS,
+                            OperationConstants.TargetType.COOKIE,
+                            String.valueOf(accountId),
+                            null, null, null, null);
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            log.error("【账号{}】浏览器兜底刷新Cookie失败", accountId, e);
+            markAccountAsCookieRefreshAbnormal(accountId, "浏览器兜底刷新异常: " + e.getMessage());
+            operationLogService.log(accountId,
+                    OperationConstants.Type.REFRESH,
+                    OperationConstants.Module.COOKIE,
+                    "浏览器兜底刷新Cookie失败，账号已标记为异常待处理",
+                    OperationConstants.Status.FAIL,
+                    OperationConstants.TargetType.COOKIE,
+                    String.valueOf(accountId),
+                    null, null, e.getMessage(), null);
+            return false;
+        }
+    }
+
+    private void markAccountAsCookieRefreshAbnormal(Long accountId, String reason) {
+        try {
+            XianyuAccount account = accountMapper.selectById(accountId);
+            if (account == null) {
+                operationLogService.log(accountId,
+                        OperationConstants.Type.UPDATE,
+                        OperationConstants.Module.ACCOUNT,
+                        "Cookie刷新失败后更新账号状态失败",
+                        OperationConstants.Status.FAIL,
+                        OperationConstants.TargetType.ACCOUNT,
+                        String.valueOf(accountId),
+                        null, null, "账号不存在，原因: " + reason, null);
+                return;
+            }
+            if (Objects.equals(account.getStatus(), -2)) {
+                operationLogService.log(accountId,
+                        OperationConstants.Type.UPDATE,
+                        OperationConstants.Module.ACCOUNT,
+                        "Cookie刷新失败，账号已处于异常待处理状态",
+                        OperationConstants.Status.PARTIAL,
+                        OperationConstants.TargetType.ACCOUNT,
+                        String.valueOf(accountId),
+                        null, null, reason, null);
+                return;
+            }
+
+            account.setStatus(-2);
+            accountMapper.updateById(account);
+            log.warn("【账号{}】浏览器兜底刷新失败后，账号状态已更新为-2（异常待处理）", accountId);
+            operationLogService.log(accountId,
+                    OperationConstants.Type.UPDATE,
+                    OperationConstants.Module.ACCOUNT,
+                    "Cookie刷新失败，账号状态已标记为异常待处理(-2)",
+                    OperationConstants.Status.SUCCESS,
+                    OperationConstants.TargetType.ACCOUNT,
+                    String.valueOf(accountId),
+                    null, null, reason, null);
+        } catch (Exception e) {
+            log.error("【账号{}】Cookie刷新失败后更新账号状态异常", accountId, e);
+            operationLogService.log(accountId,
+                    OperationConstants.Type.UPDATE,
+                    OperationConstants.Module.ACCOUNT,
+                    "Cookie刷新失败后更新账号状态异常",
+                    OperationConstants.Status.FAIL,
+                    OperationConstants.TargetType.ACCOUNT,
+                    String.valueOf(accountId),
+                    null, null, e.getMessage(), null);
+        }
+    }
+
+    private void updateAccountStatusToNormal(Long accountId, String reason) {
+        try {
+            XianyuAccount account = accountMapper.selectById(accountId);
+            if (account != null && Objects.equals(account.getStatus(), -2)) {
+                account.setStatus(1);
+                accountMapper.updateById(account);
+                log.info("【账号{}】Cookie刷新成功后，账号状态已恢复为1（正常）", accountId);
+                operationLogService.log(accountId,
+                        OperationConstants.Type.UPDATE,
+                        OperationConstants.Module.ACCOUNT,
+                        "Cookie刷新成功，账号状态已恢复正常",
+                        OperationConstants.Status.SUCCESS,
+                        OperationConstants.TargetType.ACCOUNT,
+                        String.valueOf(accountId),
+                        null, null, reason, null);
+            }
+        } catch (Exception e) {
+            log.error("【账号{}】Cookie刷新成功后恢复账号状态失败", accountId, e);
+            operationLogService.log(accountId,
+                    OperationConstants.Type.UPDATE,
+                    OperationConstants.Module.ACCOUNT,
+                    "Cookie刷新成功后恢复账号状态失败",
+                    OperationConstants.Status.FAIL,
+                    OperationConstants.TargetType.ACCOUNT,
+                    String.valueOf(accountId),
+                    null, null, e.getMessage(), null);
+        }
+    }
+
+    private List<Cookie> buildBrowserCookies(Map<String, String> cookieMap) {
+        List<Cookie> browserCookies = new ArrayList<>();
+        for (Map.Entry<String, String> entry : cookieMap.entrySet()) {
+            String name = entry.getKey();
+            String value = entry.getValue();
+            if (name == null || name.isBlank() || value == null || value.isBlank()) {
+                continue;
+            }
+            browserCookies.add(new Cookie(name, value).setDomain(GOOFISH_COOKIE_DOMAIN).setPath("/"));
+            browserCookies.add(new Cookie(name, value).setDomain(TAOBAO_COOKIE_DOMAIN).setPath("/"));
+        }
+        return browserCookies;
+    }
+
+    private String buildCookieText(List<Cookie> cookies) {
+        Map<String, String> cookieMap = new LinkedHashMap<>();
+        for (Cookie cookie : cookies) {
+            if (cookie.name == null || cookie.name.isBlank() || cookie.value == null || cookie.value.isBlank()) {
+                continue;
+            }
+            cookieMap.put(cookie.name, cookie.value);
+        }
+        return clearDuplicateCookies(XianyuSignUtils.formatCookies(cookieMap));
     }
 
     @Override

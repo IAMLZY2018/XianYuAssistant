@@ -1,5 +1,6 @@
 package com.feijimiao.xianyuassistant.service.impl;
 
+import com.feijimiao.xianyuassistant.config.WebSocketConfig;
 import com.feijimiao.xianyuassistant.entity.XianyuAccount;
 import com.feijimiao.xianyuassistant.entity.XianyuCookie;
 import com.feijimiao.xianyuassistant.mapper.XianyuAccountMapper;
@@ -9,6 +10,7 @@ import com.feijimiao.xianyuassistant.service.OperationLogService;
 import com.feijimiao.xianyuassistant.service.TokenRefreshService;
 import com.feijimiao.xianyuassistant.service.WebSocketTokenService;
 import com.feijimiao.xianyuassistant.utils.XianyuSignUtils;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -29,8 +31,8 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * <p>功能：</p>
  * <ul>
- *   <li>定期刷新_m_h5_tk token（每4小时，作为兜底机制）</li>
- *   <li>定期Cookie保活检查（每2小时）</li>
+ *   <li>定期刷新_m_h5_tk token（15-20分钟随机间隔，作为兜底机制）</li>
+ *   <li>定期Cookie保活检查（15-20分钟随机间隔）</li>
  *   <li>定期刷新websocket_token（每分钟检查，1小时刷新）</li>
  *   <li>监控token过期时间</li>
  *   <li>自动重新获取过期的token</li>
@@ -39,7 +41,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * <p>优化策略（参考Python实现）：</p>
  * <ul>
  *   <li>Python采用"按需刷新"策略：只在token获取失败时才调用hasLogin</li>
- *   <li>Java延长刷新间隔，减少频繁请求：_m_h5_tk从2小时延长至4小时，Cookie保活从30分钟延长至2小时</li>
+ *   <li>Java保留按需刷新，并增加15-20分钟的随机兜底刷新，避免固定节奏</li>
  *   <li>主要依赖token刷新失败时的自动重试机制来触发hasLogin</li>
  *   <li>WebSocket token保持每分钟检查，1小时刷新的策略</li>
  * </ul>
@@ -47,31 +49,55 @@ import java.util.concurrent.ThreadLocalRandom;
 @Slf4j
 @Service
 public class TokenRefreshServiceImpl implements TokenRefreshService {
-    
+
+    private static final long ONE_MINUTE_MS = 60 * 1000L;
+
     @Autowired
     private XianyuAccountMapper accountMapper;
-    
+
     @Autowired
     private XianyuCookieMapper cookieMapper;
-    
+
     @Autowired
     private WebSocketTokenService webSocketTokenService;
-    
+
     @Autowired
     private OperationLogService operationLogService;
-    
+
     @Autowired
     private CookieRefreshService cookieRefreshService;
-    
+
+    @Autowired
+    private WebSocketConfig webSocketConfig;
+
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
+    private volatile long nextMh5tkRefreshTime = 0;
     private volatile long nextCookieKeepAliveTime = 0;
 
+    @PostConstruct
+    public void initRefreshSchedules() {
+        scheduleNextMh5tkRefresh();
+        scheduleNextCookieKeepAlive();
+    }
+
+    private long randomRefreshDelayMinutes() {
+        int minMinutes = Math.max(1, webSocketConfig.getCredentialRefreshMinMinutes());
+        int maxMinutes = Math.max(minMinutes, webSocketConfig.getCredentialRefreshMaxMinutes());
+        return ThreadLocalRandom.current().nextLong(minMinutes, maxMinutes + 1L);
+    }
+
+    private void scheduleNextMh5tkRefresh() {
+        long delayMinutes = randomRefreshDelayMinutes();
+        nextMh5tkRefreshTime = System.currentTimeMillis() + delayMinutes * ONE_MINUTE_MS;
+        log.info("📅 下次_m_h5_tk刷新将在 {} 分钟后执行", delayMinutes);
+    }
+
     private void scheduleNextCookieKeepAlive() {
-        long delayMinutes = 120 + ThreadLocalRandom.current().nextLong(61);
-        nextCookieKeepAliveTime = System.currentTimeMillis() + delayMinutes * 60 * 1000;
+        long delayMinutes = randomRefreshDelayMinutes();
+        nextCookieKeepAliveTime = System.currentTimeMillis() + delayMinutes * ONE_MINUTE_MS;
         log.info("📅 下次Cookie保活检查将在 {} 分钟后执行", delayMinutes);
     }
     
@@ -374,16 +400,20 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
      * 参考Python逻辑优化：
      * - Python没有单独的_m_h5_tk定时刷新，而是在get_token失败时才调用hasLogin
      * - Python的token_refresh_interval默认为1小时（3600秒）
-     * - 为了减少不必要的刷新，将间隔延长至6小时，作为兜底机制
+     * - 当前实现采用15-20分钟随机间隔作为兜底机制
      *
      * 优化策略：
-     * 1. 延长刷新间隔至6小时（360分钟），大幅减少频繁刷新
+     * 1. 使用15-20分钟随机间隔，避免固定周期请求
      * 2. 主要依赖WebSocket token刷新失败时的自动重试机制
      * 3. 只有在真正需要时才调用hasLogin刷新Cookie
      * 4. 添加随机间隔（5-10秒），避免多账号同时请求被识别为机器人
      */
-    @Scheduled(fixedDelay = 360 * 60 * 1000, initialDelay = 60 * 60 * 1000)
+    @Scheduled(fixedDelay = ONE_MINUTE_MS, initialDelay = ONE_MINUTE_MS)
     public void scheduledRefreshMh5tk() {
+        if (System.currentTimeMillis() < nextMh5tkRefreshTime) {
+            return;
+        }
+        scheduleNextMh5tkRefresh();
         try {
             log.info("🔄 开始刷新所有账号的_m_h5_tk token...");
             refreshAllAccountsTokens();
@@ -399,15 +429,15 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
      * 参考Python逻辑优化：
      * - Python中hasLogin只在get_token失败时才被调用（按需刷新）
      * - Python没有单独的定期Cookie保活检查
-     * - 为了减少频繁请求，将间隔延长至3小时
+     * - 当前实现采用15-20分钟随机间隔进行保活
      *
      * 优化策略：
-     * 1. 延长保活检查间隔至3小时（180分钟）
+     * 1. 使用15-20分钟随机间隔，避免固定周期请求
      * 2. 减少对hasLogin接口的调用频率
      * 3. 主要依赖token刷新失败时的自动重试机制来触发hasLogin
      * 4. 添加随机间隔（5-15秒），避免多账号同时请求被识别为机器人
      */
-    @Scheduled(fixedDelay = 60 * 1000, initialDelay = 90 * 60 * 1000)
+    @Scheduled(fixedDelay = ONE_MINUTE_MS, initialDelay = ONE_MINUTE_MS)
     public void scheduledCookieKeepAlive() {
         if (System.currentTimeMillis() < nextCookieKeepAliveTime) {
             return;

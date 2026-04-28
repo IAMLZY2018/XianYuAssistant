@@ -36,6 +36,18 @@ public class WebSocketConfig {
      * 参考Python: TOKEN_RETRY_INTERVAL = 300 (5分钟)
      */
     private int tokenRetryInterval = 300;
+
+    /**
+     * 凭证刷新最小间隔（分钟）
+     * 用于Cookie保活和_m_h5_tk兜底刷新
+     */
+    private int credentialRefreshMinMinutes = 15;
+
+    /**
+     * 凭证刷新最大间隔（分钟）
+     * 用于Cookie保活和_m_h5_tk兜底刷新
+     */
+    private int credentialRefreshMaxMinutes = 20;
     
     /**
      * 消息过期时间（毫秒）
