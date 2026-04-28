@@ -79,6 +79,7 @@ const EMAIL_SMTP_PASSWORD_KEY = 'email_smtp_password'
 const EMAIL_SMTP_FROM_KEY = 'email_smtp_from'
 const EMAIL_SMTP_SSL_KEY = 'email_smtp_ssl'
 const EMAIL_WS_DISCONNECT_NOTIFY_KEY = 'email_notify_ws_disconnect_enabled'
+const EMAIL_COOKIE_EXPIRE_NOTIFY_KEY = 'email_notify_cookie_expire_enabled'
 
 const emailSmtpHost = ref('')
 const emailSmtpPort = ref('465')
@@ -92,6 +93,7 @@ const showEmailPassword = ref(false)
 const emailConfigured = ref(false)
 const emailConfigExpanded = ref(true)
 const wsDisconnectNotifyEnabled = ref(false)
+const cookieExpireNotifyEnabled = ref(false)
 
 // AI 状态
 const aiStatus = ref({
@@ -423,14 +425,15 @@ function handleResetEmbeddingConfig() {
 
 async function loadEmailConfig() {
   try {
-    const [hostRes, portRes, userRes, passRes, fromRes, sslRes, wsDisconnectRes] = await Promise.all([
+    const [hostRes, portRes, userRes, passRes, fromRes, sslRes, wsDisconnectRes, cookieExpireRes] = await Promise.all([
       getSetting({ settingKey: EMAIL_SMTP_HOST_KEY }),
       getSetting({ settingKey: EMAIL_SMTP_PORT_KEY }),
       getSetting({ settingKey: EMAIL_SMTP_USERNAME_KEY }),
       getSetting({ settingKey: EMAIL_SMTP_PASSWORD_KEY }),
       getSetting({ settingKey: EMAIL_SMTP_FROM_KEY }),
       getSetting({ settingKey: EMAIL_SMTP_SSL_KEY }),
-      getSetting({ settingKey: EMAIL_WS_DISCONNECT_NOTIFY_KEY })
+      getSetting({ settingKey: EMAIL_WS_DISCONNECT_NOTIFY_KEY }),
+      getSetting({ settingKey: EMAIL_COOKIE_EXPIRE_NOTIFY_KEY })
     ])
 
     if (hostRes.code === 200 && hostRes.data) emailSmtpHost.value = hostRes.data.settingValue || ''
@@ -443,6 +446,9 @@ async function loadEmailConfig() {
     }
     if (wsDisconnectRes.code === 200 && wsDisconnectRes.data && wsDisconnectRes.data.settingValue) {
       wsDisconnectNotifyEnabled.value = wsDisconnectRes.data.settingValue === '1' || wsDisconnectRes.data.settingValue === 'true'
+    }
+    if (cookieExpireRes.code === 200 && cookieExpireRes.data && cookieExpireRes.data.settingValue) {
+      cookieExpireNotifyEnabled.value = cookieExpireRes.data.settingValue === '1' || cookieExpireRes.data.settingValue === 'true'
     }
 
     emailConfigured.value = !!(emailSmtpHost.value && emailSmtpPort.value && emailSmtpUsername.value && emailSmtpPassword.value && emailSmtpFrom.value)
@@ -485,7 +491,23 @@ async function handleSaveWsDisconnectNotify() {
       settingDesc: 'WebSocket断开且无法重连时邮箱通知开关（1启用，0关闭）'
     })
     if (res.code === 200) {
-      ElMessage.success(`服务器无法连接通知已${wsDisconnectNotifyEnabled.value ? '开启' : '关闭'}`)
+      ElMessage.success(`闲鱼账号消息监听掉线通知已${wsDisconnectNotifyEnabled.value ? '开启' : '关闭'}`)
+    }
+  } catch (e) {
+    console.error('保存通知开关失败:', e)
+    ElMessage.error('保存失败')
+  }
+}
+
+async function handleSaveCookieExpireNotify() {
+  try {
+    const res = await saveSetting({
+      settingKey: EMAIL_COOKIE_EXPIRE_NOTIFY_KEY,
+      settingValue: cookieExpireNotifyEnabled.value ? '1' : '0',
+      settingDesc: 'Cookie过期且无法续期时邮箱通知开关（1启用，0关闭）'
+    })
+    if (res.code === 200) {
+      ElMessage.success(`Cookie过期通知已${cookieExpireNotifyEnabled.value ? '开启' : '关闭'}`)
     }
   } catch (e) {
     console.error('保存通知开关失败:', e)
@@ -993,22 +1015,50 @@ async function handleTestEmail() {
           <div class="settings__section-title">通知开关</div>
           <p class="settings__desc">选择哪些事件需要通过邮件通知您</p>
 
-          <div class="settings__form">
-            <div class="settings__field">
-              <label class="settings__label">闲鱼账号掉线通知</label>
-              <label class="settings__switch">
-                <input
-                  type="checkbox"
-                  v-model="wsDisconnectNotifyEnabled"
-                  :disabled="!emailConfigured"
-                  @change="handleSaveWsDisconnectNotify"
-                />
-                <span class="settings__switch-track"></span>
-                <span class="settings__switch-thumb"></span>
-              </label>
-            </div>
-            <p v-if="!emailConfigured" class="settings__hint" style="color:#e6a23c;">请先配置邮箱后再开启通知</p>
-          </div>
+          <table class="settings__notify-table">
+            <thead>
+              <tr>
+                <th class="settings__notify-th">通知类型</th>
+                <th class="settings__notify-th">说明</th>
+                <th class="settings__notify-th">状态</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="settings__notify-tr">
+                <td class="settings__notify-td">闲鱼账号消息监听掉线通知</td>
+                <td class="settings__notify-td settings__notify-td--desc">WebSocket连接失败时发送邮件通知</td>
+                <td class="settings__notify-td">
+                  <label class="settings__switch">
+                    <input
+                      type="checkbox"
+                      v-model="wsDisconnectNotifyEnabled"
+                      :disabled="!emailConfigured"
+                      @change="handleSaveWsDisconnectNotify"
+                    />
+                    <span class="settings__switch-track"></span>
+                    <span class="settings__switch-thumb"></span>
+                  </label>
+                </td>
+              </tr>
+              <tr class="settings__notify-tr">
+                <td class="settings__notify-td">Cookie过期通知</td>
+                <td class="settings__notify-td settings__notify-td--desc">Cookie过期且无法自动续期时发送邮件通知</td>
+                <td class="settings__notify-td">
+                  <label class="settings__switch">
+                    <input
+                      type="checkbox"
+                      v-model="cookieExpireNotifyEnabled"
+                      :disabled="!emailConfigured"
+                      @change="handleSaveCookieExpireNotify"
+                    />
+                    <span class="settings__switch-track"></span>
+                    <span class="settings__switch-thumb"></span>
+                  </label>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p v-if="!emailConfigured" class="settings__hint" style="color:#e6a23c;margin-top:8px;">请先配置邮箱后再开启通知</p>
         </div>
       </div>
 
@@ -1794,5 +1844,58 @@ async function handleTestEmail() {
 .settings__switch input:disabled + .settings__switch-track {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* 通知开关表格 */
+.settings__notify-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 12px;
+}
+
+.settings__notify-th {
+  background: rgba(0, 0, 0, 0.02);
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d1d1f;
+  text-align: left;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.settings__notify-th:last-child {
+  text-align: center;
+  width: 80px;
+}
+
+.settings__notify-tr {
+  transition: background 0.2s;
+}
+
+.settings__notify-tr:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.settings__notify-td {
+  padding: 14px 16px;
+  font-size: 13px;
+  color: #1d1d1f;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.settings__notify-tr:last-child .settings__notify-td {
+  border-bottom: none;
+}
+
+.settings__notify-td:last-child {
+  text-align: center;
+}
+
+.settings__notify-td--desc {
+  color: #6e6e73;
+  font-size: 12px;
 }
 </style>

@@ -25,6 +25,7 @@ public class EmailNotifyServiceImpl implements EmailNotifyService {
     private static final String KEY_SMTP_FROM = "email_smtp_from";
     private static final String KEY_SMTP_SSL = "email_smtp_ssl";
     private static final String KEY_WS_DISCONNECT_NOTIFY_ENABLED = "email_notify_ws_disconnect_enabled";
+    private static final String KEY_COOKIE_EXPIRE_NOTIFY_ENABLED = "email_notify_cookie_expire_enabled";
 
     @Autowired
     private SysSettingService sysSettingService;
@@ -47,7 +48,7 @@ public class EmailNotifyServiceImpl implements EmailNotifyService {
             String to = getSettingValue(KEY_SMTP_FROM);
 
             String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
-            String subject = "【闲鱼助手】服务器无法连接 - 账号" + accountId;
+            String subject = "【闲鱼助手】消息监听已掉线 - " + (accountNote != null && !accountNote.isEmpty() ? accountNote : "账号" + accountId);
             String content = buildWsDisconnectEmailContent(accountId, accountNote, time);
 
             MimeMessage message = mailSender.createMimeMessage();
@@ -67,6 +68,47 @@ public class EmailNotifyServiceImpl implements EmailNotifyService {
     @Override
     public boolean isWsDisconnectNotifyEnabled() {
         String value = getSettingValue(KEY_WS_DISCONNECT_NOTIFY_ENABLED);
+        return "1".equals(value) || "true".equalsIgnoreCase(value);
+    }
+
+    @Override
+    @Async
+    public void sendCookieExpireNotifyEmail(Long accountId, String accountNote) {
+        if (!isEmailConfigured()) {
+            log.warn("邮箱未配置，跳过发送Cookie过期通知邮件");
+            return;
+        }
+        if (!isCookieExpireNotifyEnabled()) {
+            log.debug("Cookie过期邮件通知未启用，跳过");
+            return;
+        }
+
+        try {
+            JavaMailSenderImpl mailSender = buildMailSender();
+            String from = getSettingValue(KEY_SMTP_USERNAME);
+            String to = getSettingValue(KEY_SMTP_FROM);
+
+            String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
+            String subject = "【闲鱼助手】Cookie已过期 - " + (accountNote != null && !accountNote.isEmpty() ? accountNote : "账号" + accountId);
+            String content = buildCookieExpireEmailContent(accountId, accountNote, time);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(from);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(content, true);
+
+            mailSender.send(message);
+            log.info("Cookie过期通知邮件发送成功: accountId={}, to={}", accountId, to);
+        } catch (Exception e) {
+            log.error("Cookie过期通知邮件发送失败: accountId={}", accountId, e);
+        }
+    }
+
+    @Override
+    public boolean isCookieExpireNotifyEnabled() {
+        String value = getSettingValue(KEY_COOKIE_EXPIRE_NOTIFY_ENABLED);
         return "1".equals(value) || "true".equalsIgnoreCase(value);
     }
 
@@ -153,7 +195,7 @@ public class EmailNotifyServiceImpl implements EmailNotifyService {
     private String buildWsDisconnectEmailContent(Long accountId, String accountNote, String time) {
         StringBuilder sb = new StringBuilder();
         sb.append("<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;'>");
-        sb.append("<h2 style='color:#f56c6c;border-bottom:2px solid #f56c6c;padding-bottom:10px;'>🔴 闲鱼助手 - 服务器无法连接</h2>");
+        sb.append("<h2 style='color:#f56c6c;border-bottom:2px solid #f56c6c;padding-bottom:10px;'>🔴 闲鱼助手 - 消息监听已掉线</h2>");
         sb.append("<div style='background:#fef0f0;border-radius:8px;padding:16px;margin:16px 0;'>");
         sb.append("<p style='margin:8px 0;'><strong>账号ID：</strong>").append(accountId).append("</p>");
         if (accountNote != null && !accountNote.isEmpty()) {
@@ -162,8 +204,43 @@ public class EmailNotifyServiceImpl implements EmailNotifyService {
         sb.append("<p style='margin:8px 0;'><strong>触发时间：</strong>").append(time).append("</p>");
         sb.append("</div>");
         sb.append("<div style='background:#f0f9ff;border-radius:8px;padding:16px;margin:16px 0;'>");
-        sb.append("<p style='margin:4px 0;color:#666;'>该账号的WebSocket连接已断开，且多次重连均失败，无法连接到闲鱼服务器。</p>");
-        sb.append("<p style='margin:4px 0;color:#666;'>请检查网络连接或Cookie是否有效，并尝试手动重新启动连接。</p>");
+        sb.append("<p style='margin:4px 0;color:#666;'><strong>问题描述：</strong>该闲鱼账号的WebSocket消息监听连接已断开，系统尝试多次重连均失败。</p>");
+        sb.append("<p style='margin:4px 0;color:#666;'><strong>可能原因：</strong></p>");
+        sb.append("<ul style='margin:4px 0;padding-left:20px;color:#666;'>");
+        sb.append("<li>网络连接不稳定或断开</li>");
+        sb.append("<li>闲鱼服务器维护或异常</li>");
+        sb.append("<li>Cookie已过期失效</li>");
+        sb.append("</ul>");
+        sb.append("<p style='margin:4px 0;color:#666;'><strong>处理建议：</strong>请检查网络连接，确认Cookie是否有效，并在账号管理页面尝试重新连接。</p>");
+        sb.append("</div>");
+        sb.append("<div style='color:#999;font-size:12px;margin-top:20px;border-top:1px solid #eee;padding-top:10px;'>");
+        sb.append("此邮件由闲鱼助手自动发送，请勿回复");
+        sb.append("</div>");
+        sb.append("</div>");
+        return sb.toString();
+    }
+
+    private String buildCookieExpireEmailContent(Long accountId, String accountNote, String time) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;'>");
+        sb.append("<h2 style='color:#e6a23c;border-bottom:2px solid #e6a23c;padding-bottom:10px;'>⚠️ 闲鱼助手 - Cookie已过期</h2>");
+        sb.append("<div style='background:#fdf6ec;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:8px 0;'><strong>账号ID：</strong>").append(accountId).append("</p>");
+        if (accountNote != null && !accountNote.isEmpty()) {
+            sb.append("<p style='margin:8px 0;'><strong>账号备注：</strong>").append(accountNote).append("</p>");
+        }
+        sb.append("<p style='margin:8px 0;'><strong>触发时间：</strong>").append(time).append("</p>");
+        sb.append("</div>");
+        sb.append("<div style='background:#f0f9ff;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:4px 0;color:#666;'><strong>问题描述：</strong>该闲鱼账号的Cookie已过期，且系统无法自动续期。</p>");
+        sb.append("<p style='margin:4px 0;color:#666;'><strong>影响范围：</strong></p>");
+        sb.append("<ul style='margin:4px 0;padding-left:20px;color:#666;'>");
+        sb.append("<li>无法接收买家消息</li>");
+        sb.append("<li>无法自动回复</li>");
+        sb.append("<li>无法自动发货</li>");
+        sb.append("<li>无法同步商品数据</li>");
+        sb.append("</ul>");
+        sb.append("<p style='margin:4px 0;color:#666;'><strong>处理建议：</strong>请登录闲鱼APP重新获取Cookie，并在账号管理页面更新Cookie。</p>");
         sb.append("</div>");
         sb.append("<div style='color:#999;font-size:12px;margin-top:20px;border-top:1px solid #eee;padding-top:10px;'>");
         sb.append("此邮件由闲鱼助手自动发送，请勿回复");

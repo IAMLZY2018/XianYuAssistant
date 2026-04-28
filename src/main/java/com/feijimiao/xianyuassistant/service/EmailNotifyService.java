@@ -21,6 +21,21 @@ public interface EmailNotifyService {
     boolean isWsDisconnectNotifyEnabled();
 
     /**
+     * 发送Cookie过期且无法续期通知邮件
+     *
+     * @param accountId 闲鱼账号ID
+     * @param accountNote 账号备注
+     */
+    void sendCookieExpireNotifyEmail(Long accountId, String accountNote);
+
+    /**
+     * 检查Cookie过期邮件通知是否启用
+     *
+     * @return 是否启用
+     */
+    boolean isCookieExpireNotifyEnabled();
+
+    /**
      * 检查邮箱配置是否完整
      *
      * @return 是否已配置

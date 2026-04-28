@@ -23,49 +23,36 @@
 
 <div align="center">
   <img src="docs/images/1.png" alt="消息管理" width="800"/>
-  <p><i>消息管理 - 聊天记录查看与快速回复</i></p>
+  <p><i>首页-数据面板</i></p>
 </div>
 
-### 自动发货配置
 
-配置商品自动发货规则，支持自动确认收货：
+### 功能截图
 
 <div align="center">
-  <img src="docs/images/2-1.png" alt="自动发货配置" width="800"/>
-  <p><i>自动发货 - 自动同步闲鱼商品列表</i></p>
+  <img src="docs/images/2.png" alt="连接管理" width="45%"/>
+  <img src="docs/images/3.png" alt="商品管理" width="45%"/>
+  <p><i>连接管理 &nbsp;&nbsp;|&nbsp;&nbsp; 商品管理</i></p>
 </div>
 
 <div align="center">
-  <img src="docs/images/2.png" alt="自动发货配置" width="800"/>
-  <p><i>自动发货 - 配置发货内容与规则</i></p>
+  <img src="docs/images/4.png" alt="消息快速回复" width="45%"/>
+  <img src="docs/images/5.png" alt="卡密仓库配置" width="45%"/>
+  <p><i>消息快速回复 &nbsp;&nbsp;|&nbsp;&nbsp; 卡密仓库配置</i></p>
 </div>
-
-### 闲鱼账号管理
-
-管理多个闲鱼账号，支持扫码登录：
 
 <div align="center">
-  <img src="docs/images/3.png" alt="闲鱼账号管理" width="800"/>
-  <p><i>账号管理 - 多账号统一管理</i></p>
+  <img src="docs/images/6.png" alt="自动发货配置" width="45%"/>
+  <img src="docs/images/7.png" alt="发货记录" width="45%"/>
+  <p><i>自动发货配置 &nbsp;&nbsp;|&nbsp;&nbsp; 发货记录</i></p>
 </div>
-
-### 商品管理
-
-同步和管理闲鱼商品，配置自动化功能：
 
 <div align="center">
-  <img src="docs/images/4.png" alt="商品管理" width="800"/>
-  <p><i>商品管理 - 商品列表与配置</i></p>
+  <img src="docs/images/8.png" alt="自动回复" width="45%"/>
+  <img src="docs/images/9.png" alt="系统配置" width="45%"/>
+  <p><i>自动回复 &nbsp;&nbsp;|&nbsp;&nbsp; 系统配置</i></p>
 </div>
 
-### 自动回复配置
-
-支持为商品单独配置知识库，根据知识库回答用户问题：
-
-<div align="center">
-  <img src="docs/images/5.png" alt="自动回复配置" width="800"/>
-  <p><i>自动回复 - 商品知识库配置</i></p>
-</div>
 
 ---
 
@@ -228,13 +215,13 @@ cd ..
 #### 启动服务
 
 ```bash
-java -jar target/XianYuAssistant-1.0.10.jar
+java -jar target/XianYuAssistant-1.1.0.jar
 ```
 
 #### 自定义配置
 
 ```bash
-java -Xms256m -Xmx512m -Dserver.port=12400 -jar target/XianYuAssistant-1.0.10.jar
+java -Xms256m -Xmx512m -Dserver.port=12400 -jar target/XianYuAssistant-1.1.0.jar
 ```
 
 #### 访问系统
@@ -411,6 +398,23 @@ java -Xms256m -Xmx512m -Dserver.port=12400 -jar target/XianYuAssistant-1.0.10.ja
 ---
 
 ## 📝 更新日志
+
+### v1.1.0 (2026-04-28)
+
+**🎉 新功能**
+- 商品详情异步同步，支持进度显示
+- 固定资料功能，每次AI回复自动携带
+- AI回答测试功能，与自动回复流程一致
+- Cookie过期邮件通知
+- 通知开关表格化展示
+
+**🎨 UI优化**
+- 商品详情弹窗左右布局
+- 同步按钮loading动画
+- 回复延时配置一行显示
+- 通知开关表格形式
+
+---
 
 ### v1.0.10 (2026-04-28)
 
