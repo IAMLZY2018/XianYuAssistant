@@ -32,6 +32,9 @@ public class ItemServiceImpl implements ItemService {
     @Autowired
     private com.feijimiao.xianyuassistant.service.AutoDeliveryService autoDeliveryService;
 
+    @Autowired
+    private com.feijimiao.xianyuassistant.service.ItemDetailSyncService itemDetailSyncService;
+
     /**
      * 获取指定页的商品信息（内部方法）
      */
@@ -81,6 +84,7 @@ public class ItemServiceImpl implements ItemService {
             }
             
             log.info("API调用成功，响应长度: {}", response.length());
+            log.info("API响应完整内容: {}", response);
 
             // 解析响应
             log.info("开始解析响应JSON...");
@@ -238,8 +242,11 @@ public class ItemServiceImpl implements ItemService {
                 respDTO.setSuccess(true);
                 respDTO.setMessage("刷新成功");
                 
-                log.info("刷新商品数据完成: xianyuAccountId={}, 总数={}, 成功={}", 
-                        reqDTO.getXianyuAccountId(), respDTO.getTotalCount(), respDTO.getSuccessCount());
+                String syncId = itemDetailSyncService.startSync(reqDTO.getXianyuAccountId(), allItems);
+                respDTO.setSyncId(syncId);
+                
+                log.info("刷新商品数据完成: xianyuAccountId={}, 总数={}, 成功={}, syncId={}", 
+                        reqDTO.getXianyuAccountId(), respDTO.getTotalCount(), respDTO.getSuccessCount(), syncId);
             } else {
                 respDTO.setSuccessCount(0);
                 respDTO.setMessage("没有获取到商品数据");
@@ -667,7 +674,7 @@ public class ItemServiceImpl implements ItemService {
                         for (Map<String, Object> card : cardList) {
                             Map<String, Object> cardData = (Map<String, Object>) card.get("cardData");
                             if (cardData != null) {
-                                // 将 Map 转换为 ItemDTO
+                                log.info("商品cardData: {}", cardData);
                                 ItemDTO itemDTO = objectMapper.convertValue(cardData, ItemDTO.class);
                                 respDTO.getItems().add(itemDTO);
                             }

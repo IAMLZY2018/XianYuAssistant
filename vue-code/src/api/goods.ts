@@ -48,6 +48,22 @@ export interface RefreshItemsResponse {
   successCount: number;
   updatedItemIds: string[];
   message: string;
+  syncId?: string;
+}
+
+export interface SyncProgressResponse {
+  syncId: string;
+  accountId: number;
+  totalCount: number;
+  completedCount: number;
+  successCount: number;
+  failedCount: number;
+  isCompleted: boolean;
+  isRunning: boolean;
+  currentItemId: string;
+  message: string;
+  startTime: number;
+  estimatedRemainingTime: number;
 }
 
 // 获取商品列表
@@ -189,5 +205,19 @@ export function getAutoReplyRecords(data: {
     url: '/items/autoReplyRecords',
     method: 'POST',
     data
+  });
+}
+
+export function getSyncProgress(syncId: string) {
+  return request<SyncProgressResponse>({
+    url: `/items/syncProgress/${syncId}`,
+    method: 'GET'
+  });
+}
+
+export function checkSyncing(accountId: number) {
+  return request<boolean>({
+    url: `/items/syncing/${accountId}`,
+    method: 'GET'
   });
 }

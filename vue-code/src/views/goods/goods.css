@@ -589,6 +589,36 @@
   }
 }
 
+.goods__sync-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--d-space-1);
+  padding: var(--d-space-2) var(--d-space-3);
+  background: rgba(0, 122, 255, 0.08);
+  border-radius: var(--d-radius-sm);
+  min-width: 120px;
+}
+
+.goods__sync-text {
+  font-size: 12px;
+  color: var(--d-accent);
+  font-weight: 500;
+}
+
+.goods__sync-bar {
+  height: 4px;
+  background: rgba(0, 122, 255, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.goods__sync-bar-fill {
+  height: 100%;
+  background: var(--d-accent);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
 /* Small phone (< 480px) */
 @media screen and (max-width: 480px) {
   .goods {

@@ -16,6 +16,8 @@ import GoodsDetail from './components/GoodsDetail.vue'
 const {
   loading,
   refreshing,
+  syncing,
+  syncProgress,
   accounts,
   selectedAccountId,
   statusFilter,
@@ -72,13 +74,24 @@ const getPageButtons = () => {
       <div class="goods__actions">
         <button
           class="btn btn--secondary"
-          :class="{ 'btn--loading': refreshing }"
-          :disabled="refreshing || !selectedAccountId"
+          :class="{ 'btn--loading': refreshing || syncing }"
+          :disabled="refreshing || syncing || !selectedAccountId"
           @click="handleRefresh"
         >
           <IconRefresh />
           <span class="mobile-hidden">刷新</span>
         </button>
+        <div v-if="syncing && syncProgress" class="goods__sync-progress">
+          <span class="goods__sync-text">
+            详情同步: {{ syncProgress.completedCount }}/{{ syncProgress.totalCount }}
+          </span>
+          <div class="goods__sync-bar">
+            <div 
+              class="goods__sync-bar-fill" 
+              :style="{ width: `${(syncProgress.completedCount / syncProgress.totalCount) * 100}%` }"
+            ></div>
+          </div>
+        </div>
       </div>
     </div>
 

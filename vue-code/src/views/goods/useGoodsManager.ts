@@ -1,4 +1,4 @@
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getAccountList } from '@/api/account'
 import {
@@ -7,12 +7,14 @@ import {
   getGoodsDetail,
   updateAutoDeliveryStatus,
   updateAutoReplyStatus,
-  deleteItem
+  deleteItem,
+  getSyncProgress,
+  checkSyncing
 } from '@/api/goods'
 import { showSuccess, showError, showInfo, showConfirm } from '@/utils'
 import { getGoodsStatusText, formatPrice, formatTime } from '@/utils'
 import type { Account } from '@/types'
-import type { GoodsItemWithConfig } from '@/api/goods'
+import type { GoodsItemWithConfig, SyncProgressResponse } from '@/api/goods'
 
 export function useGoodsManager() {
   const router = useRouter()
@@ -36,6 +38,49 @@ export function useGoodsManager() {
   const selectedGoodsId = ref<string>('')
   const selectedGoods = ref<GoodsItemWithConfig | null>(null)
   const deleteTarget = ref<{ id: string; title: string } | null>(null)
+
+  const syncProgress = ref<SyncProgressResponse | null>(null)
+  const syncing = ref(false)
+  let syncProgressTimer: ReturnType<typeof setInterval> | null = null
+
+  const stopSyncPolling = () => {
+    if (syncProgressTimer) {
+      clearInterval(syncProgressTimer)
+      syncProgressTimer = null
+    }
+  }
+
+  const pollSyncProgress = async (syncId: string) => {
+    try {
+      const response = await getSyncProgress(syncId)
+      if (response.code === 0 || response.code === 200) {
+        syncProgress.value = response.data
+        if (response.data?.isCompleted || !response.data?.isRunning) {
+          stopSyncPolling()
+          syncing.value = false
+          refreshing.value = false
+          if (response.data?.successCount && response.data.successCount > 0) {
+            showSuccess(`详情同步完成: 成功${response.data.successCount}个, 失败${response.data.failedCount}个`)
+          }
+          await loadGoods()
+        }
+      }
+    } catch (error) {
+      console.error('获取同步进度失败:', error)
+    }
+  }
+
+  const startSyncPolling = (syncId: string) => {
+    stopSyncPolling()
+    syncing.value = true
+    syncProgressTimer = setInterval(() => {
+      pollSyncProgress(syncId)
+    }, 1000)
+  }
+
+  onUnmounted(() => {
+    stopSyncPolling()
+  })
 
   // Computed
   const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
@@ -103,14 +148,19 @@ export function useGoodsManager() {
       if (response.code === 0 || response.code === 200) {
         if (response.data && response.data.success) {
           showSuccess('商品数据刷新成功')
-          await loadGoods()
+          if (response.data.syncId) {
+            startSyncPolling(response.data.syncId)
+          } else {
+            await loadGoods()
+            refreshing.value = false
+          }
         } else {
           showError(response.data?.message || '刷新商品数据失败')
+          refreshing.value = false
         }
       }
     } catch (error: any) {
       console.error('刷新商品数据失败:', error)
-    } finally {
       refreshing.value = false
     }
   }
@@ -221,6 +271,8 @@ export function useGoodsManager() {
   return {
     loading,
     refreshing,
+    syncing,
+    syncProgress,
     accounts,
     selectedAccountId,
     statusFilter,
@@ -246,7 +298,6 @@ export function useGoodsManager() {
     toggleAutoReply,
     confirmDelete,
     executeDelete,
-    // utils
     getGoodsStatusText,
     formatPrice,
     formatTime

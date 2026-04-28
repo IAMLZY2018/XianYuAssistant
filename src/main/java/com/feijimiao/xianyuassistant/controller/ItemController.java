@@ -5,6 +5,7 @@ import com.feijimiao.xianyuassistant.controller.dto.*;
 import com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoReplyRecord;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoReplyRecordMapper;
 import com.feijimiao.xianyuassistant.service.ItemService;
+import com.feijimiao.xianyuassistant.service.ItemDetailSyncService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +25,9 @@ public class ItemController {
 
     @Autowired
     private ItemService itemService;
+    
+    @Autowired
+    private ItemDetailSyncService itemDetailSyncService;
     
     @Autowired
     private com.feijimiao.xianyuassistant.service.AutoDeliveryService autoDeliveryService;
@@ -218,6 +222,30 @@ public class ItemController {
         } catch (Exception e) {
             log.error("获取自动回复记录失败", e);
             return ResultObject.failed("获取自动回复记录失败: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/syncProgress/{syncId}")
+    public ResultObject<SyncProgressRespDTO> getSyncProgress(@PathVariable String syncId) {
+        try {
+            SyncProgressRespDTO progress = itemDetailSyncService.getProgress(syncId);
+            if (progress == null) {
+                return ResultObject.failed("同步任务不存在");
+            }
+            return ResultObject.success(progress);
+        } catch (Exception e) {
+            log.error("获取同步进度失败", e);
+            return ResultObject.failed("获取同步进度失败: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/syncing/{accountId}")
+    public ResultObject<Boolean> isSyncing(@PathVariable Long accountId) {
+        try {
+            return ResultObject.success(itemDetailSyncService.isSyncing(accountId));
+        } catch (Exception e) {
+            log.error("检查同步状态失败", e);
+            return ResultObject.failed("检查同步状态失败: " + e.getMessage());
         }
     }
 }

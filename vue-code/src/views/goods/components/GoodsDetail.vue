@@ -326,123 +326,123 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="detail-panel__body" v-if="!loading && goodsDetail">
-          <!-- Image Gallery -->
-          <div class="detail-gallery" v-if="images.length > 0">
-            <div class="detail-gallery__main">
-              <img :src="images[currentImageIndex]" class="detail-gallery__img" />
-              <button
-                v-if="images.length > 1 && currentImageIndex > 0"
-                class="detail-gallery__nav detail-gallery__nav--prev"
-                @click="prevImage"
-              >
-                <IconChevronLeft />
-              </button>
-              <button
-                v-if="images.length > 1 && currentImageIndex < images.length - 1"
-                class="detail-gallery__nav detail-gallery__nav--next"
-                @click="nextImage"
-              >
-                <IconChevronRight />
-              </button>
-              <span v-if="images.length > 1" class="detail-gallery__counter">
-                {{ currentImageIndex + 1 }} / {{ images.length }}
-              </span>
-            </div>
-            <div v-if="images.length > 1" class="detail-gallery__thumbs">
-              <div
-                v-for="(img, idx) in images"
-                :key="idx"
-                class="detail-gallery__thumb"
-                :class="{ 'detail-gallery__thumb--active': idx === currentImageIndex }"
-                @click="selectImage(idx)"
-              >
-                <img :src="img" />
-              </div>
-            </div>
-          </div>
-
-          <!-- No Image -->
-          <div v-else class="detail-gallery detail-gallery--empty">
-            <div class="detail-gallery__placeholder">
-              <IconImage />
-              <span>暂无图片</span>
-            </div>
-          </div>
-
-          <!-- Info Section -->
-          <div class="detail-info">
-            <div class="detail-info__title">{{ goodsDetail.item.title }}</div>
-            <div class="detail-info__id">ID: {{ goodsDetail.item.xyGoodId }}</div>
-
-            <div class="detail-info__row">
-              <span class="detail-info__price">{{ formatPrice(goodsDetail.item.soldPrice) }}</span>
-              <span
-                class="detail-info__status"
-                :style="{
-                  color: getStatusColor(goodsDetail.item.status),
-                  background: getStatusBg(goodsDetail.item.status)
-                }"
-              >
-                {{ getGoodsStatusText(goodsDetail.item.status).text }}
-              </span>
-            </div>
-
-            <!-- Description -->
-            <div v-if="goodsDetail.item.detailInfo" class="detail-info__desc-section">
-              <div class="detail-info__section-title">商品描述</div>
-              <div class="detail-info__desc">{{ goodsDetail.item.detailInfo }}</div>
-            </div>
-
-            <!-- Config -->
-            <div class="detail-info__config">
-              <div class="detail-info__config-item">
-                <div class="detail-info__config-left">
-                  <IconSend />
-                  <span>自动发货</span>
+          <div class="detail-content">
+            <!-- Left: Image Gallery -->
+            <div class="detail-left">
+              <div class="detail-gallery" v-if="images.length > 0">
+                <div class="detail-gallery__main">
+                  <img :src="images[currentImageIndex]" class="detail-gallery__img" />
+                  <button
+                    v-if="images.length > 1 && currentImageIndex > 0"
+                    class="detail-gallery__nav detail-gallery__nav--prev"
+                    @click="prevImage"
+                  >
+                    <IconChevronLeft />
+                  </button>
+                  <button
+                    v-if="images.length > 1 && currentImageIndex < images.length - 1"
+                    class="detail-gallery__nav detail-gallery__nav--next"
+                    @click="nextImage"
+                  >
+                    <IconChevronRight />
+                  </button>
+                  <span v-if="images.length > 1" class="detail-gallery__counter">
+                    {{ currentImageIndex + 1 }} / {{ images.length }}
+                  </span>
                 </div>
-                <span
-                  class="detail-info__config-value"
-                  :class="{ 'detail-info__config-value--on': goodsDetail.xianyuAutoDeliveryOn === 1 }"
-                >
-                  {{ goodsDetail.xianyuAutoDeliveryOn === 1 ? '已开启' : '已关闭' }}
-                </span>
-              </div>
-              <div class="detail-info__config-item">
-                <div class="detail-info__config-left">
-                  <IconRobot />
-                  <span>自动回复</span>
+                <div v-if="images.length > 1" class="detail-gallery__thumbs">
+                  <div
+                    v-for="(img, idx) in images"
+                    :key="idx"
+                    class="detail-gallery__thumb"
+                    :class="{ 'detail-gallery__thumb--active': idx === currentImageIndex }"
+                    @click="selectImage(idx)"
+                  >
+                    <img :src="img" />
+                  </div>
                 </div>
-                <span
-                  class="detail-info__config-value"
-                  :class="{ 'detail-info__config-value--on': goodsDetail.xianyuAutoReplyOn === 1 }"
-                >
-                  {{ goodsDetail.xianyuAutoReplyOn === 1 ? '已开启' : '已关闭' }}
-                </span>
+              </div>
+              <div v-else class="detail-gallery detail-gallery--empty">
+                <div class="detail-gallery__placeholder">
+                  <IconImage />
+                  <span>暂无图片</span>
+                </div>
               </div>
             </div>
 
-            <!-- Time -->
-            <div class="detail-info__time">
-              <div v-if="goodsDetail.item.createdTime" class="detail-info__time-item">
-                <IconClock />
-                <span>创建: {{ goodsDetail.item.createdTime }}</span>
-              </div>
-              <div v-if="goodsDetail.item.updatedTime" class="detail-info__time-item">
-                <IconClock />
-                <span>更新: {{ goodsDetail.item.updatedTime }}</span>
-              </div>
-            </div>
+            <!-- Right: Info Section -->
+            <div class="detail-right">
+              <div class="detail-info">
+                <div class="detail-info__title">{{ goodsDetail.item.title }}</div>
+                <div class="detail-info__id">ID: {{ goodsDetail.item.xyGoodId }}</div>
 
-            <!-- Actions -->
-            <div class="detail-info__actions">
-              <button class="detail-info__action detail-info__action--config" @click="handleConfigAutoDelivery">
-                <IconSparkle />
-                <span>配置发货</span>
-              </button>
-              <button class="detail-info__action detail-info__action--delete" @click="handleDelete">
-                <IconTrash />
-                <span>删除</span>
-              </button>
+                <div class="detail-info__row">
+                  <span class="detail-info__price">{{ formatPrice(goodsDetail.item.soldPrice) }}</span>
+                  <span
+                    class="detail-info__status"
+                    :style="{
+                      color: getStatusColor(goodsDetail.item.status),
+                      background: getStatusBg(goodsDetail.item.status)
+                    }"
+                  >
+                    {{ getGoodsStatusText(goodsDetail.item.status).text }}
+                  </span>
+                </div>
+
+                <div v-if="goodsDetail.item.detailInfo" class="detail-info__desc-section">
+                  <div class="detail-info__section-title">商品描述</div>
+                  <div class="detail-info__desc">{{ goodsDetail.item.detailInfo }}</div>
+                </div>
+
+                <div class="detail-info__config">
+                  <div class="detail-info__config-item">
+                    <div class="detail-info__config-left">
+                      <IconSend />
+                      <span>自动发货</span>
+                    </div>
+                    <span
+                      class="detail-info__config-value"
+                      :class="{ 'detail-info__config-value--on': goodsDetail.xianyuAutoDeliveryOn === 1 }"
+                    >
+                      {{ goodsDetail.xianyuAutoDeliveryOn === 1 ? '已开启' : '已关闭' }}
+                    </span>
+                  </div>
+                  <div class="detail-info__config-item">
+                    <div class="detail-info__config-left">
+                      <IconRobot />
+                      <span>自动回复</span>
+                    </div>
+                    <span
+                      class="detail-info__config-value"
+                      :class="{ 'detail-info__config-value--on': goodsDetail.xianyuAutoReplyOn === 1 }"
+                    >
+                      {{ goodsDetail.xianyuAutoReplyOn === 1 ? '已开启' : '已关闭' }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="detail-info__time">
+                  <div v-if="goodsDetail.item.createdTime" class="detail-info__time-item">
+                    <IconClock />
+                    <span>创建: {{ goodsDetail.item.createdTime }}</span>
+                  </div>
+                  <div v-if="goodsDetail.item.updatedTime" class="detail-info__time-item">
+                    <IconClock />
+                    <span>更新: {{ goodsDetail.item.updatedTime }}</span>
+                  </div>
+                </div>
+
+                <div class="detail-info__actions">
+                  <button class="detail-info__action detail-info__action--config" @click="handleConfigAutoDelivery">
+                    <IconSparkle />
+                    <span>配置发货</span>
+                  </button>
+                  <button class="detail-info__action detail-info__action--delete" @click="handleDelete">
+                    <IconTrash />
+                    <span>删除</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -504,7 +504,8 @@ onBeforeUnmount(() => {
    Desktop Panel
    ============================================================ */
 .detail-panel {
-  width: 560px;
+  width: 720px;
+  max-width: 90vw;
   max-height: 90vh;
   background: #fff;
   border-radius: var(--d-r-lg);
@@ -576,6 +577,25 @@ onBeforeUnmount(() => {
 .detail-panel__body::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.12);
   border-radius: 3px;
+}
+
+.detail-content {
+  display: flex;
+  gap: 16px;
+  padding: 12px;
+}
+
+.detail-left {
+  flex: 0 0 280px;
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ============================================================
@@ -663,14 +683,13 @@ onBeforeUnmount(() => {
    Gallery (Shared)
    ============================================================ */
 .detail-gallery {
-  padding: 16px;
-  padding-bottom: 8px;
+  padding: 0;
 }
 
 .detail-gallery__main {
   position: relative;
   width: 100%;
-  height: 320px;
+  height: 260px;
   border-radius: var(--d-r-md);
   overflow: hidden;
   background: rgba(0, 0, 0, 0.03);
@@ -790,33 +809,33 @@ onBeforeUnmount(() => {
    Info Section (Shared)
    ============================================================ */
 .detail-info {
-  padding: 16px 20px 24px;
+  padding: 0;
 }
 
 .detail-info__title {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--d-text-1);
   line-height: 1.4;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .detail-info__id {
   font-size: 11px;
   color: var(--d-text-3);
   font-family: 'SF Mono', 'Menlo', monospace;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .detail-info__row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .detail-info__price {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--d-price);
   font-variant-numeric: tabular-nums;
@@ -833,27 +852,27 @@ onBeforeUnmount(() => {
 }
 
 .detail-info__desc-section {
-  margin-bottom: 16px;
-  padding: 12px;
+  margin-bottom: 12px;
+  padding: 10px;
   background: rgba(0, 0, 0, 0.03);
   border-radius: var(--d-r-sm);
 }
 
 .detail-info__section-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--d-text-2);
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
 
 .detail-info__desc {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--d-text-2);
-  line-height: 1.6;
+  line-height: 1.5;
   white-space: pre-wrap;
-  max-height: 120px;
+  max-height: 100px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
@@ -875,14 +894,14 @@ onBeforeUnmount(() => {
   border: 1px solid var(--d-border);
   border-radius: var(--d-r-sm);
   overflow: hidden;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .detail-info__config-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 12px;
+  padding: 8px 10px;
 }
 
 .detail-info__config-item:not(:last-child) {
@@ -892,15 +911,15 @@ onBeforeUnmount(() => {
 .detail-info__config-left {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  gap: 6px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--d-text-1);
 }
 
 .detail-info__config-left svg {
-  width: 15px;
-  height: 15px;
+  width: 14px;
+  height: 14px;
   color: var(--d-text-3);
 }
 
@@ -917,36 +936,36 @@ onBeforeUnmount(() => {
 .detail-info__time {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 16px;
+  gap: 4px;
+  margin-bottom: 12px;
 }
 
 .detail-info__time-item {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: 4px;
+  font-size: 11px;
   color: var(--d-text-3);
 }
 
 .detail-info__time-item svg {
-  width: 13px;
-  height: 13px;
+  width: 12px;
+  height: 12px;
 }
 
 .detail-info__actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .detail-info__action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   flex: 1;
-  height: 40px;
-  font-size: 13px;
+  height: 36px;
+  font-size: 12px;
   font-weight: 500;
   border-radius: var(--d-r-sm);
   border: 1px solid;
@@ -1031,6 +1050,24 @@ onBeforeUnmount(() => {
    Responsive
    ============================================================ */
 @media screen and (max-width: 768px) {
+  .detail-content {
+    flex-direction: column;
+    padding: 0;
+  }
+
+  .detail-left {
+    flex: none;
+    width: 100%;
+  }
+
+  .detail-right {
+    flex: none;
+  }
+
+  .detail-gallery {
+    padding: 12px;
+  }
+
   .detail-gallery__main {
     height: 280px;
   }
