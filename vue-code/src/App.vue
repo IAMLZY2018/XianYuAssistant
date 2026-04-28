@@ -16,10 +16,12 @@ const isLoginPage = computed(() => route.path === '/login')
 </script>
 
 <template>
-  <template v-if="isReady">
-    <LoginLayout v-if="isLoginPage" />
-    <AppLayout v-else />
-  </template>
+  <div class="app-root">
+    <template v-if="isReady">
+      <LoginLayout v-if="isLoginPage" />
+      <AppLayout v-else />
+    </template>
+  </div>
 </template>
 
 <style>

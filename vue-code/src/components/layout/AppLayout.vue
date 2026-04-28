@@ -71,7 +71,7 @@ onUnmounted(() => {
     </div>
 
     <!-- 电脑端: 固定侧边栏 -->
-    <el-container v-if="!isMobile" class="layout-container">
+    <el-container v-if="!isMobile" key="desktop-layout" class="layout-container">
       <el-aside width="240px" class="sidebar">
         <div class="logo">
           <div class="logo-icon">闲</div>
@@ -88,7 +88,7 @@ onUnmounted(() => {
     </el-container>
 
     <!-- 手机端: 主内容区 -->
-    <el-container v-if="isMobile" class="layout-container">
+    <el-container v-if="isMobile" key="mobile-layout" class="layout-container">
       <el-main>
         <RouterView />
       </el-main>

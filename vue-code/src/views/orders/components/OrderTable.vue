@@ -75,155 +75,157 @@ const getStatusText = (status: number | null) => {
 </script>
 
 <template>
-  <!-- Mobile: Card View -->
-  <div v-if="isMobile" class="card-list" :class="{ 'card-list--loading': loading }">
-    <div
-      v-for="order in orderList"
-      :key="order.id"
-      class="order-card"
-    >
-      <div class="order-card__header">
-        <span class="order-card__id">{{ order.orderId }}</span>
-        <span
-          class="order-card__status"
-          :style="{
-            color: getStatusColor(order.orderStatus),
-            background: getStatusBg(order.orderStatus)
-          }"
-        >
-          {{ order.orderStatusText || getStatusText(order.orderStatus) }}
-        </span>
-      </div>
-
-      <div class="order-card__body">
-        <div class="order-card__row">
-          <IconShoppingBag />
-          <span class="order-card__label">商品</span>
-          <span class="order-card__value">{{ order.goodsTitle || '-' }}</span>
-        </div>
-        <div class="order-card__row">
-          <IconUser />
-          <span class="order-card__label">买家</span>
-          <span class="order-card__value">{{ order.buyerUserName || '-' }}</span>
-        </div>
-        <div class="order-card__row">
-          <IconClock />
-          <span class="order-card__label">时间</span>
-          <span class="order-card__value">{{ formatTime(order.createTime) }}</span>
-        </div>
-        <div class="order-card__row">
-          <IconSend />
-          <span class="order-card__label">发货</span>
+  <div class="order-table-wrapper">
+    <!-- Mobile: Card View -->
+    <div v-if="isMobile" class="card-list" :class="{ 'card-list--loading': loading }">
+      <div
+        v-for="order in orderList"
+        :key="order.id"
+        class="order-card"
+      >
+        <div class="order-card__header">
+          <span class="order-card__id">{{ order.orderId }}</span>
           <span
-            class="order-card__delivery"
-            :class="{ 'order-card__delivery--success': order.autoDeliverySuccess }"
+            class="order-card__status"
+            :style="{
+              color: getStatusColor(order.orderStatus),
+              background: getStatusBg(order.orderStatus)
+            }"
           >
-            {{ order.autoDeliverySuccess ? '已自动发货' : '未发货' }}
+            {{ order.orderStatusText || getStatusText(order.orderStatus) }}
           </span>
         </div>
+
+        <div class="order-card__body">
+          <div class="order-card__row">
+            <IconShoppingBag />
+            <span class="order-card__label">商品</span>
+            <span class="order-card__value">{{ order.goodsTitle || '-' }}</span>
+          </div>
+          <div class="order-card__row">
+            <IconUser />
+            <span class="order-card__label">买家</span>
+            <span class="order-card__value">{{ order.buyerUserName || '-' }}</span>
+          </div>
+          <div class="order-card__row">
+            <IconClock />
+            <span class="order-card__label">时间</span>
+            <span class="order-card__value">{{ formatTime(order.createTime) }}</span>
+          </div>
+          <div class="order-card__row">
+            <IconSend />
+            <span class="order-card__label">发货</span>
+            <span
+              class="order-card__delivery"
+              :class="{ 'order-card__delivery--success': order.autoDeliverySuccess }"
+            >
+              {{ order.autoDeliverySuccess ? '已自动发货' : '未发货' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="order-card__footer">
+          <button class="order-card__action order-card__action--copy" @click="emit('copySid', order.sid)">
+            <IconCopy />
+            <span>复制会话ID</span>
+          </button>
+          <button
+            v-if="order.orderStatus !== 3"
+            class="order-card__action order-card__action--ship"
+            :class="{ 'order-card__action--loading': order.confirming }"
+            @click="emit('confirmShipment', order)"
+          >
+            <IconTruck />
+            <span>{{ order.confirming ? '处理中' : '确认发货' }}</span>
+          </button>
+        </div>
       </div>
 
-      <div class="order-card__footer">
-        <button class="order-card__action order-card__action--copy" @click="emit('copySid', order.sid)">
-          <IconCopy />
-          <span>复制会话ID</span>
-        </button>
-        <button
-          v-if="order.orderStatus !== 3"
-          class="order-card__action order-card__action--ship"
-          :class="{ 'order-card__action--loading': order.confirming }"
-          @click="emit('confirmShipment', order)"
-        >
-          <IconTruck />
-          <span>{{ order.confirming ? '处理中' : '确认发货' }}</span>
-        </button>
+      <!-- Empty State -->
+      <div v-if="!loading && orderList.length === 0" class="empty-state">
+        <div class="empty-state__icon"><IconEmpty /></div>
+        <p class="empty-state__text">暂无订单数据</p>
       </div>
     </div>
 
-    <!-- Empty State -->
-    <div v-if="!loading && orderList.length === 0" class="empty-state">
-      <div class="empty-state__icon"><IconEmpty /></div>
-      <p class="empty-state__text">暂无订单数据</p>
-    </div>
-  </div>
+    <!-- Desktop/Tablet: Table View -->
+    <div v-else class="table-container" :class="{ 'table-container--loading': loading }">
+      <table class="table" v-if="orderList.length > 0">
+        <thead class="table__head">
+          <tr>
+            <th class="table__th">订单ID</th>
+            <th class="table__th">商品名称</th>
+            <th class="table__th table__th--center">买家</th>
+            <th class="table__th table__th--center">会话ID</th>
+            <th class="table__th table__th--center">创建时间</th>
+            <th class="table__th table__th--center">自动发货</th>
+            <th class="table__th table__th--center">状态</th>
+            <th class="table__th table__th--actions">操作</th>
+          </tr>
+        </thead>
+        <tbody class="table__body">
+          <tr v-for="order in orderList" :key="order.id" class="table__tr">
+            <td class="table__td">
+              <span class="order-id">{{ order.orderId }}</span>
+            </td>
+            <td class="table__td table__td--title">
+              <div class="order-title-cell">
+                <span class="order-title-cell__name">{{ order.goodsTitle || '-' }}</span>
+                <span class="order-title-cell__remark">{{ order.accountRemark }}</span>
+              </div>
+            </td>
+            <td class="table__td table__td--center">
+              <span class="buyer-name">{{ order.buyerUserName || '-' }}</span>
+            </td>
+            <td class="table__td table__td--center">
+              <button class="sid-btn" @click="emit('copySid', order.sid)" :title="order.sid">
+                <IconCopy />
+                <span>复制</span>
+              </button>
+            </td>
+            <td class="table__td table__td--center">
+              <span class="time-text">{{ formatTime(order.createTime) }}</span>
+            </td>
+            <td class="table__td table__td--center">
+              <span
+                class="delivery-tag"
+                :class="{ 'delivery-tag--success': order.autoDeliverySuccess }"
+              >
+                {{ order.autoDeliverySuccess ? '成功' : '未发货' }}
+              </span>
+            </td>
+            <td class="table__td table__td--center">
+              <span
+                class="status-tag"
+                :style="{
+                  color: getStatusColor(order.orderStatus),
+                  background: getStatusBg(order.orderStatus)
+                }"
+              >
+                {{ order.orderStatusText || getStatusText(order.orderStatus) }}
+              </span>
+            </td>
+            <td class="table__td table__td--actions">
+              <button
+                v-if="order.orderStatus !== 3"
+                class="table__action table__action--ship"
+                :class="{ 'table__action--loading': order.confirming }"
+                @click="emit('confirmShipment', order)"
+              >
+                <IconTruck />
+                <span>{{ order.confirming ? '处理中' : '确认发货' }}</span>
+              </button>
+              <span v-else class="table__action-placeholder">-</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
-  <!-- Desktop/Tablet: Table View -->
-  <div v-else class="table-container" :class="{ 'table-container--loading': loading }">
-    <table class="table" v-if="orderList.length > 0">
-      <thead class="table__head">
-        <tr>
-          <th class="table__th">订单ID</th>
-          <th class="table__th">商品名称</th>
-          <th class="table__th table__th--center">买家</th>
-          <th class="table__th table__th--center">会话ID</th>
-          <th class="table__th table__th--center">创建时间</th>
-          <th class="table__th table__th--center">自动发货</th>
-          <th class="table__th table__th--center">状态</th>
-          <th class="table__th table__th--actions">操作</th>
-        </tr>
-      </thead>
-      <tbody class="table__body">
-        <tr v-for="order in orderList" :key="order.id" class="table__tr">
-          <td class="table__td">
-            <span class="order-id">{{ order.orderId }}</span>
-          </td>
-          <td class="table__td table__td--title">
-            <div class="order-title-cell">
-              <span class="order-title-cell__name">{{ order.goodsTitle || '-' }}</span>
-              <span class="order-title-cell__remark">{{ order.accountRemark }}</span>
-            </div>
-          </td>
-          <td class="table__td table__td--center">
-            <span class="buyer-name">{{ order.buyerUserName || '-' }}</span>
-          </td>
-          <td class="table__td table__td--center">
-            <button class="sid-btn" @click="emit('copySid', order.sid)" :title="order.sid">
-              <IconCopy />
-              <span>复制</span>
-            </button>
-          </td>
-          <td class="table__td table__td--center">
-            <span class="time-text">{{ formatTime(order.createTime) }}</span>
-          </td>
-          <td class="table__td table__td--center">
-            <span
-              class="delivery-tag"
-              :class="{ 'delivery-tag--success': order.autoDeliverySuccess }"
-            >
-              {{ order.autoDeliverySuccess ? '成功' : '未发货' }}
-            </span>
-          </td>
-          <td class="table__td table__td--center">
-            <span
-              class="status-tag"
-              :style="{
-                color: getStatusColor(order.orderStatus),
-                background: getStatusBg(order.orderStatus)
-              }"
-            >
-              {{ order.orderStatusText || getStatusText(order.orderStatus) }}
-            </span>
-          </td>
-          <td class="table__td table__td--actions">
-            <button
-              v-if="order.orderStatus !== 3"
-              class="table__action table__action--ship"
-              :class="{ 'table__action--loading': order.confirming }"
-              @click="emit('confirmShipment', order)"
-            >
-              <IconTruck />
-              <span>{{ order.confirming ? '处理中' : '确认发货' }}</span>
-            </button>
-            <span v-else class="table__action-placeholder">-</span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <!-- Empty State -->
-    <div v-if="!loading && orderList.length === 0" class="empty-state">
-      <div class="empty-state__icon"><IconEmpty /></div>
-      <p class="empty-state__text">暂无订单数据</p>
+      <!-- Empty State -->
+      <div v-if="!loading && orderList.length === 0" class="empty-state">
+        <div class="empty-state__icon"><IconEmpty /></div>
+        <p class="empty-state__text">暂无订单数据</p>
+      </div>
     </div>
   </div>
 </template>
@@ -247,6 +249,10 @@ const getStatusText = (status: number | null) => {
   --c-r-sm: 8px;
   --c-r-md: 12px;
   --c-ease: 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.order-table-wrapper {
+  height: 100%;
 }
 
 /* ============================================================
