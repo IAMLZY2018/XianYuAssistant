@@ -9,6 +9,7 @@ import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -33,6 +34,7 @@ public class DynamicAIChatClientManager {
     private static final String DEFAULT_MODEL = "deepseek-v3";
 
     @Autowired
+    @Lazy
     private SysSettingService sysSettingService;
 
     @Value("${ai.enabled:false}")

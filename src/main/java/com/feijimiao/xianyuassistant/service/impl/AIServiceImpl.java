@@ -395,31 +395,34 @@ public class AIServiceImpl implements AIService {
         String userMessage = userMsgBuilder.toString();
 
         try {
-            ChatClient.CallResponseSpec callSpec;
+            String replyContent;
             
             if (contextMessages != null && !contextMessages.isEmpty()) {
                 String[] lines = contextMessages.split("\n");
-                ChatClient.PromptUserSpec promptSpec = chatClient.prompt()
-                        .system(finalSystemPrompt)
-                        .user(userMessage);
-                
+                StringBuilder historyPrompt = new StringBuilder();
+                historyPrompt.append("历史对话：\n");
                 for (String line : lines) {
                     if (line.startsWith("user: ")) {
-                        promptSpec = promptSpec.user(line.substring(6));
+                        historyPrompt.append("用户：").append(line.substring(6)).append("\n");
                     } else if (line.startsWith("assistant: ")) {
-                        promptSpec = promptSpec.assistant(line.substring(11));
+                        historyPrompt.append("助手：").append(line.substring(11)).append("\n");
                     }
                 }
+                historyPrompt.append("\n").append(userMessage);
                 
-                callSpec = promptSpec.call();
+                replyContent = chatClient.prompt()
+                        .system(finalSystemPrompt)
+                        .user(historyPrompt.toString())
+                        .call()
+                        .content();
             } else {
-                callSpec = chatClient.prompt()
+                replyContent = chatClient.prompt()
                         .system(finalSystemPrompt)
                         .user(userMessage)
-                        .call();
+                        .call()
+                        .content();
             }
             
-            String replyContent = callSpec.content();
             result.setReplyContent(replyContent);
         } catch (Exception e) {
             log.error("[AI Chat FixedMaterial] 调用LLM失败: {}", e.getMessage());

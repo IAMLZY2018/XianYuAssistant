@@ -31,6 +31,18 @@ public class AutoReplyTriggerContext {
     private String contextMessages;
     
     /**
+     * 固定资料
+     * AI回复时携带的固定资料
+     */
+    private String fixedMaterial;
+    
+    /**
+     * 商品详情
+     * AI回复时携带的商品详情
+     */
+    private String goodsDetail;
+    
+    /**
      * 触发消息
      */
     @Data

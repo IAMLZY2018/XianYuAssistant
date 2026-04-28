@@ -54,15 +54,17 @@ export function useGoodsManager() {
     try {
       const response = await getSyncProgress(syncId)
       if (response.code === 0 || response.code === 200) {
-        syncProgress.value = response.data
-        if (response.data?.isCompleted || !response.data?.isRunning) {
-          stopSyncPolling()
-          syncing.value = false
-          refreshing.value = false
-          if (response.data?.successCount && response.data.successCount > 0) {
-            showSuccess(`详情同步完成: 成功${response.data.successCount}个, 失败${response.data.failedCount}个`)
+        if (response.data) {
+          syncProgress.value = response.data
+          if (response.data.isCompleted || !response.data.isRunning) {
+            stopSyncPolling()
+            syncing.value = false
+            refreshing.value = false
+            if (response.data.successCount && response.data.successCount > 0) {
+              showSuccess(`详情同步完成: 成功${response.data.successCount}个, 失败${response.data.failedCount}个`)
+            }
+            await loadGoods()
           }
-          await loadGoods()
         }
       }
     } catch (error) {

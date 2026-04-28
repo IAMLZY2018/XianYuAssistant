@@ -209,6 +209,23 @@ public class AutoReplyServiceImpl implements AutoReplyService {
                 triggerContext.setContextMessages(contextMessages);
             }
             
+            // 7.2 保存固定资料和商品详情到triggerContext
+            try {
+                XianyuGoodsConfig goodsConfig = goodsConfigMapper.selectByAccountAndGoodsId(accountId, xyGoodsId);
+                if (goodsConfig != null && goodsConfig.getFixedMaterial() != null && !goodsConfig.getFixedMaterial().isEmpty()) {
+                    triggerContext.setFixedMaterial(goodsConfig.getFixedMaterial());
+                }
+                
+                XianyuGoodsInfo goodsInfoForContext = goodsInfoMapper.selectOne(
+                    new LambdaQueryWrapper<XianyuGoodsInfo>().eq(XianyuGoodsInfo::getXyGoodId, xyGoodsId)
+                );
+                if (goodsInfoForContext != null && goodsInfoForContext.getDetailInfo() != null && !goodsInfoForContext.getDetailInfo().isEmpty()) {
+                    triggerContext.setGoodsDetail(goodsInfoForContext.getDetailInfo());
+                }
+            } catch (Exception e) {
+                log.warn("【账号{}】获取固定资料和商品详情失败: {}", accountId, e.getMessage());
+            }
+            
             // 8. 序列化triggerContext为JSON并更新记录
             try {
                 String triggerContextJson = objectMapper.writeValueAsString(triggerContext);

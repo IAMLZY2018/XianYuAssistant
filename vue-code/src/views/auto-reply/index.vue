@@ -283,8 +283,8 @@ const {
 
             <!-- Delay Config (show when auto reply is enabled) -->
             <div v-if="selectedGoods.xianyuAutoReplyOn === 1" class="ar__delay-config">
-              <div class="ar__delay-label">回复延时</div>
-              <div class="ar__delay-input-wrap">
+              <div class="ar__delay-row">
+                <span class="ar__delay-label">回复延时</span>
                 <input
                   type="number"
                   v-model.number="delaySeconds"
@@ -294,14 +294,14 @@ const {
                   :disabled="configSaving"
                 />
                 <span class="ar__delay-unit">秒</span>
+                <button
+                  class="ar__delay-btn"
+                  :disabled="configSaving"
+                  @click="updateDelaySeconds"
+                >
+                  保存
+                </button>
               </div>
-              <button
-                class="ar__delay-save-btn"
-                :disabled="configSaving"
-                @click="updateDelaySeconds"
-              >
-                保存
-              </button>
               <div class="ar__delay-hint">买家发送消息后等待指定时间，若无新消息则自动回复</div>
             </div>
           </div>
