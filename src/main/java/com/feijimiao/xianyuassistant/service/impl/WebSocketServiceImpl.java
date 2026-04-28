@@ -578,6 +578,26 @@ public class WebSocketServiceImpl implements WebSocketService {
         try {
             log.info("【账号{}】开始刷新Token并重连...", accountId);
             
+            // 参考Python: 刷新Token前先从数据库重新加载最新Cookie
+            // 避免使用过期的Cookie导致刷新必然失败
+            try {
+                if (cookieRefreshService != null) {
+                    log.info("【账号{}】刷新Token前先检查Cookie登录状态...", accountId);
+                    boolean cookieOk = cookieRefreshService.checkLoginStatus(accountId);
+                    if (!cookieOk) {
+                        log.warn("【账号{}】Cookie已失效(hasLogin)，触发浏览器兜底刷新Cookie（对齐Python的_refresh_cookies_via_browser）...", accountId);
+                        boolean browserRefreshOk = cookieRefreshService.refreshCookie(accountId);
+                        if (browserRefreshOk) {
+                            log.info("【账号{}】浏览器兜底刷新Cookie成功，继续重连", accountId);
+                        } else {
+                            log.error("【账号{}】hasLogin和浏览器兜底刷新Cookie均失败，Cookie可能已彻底过期", accountId);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("【账号{}】刷新Token前Cookie检查/兜底刷新异常，继续尝试重连: {}", accountId, e.getMessage());
+            }
+            
             // 停止当前连接
             stopWebSocket(accountId);
             
@@ -677,11 +697,17 @@ public class WebSocketServiceImpl implements WebSocketService {
                         log.info("【账号{}】重连前先检查Cookie登录状态...", accountId);
                         boolean cookieOk = cookieRefreshService.checkLoginStatus(accountId);
                         if (!cookieOk) {
-                            log.warn("【账号{}】Cookie已失效，重连可能失败，但仍尝试...", accountId);
+                            log.warn("【账号{}】Cookie已失效(hasLogin)，重连前触发浏览器兜底刷新Cookie（对齐Python）...", accountId);
+                            boolean browserRefreshOk = cookieRefreshService.refreshCookie(accountId);
+                            if (browserRefreshOk) {
+                                log.info("【账号{}】浏览器兜底刷新Cookie成功，继续重连", accountId);
+                            } else {
+                                log.error("【账号{}】hasLogin和浏览器兜底刷新Cookie均失败，重连可能失败", accountId);
+                            }
                         }
                     }
                 } catch (Exception e) {
-                    log.warn("【账号{}】重连前Cookie检查异常，继续尝试重连: {}", accountId, e.getMessage());
+                    log.warn("【账号{}】重连前Cookie检查/兜底刷新异常，继续尝试重连: {}", accountId, e.getMessage());
                 }
                 
                 // 重新启动连接

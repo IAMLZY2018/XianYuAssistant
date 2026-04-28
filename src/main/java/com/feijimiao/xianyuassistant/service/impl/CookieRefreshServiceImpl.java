@@ -239,7 +239,7 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
                     operationLogService.log(accountId,
                             OperationConstants.Type.UPDATE,
                             OperationConstants.Module.COOKIE,
-                            "Cookie自动刷新成功",
+                            "hasLogin保活成功",
                             OperationConstants.Status.SUCCESS,
                             OperationConstants.TargetType.COOKIE,
                             String.valueOf(accountId),
@@ -253,7 +253,7 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
                     operationLogService.log(accountId,
                             OperationConstants.Type.VERIFY,
                             OperationConstants.Module.COOKIE,
-                            "登录状态检查失败",
+                            "hasLogin保活失败-登录状态无效",
                             OperationConstants.Status.FAIL,
                             OperationConstants.TargetType.COOKIE,
                             String.valueOf(accountId),
@@ -288,6 +288,7 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
 
                 // 通过hasLogin接口刷新Cookie
                 boolean success = doCheckLoginStatus(accountId);
+                boolean viaBrowser = false;
                 if (!success) {
                     log.warn("【账号{}】hasLogin刷新失败，开始触发浏览器兜底刷新Cookie", accountId);
                     operationLogService.log(accountId,
@@ -299,17 +300,18 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
                             String.valueOf(accountId),
                             null, null, null, null);
                     success = refreshCookieWithBrowser(accountId);
+                    viaBrowser = true;
                 }
 
                 if (success) {
-                    log.info("【账号{}】✅ Cookie刷新成功", accountId);
+                    log.info("【账号{}】✅ Cookie刷新成功({})", accountId, viaBrowser ? "浏览器兜底刷新" : "hasLogin刷新");
                     updateAccountStatusToNormal(accountId, "Cookie刷新成功，账号状态恢复正常");
 
                     // 记录操作日志
                     operationLogService.log(accountId,
                             OperationConstants.Type.REFRESH,
                             OperationConstants.Module.COOKIE,
-                            "Cookie刷新成功",
+                            viaBrowser ? "浏览器兜底刷新Cookie成功" : "hasLogin刷新Cookie成功",
                             OperationConstants.Status.SUCCESS,
                             OperationConstants.TargetType.COOKIE,
                             String.valueOf(accountId),

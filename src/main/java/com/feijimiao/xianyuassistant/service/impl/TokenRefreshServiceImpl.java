@@ -70,6 +70,9 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
     @Autowired
     private WebSocketConfig webSocketConfig;
 
+    @Autowired(required = false)
+    private com.feijimiao.xianyuassistant.service.EmailNotifyService emailNotifyService;
+
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
@@ -453,14 +456,31 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
             for (XianyuAccount account : accounts) {
                 if (account.getStatus() == 1) { // 只检查正常状态的账号
                     try {
-                        // 参考Python: 通过hasLogin保持Cookie活跃
+                        // 第1层：通过hasLogin保持Cookie活跃
                         boolean loginOk = cookieRefreshService.checkLoginStatus(account.getId());
                         if (loginOk) {
                             successCount++;
-                            log.debug("【账号{}】Cookie保活成功", account.getId());
+                            log.debug("【账号{}】hasLogin保活成功", account.getId());
+                            operationLogService.log(account.getId(),
+                                    com.feijimiao.xianyuassistant.constants.OperationConstants.Type.UPDATE,
+                                    com.feijimiao.xianyuassistant.constants.OperationConstants.Module.COOKIE,
+                                    "hasLogin保活成功",
+                                    com.feijimiao.xianyuassistant.constants.OperationConstants.Status.SUCCESS,
+                                    com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.COOKIE,
+                                    String.valueOf(account.getId()),
+                                    null, null, null, null);
                         } else {
-                            failCount++;
-                            log.warn("【账号{}】Cookie保活失败，Cookie可能已过期", account.getId());
+                            // 第2层兜底：hasLogin失败，触发浏览器刷新Cookie（对齐Python的cookie_refresh_loop）
+                            log.warn("【账号{}】hasLogin保活失败，开始触发浏览器兜底刷新Cookie...", account.getId());
+                            boolean browserRefreshOk = cookieRefreshService.refreshCookie(account.getId());
+                            if (browserRefreshOk) {
+                                successCount++;
+                                log.info("【账号{}】浏览器兜底刷新Cookie成功", account.getId());
+                            } else {
+                                failCount++;
+                                log.error("【账号{}】hasLogin和浏览器兜底刷新均失败，Cookie已过期，需手动更新", account.getId());
+                                triggerCookieExpireNotify(account.getId());
+                            }
                         }
                     } catch (Exception e) {
                         failCount++;
@@ -554,6 +574,36 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
 
         } catch (Exception e) {
             log.error("刷新所有账号token失败", e);
+        }
+    }
+
+    private final Map<Long, Long> lastCookieExpireNotifyTimes = new HashMap<>();
+    private static final long COOKIE_NOTIFY_INTERVAL_MS = 10 * 60 * 1000L;
+
+    private void triggerCookieExpireNotify(Long accountId) {
+        try {
+            if (emailNotifyService == null || !emailNotifyService.isCookieExpireNotifyEnabled()) {
+                return;
+            }
+            long now = System.currentTimeMillis();
+            Long lastTime = lastCookieExpireNotifyTimes.get(accountId);
+            if (lastTime != null && (now - lastTime) < COOKIE_NOTIFY_INTERVAL_MS) {
+                log.debug("【账号{}】Cookie过期邮件通知防抖中，跳过", accountId);
+                return;
+            }
+            lastCookieExpireNotifyTimes.put(accountId, now);
+            String accountNote = "";
+            try {
+                XianyuAccount account = accountMapper.selectById(accountId);
+                if (account != null) {
+                    accountNote = account.getAccountNote() != null ? account.getAccountNote() : "";
+                }
+            } catch (Exception e) {
+                log.debug("获取账号备注失败: {}", e.getMessage());
+            }
+            emailNotifyService.sendCookieExpireNotifyEmail(accountId, accountNote);
+        } catch (Exception e) {
+            log.warn("触发Cookie过期邮件通知异常: {}", e.getMessage());
         }
     }
 }
