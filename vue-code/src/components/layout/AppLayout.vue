@@ -48,7 +48,7 @@ onUnmounted(() => {
 <template>
   <div class="app-layout">
     <!-- 手机端: 顶部导航栏 -->
-    <div v-if="isMobile" class="mobile-header">
+    <div v-if="isMobile" key="mobile-header" class="mobile-header">
       <el-button class="menu-toggle-btn" @click="toggleDrawer" circle>
         <span class="menu-icon">{{ drawerVisible ? '✕' : '☰' }}</span>
       </el-button>
@@ -56,7 +56,7 @@ onUnmounted(() => {
     </div>
 
     <!-- 手机端: 全屏菜单 -->
-    <div v-if="isMobile && drawerVisible" class="mobile-menu-overlay" @click="closeDrawer">
+    <div v-if="isMobile && drawerVisible" key="mobile-menu" class="mobile-menu-overlay" @click="closeDrawer">
       <div class="mobile-menu" @click.stop>
         <div class="mobile-menu-header">
           <div class="logo">
@@ -70,9 +70,9 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- 电脑端: 固定侧边栏 -->
-    <el-container v-if="!isMobile" key="desktop-layout" class="layout-container">
-      <el-aside width="240px" class="sidebar">
+    <!-- 统一布局容器: 避免多个 RouterView 切换导致的 DOM 锚点丢失 -->
+    <el-container key="app-main-container" class="layout-container">
+      <el-aside v-if="!isMobile" key="desktop-aside" width="240px" class="sidebar">
         <div class="logo">
           <div class="logo-icon">闲</div>
           <div class="logo-text">自动化管理</div>
@@ -80,18 +80,11 @@ onUnmounted(() => {
         <NavMenu />
       </el-aside>
 
-      <el-container>
+      <el-container key="main-content-wrap">
         <el-main>
           <RouterView />
         </el-main>
       </el-container>
-    </el-container>
-
-    <!-- 手机端: 主内容区 -->
-    <el-container v-if="isMobile" key="mobile-layout" class="layout-container">
-      <el-main>
-        <RouterView />
-      </el-main>
     </el-container>
   </div>
 </template>

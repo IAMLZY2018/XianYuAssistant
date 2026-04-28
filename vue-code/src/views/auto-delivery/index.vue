@@ -591,6 +591,7 @@ const {
     <Transition name="overlay-fade">
       <div
         v-if="importDialogVisible"
+        key="ad-import-dialog"
         class="ad__dialog-overlay"
         @click.self="importDialogVisible = false"
       >
@@ -633,6 +634,7 @@ const {
     <Transition name="overlay-fade">
       <div
         v-if="confirmDialog.visible"
+        key="ad-confirm-dialog"
         class="ad__dialog-overlay"
         @click.self="handleDialogCancel"
       >

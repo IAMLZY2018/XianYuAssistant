@@ -230,7 +230,7 @@ const executeConfirmShipment = async () => {
 
     <!-- Mobile Filter Sheet -->
     <Transition name="overlay-fade">
-      <div v-if="showFilterSheet" class="orders__filter-overlay" @click="showFilterSheet = false">
+      <div v-if="showFilterSheet" key="order-filter-sheet" class="orders__filter-overlay" @click="showFilterSheet = false">
         <div
           class="orders__filter-sheet"
           :class="{ 'orders__filter-sheet--open': showFilterSheet }"
@@ -273,7 +273,7 @@ const executeConfirmShipment = async () => {
 
     <!-- Confirm Shipment Dialog -->
     <Transition name="overlay-fade">
-      <div v-if="showConfirmDialog" class="orders__dialog-overlay" @click.self="showConfirmDialog = false">
+      <div v-if="showConfirmDialog" key="order-confirm-dialog" class="orders__dialog-overlay" @click.self="showConfirmDialog = false">
         <div class="orders__dialog">
           <div class="orders__dialog-header">
             <h3 class="orders__dialog-title">确认发货</h3>

@@ -270,7 +270,7 @@ const getStatusClass = (status: number) => {
 
     <!-- Edit Dialog -->
     <Transition name="overlay-fade">
-      <div v-if="dialogs.edit" class="orders__dialog-overlay" @click.self="dialogs.edit = false">
+      <div v-if="dialogs.edit" key="card-edit-dialog" class="orders__dialog-overlay" @click.self="dialogs.edit = false">
         <div class="orders__dialog">
           <div class="orders__dialog-header">
             <h3 class="orders__dialog-title">{{ editForm.id ? '编辑卡密' : '添加卡密' }}</h3>
@@ -321,7 +321,7 @@ const getStatusClass = (status: number) => {
 
     <!-- Import Dialog -->
     <Transition name="overlay-fade">
-      <div v-if="dialogs.import" class="orders__dialog-overlay" @click.self="dialogs.import = false">
+      <div v-if="dialogs.import" key="card-import-dialog" class="orders__dialog-overlay" @click.self="dialogs.import = false">
         <div class="orders__dialog orders__dialog--wide">
           <div class="orders__dialog-header">
             <h3 class="orders__dialog-title">批量导入卡密</h3>
