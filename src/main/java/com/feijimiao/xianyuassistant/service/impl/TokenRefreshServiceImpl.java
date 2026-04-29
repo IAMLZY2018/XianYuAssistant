@@ -77,12 +77,10 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
-    private volatile long nextMh5tkRefreshTime = 0;
     private volatile long nextCookieKeepAliveTime = 0;
 
     @PostConstruct
     public void initRefreshSchedules() {
-        scheduleNextMh5tkRefresh();
         scheduleNextCookieKeepAlive();
     }
 
@@ -90,12 +88,6 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
         int minMinutes = Math.max(1, webSocketConfig.getCredentialRefreshMinMinutes());
         int maxMinutes = Math.max(minMinutes, webSocketConfig.getCredentialRefreshMaxMinutes());
         return ThreadLocalRandom.current().nextLong(minMinutes, maxMinutes + 1L);
-    }
-
-    private void scheduleNextMh5tkRefresh() {
-        long delayMinutes = randomRefreshDelayMinutes();
-        nextMh5tkRefreshTime = System.currentTimeMillis() + delayMinutes * ONE_MINUTE_MS;
-        log.info("📅 下次_m_h5_tk刷新将在 {} 分钟后执行", delayMinutes);
     }
 
     private void scheduleNextCookieKeepAlive() {
@@ -398,47 +390,21 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
     }
     
     /**
-     * 定时任务：刷新所有账号的_m_h5_tk token
+     * 定时任务：Cookie保活 + _m_h5_tk Token刷新（合并任务）
      *
-     * 参考Python逻辑优化：
-     * - Python没有单独的_m_h5_tk定时刷新，而是在get_token失败时才调用hasLogin
-     * - Python的token_refresh_interval默认为1小时（3600秒）
-     * - 当前实现采用15-20分钟随机间隔作为兜底机制
-     *
-     * 优化策略：
-     * 1. 使用15-20分钟随机间隔，避免固定周期请求
-     * 2. 主要依赖WebSocket token刷新失败时的自动重试机制
-     * 3. 只有在真正需要时才调用hasLogin刷新Cookie
-     * 4. 添加随机间隔（5-10秒），避免多账号同时请求被识别为机器人
-     */
-    @Scheduled(fixedDelay = ONE_MINUTE_MS, initialDelay = ONE_MINUTE_MS)
-    public void scheduledRefreshMh5tk() {
-        if (System.currentTimeMillis() < nextMh5tkRefreshTime) {
-            return;
-        }
-        scheduleNextMh5tkRefresh();
-        try {
-            log.info("🔄 开始刷新所有账号的_m_h5_tk token...");
-            refreshAllAccountsTokens();
-
-        } catch (Exception e) {
-            log.error("定时刷新_m_h5_tk token失败", e);
-        }
-    }
-
-    /**
-     * 定时任务：通过hasLogin检查并刷新Cookie
-     *
-     * 参考Python逻辑优化：
-     * - Python中hasLogin只在get_token失败时才被调用（按需刷新）
-     * - Python没有单独的定期Cookie保活检查
-     * - 当前实现采用15-20分钟随机间隔进行保活
+     * 问题背景：
+     * - 原设计有两个独立定时任务：scheduledRefreshMh5tk 和 scheduledCookieKeepAlive
+     * - 两个任务都是15-20分钟随机间隔，存在竞争和时序冲突
+     * - hasLogin成功后，响应Set-Cookie可能不包含_m_h5_tk
+     * - 如果单独刷新_m_h5_tk时Cookie已过期，H5 API不会返回新Token
      *
      * 优化策略：
-     * 1. 使用15-20分钟随机间隔，避免固定周期请求
-     * 2. 减少对hasLogin接口的调用频率
-     * 3. 主要依赖token刷新失败时的自动重试机制来触发hasLogin
-     * 4. 添加随机间隔（5-15秒），避免多账号同时请求被识别为机器人
+     * 1. 合并两个任务为单一任务，确保执行顺序
+     * 2. 先执行hasLogin保活，确保Cookie有效
+     * 3. hasLogin成功后，立即使用最新Cookie刷新_m_h5_tk
+     * 4. 如果hasLogin失败，触发浏览器兜底刷新
+     * 5. 使用15-20分钟随机间隔，避免固定周期请求
+     * 6. 添加随机间隔（5-15秒），避免多账号同时请求被识别为机器人
      */
     @Scheduled(fixedDelay = ONE_MINUTE_MS, initialDelay = ONE_MINUTE_MS)
     public void scheduledCookieKeepAlive() {
@@ -447,19 +413,21 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
         }
         scheduleNextCookieKeepAlive();
         try {
-            log.info("🔄 开始定期Cookie保活检查...");
+            log.info("🔄 开始定期Cookie保活 + Token刷新检查...");
 
             List<XianyuAccount> accounts = accountMapper.selectList(null);
-            int successCount = 0;
+            int keepAliveSuccessCount = 0;
+            int tokenRefreshSuccessCount = 0;
             int failCount = 0;
 
             for (XianyuAccount account : accounts) {
-                if (account.getStatus() == 1) { // 只检查正常状态的账号
+                if (account.getStatus() == 1) {
                     try {
-                        // 第1层：通过hasLogin保持Cookie活跃
+                        // 第1步：通过hasLogin保持Cookie活跃
                         boolean loginOk = cookieRefreshService.checkLoginStatus(account.getId());
+                        
                         if (loginOk) {
-                            successCount++;
+                            keepAliveSuccessCount++;
                             log.debug("【账号{}】hasLogin保活成功", account.getId());
                             operationLogService.log(account.getId(),
                                     com.feijimiao.xianyuassistant.constants.OperationConstants.Type.UPDATE,
@@ -469,12 +437,27 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
                                     com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.COOKIE,
                                     String.valueOf(account.getId()),
                                     null, null, null, null);
+                            
+                            // 第2步：hasLogin成功后，立即刷新_m_h5_tk（使用最新Cookie）
+                            // 关键：必须等hasLogin更新Cookie后，才能获取新Token
+                            boolean tokenOk = refreshMh5tkToken(account.getId());
+                            if (tokenOk) {
+                                tokenRefreshSuccessCount++;
+                                log.info("【账号{}】✅ Cookie保活 + Token刷新成功", account.getId());
+                            } else {
+                                log.warn("【账号{}】⚠️ Cookie保活成功但Token刷新失败", account.getId());
+                            }
                         } else {
-                            // 第2层兜底：hasLogin失败，触发浏览器刷新Cookie（对齐Python的cookie_refresh_loop）
+                            // 第3步兜底：hasLogin失败，触发浏览器刷新Cookie
                             log.warn("【账号{}】hasLogin保活失败，开始触发浏览器兜底刷新Cookie...", account.getId());
                             boolean browserRefreshOk = cookieRefreshService.refreshCookie(account.getId());
                             if (browserRefreshOk) {
-                                successCount++;
+                                keepAliveSuccessCount++;
+                                // 浏览器刷新成功后，也尝试刷新Token
+                                boolean tokenOk = refreshMh5tkToken(account.getId());
+                                if (tokenOk) {
+                                    tokenRefreshSuccessCount++;
+                                }
                                 log.info("【账号{}】浏览器兜底刷新Cookie成功", account.getId());
                             } else {
                                 failCount++;
@@ -493,7 +476,8 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
                 }
             }
 
-            log.info("✅ Cookie保活检查完成: 成功{}个, 失败{}个", successCount, failCount);
+            log.info("✅ Cookie保活 + Token刷新完成: 保活成功{}个, Token刷新成功{}个, 失败{}个", 
+                    keepAliveSuccessCount, tokenRefreshSuccessCount, failCount);
 
         } catch (Exception e) {
             log.error("定期Cookie保活检查失败", e);
