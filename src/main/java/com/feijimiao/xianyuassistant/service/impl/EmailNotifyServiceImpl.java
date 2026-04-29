@@ -354,6 +354,61 @@ public class EmailNotifyServiceImpl implements EmailNotifyService {
         return sb.toString();
     }
 
+    @Override
+    @Async
+    public void sendAutoDeliveryFailEmail(String toEmail, String xyGoodsId, String orderId, String failReason) {
+        if (!isEmailConfigured()) {
+            log.warn("邮箱未配置，跳过发送自动发货失败邮件");
+            return;
+        }
+        String targetEmail = toEmail;
+        if (targetEmail == null || targetEmail.trim().isEmpty()) {
+            targetEmail = getSettingValue(KEY_SMTP_FROM);
+            if (targetEmail.isEmpty()) {
+                log.warn("收件邮箱为空且系统邮箱未配置，跳过发送自动发货失败邮件");
+                return;
+            }
+        }
+        try {
+            JavaMailSenderImpl mailSender = buildMailSender();
+            String from = getSettingValue(KEY_SMTP_USERNAME);
+            String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
+            String subject = "【闲鱼助手】自动发货失败 - " + (orderId != null ? orderId : "未知订单");
+            String content = buildAutoDeliveryFailEmailContent(xyGoodsId, orderId, failReason, time);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(from);
+            helper.setTo(targetEmail);
+            helper.setSubject(subject);
+            helper.setText(content, true);
+            mailSender.send(message);
+            log.info("自动发货失败邮件发送成功: xyGoodsId={}, orderId={}, to={}", xyGoodsId, orderId, targetEmail);
+        } catch (Exception e) {
+            log.error("自动发货失败邮件发送失败: xyGoodsId={}, orderId={}", xyGoodsId, orderId, e);
+        }
+    }
+
+    private String buildAutoDeliveryFailEmailContent(String xyGoodsId, String orderId, String failReason, String time) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;'>");
+        sb.append("<h2 style='color:#f56c6c;border-bottom:2px solid #f56c6c;padding-bottom:10px;'>🔴 闲鱼助手 - 自动发货失败</h2>");
+        sb.append("<div style='background:#fef0f0;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:8px 0;'><strong>商品ID：</strong>").append(xyGoodsId != null ? xyGoodsId : "未知").append("</p>");
+        sb.append("<p style='margin:8px 0;'><strong>订单ID：</strong>").append(orderId != null ? orderId : "未知").append("</p>");
+        sb.append("<p style='margin:8px 0;'><strong>失败原因：</strong><span style='color:#f56c6c;font-weight:bold;'>").append(failReason != null ? failReason : "未知").append("</span></p>");
+        sb.append("<p style='margin:8px 0;'><strong>失败时间：</strong>").append(time).append("</p>");
+        sb.append("</div>");
+        sb.append("<div style='background:#f0f9ff;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:4px 0;color:#666;'>请检查发货配置或手动处理该订单。</p>");
+        sb.append("</div>");
+        sb.append("<div style='color:#999;font-size:12px;margin-top:20px;border-top:1px solid #eee;padding-top:10px;'>");
+        sb.append("此邮件由闲鱼助手自动发送，请勿回复");
+        sb.append("</div>");
+        sb.append("</div>");
+        return sb.toString();
+    }
+
     private String buildKamiAlertEmailContent(String configName, int availableCount, int totalCount, String time) {
         StringBuilder sb = new StringBuilder();
         sb.append("<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;'>");

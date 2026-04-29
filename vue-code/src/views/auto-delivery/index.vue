@@ -610,7 +610,7 @@ const {
                       class="ad__record-action-btn"
                       @click="handleTriggerDelivery(record)"
                     >
-                      发货
+                      重新发货
                     </button>
                   </td>
                 </tr>
@@ -651,7 +651,7 @@ const {
                     class="ad__record-action-btn"
                     @click="handleTriggerDelivery(record)"
                   >
-                    发货
+                    重新发货
                   </button>
                 </div>
               </div>
@@ -725,7 +725,7 @@ const {
             <h3 class="ad__dialog-title">{{ confirmDialog.title }}</h3>
           </div>
           <div class="ad__dialog-body">
-            <p class="ad__dialog-text">{{ confirmDialog.message }}</p>
+            <p class="ad__dialog-text" :class="{ 'ad__dialog-text--danger': confirmDialog.type === 'danger' }" style="white-space: pre-line;">{{ confirmDialog.message }}</p>
           </div>
           <div class="ad__dialog-footer">
             <button

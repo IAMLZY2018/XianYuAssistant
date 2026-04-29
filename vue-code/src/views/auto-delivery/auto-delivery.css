@@ -1379,6 +1379,10 @@
   line-height: 1.5;
 }
 
+.ad__dialog-text--danger {
+  color: #ff3b30;
+}
+
 .ad__dialog-footer {
   display: flex;
   border-top: 1px solid var(--d-border);

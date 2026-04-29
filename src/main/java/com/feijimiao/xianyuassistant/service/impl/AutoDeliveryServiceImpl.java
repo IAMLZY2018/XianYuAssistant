@@ -12,6 +12,7 @@ import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoReplyRecordMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsConfigMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuKamiUsageRecordMapper;
 import com.feijimiao.xianyuassistant.service.AutoDeliveryService;
+import com.feijimiao.xianyuassistant.service.EmailNotifyService;
 import com.feijimiao.xianyuassistant.service.KamiConfigService;
 import com.feijimiao.xianyuassistant.service.OrderService;
 import com.feijimiao.xianyuassistant.service.WebSocketService;
@@ -53,6 +54,9 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
 
     @Autowired
     private KamiConfigService kamiConfigService;
+
+    @Autowired
+    private EmailNotifyService emailNotifyService;
 
     @Autowired
     private XianyuKamiUsageRecordMapper kamiUsageRecordMapper;
@@ -323,6 +327,7 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             if (deliveryConfig == null) {
                 log.warn("【账号{}】商品未配置发货模式: xyGoodsId={}", accountId, xyGoodsId);
                 updateRecordState(recordId, -1, null, "商品未配置发货模式");
+                emailNotifyService.sendAutoDeliveryFailEmail(null, xyGoodsId, orderId, "商品未配置发货模式");
                 return;
             }
 
@@ -359,11 +364,14 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             } else {
                 log.error("【账号{}】❌ 自动发货失败(服务端拒绝): recordId={}, xyGoodsId={}", accountId, recordId, xyGoodsId);
                 updateRecordState(recordId, -1, content, "消息发送失败");
+                emailNotifyService.sendAutoDeliveryFailEmail(null, xyGoodsId, orderId, "消息发送失败");
             }
 
         } catch (Exception e) {
             log.error("【账号{}】执行自动发货异常: recordId={}, xyGoodsId={}", accountId, recordId, xyGoodsId, e);
-            updateRecordState(recordId, -1, null, "发货异常: " + e.getMessage());
+            String failReason = "发货异常: " + e.getMessage();
+            updateRecordState(recordId, -1, null, failReason);
+            emailNotifyService.sendAutoDeliveryFailEmail(null, xyGoodsId, orderId, failReason);
         }
     }
 
@@ -373,6 +381,7 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             if (deliveryConfig.getAutoDeliveryContent() == null || deliveryConfig.getAutoDeliveryContent().isEmpty()) {
                 log.warn("【账号{}】自动发货模式下未配置发货内容: xyGoodsId={}", accountId, xyGoodsId);
                 updateRecordState(recordId, -1, null, "未配置发货内容");
+                emailNotifyService.sendAutoDeliveryFailEmail(null, xyGoodsId, orderId, "未配置发货内容");
                 return null;
             }
             log.info("【账号{}】文本发货模式", accountId);
@@ -382,6 +391,7 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             if (content == null) {
                 log.warn("【账号{}】卡密发货模式下无可用卡密: xyGoodsId={}, kamiConfigIds={}", accountId, xyGoodsId, deliveryConfig.getKamiConfigIds());
                 updateRecordState(recordId, -1, null, "卡密库存不足，无可用卡密");
+                emailNotifyService.sendAutoDeliveryFailEmail(null, xyGoodsId, orderId, "卡密库存不足，无可用卡密");
                 return null;
             }
             log.info("【账号{}】卡密发货模式: content长度={}", accountId, content.length());
@@ -393,6 +403,7 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
         } else {
             log.warn("【账号{}】未知的发货模式: deliveryMode={}", accountId, deliveryMode);
             updateRecordState(recordId, -1, null, "未知的发货模式: " + deliveryMode);
+            emailNotifyService.sendAutoDeliveryFailEmail(null, xyGoodsId, orderId, "未知的发货模式: " + deliveryMode);
             return null;
         }
     }
@@ -473,25 +484,7 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             log.warn("【账号{}】卡密发货未绑定卡密配置: xyGoodsId={}", accountId, xyGoodsId);
             return null;
         }
-        
-        // 先检查该订单是否已经分配过卡密（防止重复点击）
-        XianyuKamiUsageRecord existingRecord = kamiUsageRecordMapper.selectOne(
-                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<XianyuKamiUsageRecord>()
-                        .eq(XianyuKamiUsageRecord::getOrderId, orderId)
-                        .eq(XianyuKamiUsageRecord::getXianyuAccountId, accountId)
-                        .last("LIMIT 1")
-        );
-        
-        if (existingRecord != null) {
-            log.info("【账号{}】订单已分配过卡密，直接返回: orderId={}, kamiItemId={}", 
-                    accountId, orderId, existingRecord.getKamiItemId());
-            String kamiContent = existingRecord.getKamiContent();
-            if (kamiDeliveryTemplate != null && !kamiDeliveryTemplate.trim().isEmpty()) {
-                kamiContent = kamiDeliveryTemplate.replace("{kmKey}", kamiContent);
-            }
-            return kamiContent;
-        }
-        
+
         String[] configIdArr = kamiConfigIds.split(",");
         for (String configIdStr : configIdArr) {
             try {
@@ -508,29 +501,9 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
                     String cid = sId.replace("@goofish", "");
                     usageRecord.setBuyerUserId(cid);
                     usageRecord.setBuyerUserName(buyerUserName);
-                    
-                    try {
-                        kamiUsageRecordMapper.insert(usageRecord);
-                        log.info("【账号{}】卡密发货成功: configId={}, itemId={}, orderId={}", 
-                                accountId, configId, kamiItem.getId(), orderId);
-                    } catch (org.springframework.dao.DuplicateKeyException e) {
-                        // 并发情况下可能已经插入，查询已存在的记录
-                        log.warn("【账号{}】卡密使用记录已存在（并发插入），查询已有记录: orderId={}", accountId, orderId);
-                        XianyuKamiUsageRecord concurrentRecord = kamiUsageRecordMapper.selectOne(
-                                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<XianyuKamiUsageRecord>()
-                                        .eq(XianyuKamiUsageRecord::getOrderId, orderId)
-                                        .eq(XianyuKamiUsageRecord::getXianyuAccountId, accountId)
-                                        .last("LIMIT 1")
-                        );
-                        if (concurrentRecord != null) {
-                            String kamiContent = concurrentRecord.getKamiContent();
-                            if (kamiDeliveryTemplate != null && !kamiDeliveryTemplate.trim().isEmpty()) {
-                                kamiContent = kamiDeliveryTemplate.replace("{kmKey}", kamiContent);
-                            }
-                            return kamiContent;
-                        }
-                    }
-                    
+                    kamiUsageRecordMapper.insert(usageRecord);
+                    log.info("【账号{}】卡密扣减成功: configId={}, itemId={}, orderId={}", accountId, configId, kamiItem.getId(), orderId);
+
                     String kamiContent = kamiItem.getKamiContent();
                     if (kamiDeliveryTemplate != null && !kamiDeliveryTemplate.trim().isEmpty()) {
                         kamiContent = kamiDeliveryTemplate.replace("{kmKey}", kamiContent);

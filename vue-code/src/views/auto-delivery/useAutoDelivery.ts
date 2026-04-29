@@ -607,10 +607,15 @@ export function useAutoDelivery() {
       return
     }
 
+    const isKamiMode = configForm.value.deliveryMode === 2
+    const dialogMessage = isKamiMode
+      ? `确认重新发货吗？\n\n⚠️ 卡密发货模式：将发送新的卡密，扣减一次卡密库存！\n订单ID: ${record.orderId}`
+      : `确认重新发货吗？订单ID: ${record.orderId}`
+
     confirmDialog.value = {
       visible: true,
-      title: '触发发货',
-      message: `确认触发自动发货流程吗？订单ID: ${record.orderId}`,
+      title: '重新发货',
+      message: dialogMessage,
       type: 'danger',
       onConfirm: async () => {
         // 防止重复点击确认按钮

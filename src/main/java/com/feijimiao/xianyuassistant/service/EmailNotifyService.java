@@ -67,4 +67,14 @@ public interface EmailNotifyService {
      * @param orderId 触发的订单ID
      */
     void sendKamiStockOutEmail(String toEmail, String configName, String orderId);
+
+    /**
+     * 发送自动发货失败邮件
+     *
+     * @param toEmail 收件人邮箱（null则用系统配置邮箱）
+     * @param xyGoodsId 商品ID
+     * @param orderId 订单ID
+     * @param failReason 失败原因
+     */
+    void sendAutoDeliveryFailEmail(String toEmail, String xyGoodsId, String orderId, String failReason);
 }
