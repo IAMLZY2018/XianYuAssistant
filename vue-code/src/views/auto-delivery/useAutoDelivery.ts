@@ -1,7 +1,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getAccountList } from '@/api/account'
-import { getGoodsList, updateAutoDeliveryStatus } from '@/api/goods'
+import { getGoodsList, updateAutoDeliveryStatus, updateAutoConfirmShipment } from '@/api/goods'
 import {
   getAutoDeliveryConfig,
   saveOrUpdateAutoDeliveryConfig,
@@ -19,6 +19,8 @@ import {
   type TriggerAutoDeliveryReq
 } from '@/api/auto-delivery-record'
 import { showSuccess, showError, showInfo } from '@/utils'
+import { getConnectionStatus } from '@/api/websocket'
+import { ElMessage } from 'element-plus'
 import {
   getKamiConfigsByAccountId,
   type KamiConfig
@@ -42,6 +44,10 @@ const copyToClipboard = (text: string) => {
 
 export function useAutoDelivery() {
   const route = useRoute()
+  const router = useRouter()
+
+  const gotoConnection = () => router.push('/connection')
+  ;(window as any).__gotoConnection = gotoConnection
 
   const loading = ref(false)
   const saving = ref(false)
@@ -180,11 +186,15 @@ export function useAutoDelivery() {
 
   // Get record status
   const getRecordStatusText = (state: number) => {
-    return state === 1 ? '成功' : '失败'
+    if (state === 1) return '成功'
+    if (state === 0) return '待发货'
+    return '失败'
   }
 
   const getRecordStatusClass = (state: number) => {
-    return state === 1 ? 'success' : 'fail'
+    if (state === 1) return 'success'
+    if (state === 0) return 'pending'
+    return 'fail'
   }
 
   // Load accounts
@@ -433,6 +443,31 @@ export function useAutoDelivery() {
     }
   }
 
+  const toggleAutoConfirmShipment = async (value: boolean) => {
+    if (!selectedGoods.value || !selectedAccountId.value) {
+      showInfo('请先选择商品')
+      return
+    }
+
+    try {
+      const response = await updateAutoConfirmShipment({
+        xianyuAccountId: selectedAccountId.value,
+        xyGoodsId: selectedGoods.value.item.xyGoodId,
+        autoConfirmShipment: value ? 1 : 0
+      })
+
+      if (response.code === 0 || response.code === 200) {
+        showSuccess(`自动确认发货${value ? '开启' : '关闭'}成功`)
+        configForm.value.autoConfirmShipment = value ? 1 : 0
+      } else {
+        throw new Error(response.msg || '操作失败')
+      }
+    } catch (error: any) {
+      console.error('操作失败:', error)
+      configForm.value.autoConfirmShipment = value ? 0 : 1
+    }
+  }
+
   // Load delivery records
   const loadDeliveryRecords = async () => {
     if (!selectedAccountId.value || !selectedGoods.value) {
@@ -516,7 +551,10 @@ export function useAutoDelivery() {
           }
         } catch (error: any) {
           console.error('确认已发货失败:', error)
-          showError(error.message || '确认已发货失败')
+          // 只有在错误消息未显示过时才弹出提示（避免重复显示）
+          if (!error.messageShown) {
+            showError(error.message || '确认已发货失败')
+          }
         } finally {
           confirmDialog.value.visible = false
         }
@@ -524,8 +562,17 @@ export function useAutoDelivery() {
     }
   }
 
+  const showWsDisconnectedTip = () => {
+    ElMessage({
+      type: 'warning',
+      duration: 5000,
+      dangerouslyUseHTMLString: true,
+      message: '请先连接服务器，<a href="#/connection" style="color:#34c759;text-decoration:underline;font-weight:600;" onclick="event.preventDefault();window.__gotoConnection&&window.__gotoConnection()">点击跳转</a>'
+    })
+  }
+
   // Trigger auto delivery
-  const handleTriggerDelivery = (record: any) => {
+  const handleTriggerDelivery = async (record: any) => {
     if (!selectedAccountId.value || !selectedGoods.value) {
       showInfo('请先选择账号和商品')
       return
@@ -534,8 +581,29 @@ export function useAutoDelivery() {
       showError('该记录没有订单ID，无法触发发货')
       return
     }
-    if (!configForm.value.autoDeliveryContent || !configForm.value.autoDeliveryContent.trim()) {
+
+    try {
+      const wsStatus = await getConnectionStatus(selectedAccountId.value)
+      if (!wsStatus.data?.connected) {
+        showWsDisconnectedTip()
+        return
+      }
+    } catch {
+      showWsDisconnectedTip()
+      return
+    }
+    if (configForm.value.deliveryMode === 1 && (!configForm.value.autoDeliveryContent || !configForm.value.autoDeliveryContent.trim())) {
       showError('请配置发货内容！')
+      return
+    }
+    if (configForm.value.deliveryMode === 2 && !configForm.value.kamiConfigIds) {
+      showError('请绑定卡密配置！')
+      return
+    }
+
+    // 防止重复提交：检查是否正在处理
+    if (loading.value) {
+      showInfo('正在处理中，请稍候...')
       return
     }
 
@@ -545,6 +613,12 @@ export function useAutoDelivery() {
       message: `确认触发自动发货流程吗？订单ID: ${record.orderId}`,
       type: 'danger',
       onConfirm: async () => {
+        // 防止重复点击确认按钮
+        if (loading.value) {
+          return
+        }
+        
+        loading.value = true
         try {
           const req: TriggerAutoDeliveryReq = {
             xianyuAccountId: selectedAccountId.value!,
@@ -560,8 +634,12 @@ export function useAutoDelivery() {
           }
         } catch (error: any) {
           console.error('触发发货失败:', error)
-          showError(error.message || '触发发货失败')
+          // 只有在错误消息未显示过时才弹出提示（避免重复显示）
+          if (!error.messageShown) {
+            showError(error.message || '触发发货失败')
+          }
         } finally {
+          loading.value = false
           confirmDialog.value.visible = false
         }
       }
@@ -632,6 +710,7 @@ export function useAutoDelivery() {
     selectGoods,
     saveConfig,
     toggleAutoDelivery,
+    toggleAutoConfirmShipment,
     loadDeliveryRecords,
     handleRecordsPageChange,
     viewGoodsDetail,

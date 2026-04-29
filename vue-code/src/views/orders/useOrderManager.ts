@@ -72,7 +72,10 @@ export function useOrderManager() {
       total.value = response.data?.total || 0
     } catch (error: any) {
       console.error('查询发货记录失败:', error)
-      showError('查询发货记录失败: ' + (error.message || '未知错误'))
+      // 只有在错误消息未显示过时才弹出提示（避免重复显示）
+      if (!error.messageShown) {
+        showError('查询发货记录失败: ' + (error.message || '未知错误'))
+      }
       orderList.value = []
     } finally {
       loading.value = false
@@ -126,7 +129,10 @@ export function useOrderManager() {
       loadOrders()
     } catch (error: any) {
       if (error === 'cancel') return
-      showError('确认发货失败: ' + (error.message || '未知错误'))
+      // 只有在错误消息未显示过时才弹出提示（避免重复显示）
+      if (!error.messageShown) {
+        showError('确认发货失败: ' + (error.message || '未知错误'))
+      }
     } finally {
       row.confirming = false
     }

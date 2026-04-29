@@ -292,7 +292,10 @@ export function useAutoReply() {
         showError(data.msg || '保存失败')
       }
     } catch (error: any) {
-      showError('保存固定资料失败: ' + error.message)
+      // 只有在错误消息未显示过时才弹出提示（避免重复显示）
+      if (!error.messageShown) {
+        showError('保存固定资料失败: ' + error.message)
+      }
     } finally {
       fixedMaterialSaving.value = false
     }
@@ -316,7 +319,10 @@ export function useAutoReply() {
         showError(data.msg || '同步失败')
       }
     } catch (error: any) {
-      showError('同步商品详情失败: ' + error.message)
+      // 只有在错误消息未显示过时才弹出提示（避免重复显示）
+      if (!error.messageShown) {
+        showError('同步商品详情失败: ' + error.message)
+      }
     } finally {
       fixedMaterialSyncing.value = false
     }
@@ -371,7 +377,10 @@ export function useAutoReply() {
       }
     } catch (error: any) {
       console.error('更新延时失败:', error)
-      showError(error.message || '操作失败')
+      // 只有在错误消息未显示过时才弹出提示（避免重复显示）
+      if (!error.messageShown) {
+        showError(error.message || '操作失败')
+      }
     } finally {
       configSaving.value = false
     }

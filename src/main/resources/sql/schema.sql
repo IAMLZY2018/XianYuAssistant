@@ -227,8 +227,10 @@ CREATE TABLE IF NOT EXISTS xianyu_goods_order (
     order_id VARCHAR(100),                            -- 订单ID
     buyer_user_id VARCHAR(100),                       -- 买家用户ID
     buyer_user_name VARCHAR(256),                     -- 买家用户名
+    sid VARCHAR(200),                                 -- 会话ID（用于WebSocket发送消息的cid）
     content TEXT,                                     -- 发货消息内容
-    state TINYINT DEFAULT 0,                          -- 发货是否成功: 1-成功, 0-失败
+    state TINYINT DEFAULT 0,                          -- 发货是否成功: 1-成功, 0-待发货, -1-失败
+    fail_reason VARCHAR(500),                         -- 失败理由
     confirm_state TINYINT DEFAULT 0,                  -- 确认发货状态: 0-未确认, 1-已确认
     create_time DATETIME DEFAULT (datetime('now', 'localtime')),  -- 创建时间(本地时间)
     FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
@@ -387,7 +389,6 @@ CREATE TABLE IF NOT EXISTS xianyu_kami_item (
 CREATE INDEX IF NOT EXISTS idx_kami_item_config_id ON xianyu_kami_item(kami_config_id);
 CREATE INDEX IF NOT EXISTS idx_kami_item_status ON xianyu_kami_item(status);
 CREATE INDEX IF NOT EXISTS idx_kami_item_config_status ON xianyu_kami_item(kami_config_id, status);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_kami_item_unique ON xianyu_kami_item(kami_config_id, kami_content);
 
 -- 卡密使用记录表
 CREATE TABLE IF NOT EXISTS xianyu_kami_usage_record (

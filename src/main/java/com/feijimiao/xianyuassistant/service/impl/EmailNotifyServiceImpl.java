@@ -296,6 +296,64 @@ public class EmailNotifyServiceImpl implements EmailNotifyService {
         }
     }
 
+    @Override
+    @Async
+    public void sendKamiStockOutEmail(String toEmail, String configName, String orderId) {
+        if (!isEmailConfigured()) {
+            log.warn("邮箱未配置，跳过发送卡密库存不足邮件");
+            return;
+        }
+        String targetEmail = toEmail;
+        if (targetEmail == null || targetEmail.trim().isEmpty()) {
+            targetEmail = getSettingValue(KEY_SMTP_FROM);
+            if (targetEmail.isEmpty()) {
+                log.warn("收件邮箱为空且系统邮箱未配置，跳过发送卡密库存不足邮件");
+                return;
+            }
+        }
+
+        try {
+            JavaMailSenderImpl mailSender = buildMailSender();
+            String from = getSettingValue(KEY_SMTP_USERNAME);
+
+            String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
+            String subject = "【闲鱼助手】卡密库存不足 - " + (configName != null ? configName : "卡密配置");
+            String content = buildKamiStockOutEmailContent(configName, orderId, time);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(from);
+            helper.setTo(targetEmail);
+            helper.setSubject(subject);
+            helper.setText(content, true);
+
+            mailSender.send(message);
+            log.info("卡密库存不足邮件发送成功: configName={}, orderId={}, to={}", configName, orderId, targetEmail);
+        } catch (Exception e) {
+            log.error("卡密库存不足邮件发送失败: configName={}, orderId={}, to={}", configName, orderId, targetEmail, e);
+        }
+    }
+
+    private String buildKamiStockOutEmailContent(String configName, String orderId, String time) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;'>");
+        sb.append("<h2 style='color:#f56c6c;border-bottom:2px solid #f56c6c;padding-bottom:10px;'>🔴 闲鱼助手 - 卡密库存不足</h2>");
+        sb.append("<div style='background:#fef0f0;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:8px 0;'><strong>卡密配置：</strong>").append(configName != null ? configName : "未命名").append("</p>");
+        sb.append("<p style='margin:8px 0;'><strong>触发订单：</strong>").append(orderId != null ? orderId : "未知").append("</p>");
+        sb.append("<p style='margin:8px 0;'><strong>触发时间：</strong>").append(time).append("</p>");
+        sb.append("</div>");
+        sb.append("<div style='background:#f0f9ff;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:4px 0;color:#f56c6c;font-weight:bold;'>该卡密仓库已无可用卡密，订单无法自动发货！</p>");
+        sb.append("<p style='margin:4px 0;color:#666;'>请及时补充卡密，或手动处理该订单。</p>");
+        sb.append("</div>");
+        sb.append("<div style='color:#999;font-size:12px;margin-top:20px;border-top:1px solid #eee;padding-top:10px;'>");
+        sb.append("此邮件由闲鱼助手自动发送，请勿回复");
+        sb.append("</div>");
+        sb.append("</div>");
+        return sb.toString();
+    }
+
     private String buildKamiAlertEmailContent(String configName, int availableCount, int totalCount, String time) {
         StringBuilder sb = new StringBuilder();
         sb.append("<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;'>");

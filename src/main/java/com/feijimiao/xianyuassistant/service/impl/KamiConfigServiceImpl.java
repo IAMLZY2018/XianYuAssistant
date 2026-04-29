@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
@@ -34,6 +35,12 @@ public class KamiConfigServiceImpl implements KamiConfigService {
     private EmailNotifyService emailNotifyService;
 
     private final ReentrantLock acquireLock = new ReentrantLock();
+
+    private final ConcurrentHashMap<Long, ReentrantLock> configLocks = new ConcurrentHashMap<>();
+
+    private final ConcurrentHashMap<Long, Long> stockOutEmailSentTime = new ConcurrentHashMap<>();
+
+    private static final long STOCK_OUT_EMAIL_INTERVAL_MS = 10 * 60 * 1000L;
 
     @Override
     public ResultObject<KamiConfigRespDTO> createOrUpdateConfig(KamiConfigReqDTO reqDTO) {
@@ -131,15 +138,18 @@ public class KamiConfigServiceImpl implements KamiConfigService {
             }
             XianyuKamiItem item = new XianyuKamiItem();
             item.setKamiConfigId(reqDTO.getKamiConfigId());
-            item.setKamiContent(reqDTO.getKamiContent().trim());
+            String content = reqDTO.getKamiContent().trim();
+            item.setKamiContent(content);
             item.setStatus(0);
             item.setSortOrder(kamiItemMapper.countByConfigId(reqDTO.getKamiConfigId()));
-            try {
-                kamiItemMapper.insert(item);
-            } catch (Exception e) {
-                return ResultObject.failed("卡密内容重复，已存在相同卡密");
-            }
+
+            boolean duplicated = kamiItemMapper.countByConfigIdAndContent(reqDTO.getKamiConfigId(), content) > 0;
+            kamiItemMapper.insert(item);
             refreshConfigCounts(reqDTO.getKamiConfigId());
+
+            if (duplicated) {
+                return ResultObject.success(toItemRespDTO(item), "卡密内容重复，已导入");
+            }
             return ResultObject.success(toItemRespDTO(item));
         } catch (Exception e) {
             log.error("添加卡密失败", e);
@@ -162,21 +172,21 @@ public class KamiConfigServiceImpl implements KamiConfigService {
             for (String line : lines) {
                 String trimmed = line.trim();
                 if (trimmed.isEmpty()) continue;
+
+                boolean dup = kamiItemMapper.countByConfigIdAndContent(reqDTO.getKamiConfigId(), trimmed) > 0;
+                if (dup) duplicated++;
+
                 XianyuKamiItem item = new XianyuKamiItem();
                 item.setKamiConfigId(reqDTO.getKamiConfigId());
                 item.setKamiContent(trimmed);
                 item.setStatus(0);
                 item.setSortOrder(baseOrder + added);
-                try {
-                    kamiItemMapper.insert(item);
-                    added++;
-                } catch (Exception e) {
-                    duplicated++;
-                }
+                kamiItemMapper.insert(item);
+                added++;
             }
             refreshConfigCounts(reqDTO.getKamiConfigId());
             String msg = duplicated > 0
-                    ? String.format("成功导入%d条，跳过重复%d条", added, duplicated)
+                    ? String.format("成功导入%d条，其中重复%d条", added, duplicated)
                     : String.format("成功导入%d条", added);
             return ResultObject.success(added, msg);
         } catch (Exception e) {
@@ -250,7 +260,8 @@ public class KamiConfigServiceImpl implements KamiConfigService {
 
     @Override
     public XianyuKamiItem acquireKami(Long kamiConfigId, String orderId) {
-        acquireLock.lock();
+        ReentrantLock configLock = configLocks.computeIfAbsent(kamiConfigId, k -> new ReentrantLock());
+        configLock.lock();
         try {
             XianyuKamiConfig config = kamiConfigMapper.selectById(kamiConfigId);
             if (config == null) {
@@ -258,28 +269,47 @@ public class KamiConfigServiceImpl implements KamiConfigService {
                 return null;
             }
             XianyuKamiItem item = kamiItemMapper.findNextUnused(kamiConfigId);
-            
+
             if (item == null) {
-                log.info("卡密配置[{}]无可用未使用卡密，尝试获取已使用卡密（允许重复）", kamiConfigId);
-                List<XianyuKamiItem> allItems = kamiItemMapper.findByConfigId(kamiConfigId);
-                if (allItems.isEmpty()) {
-                    log.warn("卡密配置[{}]没有任何卡密", kamiConfigId);
+                log.warn("卡密配置[{}]无可用卡密，不触发发货流程", kamiConfigId);
+                sendStockOutEmailIfNeeded(config, kamiConfigId, orderId);
+                return null;
+            }
+
+            int marked = kamiItemMapper.markUsed(item.getId(), orderId);
+            if (marked == 0) {
+                log.warn("卡密[{}]已被其他订单占用，并发冲突，尝试重新获取", item.getId());
+                item = kamiItemMapper.findNextUnused(kamiConfigId);
+                if (item == null) {
+                    log.warn("卡密配置[{}]并发冲突后无可用卡密", kamiConfigId);
+                    sendStockOutEmailIfNeeded(config, kamiConfigId, orderId);
                     return null;
                 }
-                item = allItems.get(0);
-            } else {
-                int marked = kamiItemMapper.markUsed(item.getId(), orderId);
+                marked = kamiItemMapper.markUsed(item.getId(), orderId);
                 if (marked == 0) {
-                    log.warn("卡密[{}]已被其他订单占用，并发冲突", item.getId());
+                    log.warn("卡密[{}]二次并发冲突，放弃本次获取", item.getId());
                     return null;
                 }
             }
+
             refreshConfigCounts(kamiConfigId);
             checkAndSendAlert(config, kamiConfigId);
             return item;
         } finally {
-            acquireLock.unlock();
+            configLock.unlock();
         }
+    }
+
+    private void sendStockOutEmailIfNeeded(XianyuKamiConfig config, Long kamiConfigId, String orderId) {
+        Long lastSentTime = stockOutEmailSentTime.get(kamiConfigId);
+        long now = System.currentTimeMillis();
+        if (lastSentTime != null && (now - lastSentTime) < STOCK_OUT_EMAIL_INTERVAL_MS) {
+            log.debug("卡密库存不足邮件10分钟内已发送过，跳过: configId={}", kamiConfigId);
+            return;
+        }
+        stockOutEmailSentTime.put(kamiConfigId, now);
+        String configName = config.getAliasName() != null ? config.getAliasName() : "卡密配置" + kamiConfigId;
+        emailNotifyService.sendKamiStockOutEmail(config.getAlertEmail(), configName, orderId);
     }
 
     @Override

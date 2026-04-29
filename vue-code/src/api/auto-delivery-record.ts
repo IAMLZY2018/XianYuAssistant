@@ -8,7 +8,8 @@ export interface AutoDeliveryRecord {
   goodsTitle?: string;
   buyerUserName?: string;
   content?: string;
-  state: number; // 1-成功，0-失败
+  state: number; // 1-成功，-1-失败，0-待发货
+  failReason?: string;
   orderId?: string;
   createTime: string;
 }

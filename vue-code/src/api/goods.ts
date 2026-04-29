@@ -111,6 +111,18 @@ export function updateAutoDeliveryStatus(data: {
   });
 }
 
+export function updateAutoConfirmShipment(data: {
+  xianyuAccountId: number;
+  xyGoodsId: string;
+  autoConfirmShipment: number;
+}) {
+  return request({
+    url: '/items/updateAutoConfirmShipment',
+    method: 'POST',
+    data
+  });
+}
+
 // 更新自动回复状态
 export function updateAutoReplyStatus(data: {
   xianyuAccountId: number;

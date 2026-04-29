@@ -58,4 +58,13 @@ public interface EmailNotifyService {
      * @param totalCount 总数量
      */
     void sendKamiAlertEmail(String toEmail, String configName, int availableCount, int totalCount);
+
+    /**
+     * 发送卡密库存不足邮件（卡密耗尽，无法发货）
+     *
+     * @param toEmail 收件人邮箱
+     * @param configName 卡密配置名称
+     * @param orderId 触发的订单ID
+     */
+    void sendKamiStockOutEmail(String toEmail, String configName, String orderId);
 }

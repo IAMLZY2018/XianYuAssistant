@@ -24,9 +24,13 @@ public class XianyuGoodsOrder {
     
     private String buyerUserName;
     
+    private String sid;
+    
     private String content;
     
     private Integer state;
+    
+    private String failReason;
     
     private Integer confirmState;
     

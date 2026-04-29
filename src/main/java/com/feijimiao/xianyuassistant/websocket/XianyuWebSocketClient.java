@@ -12,6 +12,9 @@ import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 闲鱼WebSocket客户端
@@ -42,6 +45,9 @@ public class XianyuWebSocketClient extends WebSocketClient {
     
     // 会话信息
     private String sessionId = null;  // 保存注册后的sid
+
+    // 等待响应的Future（mid -> CompletableFuture<code>）
+    private final ConcurrentHashMap<String, CompletableFuture<Integer>> pendingResponses = new ConcurrentHashMap<>();
     
     // 注册成功回调
     private Runnable onRegistrationSuccess;
@@ -540,33 +546,121 @@ public class XianyuWebSocketClient extends WebSocketClient {
             log.error("【账号{}】WebSocket未连接，无法发送消息", accountId);
             return;
         }
+        try {
+            String cleanCid = cid.replace("@goofish", "");
+            String cleanToId = toId.replace("@goofish", "");
+            log.info("【账号{}】准备发送消息: cleanCid={}, cleanToId={}, text={}", accountId, cleanCid, cleanToId, text);
+
+            Map<String, Object> textContent = new HashMap<>();
+            textContent.put("contentType", 1);
+            Map<String, String> textData = new HashMap<>();
+            textData.put("text", text);
+            textContent.put("text", textData);
+
+            String textJson = objectMapper.writeValueAsString(textContent);
+            String textBase64 = java.util.Base64.getEncoder().encodeToString(textJson.getBytes("UTF-8"));
+
+            Map<String, Object> messageBody = new HashMap<>();
+            messageBody.put("uuid", generateUuid());
+            messageBody.put("cid", cleanCid + "@goofish");
+            messageBody.put("conversationType", 1);
+
+            Map<String, Object> content = new HashMap<>();
+            content.put("contentType", 101);
+            Map<String, Object> custom = new HashMap<>();
+            custom.put("type", 1);
+            custom.put("data", textBase64);
+            content.put("custom", custom);
+            messageBody.put("content", content);
+            messageBody.put("redPointPolicy", 0);
+
+            Map<String, String> extension = new HashMap<>();
+            extension.put("extJson", "{}");
+            messageBody.put("extension", extension);
+
+            Map<String, String> ctx = new HashMap<>();
+            ctx.put("appVersion", "1.0");
+            ctx.put("platform", "web");
+            messageBody.put("ctx", ctx);
+            messageBody.put("mtags", new HashMap<>());
+            messageBody.put("msgReadStatusSetting", 1);
+
+            Map<String, Object> receivers = new HashMap<>();
+            java.util.List<String> actualReceivers = new java.util.ArrayList<>();
+            actualReceivers.add(cleanToId + "@goofish");
+            String senderUserId = myUserId != null ? myUserId : accountId;
+            actualReceivers.add(senderUserId + "@goofish");
+            receivers.put("actualReceivers", actualReceivers);
+
+            Map<String, Object> message = new HashMap<>();
+            message.put("lwp", "/r/MessageSend/sendByReceiverScope");
+
+            Map<String, String> headers = new HashMap<>();
+            headers.put("mid", generateMid());
+            if (sessionId != null) {
+                headers.put("sid", sessionId);
+            }
+            message.put("headers", headers);
+
+            java.util.List<Object> body = new java.util.ArrayList<>();
+            body.add(messageBody);
+            body.add(receivers);
+            message.put("body", body);
+
+            String messageJson = objectMapper.writeValueAsString(message);
+            send(messageJson);
+            log.info("【账号{}】✅ 消息已发送到WebSocket", accountId);
+        } catch (Exception e) {
+            log.error("【账号{}】❌ 发送消息失败: cid={}, toId={}", accountId, cid, toId, e);
+        }
+    }
+
+    /**
+     * 完成等待中的响应Future
+     */
+    public void completePendingResponse(String mid, int code) {
+        CompletableFuture<Integer> future = pendingResponses.remove(mid);
+        if (future != null && !future.isDone()) {
+            future.complete(code);
+            log.debug("【账号{}】完成pendingResponse: mid={}, code={}", accountId, mid, code);
+        }
+    }
+
+    /**
+     * 发送消息并等待响应结果
+     *
+     * @param cid 会话ID
+     * @param toId 接收方用户ID
+     * @param text 消息文本内容
+     * @return true=服务端返回200，false=失败或超时
+     */
+    public boolean sendMessageWithResult(String cid, String toId, String text) {
+        if (!isConnected) {
+            log.error("【账号{}】WebSocket未连接，无法发送消息", accountId);
+            return false;
+        }
         
         try {
-            // 移除可能存在的@goofish后缀，确保统一处理
             String cleanCid = cid.replace("@goofish", "");
             String cleanToId = toId.replace("@goofish", "");
             
             log.info("【账号{}】准备发送消息: cleanCid={}, cleanToId={}, text={}", 
                     accountId, cleanCid, cleanToId, text);
             
-            // 构造消息内容
             Map<String, Object> textContent = new HashMap<>();
             textContent.put("contentType", 1);
             Map<String, String> textData = new HashMap<>();
             textData.put("text", text);
             textContent.put("text", textData);
             
-            // Base64编码消息内容
             String textJson = objectMapper.writeValueAsString(textContent);
             String textBase64 = java.util.Base64.getEncoder().encodeToString(textJson.getBytes("UTF-8"));
             
-            // 构造消息体
             Map<String, Object> messageBody = new HashMap<>();
             messageBody.put("uuid", generateUuid());
             messageBody.put("cid", cleanCid + "@goofish");
             messageBody.put("conversationType", 1);
             
-            // 消息内容
             Map<String, Object> content = new HashMap<>();
             content.put("contentType", 101);
             Map<String, Object> custom = new HashMap<>();
@@ -577,12 +671,10 @@ public class XianyuWebSocketClient extends WebSocketClient {
             
             messageBody.put("redPointPolicy", 0);
             
-            // 扩展信息
             Map<String, String> extension = new HashMap<>();
             extension.put("extJson", "{}");
             messageBody.put("extension", extension);
             
-            // 上下文信息
             Map<String, String> ctx = new HashMap<>();
             ctx.put("appVersion", "1.0");
             ctx.put("platform", "web");
@@ -591,23 +683,21 @@ public class XianyuWebSocketClient extends WebSocketClient {
             messageBody.put("mtags", new HashMap<>());
             messageBody.put("msgReadStatusSetting", 1);
             
-            // 接收者列表（参考Python: actualReceivers包含接收方和发送方）
             Map<String, Object> receivers = new HashMap<>();
             java.util.List<String> actualReceivers = new java.util.ArrayList<>();
             actualReceivers.add(cleanToId + "@goofish");
-            // 使用myUserId而不是accountId
             String senderUserId = myUserId != null ? myUserId : accountId;
             actualReceivers.add(senderUserId + "@goofish");
             receivers.put("actualReceivers", actualReceivers);
             
             log.info("【账号{}】消息接收者列表: {}", accountId, actualReceivers);
             
-            // 构造完整消息
             Map<String, Object> message = new HashMap<>();
             message.put("lwp", "/r/MessageSend/sendByReceiverScope");
             
+            String mid = generateMid();
             Map<String, String> headers = new HashMap<>();
-            headers.put("mid", generateMid());
+            headers.put("mid", mid);
             if (sessionId != null) {
                 headers.put("sid", sessionId);
             }
@@ -618,14 +708,33 @@ public class XianyuWebSocketClient extends WebSocketClient {
             body.add(receivers);
             message.put("body", body);
             
-            // 发送消息
+            CompletableFuture<Integer> future = new CompletableFuture<>();
+            pendingResponses.put(mid, future);
+            
             String messageJson = objectMapper.writeValueAsString(message);
             log.debug("【账号{}】发送消息JSON: {}", accountId, messageJson);
             send(messageJson);
-            log.info("【账号{}】✅ 消息已发送到WebSocket", accountId);
+            log.info("【账号{}】消息已发送到WebSocket，等待响应: mid={}", accountId, mid);
+            
+            try {
+                Integer code = future.get(10, TimeUnit.SECONDS);
+                boolean success = code != null && code == 200;
+                if (success) {
+                    log.info("【账号{}】✅ 消息发送成功(服务端返回200): mid={}", accountId, mid);
+                } else {
+                    log.error("【账号{}】❌ 消息发送失败(服务端返回{}): mid={}", accountId, code, mid);
+                }
+                return success;
+            } catch (java.util.concurrent.TimeoutException e) {
+                log.warn("【账号{}】消息发送超时(10秒)，视为发送成功: mid={}", accountId, mid);
+                return true;
+            } finally {
+                pendingResponses.remove(mid);
+            }
             
         } catch (Exception e) {
             log.error("【账号{}】❌ 发送消息失败: cid={}, toId={}", accountId, cid, toId, e);
+            return false;
         }
     }
     

@@ -213,7 +213,10 @@ export function useOperationLog() {
       }
     } catch (error: any) {
       console.error('加载操作记录失败:', error)
-      showError('加载失败: ' + error.message)
+      // 只有在错误消息未显示过时才弹出提示（避免重复显示）
+      if (!error.messageShown) {
+        showError('加载失败: ' + error.message)
+      }
     } finally {
       loading.value = false
     }
@@ -283,7 +286,10 @@ export function useOperationLog() {
       }
     } catch (error: any) {
       console.error('删除旧日志失败:', error)
-      showError('删除失败: ' + error.message)
+      // 只有在错误消息未显示过时才弹出提示（避免重复显示）
+      if (!error.messageShown) {
+        showError('删除失败: ' + error.message)
+      }
     }
   }
 

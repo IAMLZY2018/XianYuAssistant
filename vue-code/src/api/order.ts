@@ -13,8 +13,10 @@ export interface DeliveryRecordVO {
   xyGoodsId: string
   goodsTitle?: string
   buyerUserName?: string
+  sid?: string
   content?: string
   state: number
+  failReason?: string
   confirmState: number
   orderId?: string
   createTime: string

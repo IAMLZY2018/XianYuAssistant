@@ -67,7 +67,7 @@ export function sendMessage(data: {
   xyGoodsId?: string;
 }) {
   return request<string>({
-    url: '/sendMessage',
+    url: '/websocket/sendMessage',
     method: 'POST',
     data
   });

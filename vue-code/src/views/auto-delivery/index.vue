@@ -45,6 +45,7 @@ const {
   selectGoods,
   saveConfig,
   toggleAutoDelivery,
+  toggleAutoConfirmShipment,
   loadDeliveryRecords,
   handleRecordsPageChange,
   viewGoodsDetail,
@@ -295,7 +296,7 @@ const {
                     type="checkbox"
                     :checked="configForm.autoConfirmShipment === 1"
                     :disabled="selectedGoods.xianyuAutoDeliveryOn !== 1"
-                    @change="configForm.autoConfirmShipment = ($event.target as HTMLInputElement).checked ? 1 : 0"
+                    @change="toggleAutoConfirmShipment(($event.target as HTMLInputElement).checked)"
                   />
                   <span class="ad__switch-track"></span>
                   <span class="ad__switch-thumb"></span>
@@ -380,7 +381,7 @@ const {
                     type="checkbox"
                     :checked="configForm.autoConfirmShipment === 1"
                     :disabled="selectedGoods.xianyuAutoDeliveryOn !== 1"
-                    @change="configForm.autoConfirmShipment = ($event.target as HTMLInputElement).checked ? 1 : 0"
+                    @change="toggleAutoConfirmShipment(($event.target as HTMLInputElement).checked)"
                   />
                   <span class="ad__switch-track"></span>
                   <span class="ad__switch-thumb"></span>
@@ -599,6 +600,7 @@ const {
                     >
                       {{ getRecordStatusText(record.state) }}
                     </span>
+                    <span v-if="record.state === -1 && record.failReason" class="ad__record-fail-reason" :title="record.failReason">{{ record.failReason }}</span>
                   </td>
                   <td>
                     <span class="ad__record-time">{{ formatTime(record.createTime) }}</span>
@@ -629,6 +631,7 @@ const {
                   >
                     {{ getRecordStatusText(record.state) }}
                   </span>
+                  <span v-if="record.state === -1 && record.failReason" class="ad__record-fail-reason">{{ record.failReason }}</span>
                   <span class="ad__record-time">{{ formatTime(record.createTime) }}</span>
                 </div>
                 <div class="ad__record-card-row">

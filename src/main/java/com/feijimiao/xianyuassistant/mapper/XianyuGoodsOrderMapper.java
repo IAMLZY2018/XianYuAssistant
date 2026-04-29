@@ -11,8 +11,8 @@ import java.util.List;
 @Mapper
 public interface XianyuGoodsOrderMapper {
     
-    @Insert("INSERT INTO xianyu_goods_order (xianyu_account_id, xianyu_goods_id, xy_goods_id, pnm_id, order_id, buyer_user_id, buyer_user_name, content, state, confirm_state) " +
-            "VALUES (#{xianyuAccountId}, #{xianyuGoodsId}, #{xyGoodsId}, #{pnmId}, #{orderId}, #{buyerUserId}, #{buyerUserName}, #{content}, #{state}, #{confirmState})")
+    @Insert("INSERT INTO xianyu_goods_order (xianyu_account_id, xianyu_goods_id, xy_goods_id, pnm_id, order_id, buyer_user_id, buyer_user_name, sid, content, state, fail_reason, confirm_state) " +
+            "VALUES (#{xianyuAccountId}, #{xianyuGoodsId}, #{xyGoodsId}, #{pnmId}, #{orderId}, #{buyerUserId}, #{buyerUserName}, #{sid}, #{content}, #{state}, #{failReason}, #{confirmState})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(XianyuGoodsOrder record);
     
@@ -43,8 +43,10 @@ public interface XianyuGoodsOrderMapper {
         @Result(property = "orderId", column = "order_id"),
         @Result(property = "buyerUserId", column = "buyer_user_id"),
         @Result(property = "buyerUserName", column = "buyer_user_name"),
+        @Result(property = "sid", column = "sid"),
         @Result(property = "content", column = "content"),
         @Result(property = "state", column = "state"),
+        @Result(property = "failReason", column = "fail_reason"),
         @Result(property = "confirmState", column = "confirm_state"),
         @Result(property = "createTime", column = "create_time"),
         @Result(property = "goodsTitle", column = "goods_title")
@@ -69,6 +71,9 @@ public interface XianyuGoodsOrderMapper {
     
     @Update("UPDATE xianyu_goods_order SET state = #{state}, content = #{content} WHERE id = #{id}")
     int updateStateAndContent(@Param("id") Long id, @Param("state") Integer state, @Param("content") String content);
+
+    @Update("UPDATE xianyu_goods_order SET state = #{state}, content = #{content}, fail_reason = #{failReason} WHERE id = #{id}")
+    int updateStateContentAndFailReason(@Param("id") Long id, @Param("state") Integer state, @Param("content") String content, @Param("failReason") String failReason);
     
     @Select("SELECT * FROM xianyu_goods_order WHERE xianyu_account_id = #{accountId} AND xy_goods_id = #{xyGoodsId} AND order_id = #{orderId} LIMIT 1")
     XianyuGoodsOrder selectByOrderId(@Param("accountId") Long accountId, @Param("xyGoodsId") String xyGoodsId, @Param("orderId") String orderId);

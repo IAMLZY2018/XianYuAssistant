@@ -71,6 +71,10 @@ public class ImageUploadServiceImpl implements ImageUploadService {
             if (cdnUrl == null) {
                 return ResultObject.failed("上传到闲鱼CDN失败");
             }
+            if ("COOKIE_EXPIRED".equals(cdnUrl)) {
+                accountService.updateCookieStatus(accountId, 2);
+                return ResultObject.failed("Cookie已过期，请刷新Cookie");
+            }
             
             log.info("【账号{}】图片上传成功: {}", accountId, cdnUrl);
             return ResultObject.success(cdnUrl);
@@ -203,6 +207,9 @@ public class ImageUploadServiceImpl implements ImageUploadService {
                 log.debug("上传响应: {}", responseBody);
                 
                 return parseUploadResponse(responseBody);
+            } else if (response.statusCode() == 302 || response.statusCode() == 301) {
+                log.error("上传失败: HTTP {}，Cookie已过期（被重定向到登录页）", response.statusCode());
+                return "COOKIE_EXPIRED";
             } else {
                 log.error("上传失败: HTTP {}", response.statusCode());
                 return null;
@@ -219,7 +226,7 @@ public class ImageUploadServiceImpl implements ImageUploadService {
             // 检查是否返回HTML（Cookie失效）
             if (responseBody.contains("<!DOCTYPE html>") || responseBody.contains("<html>")) {
                 log.error("Cookie已失效，返回了登录页面");
-                return null;
+                return "COOKIE_EXPIRED";
             }
             
             JsonNode root = objectMapper.readTree(responseBody);

@@ -50,15 +50,21 @@ const getStatusText = (state: number) => {
 }
 
 const getDeliveryText = (state: number) => {
-  return state === 1 ? '已发货' : '未发货'
+  if (state === 1) return '已发货'
+  if (state === 0) return '待发货'
+  return '失败'
 }
 
 const getDeliveryColor = (state: number) => {
-  return state === 1 ? '#34c759' : '#ff9500'
+  if (state === 1) return '#34c759'
+  if (state === 0) return '#ff9500'
+  return '#ff3b30'
 }
 
 const getDeliveryBg = (state: number) => {
-  return state === 1 ? 'rgba(52, 199, 89, 0.1)' : 'rgba(255, 149, 0, 0.1)'
+  if (state === 1) return 'rgba(52, 199, 89, 0.1)'
+  if (state === 0) return 'rgba(255, 149, 0, 0.1)'
+  return 'rgba(255, 59, 48, 0.1)'
 }
 
 const getConfirmText = (state: number) => {
@@ -93,6 +99,7 @@ const getConfirmBg = (state: number) => {
           >
             {{ getDeliveryText(order.state) }}
           </span>
+          <span v-if="order.state === -1 && order.failReason" class="order-card__fail-reason">{{ order.failReason }}</span>
           <span
             class="order-card__status"
             :style="{
@@ -186,6 +193,7 @@ const getConfirmBg = (state: number) => {
             >
               {{ getDeliveryText(order.state) }}
             </span>
+            <span v-if="order.state === -1 && order.failReason" class="fail-reason" :title="order.failReason">{{ order.failReason }}</span>
           </td>
           <td class="table__td table__td--center">
             <span
@@ -511,6 +519,28 @@ const getConfirmBg = (state: number) => {
   padding: 3px 10px;
   border-radius: 20px;
   line-height: 1;
+}
+
+.fail-reason {
+  display: block;
+  font-size: 11px;
+  color: #ff3b30;
+  margin-top: 2px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-card__fail-reason {
+  display: block;
+  font-size: 11px;
+  color: #ff3b30;
+  margin-top: 2px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .table__action {

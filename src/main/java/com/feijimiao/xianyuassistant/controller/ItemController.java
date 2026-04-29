@@ -6,6 +6,7 @@ import com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoReplyRecord;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoReplyRecordMapper;
 import com.feijimiao.xianyuassistant.service.ItemService;
 import com.feijimiao.xianyuassistant.service.ItemDetailSyncService;
+import com.feijimiao.xianyuassistant.service.AutoDeliveryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -28,9 +29,9 @@ public class ItemController {
     
     @Autowired
     private ItemDetailSyncService itemDetailSyncService;
-    
+
     @Autowired
-    private com.feijimiao.xianyuassistant.service.AutoDeliveryService autoDeliveryService;
+    private AutoDeliveryService autoDeliveryService;
     
     @Autowired
     private XianyuGoodsAutoReplyRecordMapper autoReplyRecordMapper;
@@ -103,6 +104,21 @@ public class ItemController {
         } catch (Exception e) {
             log.error("更新商品自动发货状态失败", e);
             return ResultObject.failed("更新商品自动发货状态失败: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/updateAutoConfirmShipment")
+    public ResultObject<String> updateAutoConfirmShipment(@RequestBody java.util.Map<String, Object> params) {
+        try {
+            Long accountId = Long.parseLong(params.get("xianyuAccountId").toString());
+            String xyGoodsId = params.get("xyGoodsId").toString();
+            Integer autoConfirmShipment = Integer.parseInt(params.get("autoConfirmShipment").toString());
+            log.info("更新自动确认发货状态: xianyuAccountId={}, xyGoodsId={}, autoConfirmShipment={}", accountId, xyGoodsId, autoConfirmShipment);
+            autoDeliveryService.updateAutoConfirmShipment(accountId, xyGoodsId, autoConfirmShipment);
+            return ResultObject.success("更新成功");
+        } catch (Exception e) {
+            log.error("更新自动确认发货状态失败", e);
+            return ResultObject.failed("更新失败: " + e.getMessage());
         }
     }
     

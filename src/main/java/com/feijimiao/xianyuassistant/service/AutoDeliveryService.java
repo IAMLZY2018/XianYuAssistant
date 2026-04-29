@@ -54,10 +54,28 @@ public interface AutoDeliveryService {
             com.feijimiao.xianyuassistant.controller.dto.AutoDeliveryRecordReqDTO reqDTO);
 
     /**
-     * 触发自动发货
+     * 手动触发发货
      *
      * @param reqDTO 触发发货请求DTO
      * @return 操作结果
      */
     ResultObject<String> triggerAutoDelivery(TriggerAutoDeliveryReqDTO reqDTO);
+
+    /**
+     * 执行自动发货核心流程（供事件监听器和手动触发共用）
+     *
+     * @param recordId 发货记录ID
+     * @param accountId 账号ID
+     * @param xyGoodsId 商品ID
+     * @param sId 会话ID（带@goofish后缀）
+     * @param orderId 订单ID
+     * @param buyerUserName 买家用户名
+     * @param needHumanLikeDelay 是否模拟人工延迟
+     */
+    void executeDelivery(Long recordId, Long accountId, String xyGoodsId, String sId, String orderId, String buyerUserName, boolean needHumanLikeDelay);
+
+    /**
+     * 更新自动确认发货开关
+     */
+    void updateAutoConfirmShipment(Long accountId, String xyGoodsId, Integer autoConfirmShipment);
 }

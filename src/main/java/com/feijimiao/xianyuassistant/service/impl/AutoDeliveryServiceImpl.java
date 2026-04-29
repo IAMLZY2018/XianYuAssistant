@@ -13,6 +13,7 @@ import com.feijimiao.xianyuassistant.mapper.XianyuGoodsConfigMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuKamiUsageRecordMapper;
 import com.feijimiao.xianyuassistant.service.AutoDeliveryService;
 import com.feijimiao.xianyuassistant.service.KamiConfigService;
+import com.feijimiao.xianyuassistant.service.OrderService;
 import com.feijimiao.xianyuassistant.service.WebSocketService;
 import com.feijimiao.xianyuassistant.utils.HumanLikeDelayUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -55,6 +56,9 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
 
     @Autowired
     private XianyuKamiUsageRecordMapper kamiUsageRecordMapper;
+
+    @Autowired
+    private OrderService orderService;
     
     @Override
     public XianyuGoodsConfig getGoodsConfig(Long accountId, String xyGoodsId) {
@@ -266,11 +270,12 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             Long accountId = reqDTO.getXianyuAccountId();
             String xyGoodsId = reqDTO.getXyGoodsId();
             String orderId = reqDTO.getOrderId();
+            Boolean needHumanLikeDelay = reqDTO.getNeedHumanLikeDelay() != null ? reqDTO.getNeedHumanLikeDelay() : false;
 
-            log.info("【账号{}】触发自动发货: xyGoodsId={}, orderId={}", accountId, xyGoodsId, orderId);
+            log.info("【账号{}】触发自动发货: xyGoodsId={}, orderId={}, needHumanLikeDelay={}", 
+                    accountId, xyGoodsId, orderId, needHumanLikeDelay);
 
             XianyuGoodsOrder record = orderMapper.selectByOrderId(accountId, xyGoodsId, orderId);
-            
             if (record == null) {
                 log.warn("【账号{}】发货记录不存在: orderId={}", accountId, orderId);
                 return com.feijimiao.xianyuassistant.common.ResultObject.failed("发货记录不存在");
@@ -283,7 +288,7 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             }
 
             Long recordId = record.getId();
-            String buyerUserId = record.getBuyerUserId();
+            String sId = record.getSid() != null ? record.getSid() : record.getBuyerUserId() + "@goofish";
             String buyerUserName = record.getBuyerUserName();
 
             XianyuGoodsConfig goodsConfig = goodsConfigMapper.selectByAccountAndGoodsId(accountId, xyGoodsId);
@@ -291,87 +296,15 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
                 log.info("【账号{}】商品未开启自动发货: xyGoodsId={}", accountId, xyGoodsId);
                 return com.feijimiao.xianyuassistant.common.ResultObject.failed("商品未开启自动发货");
             }
-            
-            XianyuGoodsAutoDeliveryConfig deliveryConfig = autoDeliveryConfigMapper.findByAccountIdAndGoodsId(accountId, xyGoodsId);
-            if (deliveryConfig == null) {
-                log.warn("【账号{}】商品未配置发货模式: xyGoodsId={}", accountId, xyGoodsId);
-                orderMapper.updateStateAndContent(recordId, -1, null);
-                return com.feijimiao.xianyuassistant.common.ResultObject.failed("商品未配置发货模式");
-            }
 
-            int deliveryMode = deliveryConfig.getDeliveryMode() != null ? deliveryConfig.getDeliveryMode() : 1;
-            String content = null;
+            executeDelivery(recordId, accountId, xyGoodsId, sId, orderId, buyerUserName, needHumanLikeDelay);
 
-            if (deliveryMode == 1) {
-                if (deliveryConfig.getAutoDeliveryContent() == null || deliveryConfig.getAutoDeliveryContent().isEmpty()) {
-                    log.warn("【账号{}】自动发货模式下未配置发货内容: xyGoodsId={}", accountId, xyGoodsId);
-                    orderMapper.updateStateAndContent(recordId, -1, null);
-                    return com.feijimiao.xianyuassistant.common.ResultObject.failed("未配置发货内容");
-                }
-                content = deliveryConfig.getAutoDeliveryContent();
-                log.info("【账号{}】自动发货模式: content={}", accountId, content);
-            } else if (deliveryMode == 2) {
-                String sId = buyerUserId + "@goofish";
-                content = acquireKamiContent(deliveryConfig.getKamiConfigIds(), deliveryConfig.getKamiDeliveryTemplate(), orderId, accountId, xyGoodsId, sId, recordId, buyerUserName);
-                if (content == null) {
-                    log.warn("【账号{}】卡密发货模式下无可用卡密: xyGoodsId={}, kamiConfigIds={}", accountId, xyGoodsId, deliveryConfig.getKamiConfigIds());
-                    orderMapper.updateStateAndContent(recordId, -1, "卡密库存不足，无可用卡密");
-                    return com.feijimiao.xianyuassistant.common.ResultObject.failed("卡密库存不足");
-                }
-                log.info("【账号{}】卡密发货模式: acquiredKami length={}", accountId, content.length());
-            } else if (deliveryMode == 3) {
-                log.info("【账号{}】自定义发货模式，不自动发送消息: xyGoodsId={}", accountId, xyGoodsId);
-                orderMapper.updateStateAndContent(recordId, 1, "自定义发货-请通过API处理");
-                return com.feijimiao.xianyuassistant.common.ResultObject.success("自定义发货模式，请通过API处理");
-            } else {
-                log.warn("【账号{}】未知的发货模式: deliveryMode={}", accountId, deliveryMode);
-                orderMapper.updateStateAndContent(recordId, -1, null);
-                return com.feijimiao.xianyuassistant.common.ResultObject.failed("未知的发货模式");
-            }
-            
-            log.info("【账号{}】准备发送发货消息: deliveryMode={}", accountId, deliveryMode);
-            
-            HumanLikeDelayUtils.mediumDelay();
-            HumanLikeDelayUtils.thinkingDelay();
-            HumanLikeDelayUtils.typingDelay(content.length());
-            
-            String sId = buyerUserId + "@goofish";
-            String cid = sId.replace("@goofish", "");
-            String toId = cid;
-            
-            String imageUrlStr = deliveryConfig.getAutoDeliveryImageUrl();
-            if (imageUrlStr != null && !imageUrlStr.trim().isEmpty()) {
-                String[] imageUrls = imageUrlStr.split(",");
-                for (int i = 0; i < imageUrls.length; i++) {
-                    String url = imageUrls[i].trim();
-                    if (!url.isEmpty()) {
-                        HumanLikeDelayUtils.thinkingDelay();
-                        boolean imgSuccess = webSocketService.sendImageMessage(accountId, cid, toId, url, 800, 800);
-                        if (imgSuccess) {
-                            log.info("【账号{}】自动发货图片[{}/{}]发送成功: xyGoodsId={}", accountId, i + 1, imageUrls.length, xyGoodsId);
-                            sentMessageSaveService.saveManualImageReply(accountId, cid, toId, url, xyGoodsId);
-                        } else {
-                            log.warn("【账号{}】自动发货图片[{}/{}]发送失败: xyGoodsId={}", accountId, i + 1, imageUrls.length, xyGoodsId);
-                        }
-                    }
-                }
-            }
-            
-            log.info("【账号{}】准备发送发货文本: content长度={}, deliveryMode={}", accountId, content != null ? content.length() : 0, deliveryMode);
-            
-            boolean success = webSocketService.sendMessage(accountId, cid, toId, content);
-            
-            if (success) {
-                log.info("【账号{}】✅ 自动发货成功: recordId={}, xyGoodsId={}, deliveryMode={}", 
-                        accountId, recordId, xyGoodsId, deliveryMode);
-                orderMapper.updateStateAndContent(recordId, 1, content);
-                
-                sentMessageSaveService.saveAiAssistantReply(accountId, cid, toId, content, xyGoodsId);
+            XianyuGoodsOrder updatedRecord = orderMapper.selectByOrderId(accountId, xyGoodsId, orderId);
+            if (updatedRecord != null && updatedRecord.getState() == 1) {
                 return com.feijimiao.xianyuassistant.common.ResultObject.success("触发自动发货成功");
             } else {
-                log.error("【账号{}】❌ 自动发货失败: recordId={}, xyGoodsId={}", accountId, recordId, xyGoodsId);
-                orderMapper.updateStateAndContent(recordId, -1, content);
-                return com.feijimiao.xianyuassistant.common.ResultObject.failed("发送消息失败");
+                String failReason = updatedRecord != null ? updatedRecord.getFailReason() : "未知错误";
+                return com.feijimiao.xianyuassistant.common.ResultObject.failed(failReason != null ? failReason : "发货失败");
             }
 
         } catch (Exception e) {
@@ -381,11 +314,184 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
         }
     }
 
-    private String acquireKamiContent(String kamiConfigIds, String kamiDeliveryTemplate, String orderId, Long accountId, String xyGoodsId, String sId, Long recordId, String buyerUserName) {
+    @Override
+    public void executeDelivery(Long recordId, Long accountId, String xyGoodsId, String sId, String orderId, String buyerUserName, boolean needHumanLikeDelay) {
+        try {
+            log.info("【账号{}】开始执行自动发货: recordId={}, xyGoodsId={}, orderId={}", accountId, recordId, xyGoodsId, orderId);
+
+            XianyuGoodsAutoDeliveryConfig deliveryConfig = autoDeliveryConfigMapper.findByAccountIdAndGoodsId(accountId, xyGoodsId);
+            if (deliveryConfig == null) {
+                log.warn("【账号{}】商品未配置发货模式: xyGoodsId={}", accountId, xyGoodsId);
+                updateRecordState(recordId, -1, null, "商品未配置发货模式");
+                return;
+            }
+
+            int deliveryMode = deliveryConfig.getDeliveryMode() != null ? deliveryConfig.getDeliveryMode() : 1;
+            String content = resolveDeliveryContent(deliveryMode, deliveryConfig, recordId, accountId, xyGoodsId, sId, orderId, buyerUserName);
+            if (content == null) {
+                return;
+            }
+
+            if (needHumanLikeDelay) {
+                log.debug("【账号{}】模拟人工操作延迟...", accountId);
+                HumanLikeDelayUtils.mediumDelay();
+                HumanLikeDelayUtils.thinkingDelay();
+                HumanLikeDelayUtils.typingDelay(content.length());
+            }
+
+            String cid = sId.replace("@goofish", "");
+            String toId = cid;
+
+            sendDeliveryImages(accountId, xyGoodsId, cid, toId, deliveryConfig, needHumanLikeDelay);
+
+            log.info("【账号{}】准备发送发货文本: content长度={}, deliveryMode={}", accountId, content.length(), deliveryMode);
+            boolean success = webSocketService.sendMessage(accountId, cid, toId, content);
+
+            if (success) {
+                log.info("【账号{}】✅ 自动发货成功: recordId={}, xyGoodsId={}, deliveryMode={}", accountId, recordId, xyGoodsId, deliveryMode);
+                updateRecordState(recordId, 1, content, null);
+                sentMessageSaveService.saveAiAssistantReply(accountId, cid, toId, content, xyGoodsId);
+
+                if (deliveryConfig.getAutoConfirmShipment() != null && deliveryConfig.getAutoConfirmShipment() == 1) {
+                    log.info("【账号{}】检测到自动确认发货开关已开启，准备自动确认发货: orderId={}", accountId, orderId);
+                    executeAutoConfirmShipment(accountId, orderId);
+                }
+            } else {
+                log.error("【账号{}】❌ 自动发货失败(服务端拒绝): recordId={}, xyGoodsId={}", accountId, recordId, xyGoodsId);
+                updateRecordState(recordId, -1, content, "消息发送失败");
+            }
+
+        } catch (Exception e) {
+            log.error("【账号{}】执行自动发货异常: recordId={}, xyGoodsId={}", accountId, recordId, xyGoodsId, e);
+            updateRecordState(recordId, -1, null, "发货异常: " + e.getMessage());
+        }
+    }
+
+    private String resolveDeliveryContent(int deliveryMode, XianyuGoodsAutoDeliveryConfig deliveryConfig,
+                                          Long recordId, Long accountId, String xyGoodsId, String sId, String orderId, String buyerUserName) {
+        if (deliveryMode == 1) {
+            if (deliveryConfig.getAutoDeliveryContent() == null || deliveryConfig.getAutoDeliveryContent().isEmpty()) {
+                log.warn("【账号{}】自动发货模式下未配置发货内容: xyGoodsId={}", accountId, xyGoodsId);
+                updateRecordState(recordId, -1, null, "未配置发货内容");
+                return null;
+            }
+            log.info("【账号{}】文本发货模式", accountId);
+            return deliveryConfig.getAutoDeliveryContent();
+        } else if (deliveryMode == 2) {
+            String content = acquireKamiContent(deliveryConfig.getKamiConfigIds(), deliveryConfig.getKamiDeliveryTemplate(), orderId, accountId, xyGoodsId, sId, buyerUserName);
+            if (content == null) {
+                log.warn("【账号{}】卡密发货模式下无可用卡密: xyGoodsId={}, kamiConfigIds={}", accountId, xyGoodsId, deliveryConfig.getKamiConfigIds());
+                updateRecordState(recordId, -1, null, "卡密库存不足，无可用卡密");
+                return null;
+            }
+            log.info("【账号{}】卡密发货模式: content长度={}", accountId, content.length());
+            return content;
+        } else if (deliveryMode == 3) {
+            log.info("【账号{}】自定义发货模式，不自动发送消息: xyGoodsId={}", accountId, xyGoodsId);
+            updateRecordState(recordId, 1, "自定义发货-请通过API处理", null);
+            return null;
+        } else {
+            log.warn("【账号{}】未知的发货模式: deliveryMode={}", accountId, deliveryMode);
+            updateRecordState(recordId, -1, null, "未知的发货模式: " + deliveryMode);
+            return null;
+        }
+    }
+
+    private void sendDeliveryImages(Long accountId, String xyGoodsId, String cid, String toId,
+                                    XianyuGoodsAutoDeliveryConfig deliveryConfig, boolean needHumanLikeDelay) {
+        String imageUrlStr = deliveryConfig.getAutoDeliveryImageUrl();
+        if (imageUrlStr == null || imageUrlStr.trim().isEmpty()) {
+            return;
+        }
+        String[] imageUrls = imageUrlStr.split(",");
+        for (int i = 0; i < imageUrls.length; i++) {
+            String url = imageUrls[i].trim();
+            if (url.isEmpty()) continue;
+            if (i > 0) {
+                if (needHumanLikeDelay) {
+                    HumanLikeDelayUtils.thinkingDelay();
+                } else {
+                    try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                }
+            }
+            boolean imgSuccess = webSocketService.sendImageMessage(accountId, cid, toId, url, 800, 800);
+            if (imgSuccess) {
+                log.info("【账号{}】自动发货图片[{}/{}]发送成功: xyGoodsId={}", accountId, i + 1, imageUrls.length, xyGoodsId);
+                sentMessageSaveService.saveManualImageReply(accountId, cid, toId, url, xyGoodsId);
+            } else {
+                log.warn("【账号{}】自动发货图片[{}/{}]发送失败: xyGoodsId={}", accountId, i + 1, imageUrls.length, xyGoodsId);
+            }
+        }
+    }
+
+    private void executeAutoConfirmShipment(Long accountId, String orderId) {
+        if (orderId == null || orderId.isEmpty()) {
+            log.warn("【账号{}】订单ID为空，无法自动确认发货", accountId);
+            return;
+        }
+        log.info("【账号{}】提交异步自动确认发货: orderId={}", accountId, orderId);
+        new Thread(() -> {
+            try {
+                HumanLikeDelayUtils.longDelay();
+                String result = orderService.confirmShipment(accountId, orderId);
+                if (result != null) {
+                    log.info("【账号{}】✅ 自动确认发货成功: orderId={}", accountId, orderId);
+                } else {
+                    log.error("【账号{}】❌ 自动确认发货失败: orderId={}", accountId, orderId);
+                }
+            } catch (Exception e) {
+                log.error("【账号{}】自动确认发货异常: orderId={}", accountId, orderId, e);
+            }
+        }).start();
+    }
+
+    private void updateRecordState(Long recordId, Integer state, String content, String failReason) {
+        try {
+            orderMapper.updateStateContentAndFailReason(recordId, state, content, failReason);
+        } catch (Exception e) {
+            log.error("更新订单状态失败: recordId={}, state={}", recordId, state, e);
+        }
+    }
+
+    @Override
+    public void updateAutoConfirmShipment(Long accountId, String xyGoodsId, Integer autoConfirmShipment) {
+        XianyuGoodsAutoDeliveryConfig config = autoDeliveryConfigMapper.findByAccountIdAndGoodsId(accountId, xyGoodsId);
+        if (config == null) {
+            config = new XianyuGoodsAutoDeliveryConfig();
+            config.setXianyuAccountId(accountId);
+            config.setXyGoodsId(xyGoodsId);
+            config.setAutoConfirmShipment(autoConfirmShipment);
+            autoDeliveryConfigMapper.insert(config);
+        } else {
+            config.setAutoConfirmShipment(autoConfirmShipment);
+            autoDeliveryConfigMapper.updateById(config);
+        }
+    }
+
+    private String acquireKamiContent(String kamiConfigIds, String kamiDeliveryTemplate, String orderId, Long accountId, String xyGoodsId, String sId, String buyerUserName) {
         if (kamiConfigIds == null || kamiConfigIds.trim().isEmpty()) {
             log.warn("【账号{}】卡密发货未绑定卡密配置: xyGoodsId={}", accountId, xyGoodsId);
             return null;
         }
+        
+        // 先检查该订单是否已经分配过卡密（防止重复点击）
+        XianyuKamiUsageRecord existingRecord = kamiUsageRecordMapper.selectOne(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<XianyuKamiUsageRecord>()
+                        .eq(XianyuKamiUsageRecord::getOrderId, orderId)
+                        .eq(XianyuKamiUsageRecord::getXianyuAccountId, accountId)
+                        .last("LIMIT 1")
+        );
+        
+        if (existingRecord != null) {
+            log.info("【账号{}】订单已分配过卡密，直接返回: orderId={}, kamiItemId={}", 
+                    accountId, orderId, existingRecord.getKamiItemId());
+            String kamiContent = existingRecord.getKamiContent();
+            if (kamiDeliveryTemplate != null && !kamiDeliveryTemplate.trim().isEmpty()) {
+                kamiContent = kamiDeliveryTemplate.replace("{kmKey}", kamiContent);
+            }
+            return kamiContent;
+        }
+        
         String[] configIdArr = kamiConfigIds.split(",");
         for (String configIdStr : configIdArr) {
             try {
@@ -402,8 +508,29 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
                     String cid = sId.replace("@goofish", "");
                     usageRecord.setBuyerUserId(cid);
                     usageRecord.setBuyerUserName(buyerUserName);
-                    kamiUsageRecordMapper.insert(usageRecord);
-                    log.info("【账号{}】卡密发货成功: configId={}, itemId={}, orderId={}", accountId, configId, kamiItem.getId(), orderId);
+                    
+                    try {
+                        kamiUsageRecordMapper.insert(usageRecord);
+                        log.info("【账号{}】卡密发货成功: configId={}, itemId={}, orderId={}", 
+                                accountId, configId, kamiItem.getId(), orderId);
+                    } catch (org.springframework.dao.DuplicateKeyException e) {
+                        // 并发情况下可能已经插入，查询已存在的记录
+                        log.warn("【账号{}】卡密使用记录已存在（并发插入），查询已有记录: orderId={}", accountId, orderId);
+                        XianyuKamiUsageRecord concurrentRecord = kamiUsageRecordMapper.selectOne(
+                                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<XianyuKamiUsageRecord>()
+                                        .eq(XianyuKamiUsageRecord::getOrderId, orderId)
+                                        .eq(XianyuKamiUsageRecord::getXianyuAccountId, accountId)
+                                        .last("LIMIT 1")
+                        );
+                        if (concurrentRecord != null) {
+                            String kamiContent = concurrentRecord.getKamiContent();
+                            if (kamiDeliveryTemplate != null && !kamiDeliveryTemplate.trim().isEmpty()) {
+                                kamiContent = kamiDeliveryTemplate.replace("{kmKey}", kamiContent);
+                            }
+                            return kamiContent;
+                        }
+                    }
+                    
                     String kamiContent = kamiItem.getKamiContent();
                     if (kamiDeliveryTemplate != null && !kamiDeliveryTemplate.trim().isEmpty()) {
                         kamiContent = kamiDeliveryTemplate.replace("{kmKey}", kamiContent);

@@ -55,6 +55,17 @@ public interface WebSocketService {
     boolean sendMessage(Long accountId, String cid, String toId, String text);
     
     /**
+     * 发送消息并等待服务端响应结果
+     *
+     * @param accountId 账号ID
+     * @param cid 会话ID
+     * @param toId 接收方用户ID
+     * @param text 消息文本内容
+     * @return true=服务端返回200，false=失败
+     */
+    boolean sendMessageWithResult(Long accountId, String cid, String toId, String text);
+    
+    /**
      * 发送图片消息
      *
      * @param accountId 账号ID
