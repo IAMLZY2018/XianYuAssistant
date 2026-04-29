@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { generateQRCode, getQRCodeStatus, getQRCodeCookies } from '@/api/qrlogin'
-import { updateCookie, updateToken } from '@/api/websocket'
+import { updateCookie, updateToken, startConnection } from '@/api/websocket'
 import { showSuccess, showError } from '@/utils'
 import type { QRLoginSession } from '@/types'
 
@@ -118,8 +118,19 @@ const handleLoginSuccess = async () => {
       return
     }
 
-    // 4. 处理结果
-    showSuccess('Cookie更新成功')
+    // 4. 自动启动连接
+    statusText.value = 'Cookie更新成功，正在启动连接...'
+    try {
+      const startRes = await startConnection(props.accountId)
+      if (startRes.code === 0 || startRes.code === 200) {
+        showSuccess('Cookie更新成功，连接已启动')
+      } else {
+        showSuccess('Cookie更新成功，请手动启动连接')
+      }
+    } catch (startError) {
+      showSuccess('Cookie更新成功，请手动启动连接')
+    }
+
     emit('success')
     handleClose()
 

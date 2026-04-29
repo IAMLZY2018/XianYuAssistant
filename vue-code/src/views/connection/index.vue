@@ -76,7 +76,7 @@ onUnmounted(() => {
         <div class="connection__title-icon"><IconLink /></div>
         <h1 class="connection__title mobile-hidden">连接管理</h1>
       </div>
-      <div class="connection__actions">
+      <div v-if="!isMobile" class="connection__actions">
         <button
           class="btn btn--secondary"
           :class="{ 'btn--loading': loading }"
@@ -96,15 +96,6 @@ onUnmounted(() => {
           账号列表
           <span v-if="accounts.length" class="connection__count">{{ accounts.length }}</span>
         </span>
-        <button
-          v-if="selectedAccountId && !isMobile"
-          class="btn btn--ghost"
-          @click="handleRefresh"
-          :disabled="statusLoading"
-        >
-          <IconSync />
-          <span>刷新状态</span>
-        </button>
       </div>
 
       <!-- Desktop: Split layout -->

@@ -34,6 +34,9 @@ public class WebSocketController {
     
     @Autowired
     private com.feijimiao.xianyuassistant.service.SentMessageSaveService sentMessageSaveService;
+    
+    @Autowired
+    private com.feijimiao.xianyuassistant.service.OperationLogService operationLogService;
 
     /**
      * 启动WebSocket连接
@@ -335,6 +338,7 @@ public class WebSocketController {
             if (cookie != null) {
                 respDTO.setCookieStatus(cookie.getCookieStatus());
                 respDTO.setCookieText(cookie.getCookieText());
+                respDTO.setMH5Tk(cookie.getMH5Tk());
                 respDTO.setWebsocketToken(cookie.getWebsocketToken());
                 respDTO.setTokenExpireTime(cookie.getTokenExpireTime());
 
@@ -454,11 +458,32 @@ public class WebSocketController {
                     applicationContext.getBean(com.feijimiao.xianyuassistant.service.AccountService.class);
             accountService.updateAccountCookie(reqDTO.getXianyuAccountId(), unb, reqDTO.getCookieText());
             
+            // 记录操作日志
+            operationLogService.log(reqDTO.getXianyuAccountId(),
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.Type.UPDATE,
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.Module.COOKIE,
+                    "Cookie手动更新成功",
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.Status.SUCCESS,
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.COOKIE,
+                    String.valueOf(reqDTO.getXianyuAccountId()),
+                    null, null, null, null);
+            
             UpdateCookieRespDTO respDTO = new UpdateCookieRespDTO();
             respDTO.setMessage("Cookie更新成功");
             return ResultObject.success(respDTO);
         } catch (Exception e) {
             log.error("更新Cookie失败", e);
+            
+            // 记录失败日志
+            operationLogService.log(reqDTO.getXianyuAccountId(),
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.Type.UPDATE,
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.Module.COOKIE,
+                    "Cookie手动更新失败",
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.Status.FAIL,
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.COOKIE,
+                    String.valueOf(reqDTO.getXianyuAccountId()),
+                    null, null, e.getMessage(), null);
+            
             return ResultObject.failed("更新Cookie失败: " + e.getMessage());
         }
     }
@@ -496,20 +521,60 @@ public class WebSocketController {
             if (mh5tkSuccess && wsTokenSuccess) {
                 respDTO.setMessage("✅ 所有Token刷新成功");
                 log.info("【账号{}】✅ 所有Token刷新成功", reqDTO.getXianyuAccountId());
+                
+                operationLogService.log(reqDTO.getXianyuAccountId(),
+                        com.feijimiao.xianyuassistant.constants.OperationConstants.Type.REFRESH,
+                        com.feijimiao.xianyuassistant.constants.OperationConstants.Module.TOKEN,
+                        "Token手动刷新成功",
+                        com.feijimiao.xianyuassistant.constants.OperationConstants.Status.SUCCESS,
+                        com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.TOKEN,
+                        String.valueOf(reqDTO.getXianyuAccountId()),
+                        null, null, null, null);
+                
                 return ResultObject.success(respDTO);
             } else if (mh5tkSuccess || wsTokenSuccess) {
                 respDTO.setMessage("⚠️ 部分Token刷新成功");
                 log.warn("【账号{}】⚠️ 部分Token刷新成功: _m_h5_tk={}, websocket_token={}", 
                         reqDTO.getXianyuAccountId(), mh5tkSuccess, wsTokenSuccess);
+                
+                operationLogService.log(reqDTO.getXianyuAccountId(),
+                        com.feijimiao.xianyuassistant.constants.OperationConstants.Type.REFRESH,
+                        com.feijimiao.xianyuassistant.constants.OperationConstants.Module.TOKEN,
+                        "Token部分刷新成功",
+                        com.feijimiao.xianyuassistant.constants.OperationConstants.Status.PARTIAL,
+                        com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.TOKEN,
+                        String.valueOf(reqDTO.getXianyuAccountId()),
+                        null, null, "_m_h5_tk=" + mh5tkSuccess + ", ws=" + wsTokenSuccess, null);
+                
                 return ResultObject.success(respDTO);
             } else {
                 respDTO.setMessage("❌ Token刷新失败，请检查Cookie是否有效");
                 log.error("【账号{}】❌ Token刷新失败", reqDTO.getXianyuAccountId());
+                
+                operationLogService.log(reqDTO.getXianyuAccountId(),
+                        com.feijimiao.xianyuassistant.constants.OperationConstants.Type.REFRESH,
+                        com.feijimiao.xianyuassistant.constants.OperationConstants.Module.TOKEN,
+                        "Token手动刷新失败",
+                        com.feijimiao.xianyuassistant.constants.OperationConstants.Status.FAIL,
+                        com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.TOKEN,
+                        String.valueOf(reqDTO.getXianyuAccountId()),
+                        null, null, "Cookie可能无效", null);
+                
                 return ResultObject.failed("Token刷新失败，请检查Cookie是否有效");
             }
             
         } catch (Exception e) {
             log.error("手动刷新Token异常: xianyuAccountId={}", reqDTO.getXianyuAccountId(), e);
+            
+            operationLogService.log(reqDTO.getXianyuAccountId(),
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.Type.REFRESH,
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.Module.TOKEN,
+                    "Token手动刷新异常",
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.Status.FAIL,
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.TOKEN,
+                    String.valueOf(reqDTO.getXianyuAccountId()),
+                    null, null, e.getMessage(), null);
+            
             return ResultObject.failed("刷新Token异常: " + e.getMessage());
         }
     }
@@ -538,10 +603,30 @@ public class WebSocketController {
             tokenService.saveToken(reqDTO.getXianyuAccountId(), reqDTO.getWebsocketToken().trim());
             
             log.info("【账号{}】✅ WebSocket Token手动更新成功", reqDTO.getXianyuAccountId());
+            
+            operationLogService.log(reqDTO.getXianyuAccountId(),
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.Type.UPDATE,
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.Module.TOKEN,
+                    "WebSocket Token手动更新成功",
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.Status.SUCCESS,
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.TOKEN,
+                    String.valueOf(reqDTO.getXianyuAccountId()),
+                    null, null, null, null);
+            
             return ResultObject.success("Token更新成功");
             
         } catch (Exception e) {
             log.error("手动更新Token异常: xianyuAccountId={}", reqDTO.getXianyuAccountId(), e);
+            
+            operationLogService.log(reqDTO.getXianyuAccountId(),
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.Type.UPDATE,
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.Module.TOKEN,
+                    "WebSocket Token手动更新失败",
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.Status.FAIL,
+                    com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.TOKEN,
+                    String.valueOf(reqDTO.getXianyuAccountId()),
+                    null, null, e.getMessage(), null);
+            
             return ResultObject.failed("更新Token异常: " + e.getMessage());
         }
     }
@@ -691,6 +776,7 @@ public class WebSocketController {
         private String status;         // 连接状态描述
         private Integer cookieStatus;  // Cookie状态 1:有效 2:过期 3:失效
         private String cookieText;     // Cookie值
+        private String mH5Tk;          // H5 Token (_m_h5_tk)
         private String websocketToken; // WebSocket Token
         private Long tokenExpireTime;  // Token过期时间戳（毫秒）
     }

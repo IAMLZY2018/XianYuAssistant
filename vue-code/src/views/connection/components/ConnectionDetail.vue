@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, computed, onBeforeUnmount } from 'vue'
 import { ElMessageBox } from 'element-plus'
 import { getConnectionStatus, startConnection, stopConnection } from '@/api/websocket'
+import { queryOperationLogs, type OperationLog } from '@/api/operation-log'
 import { showSuccess, showError, showInfo } from '@/utils'
 import ManualUpdateCookieDialog from './ManualUpdateCookieDialog.vue'
-import ManualUpdateTokenDialog from './ManualUpdateTokenDialog.vue'
 import QRUpdateDialog from './QRUpdateDialog.vue'
 import CaptchaGuideDialog from './CaptchaGuideDialog.vue'
 
@@ -16,13 +16,9 @@ import IconPlay from '@/components/icons/IconPlay.vue'
 import IconStop from '@/components/icons/IconStop.vue'
 import IconQrCode from '@/components/icons/IconQrCode.vue'
 import IconRefresh from '@/components/icons/IconRefresh.vue'
-import IconClock from '@/components/icons/IconClock.vue'
-import IconHelp from '@/components/icons/IconHelp.vue'
-import IconEdit from '@/components/icons/IconEdit.vue'
 import IconLog from '@/components/icons/IconLog.vue'
 import IconCheck from '@/components/icons/IconCheck.vue'
 import IconAlert from '@/components/icons/IconAlert.vue'
-import IconShield from '@/components/icons/IconShield.vue'
 import IconLink from '@/components/icons/IconLink.vue'
 
 interface ConnectionStatus {
@@ -31,6 +27,7 @@ interface ConnectionStatus {
   status: string
   cookieStatus?: number
   cookieText?: string
+  mH5Tk?: string
   websocketToken?: string
   tokenExpireTime?: number
 }
@@ -40,27 +37,19 @@ interface Props {
   isMobile?: boolean
 }
 
-interface Emits {
-  (e: 'refresh'): void
-}
-
 const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
 
 const connectionStatus = ref<ConnectionStatus | null>(null)
 const statusLoading = ref(false)
-const logs = ref<Array<{ time: string; message: string; isError?: boolean }>>([])
+const operationLogs = ref<OperationLog[]>([])
 let statusInterval: number | null = null
 
 const showManualUpdateCookieDialog = ref(false)
-const showManualUpdateTokenDialog = ref(false)
 const showQRUpdateDialog = ref(false)
 const showCaptchaGuideDialog = ref(false)
-
-// Mobile detail as overlay
 const showMobileDetail = ref(false)
+const showCredentialDialog = ref(false)
 
-// Load connection status
 const loadConnectionStatus = async (silent = false) => {
   if (!props.accountId) return
   if (!silent) statusLoading.value = true
@@ -68,44 +57,57 @@ const loadConnectionStatus = async (silent = false) => {
     const response = await getConnectionStatus(props.accountId)
     if (response.code === 0 || response.code === 200) {
       connectionStatus.value = response.data as ConnectionStatus
-      if (!silent) addLog('状态已更新')
     } else {
       throw new Error(response.msg || '获取连接状态失败')
     }
   } catch (error: any) {
-    if (!silent) addLog('加载状态失败: ' + error.message, true)
+    console.error('加载状态失败:', error.message)
   } finally {
     statusLoading.value = false
   }
 }
 
-// Start connection
+const loadOperationLogs = async () => {
+  if (!props.accountId) return
+  try {
+    const response = await queryOperationLogs({
+      accountId: props.accountId,
+      page: 1,
+      pageSize: 20
+    })
+    if (response.code === 0 || response.code === 200) {
+      const data = response.data
+      operationLogs.value = (data?.logs || []).filter(
+        (log: OperationLog) => log.operationModule === 'COOKIE' || log.operationModule === 'TOKEN'
+      )
+    }
+  } catch (error: any) {
+    console.error('加载操作日志失败:', error.message)
+  }
+}
+
 const handleStartConnection = async () => {
   if (!props.accountId) return
   statusLoading.value = true
-  addLog('正在启动连接...')
   try {
     const response = await startConnection(props.accountId)
     if (response.code === 0 || response.code === 200) {
       showSuccess('连接启动成功')
-      addLog('连接启动成功')
       await loadConnectionStatus()
     } else if (response.code === 1001 && response.data?.needCaptcha) {
-      addLog('检测到需要滑块验证', true)
       showCaptchaGuideDialog.value = true
     } else {
       throw new Error(response.msg || '启动连接失败')
     }
   } catch (error: any) {
     if (error !== 'cancel' && error !== 'close') {
-      addLog('启动连接失败: ' + error.message, true)
+      showError('启动连接失败: ' + error.message)
     }
   } finally {
     statusLoading.value = false
   }
 }
 
-// Stop connection
 const handleStopConnection = async () => {
   if (!props.accountId) return
   try {
@@ -117,117 +119,39 @@ const handleStopConnection = async () => {
   } catch { return }
 
   statusLoading.value = true
-  addLog('正在断开连接...')
   try {
     const response = await stopConnection(props.accountId)
     if (response.code === 0 || response.code === 200) {
       showSuccess('连接已断开')
-      addLog('连接已断开')
       await loadConnectionStatus()
     } else {
       throw new Error(response.msg || '断开连接失败')
     }
   } catch (error: any) {
-    addLog('断开连接失败: ' + error.message, true)
+    showError('断开连接失败: ' + error.message)
   } finally {
     statusLoading.value = false
   }
 }
 
-// Refresh
-const handleRefresh = () => {
-  loadConnectionStatus()
+const handleRefresh = async () => {
+  await Promise.all([loadConnectionStatus(), loadOperationLogs()])
   showInfo('状态已刷新')
 }
 
-// Add log
-const addLog = (message: string, isError = false) => {
-  const time = new Date().toLocaleTimeString()
-  logs.value.push({ time, message, isError })
-  if (logs.value.length > 50) logs.value.shift()
-}
-
-// Cookie help
-const showCookieHelp = () => {
-  ElMessageBox({
-    title: '如何获取Cookie',
-    message: `
-      <div style="text-align: left;">
-        <p style="margin-bottom: 12px;">请按照以下步骤获取Cookie：</p>
-        <ol style="margin-left: 20px; line-height: 1.8;">
-          <li>打开浏览器，访问闲鱼网站并登录</li>
-          <li>按F12打开开发者工具</li>
-          <li>切换到"网络"(Network)标签</li>
-          <li>刷新页面</li>
-          <li>在请求列表中找到任意请求</li>
-          <li>在请求头中找到Cookie字段</li>
-          <li>复制完整的Cookie值</li>
-        </ol>
-        <div style="margin-top: 16px; text-align: center;">
-          <img src="/cookieGet.png" class="cookie-help-image" alt="Cookie获取示例"
-            onerror="this.style.display='none'" onclick="window.open('/cookieGet.png','_blank')" title="点击查看大图" />
-        </div>
-        <p style="margin-top: 12px; color: #86868b; font-size: 12px; text-align: center;">点击图片可查看大图</p>
-        <p style="margin-top: 8px; color: #ff3b30; font-size: 12px; text-align: center;">Cookie包含敏感信息，请勿泄露给他人</p>
-      </div>`,
-    dangerouslyUseHTMLString: true,
-    confirmButtonText: '知道了',
-    customClass: 'cookie-help-dialog'
-  })
-}
-
-// Token help
-const showTokenHelp = () => {
-  ElMessageBox({
-    title: '如何获取WebSocket Token',
-    message: `
-      <div style="text-align: left;">
-        <p style="margin-bottom: 12px;">请按照以下步骤获取WebSocket Token：</p>
-        <ol style="margin-left: 20px; line-height: 1.8;">
-          <li>打开浏览器，访问<a href="https://www.goofish.com/im" target="_blank" style="color: #007aff;">闲鱼IM页面</a>并登录</li>
-          <li>按F12打开开发者工具</li>
-          <li>切换到"网络"(Network)标签</li>
-          <li>在页面中进行任意操作（如点击聊天）</li>
-          <li>在请求列表中找到WebSocket连接请求</li>
-          <li>查看请求参数或响应中的Token信息</li>
-          <li>复制完整的Token值</li>
-        </ol>
-        <div style="margin-top: 16px; text-align: center;">
-          <img src="/tokenGet.png" class="token-help-image" alt="Token获取示例"
-            onerror="this.style.display='none'" onclick="window.open('/tokenGet.png','_blank')" title="点击查看大图" />
-        </div>
-        <p style="margin-top: 12px; color: #86868b; font-size: 12px; text-align: center;">点击图片可查看大图</p>
-        <p style="margin-top: 8px; color: #ff3b30; font-size: 12px; text-align: center;">Token包含敏感信息，请勿泄露给他人</p>
-      </div>`,
-    dangerouslyUseHTMLString: true,
-    confirmButtonText: '知道了',
-    customClass: 'token-help-dialog'
-  })
-}
-
-// Callbacks
 const handleManualUpdateCookieSuccess = async () => {
-  addLog('Cookie已手动更新')
-  await loadConnectionStatus()
-}
-
-const handleManualUpdateTokenSuccess = async () => {
-  addLog('Token已手动更新')
   await loadConnectionStatus()
 }
 
 const handleQRUpdateSuccess = async () => {
-  addLog('Cookie和Token已通过扫码更新')
   await loadConnectionStatus()
 }
 
 const handleCaptchaConfirm = () => {
   window.open('https://www.goofish.com/im', '_blank')
-  addLog('已打开闲鱼IM页面')
   showInfo('请完成验证后使用帮助按钮获取凭证')
 }
 
-// Helpers
 const getCookieStatusText = (status?: number) => {
   if (status === undefined || status === null) return '未知'
   const map: Record<number, string> = { 1: '有效', 2: '过期', 3: '失效' }
@@ -241,19 +165,13 @@ const getCookieStatusColor = (status?: number) => {
   return '#86868b'
 }
 
-const getCookieStatusBg = (status?: number) => {
-  if (status === 1) return 'rgba(52, 199, 89, 0.1)'
-  if (status === 2) return 'rgba(255, 149, 0, 0.1)'
-  if (status === 3) return 'rgba(255, 59, 48, 0.1)'
-  return 'rgba(134, 134, 139, 0.1)'
-}
-
 const formatTimestamp = (timestamp?: number) => {
   if (!timestamp) return '未设置'
-  return new Date(timestamp).toLocaleString('zh-CN', {
+  const date = new Date(timestamp)
+  return date.toLocaleString('zh-CN', {
     year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit', second: '2-digit'
-  })
+  }).replace(/\//g, '-')
 }
 
 const isTokenExpired = (timestamp?: number) => {
@@ -271,23 +189,46 @@ const getTokenStatusColor = (timestamp?: number) => {
   return isTokenExpired(timestamp) ? '#ff3b30' : '#34c759'
 }
 
-const getTokenStatusBg = (timestamp?: number) => {
-  if (!timestamp) return 'rgba(134, 134, 139, 0.1)'
-  return isTokenExpired(timestamp) ? 'rgba(255, 59, 48, 0.1)' : 'rgba(52, 199, 89, 0.1)'
+const getMH5TkStatusText = (mH5Tk?: string) => {
+  if (!mH5Tk) return '未设置'
+  return '有效'
 }
 
-// Watch accountId changes
+const getMH5TkStatusColor = (mH5Tk?: string) => {
+  if (!mH5Tk) return '#86868b'
+  return '#34c759'
+}
+
+const getOperationStatusText = (status: number) => {
+  const map: Record<number, string> = { 1: '成功', 2: '失败', 3: '部分成功' }
+  return map[status] || '未知'
+}
+
+const getOperationStatusColor = (status: number) => {
+  if (status === 1) return '#34c759'
+  if (status === 2) return '#ff3b30'
+  if (status === 3) return '#ff9500'
+  return '#86868b'
+}
+
+const canSyncGoods = computed(() => connectionStatus.value?.cookieStatus === 1)
+const canAutoReply = computed(() => connectionStatus.value?.connected === true)
+
 watch(() => props.accountId, (newId) => {
   if (newId) {
     loadConnectionStatus()
+    loadOperationLogs()
     if (statusInterval) clearInterval(statusInterval)
     statusInterval = window.setInterval(() => {
-      if (props.accountId) loadConnectionStatus(true)
-    }, 5000)
-    // Show mobile detail
+      if (props.accountId) {
+        loadConnectionStatus(true)
+        loadOperationLogs()
+      }
+    }, 10000)
     if (props.isMobile) showMobileDetail.value = true
   } else {
     connectionStatus.value = null
+    operationLogs.value = []
     if (statusInterval) {
       clearInterval(statusInterval)
       statusInterval = null
@@ -301,135 +242,59 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <!-- Desktop: Inline detail panel -->
   <div v-if="!isMobile" class="detail-panel">
-    <!-- No selection -->
     <div v-if="!accountId" class="detail-empty">
       <div class="detail-empty__icon"><IconLink /></div>
       <p class="detail-empty__text">请选择一个账号查看连接状态</p>
     </div>
 
-    <!-- Detail content -->
     <div v-else class="detail-scroll" :class="{ 'detail-scroll--loading': statusLoading }">
       <div v-if="connectionStatus" class="detail-body">
-        <!-- Status Header -->
         <div class="status-header">
           <div class="status-header__left">
-            <div
-              class="status-icon"
-              :class="connectionStatus.connected ? 'status-icon--on' : 'status-icon--off'"
-            >
+            <div class="status-icon" :class="connectionStatus.connected ? 'status-icon--on' : 'status-icon--off'">
               <component :is="connectionStatus.connected ? IconWifi : IconWifiOff" />
             </div>
             <div class="status-header__info">
               <span class="status-header__title">连接状态</span>
-              <span class="status-header__sub">账号 ID: {{ connectionStatus.xianyuAccountId }}</span>
+              <span v-if="connectionStatus.cookieStatus !== 1" class="status-header__sub status-header__sub--warning">
+                Cookie已过期，请点击<span class="status-header__link">凭证详情</span>按钮更新Cookie
+              </span>
+              <span v-else class="status-header__sub">账号 ID: {{ connectionStatus.xianyuAccountId }}</span>
             </div>
           </div>
-          <span
-            class="status-badge"
-            :class="connectionStatus.connected ? 'status-badge--on' : 'status-badge--off'"
-          >
+          <span class="status-badge" :class="connectionStatus.connected ? 'status-badge--on' : 'status-badge--off'">
             <component :is="connectionStatus.connected ? IconCheck : IconAlert" />
             {{ connectionStatus.connected ? '已连接' : '未连接' }}
           </span>
         </div>
 
-        <!-- Status Message -->
-        <div
-          class="status-message"
-          :class="connectionStatus.connected ? 'status-message--on' : 'status-message--off'"
-        >
-          <component :is="connectionStatus.connected ? IconCheck : IconAlert" />
-          <span>{{ connectionStatus.connected ? '已连接到闲鱼服务器' : '当前未连接，无法监听消息和执行自动化流程' }}</span>
-        </div>
-
-        <!-- Info Grid -->
-        <div class="info-grid">
-          <!-- Cookie Section -->
-          <div class="info-card">
-            <div class="info-card__header">
-              <div class="info-card__icon info-card__icon--cookie"><IconCookie /></div>
-              <div class="info-card__title-group">
-                <span class="info-card__title">Cookie 凭证</span>
-                <span class="info-card__note">用于识别账号身份</span>
-              </div>
-              <span
-                class="info-card__status"
-                :style="{
-                  color: getCookieStatusColor(connectionStatus.cookieStatus),
-                  background: getCookieStatusBg(connectionStatus.cookieStatus)
-                }"
-              >
-                {{ getCookieStatusText(connectionStatus.cookieStatus) }}
-              </span>
+        <div class="status-cards">
+          <div class="status-card" :class="canSyncGoods ? 'status-card--success' : 'status-card--danger'">
+            <div class="status-card__icon">
+              <component :is="canSyncGoods ? IconCheck : IconAlert" />
             </div>
-            <div class="info-card__body">
-              <div class="info-box">
-                <div class="info-box__label">Cookie 内容</div>
-                <div class="info-box__value">{{ connectionStatus.cookieText || '未获取到Cookie' }}</div>
-                <div class="info-box__meta" v-if="connectionStatus.cookieText">
-                  {{ connectionStatus.cookieText.length }} 字符
-                </div>
-              </div>
-              <div class="info-card__actions">
-                <button class="btn btn--secondary" @click="showManualUpdateCookieDialog = true">
-                  <IconEdit /><span>手动更新</span>
-                </button>
-                <button class="btn btn--ghost" @click="showCookieHelp">
-                  <IconHelp /><span>获取帮助</span>
-                </button>
-              </div>
+            <div class="status-card__content">
+              <span class="status-card__title">同步商品信息</span>
+              <span class="status-card__desc">{{ canSyncGoods ? '可正常同步商品信息' : 'Cookie无效，无法同步商品信息' }}</span>
             </div>
           </div>
 
-          <!-- Token Section -->
-          <div class="info-card">
-            <div class="info-card__header">
-              <div class="info-card__icon info-card__icon--token"><IconKey /></div>
-              <div class="info-card__title-group">
-                <span class="info-card__title">WebSocket Token</span>
-                <span class="info-card__note">消息收取凭证</span>
-              </div>
-              <span
-                class="info-card__status"
-                :style="{
-                  color: getTokenStatusColor(connectionStatus.tokenExpireTime),
-                  background: getTokenStatusBg(connectionStatus.tokenExpireTime)
-                }"
-              >
-                {{ getTokenStatusText(connectionStatus.tokenExpireTime) }}
-              </span>
+          <div class="status-card" :class="canAutoReply ? 'status-card--success' : 'status-card--danger'">
+            <div class="status-card__icon">
+              <component :is="canAutoReply ? IconCheck : IconAlert" />
             </div>
-            <div class="info-card__body">
-              <div class="info-box">
-                <div class="info-box__label">
-                  <IconClock />
-                  过期时间
-                </div>
-                <div class="info-box__value info-box__value--time">{{ formatTimestamp(connectionStatus.tokenExpireTime) }}</div>
-              </div>
-              <div class="info-box">
-                <div class="info-box__label">Token 内容</div>
-                <div class="info-box__value">{{ connectionStatus.websocketToken || '未获取到Token' }}</div>
-                <div class="info-box__meta" v-if="connectionStatus.websocketToken">
-                  {{ connectionStatus.websocketToken.length }} 字符
-                </div>
-              </div>
-              <div class="info-card__actions">
-                <button class="btn btn--secondary" @click="showManualUpdateTokenDialog = true">
-                  <IconEdit /><span>手动更新</span>
-                </button>
-                <button class="btn btn--ghost" @click="showTokenHelp">
-                  <IconHelp /><span>获取帮助</span>
-                </button>
-              </div>
+            <div class="status-card__content">
+              <span class="status-card__title">自动发货与回复</span>
+              <span class="status-card__desc">{{ canAutoReply ? '可正常自动发货与回复' : '未连接，无法自动发货与回复' }}</span>
             </div>
           </div>
         </div>
 
-        <!-- Action Buttons -->
         <div class="action-bar">
+          <button class="btn btn--secondary" @click="showCredentialDialog = true">
+            <IconKey /><span>凭证详情</span>
+          </button>
           <button
             v-if="connectionStatus.connected === true"
             class="btn btn--stop"
@@ -442,21 +307,13 @@ onBeforeUnmount(() => {
             class="btn btn--start"
             @click="handleStartConnection"
           >
-            <IconPlay /><span>启动连接</span>
+            <IconPlay /><span>开始连接</span>
           </button>
-          <button class="btn btn--qr" @click="showQRUpdateDialog = true">
-            <IconQrCode /><span>扫码更新</span>
-          </button>
-          <button class="btn btn--secondary" @click="handleRefresh" :disabled="statusLoading">
-            <IconRefresh /><span>刷新</span>
+          <button class="btn btn--ghost" @click="handleRefresh" :disabled="statusLoading">
+            <IconRefresh /><span>刷新状态</span>
           </button>
         </div>
 
-        <div class="action-tip">
-          请勿频繁启用/断开连接，否则容易触发人机校验导致账号暂时不可用
-        </div>
-
-        <!-- Logs -->
         <div class="log-section">
           <div class="log-section__header">
             <div class="log-section__title">
@@ -465,35 +322,100 @@ onBeforeUnmount(() => {
             </div>
           </div>
           <div class="log-container">
-            <div
-              v-for="(log, i) in logs"
-              :key="i"
-              class="log-entry"
-              :class="{ 'log-entry--error': log.isError }"
-            >
-              <span class="log-entry__time">{{ log.time }}</span>
-              <span class="log-entry__msg">{{ log.message }}</span>
+            <div v-for="log in operationLogs" :key="log.id" class="log-entry">
+              <span class="log-entry__time">{{ formatTimestamp(log.createTime) }}</span>
+              <span class="log-entry__module">{{ log.operationModule }}</span>
+              <span class="log-entry__desc">{{ log.operationDesc }}</span>
+              <span class="log-entry__status" :style="{ color: getOperationStatusColor(log.operationStatus) }">
+                {{ getOperationStatusText(log.operationStatus) }}
+              </span>
             </div>
-            <div v-if="logs.length === 0" class="log-empty">暂无日志记录</div>
+            <div v-if="operationLogs.length === 0" class="log-empty">暂无Cookie/Token相关日志</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Dialogs -->
+    <el-dialog
+      v-model="showCredentialDialog"
+      title="凭证详情"
+      width="500px"
+      class="credential-dialog"
+    >
+      <div v-if="connectionStatus" class="credential-dialog__content">
+        <div class="credential-dialog__actions">
+          <button class="btn btn--qr" @click="showQRUpdateDialog = true">
+            <IconQrCode /><span>扫码更新</span>
+          </button>
+          <button class="btn btn--secondary" @click="showManualUpdateCookieDialog = true">
+            <IconCookie /><span>手动更新Cookie</span>
+          </button>
+        </div>
+
+        <div class="credential-list">
+          <div class="credential-item">
+            <div class="credential-item__header">
+              <div class="credential-item__left">
+                <div class="credential-item__icon credential-item__icon--cookie"><IconCookie /></div>
+                <span class="credential-item__name">Cookie 凭证</span>
+              </div>
+              <span class="credential-item__status" :style="{ color: getCookieStatusColor(connectionStatus.cookieStatus) }">
+                {{ getCookieStatusText(connectionStatus.cookieStatus) }}
+              </span>
+            </div>
+            <div class="credential-item__value" v-if="connectionStatus.cookieText">
+              {{ connectionStatus.cookieText.substring(0, 60) }}...
+              <span class="credential-item__meta">{{ connectionStatus.cookieText.length }} 字符</span>
+            </div>
+            <div class="credential-item__value credential-item__value--empty" v-else>未设置</div>
+          </div>
+
+          <div class="credential-item">
+            <div class="credential-item__header">
+              <div class="credential-item__left">
+                <div class="credential-item__icon credential-item__icon--token"><IconKey /></div>
+                <span class="credential-item__name">WebSocket Token</span>
+              </div>
+              <span class="credential-item__status" :style="{ color: getTokenStatusColor(connectionStatus.tokenExpireTime) }">
+                {{ getTokenStatusText(connectionStatus.tokenExpireTime) }}
+              </span>
+            </div>
+            <div class="credential-item__value" v-if="connectionStatus.websocketToken">
+              {{ connectionStatus.websocketToken.substring(0, 40) }}...
+              <span class="credential-item__meta">{{ connectionStatus.websocketToken.length }} 字符</span>
+            </div>
+            <div class="credential-item__value credential-item__value--empty" v-else>未设置</div>
+            <div class="credential-item__expire" v-if="connectionStatus.tokenExpireTime">
+              过期时间: {{ formatTimestamp(connectionStatus.tokenExpireTime) }}
+            </div>
+          </div>
+
+          <div class="credential-item">
+            <div class="credential-item__header">
+              <div class="credential-item__left">
+                <div class="credential-item__icon credential-item__icon--h5"><IconKey /></div>
+                <span class="credential-item__name">H5 Token (_m_h5_tk)</span>
+              </div>
+              <span class="credential-item__status" :style="{ color: getMH5TkStatusColor(connectionStatus.mH5Tk) }">
+                {{ getMH5TkStatusText(connectionStatus.mH5Tk) }}
+              </span>
+            </div>
+            <div class="credential-item__value" v-if="connectionStatus.mH5Tk">
+              {{ connectionStatus.mH5Tk.substring(0, 40) }}...
+              <span class="credential-item__meta">{{ connectionStatus.mH5Tk.length }} 字符</span>
+            </div>
+            <div class="credential-item__value credential-item__value--empty" v-else>未设置</div>
+          </div>
+        </div>
+      </div>
+    </el-dialog>
+
     <ManualUpdateCookieDialog
       v-if="connectionStatus"
       v-model="showManualUpdateCookieDialog"
       :account-id="accountId || 0"
       :current-cookie="connectionStatus.cookieText || ''"
       @success="handleManualUpdateCookieSuccess"
-    />
-    <ManualUpdateTokenDialog
-      v-if="connectionStatus"
-      v-model="showManualUpdateTokenDialog"
-      :account-id="accountId || 0"
-      :current-token="connectionStatus.websocketToken || ''"
-      @success="handleManualUpdateTokenSuccess"
     />
     <QRUpdateDialog
       v-model="showQRUpdateDialog"
@@ -506,13 +428,12 @@ onBeforeUnmount(() => {
     />
   </div>
 
-  <!-- Mobile: Overlay Detail -->
   <template v-else>
     <Transition name="slide-up">
       <div v-if="showMobileDetail && accountId" class="mobile-overlay">
         <div class="mobile-overlay__header">
           <button class="mobile-overlay__back" @click="showMobileDetail = false">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
             </svg>
             <span>返回</span>
@@ -525,7 +446,6 @@ onBeforeUnmount(() => {
 
         <div class="mobile-overlay__scroll" :class="{ 'detail-scroll--loading': statusLoading }">
           <div v-if="connectionStatus" class="detail-body">
-            <!-- Same content structure as desktop -->
             <div class="status-header">
               <div class="status-header__left">
                 <div class="status-icon" :class="connectionStatus.connected ? 'status-icon--on' : 'status-icon--off'">
@@ -533,93 +453,68 @@ onBeforeUnmount(() => {
                 </div>
                 <div class="status-header__info">
                   <span class="status-header__title">连接状态</span>
-                  <span class="status-header__sub">账号 ID: {{ connectionStatus.xianyuAccountId }}</span>
+                  <span v-if="connectionStatus.cookieStatus !== 1" class="status-header__sub status-header__sub--warning">
+                    Cookie已过期，请更新
+                  </span>
                 </div>
               </div>
               <span class="status-badge" :class="connectionStatus.connected ? 'status-badge--on' : 'status-badge--off'">
-                <component :is="connectionStatus.connected ? IconCheck : IconAlert" />
                 {{ connectionStatus.connected ? '已连接' : '未连接' }}
               </span>
             </div>
 
-            <div class="status-message" :class="connectionStatus.connected ? 'status-message--on' : 'status-message--off'">
-              <component :is="connectionStatus.connected ? IconCheck : IconAlert" />
-              <span>{{ connectionStatus.connected ? '已连接到闲鱼服务器' : '当前未连接，无法监听消息和执行自动化流程' }}</span>
-            </div>
-
-            <div class="info-grid info-grid--mobile">
-              <div class="info-card">
-                <div class="info-card__header">
-                  <div class="info-card__icon info-card__icon--cookie"><IconCookie /></div>
-                  <div class="info-card__title-group">
-                    <span class="info-card__title">Cookie 凭证</span>
-                    <span class="info-card__note">用于识别账号身份</span>
-                  </div>
-                  <span class="info-card__status" :style="{ color: getCookieStatusColor(connectionStatus.cookieStatus), background: getCookieStatusBg(connectionStatus.cookieStatus) }">
-                    {{ getCookieStatusText(connectionStatus.cookieStatus) }}
-                  </span>
+            <div class="status-cards">
+              <div class="status-card" :class="canSyncGoods ? 'status-card--success' : 'status-card--danger'">
+                <div class="status-card__icon">
+                  <component :is="canSyncGoods ? IconCheck : IconAlert" />
                 </div>
-                <div class="info-card__body">
-                  <div class="info-box">
-                    <div class="info-box__label">Cookie 内容</div>
-                    <div class="info-box__value">{{ connectionStatus.cookieText || '未获取到Cookie' }}</div>
-                    <div class="info-box__meta" v-if="connectionStatus.cookieText">{{ connectionStatus.cookieText.length }} 字符</div>
-                  </div>
-                  <div class="info-card__actions">
-                    <button class="btn btn--secondary" @click="showManualUpdateCookieDialog = true"><IconEdit /><span>手动更新</span></button>
-                    <button class="btn btn--ghost" @click="showCookieHelp"><IconHelp /><span>获取帮助</span></button>
-                  </div>
+                <div class="status-card__content">
+                  <span class="status-card__title">同步商品信息</span>
+                  <span class="status-card__desc">{{ canSyncGoods ? '可正常同步' : '无法同步' }}</span>
                 </div>
               </div>
 
-              <div class="info-card">
-                <div class="info-card__header">
-                  <div class="info-card__icon info-card__icon--token"><IconKey /></div>
-                  <div class="info-card__title-group">
-                    <span class="info-card__title">WebSocket Token</span>
-                    <span class="info-card__note">消息收取凭证</span>
-                  </div>
-                  <span class="info-card__status" :style="{ color: getTokenStatusColor(connectionStatus.tokenExpireTime), background: getTokenStatusBg(connectionStatus.tokenExpireTime) }">
-                    {{ getTokenStatusText(connectionStatus.tokenExpireTime) }}
-                  </span>
+              <div class="status-card" :class="canAutoReply ? 'status-card--success' : 'status-card--danger'">
+                <div class="status-card__icon">
+                  <component :is="canAutoReply ? IconCheck : IconAlert" />
                 </div>
-                <div class="info-card__body">
-                  <div class="info-box">
-                    <div class="info-box__label"><IconClock /> 过期时间</div>
-                    <div class="info-box__value info-box__value--time">{{ formatTimestamp(connectionStatus.tokenExpireTime) }}</div>
-                  </div>
-                  <div class="info-box">
-                    <div class="info-box__label">Token 内容</div>
-                    <div class="info-box__value">{{ connectionStatus.websocketToken || '未获取到Token' }}</div>
-                    <div class="info-box__meta" v-if="connectionStatus.websocketToken">{{ connectionStatus.websocketToken.length }} 字符</div>
-                  </div>
-                  <div class="info-card__actions">
-                    <button class="btn btn--secondary" @click="showManualUpdateTokenDialog = true"><IconEdit /><span>手动更新</span></button>
-                    <button class="btn btn--ghost" @click="showTokenHelp"><IconHelp /><span>获取帮助</span></button>
-                  </div>
+                <div class="status-card__content">
+                  <span class="status-card__title">自动发货与回复</span>
+                  <span class="status-card__desc">{{ canAutoReply ? '可正常工作' : '无法工作' }}</span>
                 </div>
               </div>
             </div>
 
             <div class="action-bar action-bar--mobile">
-              <button v-if="connectionStatus.connected === true" class="btn btn--stop" @click="handleStopConnection"><IconStop /><span>断开</span></button>
-              <button v-else class="btn btn--start" @click="handleStartConnection"><IconPlay /><span>启动</span></button>
-              <button class="btn btn--qr" @click="showQRUpdateDialog = true"><IconQrCode /><span>扫码</span></button>
-              <button class="btn btn--secondary" @click="handleRefresh" :disabled="statusLoading"><IconRefresh /><span>刷新</span></button>
+              <button class="btn btn--secondary btn--block" @click="showCredentialDialog = true">
+                <IconKey /><span>凭证详情</span>
+              </button>
+              <button
+                v-if="connectionStatus.connected === true"
+                class="btn btn--stop btn--block"
+                @click="handleStopConnection"
+              >
+                <IconStop /><span>断开连接</span>
+              </button>
+              <button
+                v-else
+                class="btn btn--start btn--block"
+                @click="handleStartConnection"
+              >
+                <IconPlay /><span>开始连接</span>
+              </button>
             </div>
-
-            <div class="action-tip">请勿频繁启用/断开连接，否则容易触发人机校验导致账号暂时不可用</div>
 
             <div class="log-section">
               <div class="log-section__header">
                 <div class="log-section__title"><IconLog /><span>操作日志</span></div>
               </div>
               <div class="log-container">
-                <div v-for="(log, i) in logs" :key="i" class="log-entry" :class="{ 'log-entry--error': log.isError }">
-                  <span class="log-entry__time">{{ log.time }}</span>
-                  <span class="log-entry__msg">{{ log.message }}</span>
+                <div v-for="log in operationLogs" :key="log.id" class="log-entry">
+                  <span class="log-entry__time">{{ formatTimestamp(log.createTime) }}</span>
+                  <span class="log-entry__desc">{{ log.operationDesc }}</span>
                 </div>
-                <div v-if="logs.length === 0" class="log-empty">暂无日志记录</div>
+                <div v-if="operationLogs.length === 0" class="log-empty">暂无日志</div>
               </div>
             </div>
           </div>
@@ -627,20 +522,71 @@ onBeforeUnmount(() => {
       </div>
     </Transition>
 
-    <!-- Dialogs (mobile) -->
+    <el-dialog
+      v-model="showCredentialDialog"
+      title="凭证详情"
+      width="90%"
+      class="credential-dialog"
+    >
+      <div v-if="connectionStatus" class="credential-dialog__content">
+        <div class="credential-dialog__actions">
+          <button class="btn btn--qr btn--block" @click="showQRUpdateDialog = true">
+            <IconQrCode /><span>扫码更新</span>
+          </button>
+          <button class="btn btn--secondary btn--block" @click="showManualUpdateCookieDialog = true">
+            <IconCookie /><span>手动更新Cookie</span>
+          </button>
+        </div>
+
+        <div class="credential-list">
+          <div class="credential-item">
+            <div class="credential-item__header">
+              <span class="credential-item__name">Cookie 凭证</span>
+              <span class="credential-item__status" :style="{ color: getCookieStatusColor(connectionStatus.cookieStatus) }">
+                {{ getCookieStatusText(connectionStatus.cookieStatus) }}
+              </span>
+            </div>
+            <div class="credential-item__value" v-if="connectionStatus.cookieText">
+              {{ connectionStatus.cookieText.substring(0, 50) }}...
+            </div>
+            <div class="credential-item__value credential-item__value--empty" v-else>未设置</div>
+          </div>
+
+          <div class="credential-item">
+            <div class="credential-item__header">
+              <span class="credential-item__name">WebSocket Token</span>
+              <span class="credential-item__status" :style="{ color: getTokenStatusColor(connectionStatus.tokenExpireTime) }">
+                {{ getTokenStatusText(connectionStatus.tokenExpireTime) }}
+              </span>
+            </div>
+            <div class="credential-item__value" v-if="connectionStatus.websocketToken">
+              {{ connectionStatus.websocketToken.substring(0, 30) }}...
+            </div>
+            <div class="credential-item__value credential-item__value--empty" v-else>未设置</div>
+          </div>
+
+          <div class="credential-item">
+            <div class="credential-item__header">
+              <span class="credential-item__name">H5 Token</span>
+              <span class="credential-item__status" :style="{ color: getMH5TkStatusColor(connectionStatus.mH5Tk) }">
+                {{ getMH5TkStatusText(connectionStatus.mH5Tk) }}
+              </span>
+            </div>
+            <div class="credential-item__value" v-if="connectionStatus.mH5Tk">
+              {{ connectionStatus.mH5Tk.substring(0, 30) }}...
+            </div>
+            <div class="credential-item__value credential-item__value--empty" v-else>未设置</div>
+          </div>
+        </div>
+      </div>
+    </el-dialog>
+
     <ManualUpdateCookieDialog
       v-if="connectionStatus"
       v-model="showManualUpdateCookieDialog"
       :account-id="accountId || 0"
       :current-cookie="connectionStatus.cookieText || ''"
       @success="handleManualUpdateCookieSuccess"
-    />
-    <ManualUpdateTokenDialog
-      v-if="connectionStatus"
-      v-model="showManualUpdateTokenDialog"
-      :account-id="accountId || 0"
-      :current-token="connectionStatus.websocketToken || ''"
-      @success="handleManualUpdateTokenSuccess"
     />
     <QRUpdateDialog
       v-model="showQRUpdateDialog"
@@ -655,14 +601,10 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-/* ============================================================
-   Design Tokens
-   ============================================================ */
 .detail-panel {
   --c-bg: transparent;
   --c-surface: #ffffff;
   --c-border: rgba(0, 0, 0, 0.06);
-  --c-border-strong: rgba(0, 0, 0, 0.1);
   --c-text-1: #1d1d1f;
   --c-text-2: #6e6e73;
   --c-text-3: #86868b;
@@ -672,14 +614,9 @@ onBeforeUnmount(() => {
   --c-warning: #ff9500;
   --c-r-sm: 8px;
   --c-r-md: 12px;
-  --c-r-lg: 16px;
-  --c-ease: 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
   --c-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-/* ============================================================
-   Desktop Detail Panel
-   ============================================================ */
 .detail-panel {
   height: 100%;
   display: flex;
@@ -702,9 +639,6 @@ onBeforeUnmount(() => {
   width: 48px;
   height: 48px;
   opacity: 0.3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .detail-empty__icon svg {
@@ -721,22 +655,8 @@ onBeforeUnmount(() => {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
-  -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
-}
-
-.detail-scroll::-webkit-scrollbar {
-  width: 6px;
-}
-
-.detail-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.detail-scroll::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.12);
-  border-radius: 3px;
 }
 
 .detail-scroll--loading {
@@ -751,7 +671,6 @@ onBeforeUnmount(() => {
   padding: 16px;
 }
 
-/* --- Status Header --- */
 .status-header {
   display: flex;
   align-items: center;
@@ -763,7 +682,6 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 0;
 }
 
 .status-icon {
@@ -773,7 +691,6 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
 }
 
 .status-icon svg {
@@ -794,21 +711,27 @@ onBeforeUnmount(() => {
 .status-header__info {
   display: flex;
   flex-direction: column;
-  min-width: 0;
 }
 
 .status-header__title {
   font-size: 16px;
   font-weight: 600;
   color: var(--c-text-1);
-  line-height: 1.3;
 }
 
 .status-header__sub {
   font-size: 12px;
   color: var(--c-text-3);
-  line-height: 1.3;
-  margin-top: 2px;
+}
+
+.status-header__sub--warning {
+  color: var(--c-warning);
+  font-weight: 500;
+}
+
+.status-header__link {
+  color: var(--c-danger);
+  font-weight: 600;
 }
 
 .status-badge {
@@ -819,8 +742,6 @@ onBeforeUnmount(() => {
   font-weight: 500;
   padding: 4px 10px;
   border-radius: 20px;
-  flex-shrink: 0;
-  line-height: 1;
 }
 
 .status-badge svg {
@@ -838,246 +759,257 @@ onBeforeUnmount(() => {
   background: rgba(255, 59, 48, 0.1);
 }
 
-/* --- Status Message --- */
-.status-message {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 8px 12px;
-  border-radius: var(--c-r-sm);
-  line-height: 1.4;
-}
-
-.status-message svg {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-}
-
-.status-message--on {
-  color: var(--c-success);
-  background: rgba(52, 199, 89, 0.06);
-  border: 1px solid rgba(52, 199, 89, 0.12);
-}
-
-.status-message--off {
-  color: var(--c-danger);
-  background: rgba(255, 59, 48, 0.06);
-  border: 1px solid rgba(255, 59, 48, 0.12);
-}
-
-/* --- Info Grid --- */
-.info-grid {
+.status-cards {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 }
 
-.info-grid--mobile {
-  grid-template-columns: 1fr;
-}
-
-.info-card {
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--c-r-md);
-  overflow: hidden;
-  box-shadow: var(--c-shadow);
-}
-
-.info-card__header {
+.status-card {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px;
-  border-bottom: 1px solid var(--c-border);
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--c-r-md);
+  border: 1px solid;
 }
 
-.info-card__icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+.status-card--success {
+  border-color: rgba(52, 199, 89, 0.2);
+  background: rgba(52, 199, 89, 0.06);
+}
+
+.status-card--danger {
+  border-color: rgba(255, 59, 48, 0.2);
+  background: rgba(255, 59, 48, 0.06);
+}
+
+.status-card__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.info-card__icon svg {
-  width: 14px;
-  height: 14px;
+.status-card--success .status-card__icon {
+  background: rgba(52, 199, 89, 0.15);
+  color: var(--c-success);
 }
 
-.info-card__icon--cookie {
+.status-card--danger .status-card__icon {
+  background: rgba(255, 59, 48, 0.15);
+  color: var(--c-danger);
+}
+
+.status-card__icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.status-card__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.status-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text-1);
+}
+
+.status-card__desc {
+  font-size: 11px;
+  color: var(--c-text-3);
+}
+
+.status-card--success .status-card__title {
+  color: var(--c-success);
+}
+
+.status-card--danger .status-card__title {
+  color: var(--c-danger);
+}
+
+.credential-dialog__content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.credential-dialog__actions {
+  display: flex;
+  gap: 12px;
+}
+
+@media screen and (max-width: 600px) {
+  .credential-dialog__actions {
+    flex-direction: column;
+  }
+  
+  .credential-dialog__actions .btn {
+    padding: 12px 16px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+}
+
+.credential-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.credential-item {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--c-border);
+  border-radius: var(--c-r-md);
+  padding: 12px;
+}
+
+.credential-item__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.credential-item__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.credential-item__icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.credential-item__icon svg {
+  width: 12px;
+  height: 12px;
+}
+
+.credential-item__icon--cookie {
   background: rgba(255, 149, 0, 0.1);
   color: var(--c-warning);
 }
 
-.info-card__icon--token {
+.credential-item__icon--token {
   background: rgba(52, 199, 89, 0.1);
   color: var(--c-success);
 }
 
-.info-card__title-group {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
+.credential-item__icon--h5 {
+  background: rgba(0, 122, 255, 0.1);
+  color: var(--c-accent);
 }
 
-.info-card__title {
+.credential-item__name {
   font-size: 13px;
   font-weight: 600;
   color: var(--c-text-1);
-  line-height: 1.3;
 }
 
-.info-card__note {
-  font-size: 11px;
-  color: var(--c-text-3);
-  line-height: 1.3;
-  margin-top: 1px;
-}
-
-.info-card__status {
+.credential-item__status {
   font-size: 11px;
   font-weight: 500;
   padding: 2px 8px;
   border-radius: 10px;
-  flex-shrink: 0;
-  line-height: 1;
+  background: rgba(0, 0, 0, 0.05);
 }
 
-.info-card__body {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-}
-
-/* --- Info Box --- */
-.info-box {
-  background: rgba(0, 0, 0, 0.02);
-  border: 1px solid var(--c-border);
-  border-radius: var(--c-r-sm);
-  padding: 8px 10px;
-}
-
-.info-box__label {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--c-text-3);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  margin-bottom: 4px;
-}
-
-.info-box__label svg {
-  width: 10px;
-  height: 10px;
-}
-
-.info-box__value {
-  font-family: 'SF Mono', 'Menlo', 'Courier New', monospace;
-  font-size: 10px;
+.credential-item__value {
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 11px;
   color: var(--c-text-2);
-  line-height: 1.5;
   word-break: break-all;
-  max-height: 60px;
-  overflow-y: auto;
-  scrollbar-width: none;
+  line-height: 1.5;
+  margin-top: 8px;
 }
 
-.info-box__value::-webkit-scrollbar {
-  display: none;
-}
-
-.info-box__value--time {
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--c-text-1);
-}
-
-.info-box__meta {
-  font-size: 10px;
+.credential-item__value--empty {
   color: var(--c-text-3);
-  margin-top: 4px;
-  text-align: right;
+  font-style: italic;
 }
 
-/* --- Card Actions --- */
-.info-card__actions {
+.credential-item__meta {
+  display: inline-block;
+  margin-left: 8px;
+  color: var(--c-text-3);
+  font-size: 10px;
+}
+
+.credential-item__expire {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--c-text-3);
+}
+
+.action-bar {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  width: 100%;
 }
 
-.info-card__actions .btn {
-  flex: 1;
-  height: 32px;
-  font-size: 12px;
-  min-width: 0;
+.action-bar--mobile {
+  flex-direction: column;
 }
 
-.info-card__actions .btn svg {
-  width: 14px;
-  height: 14px;
-}
-
-/* --- Buttons --- */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 36px;
-  padding: 0 16px;
+  padding: 8px 16px;
   font-size: 13px;
-  font-weight: 600;
-  border-radius: 8px;
-  border: none;
+  font-weight: 500;
+  border-radius: var(--c-r-sm);
+  border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  min-width: 0;
-  -webkit-tap-highlight-color: transparent;
-  background: rgba(0, 0, 0, 0.05);
-  color: #1d1d1f;
+  transition: all 0.2s;
 }
 
 .btn svg {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+.btn--block {
+  width: 100%;
 }
 
 .btn--secondary {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--c-text-1);
+  border-color: var(--c-border);
 }
 
 .btn--secondary:hover {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .btn--ghost {
-  background: rgba(0, 122, 255, 0.1);
-  color: #007aff;
+  background: transparent;
+  color: var(--c-text-2);
+  border-color: var(--c-border);
 }
 
 .btn--ghost:hover {
-  background: rgba(0, 122, 255, 0.15);
+  background: rgba(0, 0, 0, 0.04);
 }
 
 .btn--start {
-  background: #34c759;
-  color: #ffffff;
+  background: var(--c-success);
+  color: white;
 }
 
 .btn--start:hover {
@@ -1085,76 +1017,34 @@ onBeforeUnmount(() => {
 }
 
 .btn--stop {
-  background: #ff3b30;
-  color: #ffffff;
+  background: var(--c-danger);
+  color: white;
 }
 
 .btn--stop:hover {
-  background: #e0332a;
+  background: #e6352a;
 }
 
 .btn--qr {
-  background: #007aff;
-  color: #ffffff;
+  background: var(--c-accent);
+  color: white;
 }
 
 .btn--qr:hover {
   background: #0066d6;
 }
 
-.btn:active {
-  transform: scale(0.96);
-  opacity: 0.9;
-}
-
-.btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* --- Action Bar --- */
-.action-bar {
-  display: flex;
-  gap: 8px;
-  flex-wrap: nowrap;
-  width: 100%;
-  align-items: center;
-}
-
-.action-bar--mobile {
-  flex-direction: row;
-}
-
-.action-bar .btn {
-  flex: 1 1 0;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.action-bar .btn span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.action-tip {
-  font-size: 11px;
-  color: var(--c-text-3);
-  text-align: center;
-  line-height: 1.5;
-  padding: 0 8px;
-}
-
-/* --- Log Section --- */
 .log-section {
-  margin-top: 4px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--c-r-md);
+  overflow: hidden;
 }
 
 .log-section__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
+  padding: 12px;
+  border-bottom: 1px solid var(--c-border);
+  background: rgba(0, 0, 0, 0.02);
 }
 
 .log-section__title {
@@ -1172,57 +1062,64 @@ onBeforeUnmount(() => {
 }
 
 .log-container {
-  background: rgba(28, 28, 30, 0.92);
-  color: rgba(255, 255, 255, 0.85);
-  border-radius: var(--c-r-sm);
-  padding: 10px 12px;
-  font-family: 'SF Mono', 'Menlo', 'Courier New', monospace;
-  font-size: 11px;
-  max-height: 160px;
+  max-height: 200px;
   overflow-y: auto;
-  scrollbar-width: none;
-}
-
-.log-container::-webkit-scrollbar {
-  display: none;
+  padding: 8px 12px;
 }
 
 .log-entry {
   display: flex;
-  gap: 6px;
-  padding: 2px 0;
-  line-height: 1.5;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 12px;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.log-entry:last-child {
+  border-bottom: none;
 }
 
 .log-entry__time {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 10px;
   flex-shrink: 0;
+  color: var(--c-text-3);
+  font-size: 11px;
 }
 
-.log-entry__msg {
-  color: rgba(255, 255, 255, 0.85);
+.log-entry__module {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.05);
+  font-size: 10px;
+  font-weight: 600;
 }
 
-.log-entry--error .log-entry__msg {
-  color: #ff6b6b;
+.log-entry__desc {
+  flex: 1;
+  color: var(--c-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.log-entry__status {
+  flex-shrink: 0;
+  font-weight: 500;
 }
 
 .log-empty {
   text-align: center;
-  color: rgba(255, 255, 255, 0.3);
-  padding: 12px;
+  color: var(--c-text-3);
   font-size: 12px;
+  padding: 12px;
 }
 
-/* ============================================================
-   Mobile Overlay
-   ============================================================ */
 .mobile-overlay {
   position: fixed;
   inset: 0;
+  background: #f5f5f7;
   z-index: 100;
-  background: #ffffff;
   display: flex;
   flex-direction: column;
 }
@@ -1231,49 +1128,49 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--c-border);
-  background: var(--c-surface);
-  flex-shrink: 0;
+  padding: 14px 16px;
+  background: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .mobile-overlay__back {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--c-accent);
-  cursor: pointer;
   background: none;
   border: none;
-  padding: 4px;
-  -webkit-tap-highlight-color: transparent;
+  color: #007aff;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-left: -8px;
+  border-radius: 6px;
+  transition: background 0.2s;
 }
 
-.mobile-overlay__back svg {
-  width: 20px;
-  height: 20px;
+.mobile-overlay__back:active {
+  background: rgba(0, 122, 255, 0.1);
 }
 
 .mobile-overlay__title {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
-  color: var(--c-text-1);
+  color: #1d1d1f;
 }
 
 .mobile-overlay__refresh {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--c-accent);
-  cursor: pointer;
   background: none;
   border: none;
-  border-radius: 50%;
-  -webkit-tap-highlight-color: transparent;
+  color: #007aff;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.mobile-overlay__refresh:active {
+  background: rgba(0, 122, 255, 0.1);
 }
 
 .mobile-overlay__refresh svg {
@@ -1284,121 +1181,54 @@ onBeforeUnmount(() => {
 .mobile-overlay__scroll {
   flex: 1;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  background: #f5f5f7;
 }
 
-.mobile-overlay__scroll::-webkit-scrollbar {
-  display: none;
-}
-
-.slide-up-enter-active,
-.slide-up-leave-active {
-  transition: transform 0.3s var(--c-ease), opacity 0.3s;
-}
-
-.slide-up-enter-from {
-  transform: translateY(100%);
-  opacity: 0;
-}
-
-.slide-up-leave-to {
-  transform: translateY(100%);
-  opacity: 0;
-}
-
-/* ============================================================
-   Responsive
-   ============================================================ */
-@media screen and (max-width: 768px) {
-  .info-grid {
+@media screen and (max-width: 600px) {
+  .status-cards {
     grid-template-columns: 1fr;
   }
-
-  .status-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-}
-
-@media screen and (max-width: 480px) {
+  
   .detail-body {
     padding: 12px;
     gap: 12px;
   }
-
-  .btn {
-    height: 36px;
-    font-size: 12px;
-    padding: 0 10px;
-    gap: 5px;
-    border-radius: 8px;
+  
+  .status-card {
+    padding: 14px;
   }
-
-  .action-bar {
-    gap: 8px;
+  
+  .action-bar--mobile .btn {
+    padding: 12px 16px;
+    font-size: 15px;
+    font-weight: 600;
   }
-
-  .action-bar .btn {
-    flex: 1 1 0;
-    min-width: 0;
+  
+  .btn--start {
+    background: #34c759;
   }
-
-  .info-card__actions .btn {
-    height: 32px;
-    font-size: 11px;
-    padding: 0 12px;
+  
+  .btn--stop {
+    background: #ff3b30;
+  }
+  
+  .btn--qr {
+    background: #007aff;
+  }
+  
+  .btn--secondary {
+    background: rgba(0, 0, 0, 0.05);
+    color: #1d1d1f;
   }
 }
-</style>
 
-<style>
-/* Global dialog styles */
-.cookie-help-dialog,
-.token-help-dialog {
-  max-width: 900px;
-  width: 90%;
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: transform 0.3s ease;
 }
 
-.cookie-help-dialog .el-message-box__message,
-.token-help-dialog .el-message-box__message {
-  max-height: 70vh;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.cookie-help-dialog .el-message-box__message::-webkit-scrollbar,
-.token-help-dialog .el-message-box__message::-webkit-scrollbar {
-  display: none;
-}
-
-.cookie-help-dialog .cookie-help-image,
-.token-help-dialog .token-help-image {
-  max-width: 100%;
-  max-height: 50vh;
-  width: auto;
-  height: auto;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-  object-fit: contain;
-  display: block;
-  margin: 0 auto;
-}
-
-.captcha-guide-dialog {
-  max-width: 650px;
-  width: 90%;
-}
-
-.captcha-guide-dialog .el-message-box__message {
-  font-size: 14px;
-  line-height: 1.8;
-  white-space: pre-line;
-  text-align: left;
+.slide-up-enter-from,
+.slide-up-leave-to {
+  transform: translateY(100%);
 }
 </style>
