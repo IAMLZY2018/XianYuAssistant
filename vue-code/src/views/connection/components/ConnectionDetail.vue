@@ -28,6 +28,7 @@ interface ConnectionStatus {
   cookieStatus?: number
   cookieText?: string
   mH5Tk?: string
+  mh5Tk?: string
   websocketToken?: string
   tokenExpireTime?: number
 }
@@ -198,6 +199,8 @@ const getMH5TkStatusColor = (mH5Tk?: string) => {
   if (!mH5Tk) return '#86868b'
   return '#34c759'
 }
+
+const h5Token = computed(() => connectionStatus.value?.mH5Tk || connectionStatus.value?.mh5Tk)
 
 const getOperationStatusText = (status: number) => {
   const map: Record<number, string> = { 1: '成功', 2: '失败', 3: '部分成功' }
@@ -396,13 +399,13 @@ onBeforeUnmount(() => {
                 <div class="credential-item__icon credential-item__icon--h5"><IconKey /></div>
                 <span class="credential-item__name">H5 Token (_m_h5_tk)</span>
               </div>
-              <span class="credential-item__status" :style="{ color: getMH5TkStatusColor(connectionStatus.mH5Tk) }">
-                {{ getMH5TkStatusText(connectionStatus.mH5Tk) }}
+              <span class="credential-item__status" :style="{ color: getMH5TkStatusColor(h5Token) }">
+                {{ getMH5TkStatusText(h5Token) }}
               </span>
             </div>
-            <div class="credential-item__value" v-if="connectionStatus.mH5Tk">
-              {{ connectionStatus.mH5Tk.substring(0, 40) }}...
-              <span class="credential-item__meta">{{ connectionStatus.mH5Tk.length }} 字符</span>
+            <div class="credential-item__value" v-if="h5Token">
+              {{ h5Token.substring(0, 40) }}...
+              <span class="credential-item__meta">{{ h5Token.length }} 字符</span>
             </div>
             <div class="credential-item__value credential-item__value--empty" v-else>未设置</div>
           </div>
@@ -568,12 +571,12 @@ onBeforeUnmount(() => {
           <div class="credential-item">
             <div class="credential-item__header">
               <span class="credential-item__name">H5 Token</span>
-              <span class="credential-item__status" :style="{ color: getMH5TkStatusColor(connectionStatus.mH5Tk) }">
-                {{ getMH5TkStatusText(connectionStatus.mH5Tk) }}
+              <span class="credential-item__status" :style="{ color: getMH5TkStatusColor(h5Token) }">
+                {{ getMH5TkStatusText(h5Token) }}
               </span>
             </div>
-            <div class="credential-item__value" v-if="connectionStatus.mH5Tk">
-              {{ connectionStatus.mH5Tk.substring(0, 30) }}...
+            <div class="credential-item__value" v-if="h5Token">
+              {{ h5Token.substring(0, 30) }}...
             </div>
             <div class="credential-item__value credential-item__value--empty" v-else>未设置</div>
           </div>
