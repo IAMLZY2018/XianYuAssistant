@@ -35,6 +35,9 @@ public class ItemServiceImpl implements ItemService {
     @Autowired
     private com.feijimiao.xianyuassistant.service.ItemDetailSyncService itemDetailSyncService;
 
+    @Autowired
+    private com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoDeliveryConfigMapper autoDeliveryConfigMapper;
+
     /**
      * 获取指定页的商品信息（内部方法）
      */
@@ -964,9 +967,24 @@ public class ItemServiceImpl implements ItemService {
      */
     @Override
     public ResultObject<RagAutoReplyConfigRespDTO> getRagAutoReplyConfig(RagAutoReplyConfigReqDTO reqDTO) {
-        RagAutoReplyConfigRespDTO respDTO = new RagAutoReplyConfigRespDTO();
-        respDTO.setRagDelaySeconds(15);
-        return ResultObject.success(respDTO);
+        try {
+            Long accountId = reqDTO.getXianyuAccountId();
+            String xyGoodsId = reqDTO.getXyGoodsId();
+
+            com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoDeliveryConfig config = 
+                    autoDeliveryConfigMapper.findByAccountIdAndGoodsId(accountId, xyGoodsId);
+
+            RagAutoReplyConfigRespDTO respDTO = new RagAutoReplyConfigRespDTO();
+            if (config != null && config.getRagDelaySeconds() != null) {
+                respDTO.setRagDelaySeconds(config.getRagDelaySeconds());
+            } else {
+                respDTO.setRagDelaySeconds(15);
+            }
+            return ResultObject.success(respDTO);
+        } catch (Exception e) {
+            log.error("获取自动回复配置失败", e);
+            return ResultObject.failed("获取自动回复配置失败: " + e.getMessage());
+        }
     }
     
     /**
@@ -974,6 +992,31 @@ public class ItemServiceImpl implements ItemService {
      */
     @Override
     public ResultObject<?> updateRagAutoReplyConfig(UpdateRagAutoReplyConfigReqDTO reqDTO) {
-        return ResultObject.success(null);
+        try {
+            Long accountId = reqDTO.getXianyuAccountId();
+            String xyGoodsId = reqDTO.getXyGoodsId();
+            Integer ragDelaySeconds = reqDTO.getRagDelaySeconds();
+
+            com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoDeliveryConfig config = 
+                    autoDeliveryConfigMapper.findByAccountIdAndGoodsId(accountId, xyGoodsId);
+
+            if (config == null) {
+                config = new com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoDeliveryConfig();
+                config.setXianyuAccountId(accountId);
+                config.setXyGoodsId(xyGoodsId);
+                config.setRagDelaySeconds(ragDelaySeconds != null ? ragDelaySeconds : 15);
+                autoDeliveryConfigMapper.insert(config);
+            } else {
+                config.setRagDelaySeconds(ragDelaySeconds != null ? ragDelaySeconds : 15);
+                autoDeliveryConfigMapper.updateById(config);
+            }
+
+            log.info("更新自动回复延时配置成功: accountId={}, xyGoodsId={}, ragDelaySeconds={}", 
+                    accountId, xyGoodsId, ragDelaySeconds);
+            return ResultObject.success(null);
+        } catch (Exception e) {
+            log.error("更新自动回复配置失败", e);
+            return ResultObject.failed("更新自动回复配置失败: " + e.getMessage());
+        }
     }
 }

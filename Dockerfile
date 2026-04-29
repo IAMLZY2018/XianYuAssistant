@@ -5,6 +5,9 @@ FROM node:20-alpine AS frontend-build
 
 WORKDIR /app/vue-code
 
+# 设置 npm 镜像源
+RUN npm config set registry https://registry.npmmirror.com
+
 # 先复制依赖文件，利用缓存
 COPY vue-code/package.json vue-code/package-lock.json ./
 RUN npm ci
@@ -44,7 +47,7 @@ WORKDIR /app
 RUN mkdir -p /app/dbdata /app/logs
 
 # 从构建阶段复制 JAR
-COPY --from=backend-build /app/target/XianYuAssistant-1.1.0.jar app.jar
+COPY --from=backend-build /app/target/XianYuAssistant-1.1.1.jar app.jar
 
 # 暴露端口
 EXPOSE 12400

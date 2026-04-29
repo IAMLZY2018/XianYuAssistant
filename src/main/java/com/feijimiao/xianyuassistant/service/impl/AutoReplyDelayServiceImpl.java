@@ -1,6 +1,8 @@
 package com.feijimiao.xianyuassistant.service.impl;
 
+import com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoDeliveryConfig;
 import com.feijimiao.xianyuassistant.event.chatMessageEvent.ChatMessageData;
+import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoDeliveryConfigMapper;
 import com.feijimiao.xianyuassistant.service.AutoReplyDelayService;
 import com.feijimiao.xianyuassistant.service.AutoReplyService;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +31,9 @@ public class AutoReplyDelayServiceImpl implements AutoReplyDelayService {
     
     @Autowired
     private AutoReplyService autoReplyService;
+
+    @Autowired
+    private XianyuGoodsAutoDeliveryConfigMapper autoDeliveryConfigMapper;
     
     /**
      * 延时任务调度器
@@ -178,11 +183,24 @@ public class AutoReplyDelayServiceImpl implements AutoReplyDelayService {
     /**
      * 获取延时秒数
      * 
-     * <p>优先使用消息中携带的配置，否则使用默认值</p>
+     * <p>优先从数据库配置获取，否则使用默认值</p>
      */
     private int getDelaySeconds(ChatMessageData messageData) {
-        // 这里可以从消息数据或配置中获取，暂时使用默认值
-        // 后续可以通过查询数据库配置来获取
+        try {
+            Long accountId = messageData.getXianyuAccountId();
+            String xyGoodsId = messageData.getXyGoodsId();
+            
+            if (accountId == null || xyGoodsId == null) {
+                return DEFAULT_DELAY_SECONDS;
+            }
+            
+            XianyuGoodsAutoDeliveryConfig config = autoDeliveryConfigMapper.findByAccountIdAndGoodsId(accountId, xyGoodsId);
+            if (config != null && config.getRagDelaySeconds() != null && config.getRagDelaySeconds() > 0) {
+                return config.getRagDelaySeconds();
+            }
+        } catch (Exception e) {
+            log.warn("获取延时配置失败，使用默认值: {}", e.getMessage());
+        }
         return DEFAULT_DELAY_SECONDS;
     }
 }

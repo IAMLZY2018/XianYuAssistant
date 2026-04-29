@@ -200,6 +200,7 @@ CREATE TABLE IF NOT EXISTS xianyu_goods_auto_delivery_config (
     kami_delivery_template TEXT,                      -- 卡密发货文案模板，使用{kmKey}占位符替换卡密内容
     auto_delivery_image_url TEXT,                     -- 自动发货图片URL
     auto_confirm_shipment TINYINT DEFAULT 0,          -- 自动确认发货开关：0-关闭，1-开启
+    rag_delay_seconds INTEGER DEFAULT 15,             -- 自动回复延时秒数（RAG回复延时）
     create_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 创建时间
     update_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 更新时间
     FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)

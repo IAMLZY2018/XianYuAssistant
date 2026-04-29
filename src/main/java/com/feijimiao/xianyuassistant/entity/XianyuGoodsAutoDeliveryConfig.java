@@ -62,6 +62,11 @@ public class XianyuGoodsAutoDeliveryConfig {
      * 自动确认发货开关：0-关闭，1-开启
      */
     private Integer autoConfirmShipment;
+
+    /**
+     * 自动回复延时秒数（RAG回复延时）
+     */
+    private Integer ragDelaySeconds;
     
     /**
      * 创建时间

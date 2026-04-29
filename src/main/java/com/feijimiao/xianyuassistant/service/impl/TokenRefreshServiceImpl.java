@@ -9,18 +9,17 @@ import com.feijimiao.xianyuassistant.service.CookieRefreshService;
 import com.feijimiao.xianyuassistant.service.OperationLogService;
 import com.feijimiao.xianyuassistant.service.TokenRefreshService;
 import com.feijimiao.xianyuassistant.service.WebSocketTokenService;
+import com.feijimiao.xianyuassistant.utils.SessionCookieJar;
 import com.feijimiao.xianyuassistant.utils.XianyuSignUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,10 +72,6 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
     @Autowired(required = false)
     private com.feijimiao.xianyuassistant.service.EmailNotifyService emailNotifyService;
 
-    private final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(10))
-            .build();
-
     private volatile long nextCookieKeepAliveTime = 0;
 
     @PostConstruct
@@ -128,8 +123,7 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
     private boolean refreshMh5tkTokenWithRetry(Long accountId, int retryCount, boolean hasLoginAttempted) {
         try {
             log.info("【账号{}】开始刷新_m_h5_tk token... (重试次数: {})", accountId, retryCount);
-            
-            // 1. 获取当前Cookie
+
             XianyuCookie cookie = cookieMapper.selectOne(
                     new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<XianyuCookie>()
                             .eq(XianyuCookie::getXianyuAccountId, accountId)
@@ -138,64 +132,57 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
                 log.warn("【账号{}】未找到Cookie，无法刷新token", accountId);
                 return false;
             }
-            
-            String cookieStr = cookie.getCookieText();
-            Map<String, String> cookies = XianyuSignUtils.parseCookies(cookieStr);
-            
-            // 2. 构建请求：获取新的_m_h5_tk
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(API_H5_TK))
+
+            String oldCookieStr = cookie.getCookieText();
+            SessionCookieJar cookieJar = new SessionCookieJar(oldCookieStr);
+
+            Request request = new Request.Builder()
+                    .url(API_H5_TK)
                     .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
                     .header("Referer", "https://market.m.goofish.com/")
-                    .header("Cookie", cookieStr)
-                    .GET()
-                    .timeout(Duration.ofSeconds(10))
+                    .get()
                     .build();
-            
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            
-            // 3. 提取新的_m_h5_tk
-            List<String> setCookieHeaders = response.headers().allValues("Set-Cookie");
-            boolean updated = false;
-            
-            for (String setCookie : setCookieHeaders) {
-                String[] parts = setCookie.split(";")[0].split("=", 2);
-                if (parts.length == 2 && "_m_h5_tk".equals(parts[0])) {
-                    String newMh5tk = parts[1];
-                    cookies.put("_m_h5_tk", newMh5tk);
-                    
-                    // 更新数据库
-                    String newCookieStr = XianyuSignUtils.formatCookies(cookies);
-                    cookie.setCookieText(newCookieStr);
-                    cookie.setMH5Tk(newMh5tk);
-                    cookieMapper.updateById(cookie);
-                    
-                    log.info("【账号{}】✅ _m_h5_tk token刷新成功: {}", accountId, 
-                            newMh5tk.substring(0, Math.min(20, newMh5tk.length())));
-                    
-                    // 记录操作日志
-                    operationLogService.log(accountId,
-                        com.feijimiao.xianyuassistant.constants.OperationConstants.Type.REFRESH,
-                        com.feijimiao.xianyuassistant.constants.OperationConstants.Module.TOKEN,
-                        "_m_h5_tk Token刷新成功",
-                        com.feijimiao.xianyuassistant.constants.OperationConstants.Status.SUCCESS,
-                        com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.TOKEN,
-                        String.valueOf(accountId),
-                        null, null, null, null);
-                    
-                    updated = true;
-                    break;
+
+            OkHttpClient okHttpClient = cookieJar.createHttpClient();
+
+            try (Response response = okHttpClient.newCall(request).execute()) {
+                String newCookieStr = cookieJar.getCookieString();
+                Map<String, String> newCookies = XianyuSignUtils.parseCookies(newCookieStr);
+                String newMh5tk = newCookies.get("_m_h5_tk");
+
+                if (newMh5tk != null && !newMh5tk.isEmpty()) {
+                    Map<String, String> oldCookies = XianyuSignUtils.parseCookies(oldCookieStr);
+                    String oldMh5tk = oldCookies.get("_m_h5_tk");
+                    boolean mh5tkChanged = !newMh5tk.equals(oldMh5tk);
+
+                    if (mh5tkChanged) {
+                        cookie.setCookieText(newCookieStr);
+                        cookie.setMH5Tk(newMh5tk);
+                        cookieMapper.updateById(cookie);
+
+                        log.info("【账号{}】✅ _m_h5_tk token刷新成功: {}",
+                                accountId, newMh5tk.substring(0, Math.min(20, newMh5tk.length())));
+
+                        operationLogService.log(accountId,
+                            com.feijimiao.xianyuassistant.constants.OperationConstants.Type.REFRESH,
+                            com.feijimiao.xianyuassistant.constants.OperationConstants.Module.TOKEN,
+                            "_m_h5_tk Token刷新成功（通过SessionCookieJar自动吸收Set-Cookie）",
+                            com.feijimiao.xianyuassistant.constants.OperationConstants.Status.SUCCESS,
+                            com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.TOKEN,
+                            String.valueOf(accountId),
+                            null, null, null, null);
+
+                        return true;
+                    } else {
+                        log.info("【账号{}】_m_h5_tk未变化，Token仍然有效", accountId);
+                        return true;
+                    }
                 }
+
+                log.warn("【账号{}】⚠️ 响应中未包含新的_m_h5_tk", accountId);
+                return handleMh5tkRefreshFailure(accountId, retryCount, hasLoginAttempted, "响应中未包含新Token");
             }
-            
-            if (updated) {
-                return true;
-            }
-            
-            // 4. 响应中未包含新的_m_h5_tk，进入失败处理
-            log.warn("【账号{}】⚠️ 响应中未包含新的_m_h5_tk", accountId);
-            return handleMh5tkRefreshFailure(accountId, retryCount, hasLoginAttempted, "响应中未包含新Token");
-            
+
         } catch (Exception e) {
             log.error("【账号{}】刷新_m_h5_tk token失败", accountId, e);
             return handleMh5tkRefreshFailure(accountId, retryCount, hasLoginAttempted, "异常: " + e.getMessage());

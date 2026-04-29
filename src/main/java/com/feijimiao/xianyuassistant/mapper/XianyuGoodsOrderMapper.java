@@ -70,8 +70,8 @@ public interface XianyuGoodsOrderMapper {
     @Update("UPDATE xianyu_goods_order SET state = #{state}, content = #{content} WHERE id = #{id}")
     int updateStateAndContent(@Param("id") Long id, @Param("state") Integer state, @Param("content") String content);
     
-    @Select("SELECT * FROM xianyu_goods_order WHERE xianyu_account_id = #{accountId} AND order_id = #{orderId}")
-    XianyuGoodsOrder selectByOrderId(@Param("accountId") Long accountId, @Param("orderId") String orderId);
+    @Select("SELECT * FROM xianyu_goods_order WHERE xianyu_account_id = #{accountId} AND xy_goods_id = #{xyGoodsId} AND order_id = #{orderId} LIMIT 1")
+    XianyuGoodsOrder selectByOrderId(@Param("accountId") Long accountId, @Param("xyGoodsId") String xyGoodsId, @Param("orderId") String orderId);
     
     @Update("UPDATE xianyu_goods_order SET confirm_state = 1 WHERE xianyu_account_id = #{accountId} AND order_id = #{orderId}")
     int updateConfirmState(@Param("accountId") Long accountId, @Param("orderId") String orderId);
