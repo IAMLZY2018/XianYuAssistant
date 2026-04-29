@@ -443,6 +443,8 @@ async function loadEmailConfig() {
     if (fromRes.code === 200 && fromRes.data) emailSmtpFrom.value = fromRes.data.settingValue || ''
     if (sslRes.code === 200 && sslRes.data && sslRes.data.settingValue !== undefined) {
       emailSmtpSsl.value = sslRes.data.settingValue === '1' || sslRes.data.settingValue === 'true'
+    } else {
+      emailSmtpSsl.value = true
     }
     if (wsDisconnectRes.code === 200 && wsDisconnectRes.data && wsDisconnectRes.data.settingValue) {
       wsDisconnectNotifyEnabled.value = wsDisconnectRes.data.settingValue === '1' || wsDisconnectRes.data.settingValue === 'true'
@@ -912,6 +914,14 @@ async function handleTestEmail() {
           <div class="settings__section-header">
             <div class="settings__section-title">邮箱配置</div>
             <div class="settings__section-header-actions">
+              <button
+                v-if="emailConfigured"
+                class="settings__toggle-btn settings__toggle-btn--test"
+                :disabled="emailTesting"
+                @click="handleTestEmail"
+              >
+                {{ emailTesting ? '发送中...' : '发送测试邮件' }}
+              </button>
               <span v-if="emailConfigured" class="settings__status-badge" :class="emailConfigured ? 'settings__status-badge--success' : ''">
                 {{ emailConfigured ? '已配置' : '未配置' }}
               </span>
@@ -992,13 +1002,6 @@ async function handleTestEmail() {
               </label>
             </div>
             <div class="settings__actions">
-              <button
-                class="settings__btn settings__btn--secondary"
-                :disabled="emailTesting || !emailConfigured"
-                @click="handleTestEmail"
-              >
-                {{ emailTesting ? '发送中...' : '发送测试邮件' }}
-              </button>
               <button
                 class="settings__btn settings__btn--primary"
                 :disabled="emailSaving"

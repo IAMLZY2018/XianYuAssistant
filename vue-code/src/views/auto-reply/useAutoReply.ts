@@ -1,11 +1,12 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getAccountList } from '@/api/account'
 import { getGoodsList, updateAutoReplyStatus, getAutoReplyConfig, updateAutoReplyConfig, getAutoReplyRecords } from '@/api/goods'
 import { chatWithAI, chatTestWithAI, putNewDataToRAG, queryRAGData, deleteRAGData, saveFixedMaterial, getFixedMaterial, syncDetailToFixedMaterial } from '@/api/ai'
 import type { RAGDataItem } from '@/api/ai'
 import type { AutoReplyRecord } from '@/api/goods'
 import { showSuccess, showError, showInfo } from '@/utils'
+import { ElMessage } from 'element-plus'
 import type { Account } from '@/types'
 import type { GoodsItemWithConfig } from '@/api/goods'
 
@@ -20,6 +21,17 @@ export interface ChatMessage {
 
 export function useAutoReply() {
   const route = useRoute()
+  const router = useRouter()
+
+  const showAiConfigTip = () => {
+    ElMessage({
+      type: 'warning',
+      duration: 5000,
+      dangerouslyUseHTMLString: true,
+      message: '请完成AI配置再上传资料，<a href="#/settings" style="color:#34c759;text-decoration:underline;font-weight:600;" onclick="event.preventDefault();window.__gotoSettings&&window.__gotoSettings()">点击前往</a>'
+    })
+  }
+  ;(window as any).__gotoSettings = () => router.push('/settings')
 
   const saving = ref(false)
   const accounts = ref<Account[]>([])
@@ -491,10 +503,11 @@ export function useAutoReply() {
       if (result.code === 0 || result.code === 200) {
         showSuccess('添加成功')
         dataContent.value = ''
-        // 上传成功后如果正在查看资料列表，自动刷新
         if (dataVisible.value) {
           handleQueryData()
         }
+      } else if (result.code === 1001) {
+        showAiConfigTip()
       } else {
         // 检查是否是AI未配置的错误
         const errorMsg = result.msg || '上传资料失败'

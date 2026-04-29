@@ -4,6 +4,7 @@ import type { ApiResponse } from '@/types';
 // 自动发货记录 (简化版)
 export interface AutoDeliveryRecord {
   id: number;
+  xianyuAccountId?: number;
   xyGoodsId: string;
   goodsTitle?: string;
   buyerUserName?: string;

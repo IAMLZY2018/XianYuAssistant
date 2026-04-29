@@ -93,8 +93,15 @@ public class AIChatController {
 
     @PostMapping("/putNewData")
     public ResultObject<?> putNewData(@RequestBody PutNewDataToRAGReqDTO putNewDataToRAGReqDTO) {
-        aiService.putDataToRAG(putNewDataToRAGReqDTO.getContent(), putNewDataToRAGReqDTO.getGoodsId());
-        return ResultObject.success(null);
+        try {
+            aiService.putDataToRAG(putNewDataToRAGReqDTO.getContent(), putNewDataToRAGReqDTO.getGoodsId());
+            return ResultObject.success(null);
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().contains("向量库未初始化")) {
+                return ResultObject.failed(1001, "请完成AI配置再上传资料");
+            }
+            throw e;
+        }
     }
 
     @PostMapping("/queryRAGData")

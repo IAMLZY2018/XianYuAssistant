@@ -1,0 +1,1 @@
+import{h as o}from"./index-Bb-5byfS.js";function t(e){return o({url:"/operation-log/query",method:"POST",data:e})}function n(e){return o({url:"/operation-log/deleteOld",method:"POST",data:{days:e}})}export{n as d,t as q};

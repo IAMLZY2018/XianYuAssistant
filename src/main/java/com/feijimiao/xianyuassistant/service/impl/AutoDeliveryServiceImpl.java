@@ -245,6 +245,7 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             com.feijimiao.xianyuassistant.controller.dto.AutoDeliveryRecordDTO dto = 
                     new com.feijimiao.xianyuassistant.controller.dto.AutoDeliveryRecordDTO();
             dto.setId(record.getId());
+            dto.setXianyuAccountId(record.getXianyuAccountId());
             dto.setXyGoodsId(record.getXyGoodsId());
             dto.setGoodsTitle(record.getGoodsTitle());
             dto.setBuyerUserName(record.getBuyerUserName());
@@ -447,6 +448,7 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
                 String result = orderService.confirmShipment(accountId, orderId);
                 if (result != null) {
                     log.info("【账号{}】✅ 自动确认发货成功: orderId={}", accountId, orderId);
+                    orderMapper.updateConfirmState(accountId, orderId);
                 } else {
                     log.error("【账号{}】❌ 自动确认发货失败: orderId={}", accountId, orderId);
                 }

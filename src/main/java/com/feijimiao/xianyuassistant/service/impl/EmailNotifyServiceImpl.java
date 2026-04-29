@@ -181,7 +181,7 @@ public class EmailNotifyServiceImpl implements EmailNotifyService {
         Properties props = sender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
         props.put("mail.smtp.auth", "true");
-        if ("1".equals(ssl) || "true".equalsIgnoreCase(ssl)) {
+        if (!"0".equals(ssl) && !"false".equalsIgnoreCase(ssl)) {
             props.put("mail.smtp.ssl.enable", "true");
             props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
         } else {

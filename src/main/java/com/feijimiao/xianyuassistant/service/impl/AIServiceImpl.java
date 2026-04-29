@@ -52,6 +52,27 @@ public class AIServiceImpl implements AIService {
     /** AI不可用时的降级提示 */
     private static final String AI_NOT_AVAILABLE_MSG = "AI服务暂未配置，请在系统设置中配置API Key后再试";
 
+    private String extractAiErrorMessage(Throwable e) {
+        String msg = e.getMessage();
+        if (msg == null) return "未知错误";
+        try {
+            int jsonStart = msg.indexOf("{");
+            if (jsonStart >= 0) {
+                String json = msg.substring(jsonStart);
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(json);
+                com.fasterxml.jackson.databind.JsonNode messageNode = root.at("/error/message");
+                if (!messageNode.isMissingNode() && !messageNode.isNull()) {
+                    return messageNode.asText();
+                }
+            }
+        } catch (Exception parseEx) {
+            log.debug("解析AI错误JSON失败: {}", parseEx.getMessage());
+        }
+        if (msg.length() > 200) return msg.substring(0, 200);
+        return msg;
+    }
+
     @Autowired
     private DynamicAIChatClientManager dynamicAIChatClientManager;
 
@@ -139,6 +160,11 @@ public class AIServiceImpl implements AIService {
                         long firstTokenCost = System.currentTimeMillis() - llmStart;
                         log.info("[AI Chat] 首 token 耗时: {}ms (从请求到LLM开始输出)", firstTokenCost);
                     }
+                })
+                .onErrorResume(e -> {
+                    log.error("[AI Chat] LLM调用失败: {}", e.getMessage());
+                    String errorMsg = extractAiErrorMessage(e);
+                    return Flux.just("【AI服务错误】" + errorMsg);
                 });
     }
 
@@ -381,7 +407,11 @@ public class AIServiceImpl implements AIService {
                 .system(finalSystemPrompt)
                 .user(userMessage)
                 .stream()
-                .content();
+                .content()
+                .onErrorResume(e -> {
+                    log.error("[AI Chat Test Stream] LLM调用失败: {}", e.getMessage());
+                    return Flux.just("【AI服务错误】" + extractAiErrorMessage(e));
+                });
     }
 
     @Override
@@ -526,6 +556,10 @@ public class AIServiceImpl implements AIService {
                         long firstTokenCost = System.currentTimeMillis() - llmStart;
                         log.info("[AI Chat] 首 token 耗时: {}ms", firstTokenCost);
                     }
+                })
+                .onErrorResume(e -> {
+                    log.error("[AI Chat] LLM调用失败: {}", e.getMessage());
+                    return Flux.just("【AI服务错误】" + extractAiErrorMessage(e));
                 });
     }
 

@@ -13,9 +13,8 @@ public class AutoDeliveryRecordDTO {
      */
     private Long id;
     
-    /**
-     * 闲鱼的商品ID
-     */
+    private Long xianyuAccountId;
+    
     private String xyGoodsId;
     
     /**

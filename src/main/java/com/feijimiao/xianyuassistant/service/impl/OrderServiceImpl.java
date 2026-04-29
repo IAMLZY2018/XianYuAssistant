@@ -64,10 +64,16 @@ public class OrderServiceImpl implements OrderService {
             );
             
             if (!result.isSuccess()) {
-                log.error("【账号{}】❌ 闲鱼API确认发货失败: {}", accountId, result.getErrorMessage());
+                String errorMsg = result.getErrorMessage();
+                log.error("【账号{}】❌ 闲鱼API确认发货失败: {}", accountId, errorMsg);
                 
                 if (result.isTokenExpired()) {
                     return "令牌过期，请稍后重试或手动更新Cookie";
+                }
+
+                if (errorMsg != null && errorMsg.contains("ORDER_ALREADY_DELIVERY")) {
+                    log.info("【账号{}】订单已发货(ORDER_ALREADY_DELIVERY)，视为确认成功: orderId={}", accountId, orderId);
+                    return "确认发货成功(已发货)";
                 }
                 
                 return null;

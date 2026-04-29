@@ -10,6 +10,7 @@ export interface DeliveryRecordQueryReq {
 
 export interface DeliveryRecordVO {
   id: number
+  xianyuAccountId?: number
   xyGoodsId: string
   goodsTitle?: string
   buyerUserName?: string

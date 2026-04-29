@@ -1,1 +1,0 @@
-import{h as o}from"./index-2nHzk72o.js";function t(e){return o({url:"/operation-log/query",method:"POST",data:e})}function n(e){return o({url:"/operation-log/deleteOld",method:"POST",data:{days:e}})}export{n as d,t as q};
