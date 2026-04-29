@@ -1,6 +1,7 @@
 package com.feijimiao.xianyuassistant.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.feijimiao.xianyuassistant.entity.XianyuOperationLog;
 import com.feijimiao.xianyuassistant.mapper.XianyuOperationLogMapper;
 import com.feijimiao.xianyuassistant.service.OperationLogService;
@@ -23,60 +24,77 @@ public class OperationLogServiceImpl implements OperationLogService {
     @Autowired
     private XianyuOperationLogMapper operationLogMapper;
     
-    @Async
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    
     @Override
+    @Async
     public void log(XianyuOperationLog operationLog) {
         try {
+            // 设置创建时间
             if (operationLog.getCreateTime() == null) {
                 operationLog.setCreateTime(System.currentTimeMillis());
             }
+            
             operationLogMapper.insert(operationLog);
+            log.debug("操作日志已记录: accountId={}, type={}, module={}", 
+                    operationLog.getXianyuAccountId(), 
+                    operationLog.getOperationType(), 
+                    operationLog.getOperationModule());
         } catch (Exception e) {
             log.error("记录操作日志失败", e);
         }
     }
     
-    @Async
     @Override
+    @Async
     public void log(Long accountId, String operationType, String operationDesc, Integer status) {
-        XianyuOperationLog operationLog = new XianyuOperationLog();
-        operationLog.setXianyuAccountId(accountId);
-        operationLog.setOperationType(operationType);
-        operationLog.setOperationDesc(operationDesc);
-        operationLog.setOperationStatus(status);
-        operationLog.setCreateTime(System.currentTimeMillis());
-        log(operationLog);
+        log(accountId, operationType, null, operationDesc, status, 
+            null, null, null, null, null, null);
     }
     
-    @Async
     @Override
-    public void log(Long accountId, String operationType, String operationModule,
-                    String operationDesc, Integer status, String targetType, String targetId,
-                    String requestParams, String responseResult, String errorMessage, Integer durationMs) {
-        XianyuOperationLog operationLog = new XianyuOperationLog();
-        operationLog.setXianyuAccountId(accountId);
-        operationLog.setOperationType(operationType);
-        operationLog.setOperationModule(operationModule);
-        operationLog.setOperationDesc(operationDesc);
-        operationLog.setOperationStatus(status);
-        operationLog.setTargetType(targetType);
-        operationLog.setTargetId(targetId);
-        operationLog.setRequestParams(requestParams);
-        operationLog.setResponseResult(responseResult);
-        operationLog.setErrorMessage(errorMessage);
-        operationLog.setDurationMs(durationMs);
-        operationLog.setCreateTime(System.currentTimeMillis());
-        log(operationLog);
+    @Async
+    public void log(Long accountId, String operationType, String operationModule, 
+                   String operationDesc, Integer status, String targetType, String targetId,
+                   String requestParams, String responseResult, String errorMessage, Integer durationMs) {
+        try {
+            XianyuOperationLog operationLog = new XianyuOperationLog();
+            operationLog.setXianyuAccountId(accountId);
+            operationLog.setOperationType(operationType);
+            operationLog.setOperationModule(operationModule);
+            operationLog.setOperationDesc(operationDesc);
+            operationLog.setOperationStatus(status);
+            operationLog.setTargetType(targetType);
+            operationLog.setTargetId(targetId);
+            operationLog.setRequestParams(requestParams);
+            operationLog.setResponseResult(responseResult);
+            operationLog.setErrorMessage(errorMessage);
+            operationLog.setDurationMs(durationMs);
+            operationLog.setCreateTime(System.currentTimeMillis());
+            
+            operationLogMapper.insert(operationLog);
+            log.debug("操作日志已记录: accountId={}, type={}, module={}, status={}", 
+                    accountId, operationType, operationModule, status);
+        } catch (Exception e) {
+            log.error("记录操作日志失败", e);
+        }
     }
     
     @Override
     public Map<String, Object> queryLogs(Long accountId, String operationType, String operationModule,
-                                         Integer operationStatus, Integer page, Integer pageSize) {
+                                        Integer operationStatus, Integer page, Integer pageSize) {
         try {
-            // 计算偏移量
+            // 参数校验
+            if (page == null || page < 1) {
+                page = 1;
+            }
+            if (pageSize == null || pageSize < 1) {
+                pageSize = 20;
+            }
+            
             int offset = (page - 1) * pageSize;
             
-            // 查询数据
+            // 查询列表
             List<XianyuOperationLog> logs = operationLogMapper.selectByPage(
                     accountId, operationType, operationModule, operationStatus, pageSize, offset);
             
@@ -84,18 +102,17 @@ public class OperationLogServiceImpl implements OperationLogService {
             Integer total = operationLogMapper.countByCondition(
                     accountId, operationType, operationModule, operationStatus);
             
-            // 构建返回结果
+            // 构建返回结果（注意：前端期望的字段名是logs，不是list）
             Map<String, Object> result = new HashMap<>();
-            result.put("logs", logs);
+            result.put("logs", logs);  // 修改为logs
             result.put("total", total);
             result.put("page", page);
             result.put("pageSize", pageSize);
             result.put("totalPages", (int) Math.ceil((double) total / pageSize));
             
             return result;
-            
         } catch (Exception e) {
-            log.error("查询操作记录失败", e);
+            log.error("查询操作日志失败", e);
             return new HashMap<>();
         }
     }
@@ -103,15 +120,16 @@ public class OperationLogServiceImpl implements OperationLogService {
     @Override
     public int deleteOldLogs(int days) {
         try {
-            long cutoffTime = System.currentTimeMillis() - (days * 24L * 60 * 60 * 1000);
-            int deleted = operationLogMapper.delete(
-                    new LambdaQueryWrapper<XianyuOperationLog>()
-                            .lt(XianyuOperationLog::getCreateTime, cutoffTime)
-            );
-            log.info("删除{}天前的操作记录，共删除{}条", days, deleted);
+            long threshold = System.currentTimeMillis() - (days * 24L * 60 * 60 * 1000);
+            
+            LambdaQueryWrapper<XianyuOperationLog> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.lt(XianyuOperationLog::getCreateTime, threshold);
+            
+            int deleted = operationLogMapper.delete(queryWrapper);
+            log.info("已删除{}天前的操作日志: {}条", days, deleted);
             return deleted;
         } catch (Exception e) {
-            log.error("删除旧操作记录失败", e);
+            log.error("删除旧日志失败", e);
             return 0;
         }
     }

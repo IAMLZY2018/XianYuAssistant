@@ -33,8 +33,8 @@ public class AutoDeliveryConfigController {
     @PostMapping("/save")
     public ResultObject<AutoDeliveryConfigRespDTO> saveOrUpdateConfig(@Valid @RequestBody AutoDeliveryConfigReqDTO reqDTO) {
         try {
-            log.info("保存自动发货配置请求: xianyuAccountId={}, xyGoodsId={}, type={}", 
-                    reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId(), reqDTO.getType());
+            log.info("保存自动发货配置请求: xianyuAccountId={}, xyGoodsId={}, deliveryMode={}", 
+                    reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId(), reqDTO.getDeliveryMode());
             return autoDeliveryConfigService.saveOrUpdateConfig(reqDTO);
         } catch (Exception e) {
             log.error("保存自动发货配置失败", e);

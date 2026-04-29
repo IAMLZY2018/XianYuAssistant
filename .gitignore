@@ -38,3 +38,10 @@ build/
 *.db
 *.db-journal
 /logs/
+/nul
+/vue-code/nul
+/demo/
+/.codeartsdoer/
+/.arts/
+/.qoder/
+/.qoder/

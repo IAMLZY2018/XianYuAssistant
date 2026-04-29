@@ -1,55 +1,61 @@
-# 多阶段构建 Dockerfile
+# ===== 多阶段构建 =====
+
 # 阶段1: 构建前端
-FROM node:20-alpine AS frontend-builder
+FROM node:20-alpine AS frontend-build
 
 WORKDIR /app/vue-code
 
-# 复制前端项目文件
-COPY vue-code/package*.json ./
-RUN npm install
+# 设置 npm 镜像源
+RUN npm config set registry https://registry.npmmirror.com
 
+# 先复制依赖文件，利用缓存
+COPY vue-code/package.json vue-code/package-lock.json ./
+RUN npm ci
+
+# 复制前端源码并构建
 COPY vue-code/ ./
 RUN npm run build:spring
 
-# 阶段2: 构建后端
-FROM maven:3.9-eclipse-temurin-17 AS backend-builder
+# 阶段2: 构建后端 JAR
+FROM eclipse-temurin:21-jdk-alpine AS backend-build
 
 WORKDIR /app
 
-# 复制 Maven 配置文件
-COPY pom.xml ./
-RUN mvn dependency:go-offline -B
+# 先复制 Maven 配置和 pom.xml，利用缓存
+COPY .mvn/ .mvn/
+COPY mvnw mvnw.cmd pom.xml ./
+RUN chmod +x mvnw
 
-# 复制后端源代码
-COPY src ./src
+# 复制前端构建产物到 static 目录
+COPY --from=frontend-build /app/vue-code/../src/main/resources/static src/main/resources/static/
 
-# 从前端构建阶段复制静态文件
-COPY --from=frontend-builder /app/src/main/resources/static ./src/main/resources/static
+# 复制后端源码
+COPY src/ src/
 
-# 构建后端
-RUN mvn clean package -DskipTests
+# 构建 JAR（跳过测试）
+RUN ./mvnw clean package -DskipTests
 
 # 阶段3: 运行时镜像
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
+
+LABEL maintainer="IAMLZY"
+LABEL description="XianYuAssistant - 闲鱼自动化管理系统"
 
 WORKDIR /app
 
 # 创建数据目录
-RUN mkdir -p /app/data
+RUN mkdir -p /app/dbdata /app/logs
 
-# 从构建阶段复制 JAR 文件
-COPY --from=backend-builder /app/target/*.jar app.jar
+# 从构建阶段复制 JAR
+COPY --from=backend-build /app/target/XianYuAssistant-1.1.2.jar app.jar
 
 # 暴露端口
-EXPOSE 8080
+EXPOSE 12400
 
-# 设置环境变量
-ENV JAVA_OPTS="-Xms256m -Xmx512m" \
-    TZ=Asia/Shanghai
+# 环境变量
+ENV JAVA_OPTS="-Xms256m -Xmx512m"
+ENV SERVER_PORT=12400
+ENV ALI_API_KEY=""
 
-# 健康检查
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/health || exit 1
-
-# 启动应用
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+# 启动命令
+ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -Dserver.port=${SERVER_PORT} -jar app.jar"]

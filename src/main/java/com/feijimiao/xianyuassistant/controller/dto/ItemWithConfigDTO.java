@@ -25,6 +25,11 @@ public class ItemWithConfigDTO {
     private Integer xianyuAutoReplyOn;
     
     /**
+     * 携带上下文开关：1-开启，0-关闭
+     */
+    private Integer xianyuAutoReplyContextOn;
+    
+    /**
      * 自动发货类型（1-文本，2-自定义）
      */
     private Integer autoDeliveryType;

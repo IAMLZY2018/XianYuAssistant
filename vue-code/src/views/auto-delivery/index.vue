@@ -1,984 +1,799 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
-import { ElMessageBox } from 'element-plus';
-import { getAccountList } from '@/api/account';
-import { getGoodsList, getGoodsDetail, updateAutoDeliveryStatus } from '@/api/goods';
-import {
-  getAutoDeliveryConfig,
-  saveOrUpdateAutoDeliveryConfig,
-  type AutoDeliveryConfig,
-  type SaveAutoDeliveryConfigReq,
-  type GetAutoDeliveryConfigReq
-} from '@/api/auto-delivery-config';
-import { showSuccess, showError, showInfo } from '@/utils';
-import type { Account } from '@/types';
-import type { GoodsItemWithConfig } from '@/api/goods';
-import GoodsDetailDialog from '../goods/components/GoodsDetailDialog.vue';
-import { getAutoDeliveryRecords, type AutoDeliveryRecordReq, type AutoDeliveryRecordResp, confirmShipment, type ConfirmShipmentReq } from '@/api/auto-delivery-record';
+import { useAutoDelivery } from './useAutoDelivery'
+import './auto-delivery.css'
 
-const loading = ref(false);
-const saving = ref(false);
-const accounts = ref<Account[]>([]);
-const selectedAccountId = ref<number | null>(null);
-const goodsList = ref<GoodsItemWithConfig[]>([]);
-const selectedGoods = ref<GoodsItemWithConfig | null>(null);
-const currentConfig = ref<AutoDeliveryConfig | null>(null);
+import IconTruck from '@/components/icons/IconTruck.vue'
+import IconChevronDown from '@/components/icons/IconChevronDown.vue'
+import IconChevronLeft from '@/components/icons/IconChevronLeft.vue'
+import IconChevronRight from '@/components/icons/IconChevronRight.vue'
+import IconText from '@/components/icons/IconText.vue'
+import IconRobot from '@/components/icons/IconRobot.vue'
+import IconSend from '@/components/icons/IconSend.vue'
+import IconImage from '@/components/icons/IconImage.vue'
+import IconSparkle from '@/components/icons/IconSparkle.vue'
+import IconCheck from '@/components/icons/IconCheck.vue'
+import IconClock from '@/components/icons/IconClock.vue'
+import IconPackage from '@/components/icons/IconPackage.vue'
+import IconCopy from '@/components/icons/IconCopy.vue'
 
-// 商品详情对话框
-const detailDialogVisible = ref(false);
-const selectedGoodsId = ref<string>('');
+import GoodsDetailDialog from '../goods/components/GoodsDetailDialog.vue'
+import MultiImageUploader from '@/components/MultiImageUploader.vue'
 
-// 表单数据
-const configForm = ref({
-  type: 1,
-  autoDeliveryContent: '',
-  autoConfirmShipment: 0
-});
-
-// 自动发货记录
-const recordsLoading = ref(false);
-const deliveryRecords = ref<any[]>([]);
-const recordsTotal = ref(0);
-const recordsPageNum = ref(1);
-const recordsPageSize = ref(20);
-const recordsExpanded = ref(false); // 记录表格是否展开全屏
-
-// 格式化时间
-const formatTime = (time: string) => {
-  if (!time) return '-';
-  // 将ISO时间格式转换为 YYYY-MM-DD HH:mm:ss
-  return time.replace('T', ' ').substring(0, 19);
-};
-
-// 加载账号列表
-const loadAccounts = async () => {
-  try {
-    const response = await getAccountList();
-    if (response.code === 0 || response.code === 200) {
-      accounts.value = response.data?.accounts || [];
-      // 默认选择第一个账号
-      if (accounts.value.length > 0 && !selectedAccountId.value) {
-        selectedAccountId.value = accounts.value[0]?.id || null;
-        loadGoods();
-      }
-    }
-  } catch (error: any) {
-    console.error('加载账号列表失败:', error);
-  }
-};
-
-// 加载商品列表
-const loadGoods = async () => {
-  if (!selectedAccountId.value) {
-    showInfo('请先选择账号');
-    return;
-  }
-
-  loading.value = true;
-  try {
-    const params = {
-      xianyuAccountId: selectedAccountId.value,
-      pageNum: 1,
-      pageSize: 100 // 获取所有商品
-    };
-
-    const response = await getGoodsList(params);
-    if (response.code === 0 || response.code === 200) {
-      goodsList.value = response.data?.itemsWithConfig || [];
-      // 默认选择第一个商品
-      if (goodsList.value.length > 0 && !selectedGoods.value) {
-        if (goodsList.value.length > 0) {
-          selectGoods(goodsList.value[0]!);
-        }
-      }
-    } else {
-      throw new Error(response.msg || '获取商品列表失败');
-    }
-  } catch (error: any) {
-    console.error('加载商品列表失败:', error);
-    goodsList.value = [];
-  } finally {
-    loading.value = false;
-  }
-};
-
-// 账号变更
-const handleAccountChange = () => {
-  selectedGoods.value = null;
-  currentConfig.value = null;
-  loadGoods();
-};
-
-// 选择商品
-const selectGoods = async (goods: GoodsItemWithConfig) => {
-  selectedGoods.value = goods;
-  recordsPageNum.value = 1; // 重置页码
-  await loadConfig();
-  await loadDeliveryRecords();
-};
-
-// 加载配置
-const loadConfig = async () => {
-  if (!selectedGoods.value || !selectedAccountId.value) return;
-
-  try {
-    const req: GetAutoDeliveryConfigReq = {
-      xianyuAccountId: selectedAccountId.value,
-      xyGoodsId: selectedGoods.value.item.xyGoodId
-    };
-
-    const response = await getAutoDeliveryConfig(req);
-    if (response.code === 0 || response.code === 200) {
-      currentConfig.value = response.data || null;
-      if (response.data) {
-        configForm.value.type = response.data.type;
-        configForm.value.autoDeliveryContent = response.data.autoDeliveryContent || '';
-        configForm.value.autoConfirmShipment = response.data.autoConfirmShipment || 0;
-      } else {
-        // 重置表单
-        configForm.value.type = 1;
-        configForm.value.autoDeliveryContent = '';
-        configForm.value.autoConfirmShipment = 0;
-      }
-    } else {
-      throw new Error(response.msg || '获取配置失败');
-    }
-  } catch (error: any) {
-    console.error('加载配置失败:', error);
-    currentConfig.value = null;
-  }
-};
-
-// 保存配置
-const saveConfig = async () => {
-  if (!selectedGoods.value || !selectedAccountId.value) {
-    showInfo('请先选择商品');
-    return;
-  }
-
-  if (!configForm.value.autoDeliveryContent.trim()) {
-    showInfo('请输入自动发货内容');
-    return;
-  }
-
-  saving.value = true;
-  try {
-    const req: SaveAutoDeliveryConfigReq = {
-      xianyuAccountId: selectedAccountId.value,
-      xianyuGoodsId: selectedGoods.value.item.id,
-      xyGoodsId: selectedGoods.value.item.xyGoodId,
-      type: configForm.value.type,
-      autoDeliveryContent: configForm.value.autoDeliveryContent.trim(),
-      autoConfirmShipment: configForm.value.autoConfirmShipment
-    };
-
-    const response = await saveOrUpdateAutoDeliveryConfig(req);
-    if (response.code === 0 || response.code === 200) {
-      showSuccess('保存配置成功');
-      currentConfig.value = response.data || null;
-    } else {
-      throw new Error(response.msg || '保存配置失败');
-    }
-  } catch (error: any) {
-    console.error('保存配置失败:', error);
-  } finally {
-    saving.value = false;
-  }
-};
-
-// 获取状态标签类型
-const getStatusType = (status: number) => {
-  const statusMap: Record<number, string> = {
-    0: 'success',
-    1: 'info',
-    2: 'warning'
-  };
-  return statusMap[status] || 'info';
-};
-
-// 获取状态文本
-const getStatusText = (status: number) => {
-  const statusMap: Record<number, string> = {
-    0: '在售',
-    1: '已下架',
-    2: '已售出'
-  };
-  return statusMap[status] || '未知';
-};
-
-// 格式化价格
-const formatPrice = (price: string) => {
-  return price ? `¥${price}` : '-';
-};
-
-// 查看商品详情
-const viewGoodsDetail = () => {
-  if (!selectedGoods.value || !selectedAccountId.value) {
-    showInfo('请先选择商品');
-    return;
-  }
-
-  selectedGoodsId.value = selectedGoods.value.item.xyGoodId;
-  detailDialogVisible.value = true;
-};
-
-// 切换自动发货状态
-const toggleAutoDelivery = async (value: boolean) => {
-  if (!selectedGoods.value || !selectedAccountId.value) {
-    showInfo('请先选择商品');
-    return;
-  }
-
-  try {
-    const response = await updateAutoDeliveryStatus({
-      xianyuAccountId: selectedAccountId.value,
-      xyGoodsId: selectedGoods.value.item.xyGoodId,
-      xianyuAutoDeliveryOn: value ? 1 : 0
-    });
-
-    if (response.code === 0 || response.code === 200) {
-      showSuccess(`自动发货${value ? '开启' : '关闭'}成功`);
-      // 更新本地状态
-      if (selectedGoods.value) {
-        selectedGoods.value.xianyuAutoDeliveryOn = value ? 1 : 0;
-      }
-      // 同时更新商品列表中的状态
-      const goodsItem = goodsList.value.find(item => item.item.xyGoodId === selectedGoods.value?.item.xyGoodId);
-      if (goodsItem) {
-        goodsItem.xianyuAutoDeliveryOn = value ? 1 : 0;
-      }
-    } else {
-      throw new Error(response.msg || '操作失败');
-    }
-  } catch (error: any) {
-    console.error('操作失败:', error);
-    // 恢复开关状态
-    if (selectedGoods.value) {
-      selectedGoods.value.xianyuAutoDeliveryOn = value ? 0 : 1;
-    }
-  }
-};
-
-// 加载自动发货记录
-const loadDeliveryRecords = async () => {
-  if (!selectedAccountId.value || !selectedGoods.value) {
-    deliveryRecords.value = [];
-    recordsTotal.value = 0;
-    return;
-  }
-
-  recordsLoading.value = true;
-  try {
-    const req: AutoDeliveryRecordReq = {
-      xianyuAccountId: selectedAccountId.value,
-      xyGoodsId: selectedGoods.value.item.xyGoodId,
-      pageNum: recordsPageNum.value,
-      pageSize: recordsPageSize.value
-    };
-
-    const response = await getAutoDeliveryRecords(req);
-    if (response.code === 0 || response.code === 200) {
-      deliveryRecords.value = response.data?.records || [];
-      recordsTotal.value = response.data?.total || 0;
-    } else {
-      throw new Error(response.msg || '获取记录失败');
-    }
-  } catch (error: any) {
-    console.error('加载自动发货记录失败:', error);
-    deliveryRecords.value = [];
-    recordsTotal.value = 0;
-  } finally {
-    recordsLoading.value = false;
-  }
-};
-
-// 记录分页变化
-const handleRecordsPageChange = (page: number) => {
-  recordsPageNum.value = page;
-  loadDeliveryRecords();
-};
-
-// 记录每页数量变化
-const handleRecordsSizeChange = (size: number) => {
-  recordsPageSize.value = size;
-  recordsPageNum.value = 1;
-  loadDeliveryRecords();
-};
-
-// 获取状态标签类型
-const getRecordStatusType = (state: number) => {
-  return state === 1 ? 'success' : 'danger';
-};
-
-// 获取状态文本
-const getRecordStatusText = (state: number) => {
-  return state === 1 ? '成功' : '失败';
-};
-
-// 确认收货
-const handleConfirmShipment = async (record: any) => {
-  if (!selectedAccountId.value) {
-    showInfo('请先选择账号');
-    return;
-  }
-
-  if (!record.orderId) {
-    showError('该记录没有订单ID，无法确认收货');
-    return;
-  }
-
-  try {
-    await ElMessageBox.confirm(
-      `确定要确认收货吗？订单ID: ${record.orderId}`,
-      '确认收货',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    );
-
-    const req: ConfirmShipmentReq = {
-      xianyuAccountId: selectedAccountId.value,
-      orderId: record.orderId
-    };
-
-    const response = await confirmShipment(req);
-    if (response.code === 0 || response.code === 200) {
-      showSuccess(response.data || '确认收货成功');
-      // 刷新记录列表
-      await loadDeliveryRecords();
-    } else {
-      // 检查是否是token过期错误
-      if (response.msg && (response.msg.includes('Token') || response.msg.includes('令牌'))) {
-        throw new Error('Cookie已过期，请重新扫码登录获取新的Cookie');
-      }
-      throw new Error(response.msg || '确认收货失败');
-    }
-  } catch (error: any) {
-    if (error === 'cancel') {
-      // 用户取消操作
-      return;
-    }
-    console.error('确认收货失败:', error);
-    showError(error.message || '确认收货失败');
-  }
-};
-
-// 从消息内容中提取订单ID
-const extractOrderId = (content: string): string | null => {
-  try {
-    // 尝试解析 JSON
-    const data = JSON.parse(content);
-    
-    // 从 reminderUrl 中提取订单ID
-    // 格式: fleamarket://order_detail?id=3052762719755595568&role=seller
-    const reminderUrl = data?.['1']?.['6']?.['10']?.reminderUrl || '';
-    const match = reminderUrl.match(/[?&]id=(\d+)/);
-    if (match && match[1]) {
-      return match[1];
-    }
-    
-    // 如果 reminderUrl 中没有，尝试从 targetUrl 中提取
-    const targetUrl = data?.['1']?.['6']?.['5']?.['1']?.['1']?.['1']?.main?.targetUrl || '';
-    const match2 = targetUrl.match(/[?&]id=(\d+)/);
-    if (match2 && match2[1]) {
-      return match2[1];
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('解析订单ID失败:', error);
-    return null;
-  }
-};
-
-onMounted(() => {
-  loadAccounts();
-});
+const {
+  saving,
+  accounts,
+  selectedAccountId,
+  goodsList,
+  selectedGoods,
+  currentConfig,
+  configForm,
+  goodsTotal,
+  goodsLoading,
+  goodsListRef,
+  detailDialogVisible,
+  selectedGoodsId,
+  deliveryRecords,
+  recordsLoading,
+  recordsTotal,
+  recordsPageNum,
+  recordsPageSize,
+  recordsTotalPages,
+  isMobile,
+  mobileView,
+  confirmDialog,
+  handleAccountChange,
+  selectGoods,
+  saveConfig,
+  toggleAutoDelivery,
+  toggleAutoConfirmShipment,
+  loadDeliveryRecords,
+  handleRecordsPageChange,
+  viewGoodsDetail,
+  handleConfirmShipment,
+  handleTriggerDelivery,
+  handleDialogConfirm,
+  handleDialogCancel,
+  handleGoodsScroll,
+  goBackToGoods,
+  formatTime,
+  formatPrice,
+  getStatusText,
+  getStatusClass,
+  getRecordStatusText,
+  getRecordStatusClass,
+  apiHintUrl,
+  apiHintParamsJson,
+  confirmShipmentUrl,
+  confirmShipmentParamsJson,
+  kamiConfigOptions,
+  selectedKamiConfigId,
+  copyApiUrl,
+  copyApiParams,
+  copyConfirmShipmentUrl,
+  copyConfirmShipmentParams
+} = useAutoDelivery()
 </script>
 
 <template>
-  <div class="auto-delivery-page">
-    <div class="page-header">
-      <h1 class="page-title">自动发货配置</h1>
-      <div class="header-actions">
-        <span class="account-label">选择闲鱼账号</span>
-        <el-select
-          v-model="selectedAccountId"
-          placeholder="选择账号"
-          style="width: 200px"
-          @change="handleAccountChange"
+  <div class="ad">
+    <!-- Header -->
+    <div class="ad__header">
+      <div class="ad__title-row">
+        <div class="ad__title-icon">
+          <IconTruck />
+        </div>
+        <h1 class="ad__title">自动发货</h1>
+      </div>
+      <div class="ad__actions">
+        <div class="ad__select-wrap">
+          <select
+            v-model="selectedAccountId"
+            class="ad__select"
+            @change="handleAccountChange"
+          >
+            <option :value="null" disabled>选择账号</option>
+            <option v-for="acc in accounts" :key="acc.id" :value="acc.id">
+              {{ acc.accountNote || acc.unb }}
+            </option>
+          </select>
+          <span class="ad__select-icon">
+            <IconChevronDown />
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="ad__body">
+      <!-- Goods Panel -->
+      <div
+        class="ad__goods-panel"
+        :class="{ 'ad__goods-panel--hidden': isMobile && mobileView === 'config' }"
+      >
+        <div class="ad__goods-toolbar">
+          <span class="ad__goods-toolbar-title">商品列表</span>
+          <span v-if="goodsTotal > 0" class="ad__goods-toolbar-count">共 {{ goodsTotal }} 件</span>
+        </div>
+
+        <div
+          class="ad__goods-list"
+          ref="goodsListRef"
+          @scroll="handleGoodsScroll"
         >
-          <el-option
-            v-for="account in accounts"
-            :key="account.id"
-            :label="account.accountNote || account.unb"
-            :value="account.id"
+          <!-- Loading first page -->
+          <div v-if="goodsLoading && goodsList.length === 0" class="ad__loading">
+            <div class="ad__spinner"></div>
+            <span>加载中...</span>
+          </div>
+
+          <!-- Goods items -->
+          <div
+            v-for="goods in goodsList"
+            :key="goods.item.xyGoodId"
+            class="ad__goods-item"
+            :class="{ 'ad__goods-item--active': selectedGoods?.item.xyGoodId === goods.item.xyGoodId }"
+            @click="selectGoods(goods)"
+          >
+            <img
+              :src="goods.item.coverPic"
+              :alt="goods.item.title"
+              class="ad__goods-cover"
+            />
+            <div class="ad__goods-info">
+              <div class="ad__goods-title">{{ goods.item.title }}</div>
+              <div class="ad__goods-meta">
+                <span class="ad__goods-price">{{ formatPrice(goods.item.soldPrice) }}</span>
+                <span
+                  class="ad__goods-status"
+                  :class="`ad__goods-status--${getStatusClass(goods.item.status)}`"
+                >
+                  {{ getStatusText(goods.item.status) }}
+                </span>
+                <span
+                  v-if="goods.xianyuAutoDeliveryOn === 1"
+                  class="ad__goods-auto-badge ad__goods-auto-badge--on"
+                >
+                  <IconSparkle />
+                  {{ goods.autoDeliveryType === 2 ? '卡密' : '文本' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loading more -->
+          <div v-if="goodsLoading && goodsList.length > 0" class="ad__loading">
+            <div class="ad__spinner"></div>
+            <span>加载中...</span>
+          </div>
+
+          <!-- No more data -->
+          <div
+            v-if="!goodsLoading && goodsList.length > 0 && goodsList.length >= goodsTotal"
+            class="ad__no-more"
+          >
+            已加载全部
+          </div>
+
+          <!-- Empty -->
+          <div v-if="!goodsLoading && goodsList.length === 0" class="ad__empty">
+            <IconPackage />
+            <span class="ad__empty-text">暂无商品</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Config Panel -->
+      <div
+        class="ad__config-panel"
+        :class="{ 'ad__config-panel--hidden': isMobile && mobileView === 'goods' }"
+      >
+        <!-- Mobile back button -->
+        <div v-if="isMobile && selectedGoods" class="ad__config-header">
+          <button class="ad__back-btn" @click="goBackToGoods">
+            <IconChevronLeft />
+            返回
+          </button>
+          <img
+            v-if="selectedGoods"
+            :src="selectedGoods.item.coverPic"
+            :alt="selectedGoods.item.title"
+            class="ad__config-goods-cover"
           />
-        </el-select>
-      </div>
-    </div>
+          <div class="ad__config-goods-info">
+            <div class="ad__config-goods-title">{{ selectedGoods.item.title }}</div>
+            <div class="ad__config-goods-sub">{{ formatPrice(selectedGoods.item.soldPrice) }}</div>
+          </div>
+        </div>
 
-    <div class="content-container">
-      <!-- 左侧商品列表 -->
-      <div class="goods-panel">
-        <el-card class="goods-card">
-          <template #header>
-            <div class="card-header">
-              <span class="card-title">商品列表</span>
-              <span class="card-subtitle">共 {{ goodsList.length }} 件商品</span>
-            </div>
-          </template>
+        <!-- Desktop config header -->
+        <div v-if="!isMobile && selectedGoods" class="ad__config-header">
+          <img
+            :src="selectedGoods.item.coverPic"
+            :alt="selectedGoods.item.title"
+            class="ad__config-goods-cover"
+          />
+          <div class="ad__config-goods-info">
+            <div class="ad__config-goods-title">{{ selectedGoods.item.title }}</div>
+            <div class="ad__config-goods-sub">{{ formatPrice(selectedGoods.item.soldPrice) }}</div>
+          </div>
+          <button class="btn btn--ghost btn--sm" @click="viewGoodsDetail">
+            <IconImage />
+            <span class="mobile-hidden">详情</span>
+          </button>
+        </div>
 
-          <div class="goods-list" v-loading="loading">
-            <div
-              v-for="goods in goodsList"
-              :key="goods.item.xyGoodId"
-              :id="`goods-item-${goods.item.id}-${Math.random().toString(36).substr(2, 9)}`"
-              class="goods-item"
-              :class="{ active: selectedGoods?.item.xyGoodId === goods.item.xyGoodId }"
-              @click="selectGoods(goods)"
-            >
-              <el-image
-                :src="goods.item.coverPic"
-                fit="cover"
-                class="goods-image"
-              />
-              <div class="goods-info">
-                <div class="goods-title">{{ goods.item.title }}</div>
-                <div class="goods-meta">
-                  <span class="goods-price">{{ formatPrice(goods.item.soldPrice) }}</span>
-                  <el-tag :type="getStatusType(goods.item.status)" size="small">
-                    {{ getStatusText(goods.item.status) }}
-                  </el-tag>
-                </div>
-              </div>
-            </div>
+        <!-- Empty state -->
+        <div v-if="!selectedGoods" class="ad__config-empty">
+          <IconPackage />
+          <span class="ad__config-empty-text">选择商品以配置自动发货</span>
+        </div>
 
-            <div v-if="goodsList.length === 0 && !loading" class="empty-goods">
-              <el-empty description="暂无商品" />
+        <!-- Config content -->
+        <div v-if="selectedGoods" class="ad__config-scroll">
+          <!-- Top Tab Switch -->
+          <div class="ad__config-section ad__config-section--no-pad-bottom">
+            <div class="ad__tab-group">
+              <button
+                class="ad__tab-btn"
+                :class="{ 'ad__tab-btn--active': configForm.deliveryMode === 1 }"
+                @click="configForm.deliveryMode = 1"
+              >
+                <IconText />
+                文本发货
+              </button>
+              <button
+                class="ad__tab-btn"
+                :class="{ 'ad__tab-btn--active': configForm.deliveryMode === 2 }"
+                @click="configForm.deliveryMode = 2"
+              >
+                🔑
+                卡密发货
+              </button>
+              <button
+                class="ad__tab-btn"
+                :class="{ 'ad__tab-btn--active': configForm.deliveryMode === 3 }"
+                @click="configForm.deliveryMode = 3"
+              >
+                <IconRobot />
+                自定义发货
+              </button>
             </div>
           </div>
-        </el-card>
-      </div>
 
-      <!-- 右侧配置面板 -->
-      <div class="config-panel">
-        <el-card class="config-card">
-          <template #header>
-            <div class="card-header">
-              <span class="card-title">自动发货配置</span>
-              <span class="card-subtitle" v-if="!selectedGoods">
-                请选择商品
-              </span>
-            </div>
-          </template>
+          <!-- ====== 自动发货视图 ====== -->
+          <template v-if="configForm.deliveryMode === 1">
+            <!-- Delivery Toggle Section -->
+            <div class="ad__config-section">
+              <div class="ad__config-section-title">发货设置</div>
 
-          <div class="config-form" v-if="selectedGoods" :class="{ 'records-expanded': recordsExpanded }">
-            <div class="config-content" v-show="!recordsExpanded">
-              <div class="goods-title-section">
-                <div class="goods-title-text">{{ selectedGoods.item.title }}</div>
-                <el-button
-                  type="primary"
-                  size="small"
-                  @click="viewGoodsDetail"
-                >
-                  查看商品详情
-                </el-button>
+              <div class="ad__toggle-row">
+                <div class="ad__toggle-info">
+                  <div class="ad__toggle-label">自动发货</div>
+                  <div class="ad__toggle-hint">买家下单后自动发送发货内容</div>
+                </div>
+                <label class="ad__switch">
+                  <input
+                    type="checkbox"
+                    :checked="selectedGoods.xianyuAutoDeliveryOn === 1"
+                    @change="toggleAutoDelivery(($event.target as HTMLInputElement).checked)"
+                  />
+                  <span class="ad__switch-track"></span>
+                  <span class="ad__switch-thumb"></span>
+                </label>
               </div>
 
-              <el-form :model="configForm" label-width="100px">
-                <el-form-item label="自动发货">
-                  <el-switch
-                    v-model="selectedGoods.xianyuAutoDeliveryOn"
-                    :active-value="1"
-                    :inactive-value="0"
-                    @change="toggleAutoDelivery"
-                  />
-                  <span class="switch-label">
-                    {{ selectedGoods.xianyuAutoDeliveryOn === 1 ? '已开启' : '已关闭' }}
-                  </span>
-                </el-form-item>
-
-                <el-form-item label="发货类型">
-                  <el-radio-group v-model="configForm.type">
-                    <el-radio :value="1">文本内容</el-radio>
-                    <el-radio :value="2">自定义</el-radio>
-                  </el-radio-group>
-                </el-form-item>
-
-                <el-form-item label="发货内容">
-                  <el-input
-                    v-model="configForm.autoDeliveryContent"
-                    type="textarea"
-                    :rows="8"
-                    placeholder="请输入自动发货内容，买家下单后将自动发送此内容"
-                    maxlength="1000"
-                    show-word-limit
-                  />
-                </el-form-item>
-
-                <el-form-item label="自动确认发货">
-                  <el-switch
-                    v-model="configForm.autoConfirmShipment"
-                    :active-value="1"
-                    :inactive-value="0"
+              <div class="ad__toggle-row">
+                <div class="ad__toggle-info">
+                  <div class="ad__toggle-label">自动确认发货</div>
+                  <div class="ad__toggle-hint">
+                    {{ selectedGoods.xianyuAutoDeliveryOn === 1
+                      ? '发货成功后自动确认已发货'
+                      : '需先开启自动发货' }}
+                  </div>
+                </div>
+                <label class="ad__switch">
+                  <input
+                    type="checkbox"
+                    :checked="configForm.autoConfirmShipment === 1"
                     :disabled="selectedGoods.xianyuAutoDeliveryOn !== 1"
+                    @change="toggleAutoConfirmShipment(($event.target as HTMLInputElement).checked)"
                   />
-                  <span class="switch-label">
-                    {{ configForm.autoConfirmShipment === 1 ? '已开启' : '已关闭' }}
-                  </span>
-                  <div class="form-tip">
-                    {{ selectedGoods.xianyuAutoDeliveryOn === 1 
-                      ? '开启后，自动发货成功将自动确认收货' 
-                      : '需要先开启自动发货' }}
-                  </div>
-                </el-form-item>
-
-                <el-form-item>
-                  <div class="save-config-container">
-                    <el-button type="primary" :loading="saving" @click="saveConfig">
-                      保存配置
-                    </el-button>
-                    <span v-if="currentConfig" class="last-update-time">
-                      上次更新: {{ formatTime(currentConfig.updateTime) }}
-                    </span>
-                  </div>
-                </el-form-item>
-              </el-form>
+                  <span class="ad__switch-track"></span>
+                  <span class="ad__switch-thumb"></span>
+                </label>
+              </div>
             </div>
 
-            <!-- 自动发货记录表格 -->
-            <div class="delivery-records-section">
-              <div class="records-header">
-                <div class="records-info">
-                  <span class="records-title">自动发货记录</span>
-                  <span class="records-count">共 {{ recordsTotal }} 条记录</span>
-                </div>
-                <div class="records-actions">
-                  <div class="records-pagination" v-if="recordsTotal > 0 && !recordsExpanded">
-                    <el-pagination
-                      v-model:current-page="recordsPageNum"
-                      v-model:page-size="recordsPageSize"
-                      :page-sizes="[10, 20, 50, 100]"
-                      :total="recordsTotal"
-                      layout="sizes, prev, pager, next"
-                      small
-                      @size-change="handleRecordsSizeChange"
-                      @current-change="handleRecordsPageChange"
-                    />
-                  </div>
-                  <el-button
-                    :icon="recordsExpanded ? 'ArrowDown' : 'ArrowUp'"
-                    size="small"
-                    @click="recordsExpanded = !recordsExpanded"
-                  >
-                    {{ recordsExpanded ? '收起' : '展开' }}
-                  </el-button>
-                </div>
+            <!-- Content Section -->
+            <div class="ad__config-section">
+              <div class="ad__config-section-title">发货内容</div>
+
+              <textarea
+                v-model="configForm.autoDeliveryContent"
+                class="ad__textarea"
+                placeholder="请输入自动发货内容，买家下单后将自动发送此内容"
+                maxlength="1000"
+              ></textarea>
+              <div class="ad__textarea-footer">
+                <span class="ad__textarea-hint">支持文本、链接、卡密等内容</span>
+                <span class="ad__textarea-count">{{ configForm.autoDeliveryContent.length }} / 1000</span>
               </div>
-              
-              <div class="records-table-wrapper" v-loading="recordsLoading">
-                <el-table
-                  :data="deliveryRecords"
-                  stripe
-                  style="width: 100%"
-                  :max-height="recordsExpanded ? 'calc(100vh - 250px)' : 400"
+
+              <div class="ad__image-section">
+                <div class="ad__image-section-title">发货图片</div>
+                <div class="ad__image-section-hint">可选，买家下单后先发送图片再发送文本</div>
+                <MultiImageUploader
+                  v-if="selectedAccountId"
+                  :account-id="selectedAccountId"
+                  v-model="configForm.autoDeliveryImageUrl"
+                />
+              </div>
+
+              <div class="ad__save-row">
+                <button
+                  class="btn btn--primary"
+                  :class="{ 'btn--loading': saving }"
+                  :disabled="saving"
+                  @click="saveConfig"
                 >
-                  <el-table-column type="index" label="序号" width="60" align="center" />
-                  <el-table-column prop="orderId" label="订单ID" width="180">
-                    <template #default="{ row }">
-                      <span class="order-id">{{ row.orderId || '-' }}</span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="buyerUserId" label="买家ID" width="120">
-                    <template #default="{ row }">
-                      {{ row.buyerUserId || '-' }}
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="buyerUserName" label="买家名称" width="120">
-                    <template #default="{ row }">
-                      {{ row.buyerUserName || '-' }}
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="content" label="发货内容" min-width="200">
-                    <template #default="{ row }">
-                      <div class="content-text">{{ row.content || '-' }}</div>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="state" label="自动发货结果" width="120" align="center">
-                    <template #default="{ row }">
-                      <el-tag :type="getRecordStatusType(row.state)" size="small">
-                        {{ getRecordStatusText(row.state) }}
-                      </el-tag>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="orderState" label="确认发货" width="100" align="center">
-                    <template #default="{ row }">
-                      <el-tag :type="row.orderState === 1 ? 'success' : 'info'" size="small">
-                        {{ row.orderState === 1 ? '已确认' : '未确认' }}
-                      </el-tag>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="createTime" label="发货时间" width="180">
-                    <template #default="{ row }">
-                      {{ formatTime(row.createTime) }}
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="操作" width="120" align="center" fixed="right">
-                    <template #default="{ row }">
-                      <el-button
-                        type="primary"
-                        size="small"
-                        :disabled="!row.orderId || row.orderState === 1"
-                        @click="handleConfirmShipment(row)"
-                      >
-                        确认收货
-                      </el-button>
-                    </template>
-                  </el-table-column>
-                  <template #empty>
-                    <el-empty description="暂无发货记录" :image-size="80" />
-                  </template>
-                </el-table>
-                
-                <div class="pagination-container-bottom" v-if="recordsTotal > 0 && recordsExpanded">
-                  <el-pagination
-                    v-model:current-page="recordsPageNum"
-                    v-model:page-size="recordsPageSize"
-                    :page-sizes="[10, 20, 50, 100]"
-                    :total="recordsTotal"
-                    layout="total, sizes, prev, pager, next, jumper"
-                    small
-                    @size-change="handleRecordsSizeChange"
-                    @current-change="handleRecordsPageChange"
+                  <IconCheck />
+                  保存配置
+                </button>
+                <span v-if="currentConfig" class="ad__save-time">
+                  更新于 {{ formatTime(currentConfig.updateTime) }}
+                </span>
+              </div>
+            </div>
+          </template>
+
+          <!-- ====== 卡密发货视图 ====== -->
+          <template v-if="configForm.deliveryMode === 2">
+            <div class="ad__config-section">
+              <div class="ad__config-section-title">发货设置</div>
+
+              <div class="ad__toggle-row">
+                <div class="ad__toggle-info">
+                  <div class="ad__toggle-label">自动发货</div>
+                  <div class="ad__toggle-hint">买家下单后自动发送卡密</div>
+                </div>
+                <label class="ad__switch">
+                  <input
+                    type="checkbox"
+                    :checked="selectedGoods.xianyuAutoDeliveryOn === 1"
+                    @change="toggleAutoDelivery(($event.target as HTMLInputElement).checked)"
                   />
+                  <span class="ad__switch-track"></span>
+                  <span class="ad__switch-thumb"></span>
+                </label>
+              </div>
+
+              <div class="ad__toggle-row">
+                <div class="ad__toggle-info">
+                  <div class="ad__toggle-label">自动确认发货</div>
+                  <div class="ad__toggle-hint">
+                    {{ selectedGoods.xianyuAutoDeliveryOn === 1
+                      ? '卡密发送成功后自动确认已发货'
+                      : '需先开启自动发货' }}
+                  </div>
+                </div>
+                <label class="ad__switch">
+                  <input
+                    type="checkbox"
+                    :checked="configForm.autoConfirmShipment === 1"
+                    :disabled="selectedGoods.xianyuAutoDeliveryOn !== 1"
+                    @change="toggleAutoConfirmShipment(($event.target as HTMLInputElement).checked)"
+                  />
+                  <span class="ad__switch-track"></span>
+                  <span class="ad__switch-thumb"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="ad__config-section">
+              <div class="ad__config-section-title">卡密配置绑定</div>
+              <div style="margin-bottom: 12px;">
+                <el-select
+                  v-model="selectedKamiConfigId"
+                  placeholder="请选择卡密配置"
+                  clearable
+                  style="width: 100%;"
+                  popper-class="kami-config-select-popper"
+                >
+                  <el-option
+                    v-for="opt in kamiConfigOptions"
+                    :key="opt.id"
+                    :label="opt.aliasName || `配置#${opt.id}`"
+                    :value="String(opt.id)"
+                  >
+                    <div class="kami-option">
+                      <span class="kami-option__name">{{ opt.aliasName || `配置#${opt.id}` }}</span>
+                      <span class="kami-option__stats">
+                        <span class="kami-option__avail">可用{{ opt.availableCount }}</span>
+                        <span class="kami-option__divider">/</span>
+                        <span class="kami-option__total">总{{ opt.totalCount }}</span>
+                      </span>
+                    </div>
+                  </el-option>
+                </el-select>
+                <div v-if="kamiConfigOptions.length === 0" style="color: #86868b; font-size: 13px; margin-top: 8px;">
+                  暂无卡密配置，请先在「卡密配置」页面创建
+                </div>
+              </div>
+
+              <div style="margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                  <span style="font-size: 13px; color: #6e6e73;">发货文案</span>
+                  <el-tag size="small" type="info" effect="plain" style="font-size: 11px;">占位符 {kmKey}</el-tag>
+                </div>
+                <el-input
+                  v-model="configForm.kamiDeliveryTemplate"
+                  type="textarea"
+                  :rows="3"
+                  placeholder="可选，填写后发货时将用卡密替换{kmKey}发送，不填则直接发送卡密内容。例：您的卡密为：{kmKey}，请妥善保管"
+                />
+              </div>
+
+              <div class="ad__image-section">
+                <div class="ad__image-section-title">发货图片</div>
+                <div class="ad__image-section-hint">可选，买家下单后先发送图片再发送卡密</div>
+                <MultiImageUploader
+                  v-if="selectedAccountId"
+                  :account-id="selectedAccountId"
+                  v-model="configForm.autoDeliveryImageUrl"
+                />
+              </div>
+
+              <div class="ad__save-row">
+                <button
+                  class="btn btn--primary"
+                  :class="{ 'btn--loading': saving }"
+                  :disabled="saving"
+                  @click="saveConfig"
+                >
+                  <IconCheck />
+                  保存配置
+                </button>
+                <span v-if="currentConfig" class="ad__save-time">
+                  更新于 {{ formatTime(currentConfig.updateTime) }}
+                </span>
+              </div>
+            </div>
+          </template>
+
+          <!-- ====== 自定义发货视图 ====== -->
+          <template v-if="configForm.deliveryMode === 3">
+            <!-- API Hint Panel -->
+            <div class="ad__config-section">
+              <div class="ad__api-hint">
+                <div class="ad__api-hint-header">
+                  <span class="ad__api-hint-title">API 接入指南</span>
+                </div>
+                <div class="ad__api-hint-desc">
+                  自定义发货需调用 <code>/api/order/list</code> 获取待发货订单，再调用 <code>/api/order/confirmShipment</code> 确认发货。
+                </div>
+
+                <div class="ad__api-hint-cols">
+                  <!-- Left: /api/order/list -->
+                  <div class="ad__api-hint-col">
+                    <div class="ad__api-hint-col-title">获取订单列表</div>
+
+                    <div class="ad__api-hint-section">
+                      <div class="ad__api-hint-label">
+                        接口地址
+                        <button class="ad__api-hint-copy-btn" @click="copyApiUrl">
+                          <IconCopy /> 复制
+                        </button>
+                      </div>
+                      <div class="ad__api-hint-code">POST {{ apiHintUrl }}</div>
+                    </div>
+
+                    <div class="ad__api-hint-section">
+                      <div class="ad__api-hint-label">
+                        请求参数
+                        <button class="ad__api-hint-copy-btn" @click="copyApiParams">
+                          <IconCopy /> 复制
+                        </button>
+                      </div>
+                      <pre class="ad__api-hint-pre"><code>{{ apiHintParamsJson }}</code></pre>
+                    </div>
+
+                    <div class="ad__api-hint-params-desc">
+                      <div class="ad__api-hint-params-title">参数说明</div>
+                      <table class="ad__api-hint-table">
+                        <thead>
+                          <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+                        </thead>
+                        <tbody>
+                          <tr><td>xianyuAccountId</td><td>number</td><td>否</td><td>闲鱼账号ID</td></tr>
+                          <tr><td>xyGoodsId</td><td>string</td><td>否</td><td>闲鱼商品ID</td></tr>
+                          <tr><td>orderStatus</td><td>number</td><td>否</td><td>1=待付款 2=待发货 3=已发货 4=已完成 5=已关闭</td></tr>
+                          <tr><td>pageNum</td><td>number</td><td>是</td><td>页码</td></tr>
+                          <tr><td>pageSize</td><td>number</td><td>是</td><td>每页条数</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <!-- Right: /api/order/confirmShipment -->
+                  <div class="ad__api-hint-col">
+                    <div class="ad__api-hint-col-title">确认发货</div>
+
+                    <div class="ad__api-hint-section">
+                      <div class="ad__api-hint-label">
+                        接口地址
+                        <button class="ad__api-hint-copy-btn" @click="copyConfirmShipmentUrl">
+                          <IconCopy /> 复制
+                        </button>
+                      </div>
+                      <div class="ad__api-hint-code">POST {{ confirmShipmentUrl }}</div>
+                    </div>
+
+                    <div class="ad__api-hint-section">
+                      <div class="ad__api-hint-label">
+                        请求参数
+                        <button class="ad__api-hint-copy-btn" @click="copyConfirmShipmentParams">
+                          <IconCopy /> 复制
+                        </button>
+                      </div>
+                      <pre class="ad__api-hint-pre"><code>{{ confirmShipmentParamsJson }}</code></pre>
+                    </div>
+
+                    <div class="ad__api-hint-params-desc">
+                      <div class="ad__api-hint-params-title">参数说明</div>
+                      <table class="ad__api-hint-table">
+                        <thead>
+                          <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+                        </thead>
+                        <tbody>
+                          <tr><td>xianyuAccountId</td><td>number</td><td>是</td><td>闲鱼账号ID</td></tr>
+                          <tr><td>orderId</td><td>string</td><td>是</td><td>订单ID</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </template>
 
-          <div v-else class="empty-config">
-            <el-empty description="请选择左侧商品进行配置" />
+          <!-- Records Section (shared) -->
+          <div class="ad__records">
+            <div class="ad__records-header">
+              <div class="ad__records-title-row">
+                <IconClock style="width:16px;height:16px;color:var(--d-text-tertiary)" />
+                <span class="ad__records-title">发货记录</span>
+                <span v-if="recordsTotal > 0" class="ad__records-count">共 {{ recordsTotal }} 条</span>
+              </div>
+            </div>
+
+            <!-- Records Loading -->
+            <div v-if="recordsLoading" class="ad__loading">
+              <div class="ad__spinner"></div>
+              <span>加载中...</span>
+            </div>
+
+            <!-- Desktop Table -->
+            <table v-if="!isMobile && !recordsLoading && deliveryRecords.length > 0" class="ad__records-table">
+              <thead>
+                <tr>
+                  <th>订单ID</th>
+                  <th>买家</th>
+                  <th>发货内容</th>
+                  <th>状态</th>
+                  <th>时间</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="record in deliveryRecords" :key="record.id">
+                  <td>
+                    <span class="ad__record-order-id">{{ record.orderId || '-' }}</span>
+                  </td>
+                  <td>{{ record.buyerUserName || '-' }}</td>
+                  <td>
+                    <span class="ad__record-content" :title="record.content">{{ record.content || '-' }}</span>
+                  </td>
+                  <td>
+                    <span
+                      class="ad__record-status"
+                      :class="`ad__record-status--${getRecordStatusClass(record.state)}`"
+                    >
+                      {{ getRecordStatusText(record.state) }}
+                    </span>
+                    <span v-if="record.state === -1 && record.failReason" class="ad__record-fail-reason" :title="record.failReason">{{ record.failReason }}</span>
+                  </td>
+                  <td>
+                    <span class="ad__record-time">{{ formatTime(record.createTime) }}</span>
+                  </td>
+                  <td>
+                    <button
+                      class="ad__record-action-btn"
+                      @click="handleTriggerDelivery(record)"
+                    >
+                      重新发货
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Mobile Record Cards -->
+            <div v-if="isMobile && !recordsLoading && deliveryRecords.length > 0">
+              <div
+                v-for="record in deliveryRecords"
+                :key="record.id"
+                class="ad__record-card"
+              >
+                <div class="ad__record-card-header">
+                  <span
+                    class="ad__record-status"
+                    :class="`ad__record-status--${getRecordStatusClass(record.state)}`"
+                  >
+                    {{ getRecordStatusText(record.state) }}
+                  </span>
+                  <span v-if="record.state === -1 && record.failReason" class="ad__record-fail-reason">{{ record.failReason }}</span>
+                  <span class="ad__record-time">{{ formatTime(record.createTime) }}</span>
+                </div>
+                <div class="ad__record-card-row">
+                  <span class="ad__record-card-label">订单：</span>
+                  <span class="ad__record-card-value">{{ record.orderId || '-' }}</span>
+                </div>
+                <div class="ad__record-card-row">
+                  <span class="ad__record-card-label">买家：</span>
+                  <span class="ad__record-card-value">{{ record.buyerUserName || '-' }}</span>
+                </div>
+                <div class="ad__record-card-row">
+                  <span class="ad__record-card-label">内容：</span>
+                  <span class="ad__record-card-value ad__record-card-value--content" :title="record.content">{{ record.content || '-' }}</span>
+                </div>
+                <div class="ad__record-card-footer">
+                  <button
+                    class="ad__record-action-btn"
+                    @click="handleTriggerDelivery(record)"
+                  >
+                    重新发货
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Records Empty -->
+            <div v-if="!recordsLoading && deliveryRecords.length === 0" class="ad__empty">
+              <IconSend />
+              <span class="ad__empty-text">暂无发货记录</span>
+            </div>
+
+            <!-- Records Pagination -->
+            <div v-if="recordsTotalPages > 1" class="ad__pagination">
+              <button
+                class="ad__page-btn"
+                :class="{ 'ad__page-btn--disabled': recordsPageNum <= 1 }"
+                @click="handleRecordsPageChange(recordsPageNum - 1)"
+              >
+                <IconChevronLeft />
+              </button>
+
+              <template v-for="page in (() => {
+                const btns: number[] = []
+                const max = 5
+                let start = Math.max(1, recordsPageNum - Math.floor(max / 2))
+                const end = Math.min(recordsTotalPages, start + max - 1)
+                start = Math.max(1, end - max + 1)
+                for (let i = start; i <= end; i++) btns.push(i)
+                return btns
+              })()" :key="page">
+                <button
+                  class="ad__page-btn"
+                  :class="{ 'ad__page-btn--active': page === recordsPageNum }"
+                  @click="handleRecordsPageChange(page)"
+                >
+                  {{ page }}
+                </button>
+              </template>
+
+              <button
+                class="ad__page-btn"
+                :class="{ 'ad__page-btn--disabled': recordsPageNum >= recordsTotalPages }"
+                @click="handleRecordsPageChange(recordsPageNum + 1)"
+              >
+                <IconChevronRight />
+              </button>
+
+              <span class="ad__page-info">{{ recordsPageNum }} / {{ recordsTotalPages }}</span>
+            </div>
           </div>
-        </el-card>
+        </div>
       </div>
     </div>
 
-    <!-- 商品详情对话框 -->
+    <!-- Goods Detail Dialog -->
     <GoodsDetailDialog
       v-model="detailDialogVisible"
       :goods-id="selectedGoodsId"
       :account-id="selectedAccountId"
     />
+
+    <!-- Confirm Dialog -->
+    <Transition name="overlay-fade">
+      <div
+        v-if="confirmDialog.visible"
+        class="ad__dialog-overlay"
+        @click.self="handleDialogCancel"
+      >
+        <div class="ad__dialog">
+          <div class="ad__dialog-header">
+            <h3 class="ad__dialog-title">{{ confirmDialog.title }}</h3>
+          </div>
+          <div class="ad__dialog-body">
+            <p class="ad__dialog-text" :class="{ 'ad__dialog-text--danger': confirmDialog.type === 'danger' }" style="white-space: pre-line;">{{ confirmDialog.message }}</p>
+          </div>
+          <div class="ad__dialog-footer">
+            <button
+              class="ad__dialog-btn ad__dialog-btn--cancel"
+              @click="handleDialogCancel"
+            >
+              取消
+            </button>
+            <button
+              class="ad__dialog-btn"
+              :class="confirmDialog.type === 'danger' ? 'ad__dialog-btn--danger' : 'ad__dialog-btn--primary'"
+              @click="handleDialogConfirm"
+            >
+              确定
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <style scoped>
-.auto-delivery-page {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  padding: 15px;
+.overlay-fade-enter-active,
+.overlay-fade-leave-active {
+  transition: opacity 0.2s ease;
 }
 
-.page-header {
+.overlay-fade-enter-from,
+.overlay-fade-leave-to {
+  opacity: 0;
+}
+</style>
+
+<style>
+.kami-config-select-popper {
+  min-width: 180px !important;
+}
+.kami-option {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
+  width: 100%;
+  gap: 8px;
 }
-
-.page-title {
-  font-size: 22px;
-  font-weight: 600;
-  color: #303133;
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.account-label {
+.kami-option__name {
   font-size: 14px;
-  color: #606266;
-  font-weight: 500;
-}
-
-.content-container {
-  flex: 1;
-  display: flex;
-  gap: 15px;
-  min-height: 0;
-}
-
-.goods-panel {
-  flex: 1;
-  min-width: 0;
-  max-width: 400px;
-}
-
-.config-panel {
-  flex: 2;
-  min-width: 0;
-}
-
-.goods-card,
-.config-card {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.card-title {
-  font-size: 17px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.card-subtitle {
-  font-size: 13px;
-  color: #909399;
-}
-
-.goods-list {
-  flex: 1;
-  overflow-y: auto;
-}
-
-.goods-item {
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  border: 1px solid #ebeef5;
-  border-radius: 3px;
-  margin-bottom: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.goods-item:hover {
-  background-color: #f5f7fa;
-  border-color: #c0c4cc;
-}
-
-.goods-item.active {
-  background-color: #ecf5ff;
-  border-color: #409eff;
-}
-
-.goods-image {
-  width: 50px;
-  height: 50px;
-  border-radius: 3px;
-  margin-right: 10px;
-  flex-shrink: 0;
-}
-
-.goods-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.goods-title {
-  font-size: 13px;
-  font-weight: 500;
-  color: #303133;
-  margin-bottom: 6px;
+  color: #1d1d1f;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.kami-option__stats {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
   white-space: nowrap;
-}
-
-.goods-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.goods-price {
-  font-size: 15px;
-  font-weight: 600;
-  color: #f56c6c;
-}
-
-.empty-goods,
-.empty-config {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
-}
-
-.config-form {
-  padding: 0;
-}
-
-.config-content {
-  margin-bottom: 20px;
-}
-
-.goods-title-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 15px;
-  padding-top: 5px;
-}
-
-.goods-title-text {
-  flex: 1;
-  font-size: 15px;
-  font-weight: 500;
-  color: #303133;
-  line-height: 1.5;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.config-form .el-form-item:first-child {
-  margin-bottom: 20px;
-}
-
-.config-time {
-  color: #909399;
-  font-size: 13px;
-}
-
-.switch-label {
-  margin-left: 10px;
-  font-size: 14px;
-  color: #606266;
-}
-
-.form-tip {
-  margin-left: 10px;
-  font-size: 12px;
-  color: #909399;
-  line-height: 1.5;
-}
-
-.save-config-container {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.last-update-time {
-  font-size: 12px;
-  color: #909399;
-}
-
-.delivery-records-section {
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 1px solid #ebeef5;
-}
-
-.config-form.records-expanded .delivery-records-section {
-  margin-top: 0;
-  padding-top: 0;
-  border-top: none;
-}
-
-.records-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  gap: 15px;
-}
-
-.records-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.records-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.records-count {
-  font-size: 13px;
-  color: #909399;
-}
-
-.records-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.records-pagination {
   flex-shrink: 0;
 }
-
-.records-table-wrapper {
-  border: 1px solid #ebeef5;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 15px;
+.kami-option__avail {
+  color: #34c759;
+  font-weight: 600;
 }
-
-.config-form.records-expanded .records-table-wrapper {
-  margin-bottom: 0;
+.kami-option__divider {
+  color: #c0c4cc;
 }
-
-.pagination-container-bottom {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 12px 15px;
-  background-color: #fafafa;
-  border-top: 1px solid #ebeef5;
-  flex-shrink: 0;
-}
-
-.buyer-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.buyer-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: #303133;
-}
-
-.buyer-id {
-  font-size: 12px;
+.kami-option__total {
   color: #909399;
-}
-
-.content-text {
-  font-size: 13px;
-  color: #606266;
-  line-height: 1.5;
-  word-break: break-all;
-}
-
-.order-id {
-  font-family: 'Courier New', monospace;
-  font-size: 13px;
-  color: #409eff;
-  font-weight: 500;
 }
 </style>

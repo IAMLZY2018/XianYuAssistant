@@ -32,6 +32,12 @@ public class ItemServiceImpl implements ItemService {
     @Autowired
     private com.feijimiao.xianyuassistant.service.AutoDeliveryService autoDeliveryService;
 
+    @Autowired
+    private com.feijimiao.xianyuassistant.service.ItemDetailSyncService itemDetailSyncService;
+
+    @Autowired
+    private com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoDeliveryConfigMapper autoDeliveryConfigMapper;
+
     /**
      * 获取指定页的商品信息（内部方法）
      */
@@ -81,6 +87,7 @@ public class ItemServiceImpl implements ItemService {
             }
             
             log.info("API调用成功，响应长度: {}", response.length());
+            log.info("API响应完整内容: {}", response);
 
             // 解析响应
             log.info("开始解析响应JSON...");
@@ -238,8 +245,11 @@ public class ItemServiceImpl implements ItemService {
                 respDTO.setSuccess(true);
                 respDTO.setMessage("刷新成功");
                 
-                log.info("刷新商品数据完成: xianyuAccountId={}, 总数={}, 成功={}", 
-                        reqDTO.getXianyuAccountId(), respDTO.getTotalCount(), respDTO.getSuccessCount());
+                String syncId = itemDetailSyncService.startSync(reqDTO.getXianyuAccountId(), allItems);
+                respDTO.setSyncId(syncId);
+                
+                log.info("刷新商品数据完成: xianyuAccountId={}, 总数={}, 成功={}, syncId={}", 
+                        reqDTO.getXianyuAccountId(), respDTO.getTotalCount(), respDTO.getSuccessCount(), syncId);
             } else {
                 respDTO.setSuccessCount(0);
                 respDTO.setMessage("没有获取到商品数据");
@@ -259,11 +269,7 @@ public class ItemServiceImpl implements ItemService {
             log.info("从数据库获取商品列表: status={}, xianyuAccountId={}, pageNum={}, pageSize={}", 
                     reqDTO.getStatus(), reqDTO.getXianyuAccountId(), reqDTO.getPageNum(), reqDTO.getPageSize());
             
-            // 获取所有商品（用于计算总数）
-            List<XianyuGoodsInfo> allItems = goodsInfoService.listByStatus(reqDTO.getStatus());
-            
-            // 计算分页信息
-            int totalCount = allItems != null ? allItems.size() : 0;
+            // 获取分页参数
             int pageSize = reqDTO.getPageSize() != null ? reqDTO.getPageSize() : 20;
             int pageNum = reqDTO.getPageNum() != null ? reqDTO.getPageNum() : 1;
             
@@ -271,6 +277,9 @@ public class ItemServiceImpl implements ItemService {
             if (pageNum < 1) {
                 pageNum = 1;
             }
+            
+            // 统计总数（使用count查询，提高性能）
+            int totalCount = goodsInfoService.countByStatusAndAccountId(reqDTO.getStatus(), reqDTO.getXianyuAccountId());
             
             // 计算总页数
             int totalPage = (int) Math.ceil((double) totalCount / pageSize);
@@ -285,8 +294,9 @@ public class ItemServiceImpl implements ItemService {
                 pageNum = totalPage;
             }
             
-            // 获取当前页的商品列表
-            List<XianyuGoodsInfo> pagedItems = goodsInfoService.listByStatus(reqDTO.getStatus(), pageNum, pageSize);
+            // 获取当前页的商品列表（带账号ID筛选）
+            List<XianyuGoodsInfo> pagedItems = goodsInfoService.listByStatusAndAccountId(
+                    reqDTO.getStatus(), reqDTO.getXianyuAccountId(), pageNum, pageSize);
             
             // 如果分页查询结果为null，创建空列表
             if (pagedItems == null) {
@@ -310,6 +320,15 @@ public class ItemServiceImpl implements ItemService {
                     } else {
                         itemWithConfig.setXianyuAutoDeliveryOn(0);
                         itemWithConfig.setXianyuAutoReplyOn(0);
+                    }
+                    
+                    // 获取自动发货配置
+                    com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoDeliveryConfig deliveryConfig = 
+                            autoDeliveryService.getAutoDeliveryConfig(item.getXianyuAccountId(), item.getXyGoodId());
+                    
+                    if (deliveryConfig != null) {
+                        itemWithConfig.setAutoDeliveryType(deliveryConfig.getDeliveryMode());
+                        itemWithConfig.setAutoDeliveryContent(deliveryConfig.getAutoDeliveryContent());
                     }
                 } else {
                     itemWithConfig.setXianyuAutoDeliveryOn(0);
@@ -429,9 +448,11 @@ public class ItemServiceImpl implements ItemService {
             if (config != null) {
                 itemWithConfig.setXianyuAutoDeliveryOn(config.getXianyuAutoDeliveryOn());
                 itemWithConfig.setXianyuAutoReplyOn(config.getXianyuAutoReplyOn());
+                itemWithConfig.setXianyuAutoReplyContextOn(config.getXianyuAutoReplyContextOn() != null ? config.getXianyuAutoReplyContextOn() : 1);
             } else {
                 itemWithConfig.setXianyuAutoDeliveryOn(0);
                 itemWithConfig.setXianyuAutoReplyOn(0);
+                itemWithConfig.setXianyuAutoReplyContextOn(1);
             }
             
             // 获取自动发货配置
@@ -439,12 +460,13 @@ public class ItemServiceImpl implements ItemService {
                     autoDeliveryService.getAutoDeliveryConfig(item.getXianyuAccountId(), item.getXyGoodId());
             
             if (deliveryConfig != null) {
-                itemWithConfig.setAutoDeliveryType(deliveryConfig.getType());
+                itemWithConfig.setAutoDeliveryType(deliveryConfig.getDeliveryMode());
                 itemWithConfig.setAutoDeliveryContent(deliveryConfig.getAutoDeliveryContent());
             }
         } else {
             itemWithConfig.setXianyuAutoDeliveryOn(0);
             itemWithConfig.setXianyuAutoReplyOn(0);
+            itemWithConfig.setXianyuAutoReplyContextOn(1);
         }
         
         return itemWithConfig;
@@ -655,7 +677,7 @@ public class ItemServiceImpl implements ItemService {
                         for (Map<String, Object> card : cardList) {
                             Map<String, Object> cardData = (Map<String, Object>) card.get("cardData");
                             if (cardData != null) {
-                                // 将 Map 转换为 ItemDTO
+                                log.info("商品cardData: {}", cardData);
                                 ItemDTO itemDTO = objectMapper.convertValue(cardData, ItemDTO.class);
                                 respDTO.getItems().add(itemDTO);
                             }
@@ -830,11 +852,21 @@ public class ItemServiceImpl implements ItemService {
                 goodsConfig.setXyGoodsId(reqDTO.getXyGoodsId());
                 goodsConfig.setXianyuAutoDeliveryOn(0); // 默认关闭自动发货
                 goodsConfig.setXianyuAutoReplyOn(reqDTO.getXianyuAutoReplyOn());
+                // 携带上下文开关：第一次跟随自动回复开关默认开启
+                if (reqDTO.getXianyuAutoReplyContextOn() != null) {
+                    goodsConfig.setXianyuAutoReplyContextOn(reqDTO.getXianyuAutoReplyContextOn());
+                } else {
+                    goodsConfig.setXianyuAutoReplyContextOn(1); // 默认开启
+                }
                 goodsConfig.setCreateTime(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date()));
                 goodsConfig.setUpdateTime(goodsConfig.getCreateTime());
             } else {
                 // 3. 更新配置
                 goodsConfig.setXianyuAutoReplyOn(reqDTO.getXianyuAutoReplyOn());
+                // 更新携带上下文开关
+                if (reqDTO.getXianyuAutoReplyContextOn() != null) {
+                    goodsConfig.setXianyuAutoReplyContextOn(reqDTO.getXianyuAutoReplyContextOn());
+                }
                 goodsConfig.setUpdateTime(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date()));
             }
             
@@ -925,6 +957,66 @@ public class ItemServiceImpl implements ItemService {
         } catch (Exception e) {
             log.error("补充m_h5_tk失败: accountId={}", accountId, e);
             return cookieText;
+        }
+    }
+    
+
+    
+    /**
+     * 获取自动回复配置
+     */
+    @Override
+    public ResultObject<RagAutoReplyConfigRespDTO> getRagAutoReplyConfig(RagAutoReplyConfigReqDTO reqDTO) {
+        try {
+            Long accountId = reqDTO.getXianyuAccountId();
+            String xyGoodsId = reqDTO.getXyGoodsId();
+
+            com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoDeliveryConfig config = 
+                    autoDeliveryConfigMapper.findByAccountIdAndGoodsId(accountId, xyGoodsId);
+
+            RagAutoReplyConfigRespDTO respDTO = new RagAutoReplyConfigRespDTO();
+            if (config != null && config.getRagDelaySeconds() != null) {
+                respDTO.setRagDelaySeconds(config.getRagDelaySeconds());
+            } else {
+                respDTO.setRagDelaySeconds(15);
+            }
+            return ResultObject.success(respDTO);
+        } catch (Exception e) {
+            log.error("获取自动回复配置失败", e);
+            return ResultObject.failed("获取自动回复配置失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 更新自动回复配置
+     */
+    @Override
+    public ResultObject<?> updateRagAutoReplyConfig(UpdateRagAutoReplyConfigReqDTO reqDTO) {
+        try {
+            Long accountId = reqDTO.getXianyuAccountId();
+            String xyGoodsId = reqDTO.getXyGoodsId();
+            Integer ragDelaySeconds = reqDTO.getRagDelaySeconds();
+
+            com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoDeliveryConfig config = 
+                    autoDeliveryConfigMapper.findByAccountIdAndGoodsId(accountId, xyGoodsId);
+
+            if (config == null) {
+                config = new com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoDeliveryConfig();
+                config.setXianyuAccountId(accountId);
+                config.setXyGoodsId(xyGoodsId);
+                config.setRagDelaySeconds(ragDelaySeconds != null ? ragDelaySeconds : 15);
+                autoDeliveryConfigMapper.insert(config);
+            } else {
+                config.setRagDelaySeconds(ragDelaySeconds != null ? ragDelaySeconds : 15);
+                autoDeliveryConfigMapper.updateById(config);
+            }
+
+            log.info("更新自动回复延时配置成功: accountId={}, xyGoodsId={}, ragDelaySeconds={}", 
+                    accountId, xyGoodsId, ragDelaySeconds);
+            return ResultObject.success(null);
+        } catch (Exception e) {
+            log.error("更新自动回复配置失败", e);
+            return ResultObject.failed("更新自动回复配置失败: " + e.getMessage());
         }
     }
 }

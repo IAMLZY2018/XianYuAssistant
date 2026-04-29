@@ -1,6 +1,7 @@
 package com.feijimiao.xianyuassistant.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.feijimiao.xianyuassistant.utils.AccountDisplayNameUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
@@ -11,6 +12,9 @@ import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 闲鱼WebSocket客户端
@@ -22,6 +26,7 @@ public class XianyuWebSocketClient extends WebSocketClient {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final String accountId;
+    private final AccountDisplayNameUtils displayNameUtils;
     private boolean isConnected = false;
     
     // 当前用户ID（从Cookie的unb字段获取）
@@ -40,16 +45,43 @@ public class XianyuWebSocketClient extends WebSocketClient {
     
     // 会话信息
     private String sessionId = null;  // 保存注册后的sid
+
+    // 等待响应的Future（mid -> CompletableFuture<code>）
+    private final ConcurrentHashMap<String, CompletableFuture<Integer>> pendingResponses = new ConcurrentHashMap<>();
     
     // 注册成功回调
     private Runnable onRegistrationSuccess;
     
     // Token失效回调
     private Runnable onTokenExpired;
+    
+    // 心跳响应回调
+    private Runnable onHeartbeatResponse;
+    
+    // 连接关闭回调（参考Python的finally重连逻辑）
+    private Runnable onConnectionClosed;
+    
+    // 是否为主动关闭（防止主动关闭时触发重连）
+    private volatile boolean intentionalClose = false;
 
-    public XianyuWebSocketClient(URI serverUri, Map<String, String> headers, String accountId) {
+    public XianyuWebSocketClient(URI serverUri, Map<String, String> headers, String accountId, AccountDisplayNameUtils displayNameUtils) {
         super(serverUri, headers);
         this.accountId = accountId;
+        this.displayNameUtils = displayNameUtils;
+    }
+    
+    /**
+     * 获取账号显示名称
+     */
+    private String getDisplayName() {
+        return displayNameUtils != null ? displayNameUtils.getDisplayName(accountId) : "账号" + accountId;
+    }
+    
+    /**
+     * 格式化日志前缀
+     */
+    private String logPrefix() {
+        return "【" + getDisplayName() + "】";
     }
     
     /**
@@ -79,17 +111,40 @@ public class XianyuWebSocketClient extends WebSocketClient {
     public void setOnTokenExpired(Runnable callback) {
         this.onTokenExpired = callback;
     }
+    
+    /**
+     * 设置心跳响应回调
+     */
+    public void setOnHeartbeatResponse(Runnable callback) {
+        this.onHeartbeatResponse = callback;
+    }
+    
+    /**
+     * 设置连接关闭回调
+     * 参考Python的finally块中的重连逻辑
+     */
+    public void setOnConnectionClosed(Runnable callback) {
+        this.onConnectionClosed = callback;
+    }
+    
+    /**
+     * 标记为主动关闭（防止关闭时触发重连回调）
+     */
+    public void setIntentionalClose(boolean intentional) {
+        this.intentionalClose = intentional;
+    }
 
     @Override
     public void onOpen(ServerHandshake handshakedata) {
         isConnected = true;
-        log.info("【账号{}】==================== WebSocket连接建立成功 ====================", accountId);
-        log.info("【账号{}】服务器握手状态: {}", accountId, handshakedata.getHttpStatus());
-        log.info("【账号{}】服务器握手消息: {}", accountId, handshakedata.getHttpStatusMessage());
-        log.info("【账号{}】连接已就绪，等待初始化和接收消息...", accountId);
-        log.info("【账号{}】WebSocket连接状态正常，等待服务器消息...", accountId);
-        log.info("【账号{}】准备进入消息接收循环...", accountId);
-        log.info("【账号{}】================================================================", accountId);
+        String displayName = getDisplayName();
+        log.info("【{}】==================== WebSocket连接建立成功 ====================", displayName);
+        log.info("【{}】服务器握手状态: {}", displayName, handshakedata.getHttpStatus());
+        log.info("【{}】服务器握手消息: {}", displayName, handshakedata.getHttpStatusMessage());
+        log.info("【{}】连接已就绪，等待初始化和接收消息...", displayName);
+        log.info("【{}】WebSocket连接状态正常，等待服务器消息...", displayName);
+        log.info("【{}】准备进入消息接收循环...", displayName);
+        log.info("【{}】================================================================", displayName);
     }
 
     @Override
@@ -234,15 +289,17 @@ public class XianyuWebSocketClient extends WebSocketClient {
                     return; // 不再继续处理
                 }
                 
-                if (code != null && (code.equals(200) || "200".equals(code.toString()))) {
-                    handleHeartbeatResponse();
-                    // 心跳响应也要继续处理，不要return
-                }
-
-                // 检查是否是注册响应，保存sid
+                // 检查是否是心跳响应（参考Python的handle_heartbeat_response）
+                // 心跳响应的特征：code=200 且 headers中有mid
                 if (code != null && (code.equals(200) || "200".equals(code.toString()))) {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> headers = (Map<String, Object>) messageData.get("headers");
+                    if (headers != null && headers.containsKey("mid")) {
+                        // 这是心跳响应
+                        handleHeartbeatResponse();
+                    }
+                    
+                    // 检查是否是注册响应，保存sid
                     if (headers != null && headers.containsKey("sid")) {
                         sessionId = headers.get("sid").toString();
                         log.info("【账号{}】已保存会话ID: {}", accountId, sessionId);
@@ -354,10 +411,8 @@ public class XianyuWebSocketClient extends WebSocketClient {
             if (headers.containsKey("mid")) {
                 ackHeaders.put("mid", headers.get("mid"));
             } else {
-                // 生成mid: 随机数(0-999) + 时间戳(毫秒) + " 0"
-                int randomPart = (int) (Math.random() * 1000);
-                long timestamp = System.currentTimeMillis();
-                String mid = randomPart + String.valueOf(timestamp) + " 0";
+                // 生成mid
+                String mid = com.feijimiao.xianyuassistant.utils.XianyuDeviceUtils.generateMid();
                 ackHeaders.put("mid", mid);
             }
             
@@ -396,6 +451,18 @@ public class XianyuWebSocketClient extends WebSocketClient {
      * 参考Python的handle_heartbeat_response方法
      */
     private void handleHeartbeatResponse() {
+        log.debug("【账号{}】收到心跳响应", accountId);
+        
+        // 触发心跳响应回调（更新心跳响应时间）
+        if (onHeartbeatResponse != null) {
+            try {
+                onHeartbeatResponse.run();
+            } catch (Exception e) {
+                log.error("【账号{}】心跳响应回调执行失败", accountId, e);
+            }
+        }
+        
+        // 调用消息处理器
         if (messageHandler != null) {
             messageHandler.handleHeartbeat(accountId);
         }
@@ -407,19 +474,34 @@ public class XianyuWebSocketClient extends WebSocketClient {
     public void onClose(int code, String reason, boolean remote) {
         isConnected = false;
         String closeType = remote ? "服务器" : "客户端";
-        log.info("【账号{}】WebSocket连接关闭 - 关闭方: {}, 代码: {}, 原因: {}", 
-                accountId, closeType, code, reason);
+        log.info("{}WebSocket连接关闭 - 关闭方: {}, 代码: {}, 原因: {}", 
+                logPrefix(), closeType, code, reason);
         
         // 关闭消息处理线程池
         if (messageExecutor != null && !messageExecutor.isShutdown()) {
             messageExecutor.shutdown();
-            log.debug("【账号{}】消息处理线程池已关闭", accountId);
+            log.debug("{}消息处理线程池已关闭", logPrefix());
+        }
+        
+        // 触发连接关闭回调（参考Python的finally块中重连逻辑）
+        // 但如果是主动关闭（如Token刷新重连），则不触发回调，由调用方自行处理重连
+        if (!intentionalClose && onConnectionClosed != null) {
+            try {
+                log.info("{}触发连接关闭回调，准备自动重连...", logPrefix());
+                onConnectionClosed.run();
+            } catch (Exception e) {
+                log.error("{}连接关闭回调执行失败", logPrefix(), e);
+            }
+        } else if (intentionalClose) {
+            log.info("{}主动关闭连接，不触发自动重连回调", logPrefix());
+            // 重置标志，以便下次连接可以正常触发
+            intentionalClose = false;
         }
     }
 
     @Override
     public void onError(Exception ex) {
-        log.error("【账号{}】WebSocket发生错误", accountId, ex);
+        log.error("{}WebSocket发生错误", logPrefix(), ex);
         if (messageHandler != null) {
             messageHandler.handleError(accountId, ex);
         }
@@ -433,10 +515,7 @@ public class XianyuWebSocketClient extends WebSocketClient {
         if (isConnected) {
             try {
                 // 生成心跳消息（参考Python格式）
-                // mid格式: 随机数(0-999) + 时间戳(毫秒) + " 0"
-                int randomPart = (int) (Math.random() * 1000);
-                long timestamp = System.currentTimeMillis();
-                String mid = randomPart + String.valueOf(timestamp) + " 0";
+                String mid = com.feijimiao.xianyuassistant.utils.XianyuDeviceUtils.generateMid();
                 String heartbeat = String.format("{\"lwp\":\"/!\",\"headers\":{\"mid\":\"%s\"}}", mid);
                 send(heartbeat);
             } catch (Exception e) {
@@ -447,9 +526,11 @@ public class XianyuWebSocketClient extends WebSocketClient {
 
     /**
      * 检查连接状态
+     * 使用底层的连接状态，而不是标志位
      */
     public boolean isConnected() {
-        return isConnected && !isClosed();
+        // 使用底层WebSocket的连接状态
+        return !isClosed() && isOpen();
     }
     
     /**
@@ -465,33 +546,121 @@ public class XianyuWebSocketClient extends WebSocketClient {
             log.error("【账号{}】WebSocket未连接，无法发送消息", accountId);
             return;
         }
+        try {
+            String cleanCid = cid.replace("@goofish", "");
+            String cleanToId = toId.replace("@goofish", "");
+            log.info("【账号{}】准备发送消息: cleanCid={}, cleanToId={}, text={}", accountId, cleanCid, cleanToId, text);
+
+            Map<String, Object> textContent = new HashMap<>();
+            textContent.put("contentType", 1);
+            Map<String, String> textData = new HashMap<>();
+            textData.put("text", text);
+            textContent.put("text", textData);
+
+            String textJson = objectMapper.writeValueAsString(textContent);
+            String textBase64 = java.util.Base64.getEncoder().encodeToString(textJson.getBytes("UTF-8"));
+
+            Map<String, Object> messageBody = new HashMap<>();
+            messageBody.put("uuid", generateUuid());
+            messageBody.put("cid", cleanCid + "@goofish");
+            messageBody.put("conversationType", 1);
+
+            Map<String, Object> content = new HashMap<>();
+            content.put("contentType", 101);
+            Map<String, Object> custom = new HashMap<>();
+            custom.put("type", 1);
+            custom.put("data", textBase64);
+            content.put("custom", custom);
+            messageBody.put("content", content);
+            messageBody.put("redPointPolicy", 0);
+
+            Map<String, String> extension = new HashMap<>();
+            extension.put("extJson", "{}");
+            messageBody.put("extension", extension);
+
+            Map<String, String> ctx = new HashMap<>();
+            ctx.put("appVersion", "1.0");
+            ctx.put("platform", "web");
+            messageBody.put("ctx", ctx);
+            messageBody.put("mtags", new HashMap<>());
+            messageBody.put("msgReadStatusSetting", 1);
+
+            Map<String, Object> receivers = new HashMap<>();
+            java.util.List<String> actualReceivers = new java.util.ArrayList<>();
+            actualReceivers.add(cleanToId + "@goofish");
+            String senderUserId = myUserId != null ? myUserId : accountId;
+            actualReceivers.add(senderUserId + "@goofish");
+            receivers.put("actualReceivers", actualReceivers);
+
+            Map<String, Object> message = new HashMap<>();
+            message.put("lwp", "/r/MessageSend/sendByReceiverScope");
+
+            Map<String, String> headers = new HashMap<>();
+            headers.put("mid", generateMid());
+            if (sessionId != null) {
+                headers.put("sid", sessionId);
+            }
+            message.put("headers", headers);
+
+            java.util.List<Object> body = new java.util.ArrayList<>();
+            body.add(messageBody);
+            body.add(receivers);
+            message.put("body", body);
+
+            String messageJson = objectMapper.writeValueAsString(message);
+            send(messageJson);
+            log.info("【账号{}】✅ 消息已发送到WebSocket", accountId);
+        } catch (Exception e) {
+            log.error("【账号{}】❌ 发送消息失败: cid={}, toId={}", accountId, cid, toId, e);
+        }
+    }
+
+    /**
+     * 完成等待中的响应Future
+     */
+    public void completePendingResponse(String mid, int code) {
+        CompletableFuture<Integer> future = pendingResponses.remove(mid);
+        if (future != null && !future.isDone()) {
+            future.complete(code);
+            log.debug("【账号{}】完成pendingResponse: mid={}, code={}", accountId, mid, code);
+        }
+    }
+
+    /**
+     * 发送消息并等待响应结果
+     *
+     * @param cid 会话ID
+     * @param toId 接收方用户ID
+     * @param text 消息文本内容
+     * @return true=服务端返回200，false=失败或超时
+     */
+    public boolean sendMessageWithResult(String cid, String toId, String text) {
+        if (!isConnected) {
+            log.error("【账号{}】WebSocket未连接，无法发送消息", accountId);
+            return false;
+        }
         
         try {
-            // 移除可能存在的@goofish后缀，确保统一处理
             String cleanCid = cid.replace("@goofish", "");
             String cleanToId = toId.replace("@goofish", "");
             
             log.info("【账号{}】准备发送消息: cleanCid={}, cleanToId={}, text={}", 
                     accountId, cleanCid, cleanToId, text);
             
-            // 构造消息内容
             Map<String, Object> textContent = new HashMap<>();
             textContent.put("contentType", 1);
             Map<String, String> textData = new HashMap<>();
             textData.put("text", text);
             textContent.put("text", textData);
             
-            // Base64编码消息内容
             String textJson = objectMapper.writeValueAsString(textContent);
             String textBase64 = java.util.Base64.getEncoder().encodeToString(textJson.getBytes("UTF-8"));
             
-            // 构造消息体
             Map<String, Object> messageBody = new HashMap<>();
             messageBody.put("uuid", generateUuid());
             messageBody.put("cid", cleanCid + "@goofish");
             messageBody.put("conversationType", 1);
             
-            // 消息内容
             Map<String, Object> content = new HashMap<>();
             content.put("contentType", 101);
             Map<String, Object> custom = new HashMap<>();
@@ -502,12 +671,10 @@ public class XianyuWebSocketClient extends WebSocketClient {
             
             messageBody.put("redPointPolicy", 0);
             
-            // 扩展信息
             Map<String, String> extension = new HashMap<>();
             extension.put("extJson", "{}");
             messageBody.put("extension", extension);
             
-            // 上下文信息
             Map<String, String> ctx = new HashMap<>();
             ctx.put("appVersion", "1.0");
             ctx.put("platform", "web");
@@ -516,23 +683,21 @@ public class XianyuWebSocketClient extends WebSocketClient {
             messageBody.put("mtags", new HashMap<>());
             messageBody.put("msgReadStatusSetting", 1);
             
-            // 接收者列表（参考Python: actualReceivers包含接收方和发送方）
             Map<String, Object> receivers = new HashMap<>();
             java.util.List<String> actualReceivers = new java.util.ArrayList<>();
             actualReceivers.add(cleanToId + "@goofish");
-            // 使用myUserId而不是accountId
             String senderUserId = myUserId != null ? myUserId : accountId;
             actualReceivers.add(senderUserId + "@goofish");
             receivers.put("actualReceivers", actualReceivers);
             
             log.info("【账号{}】消息接收者列表: {}", accountId, actualReceivers);
             
-            // 构造完整消息
             Map<String, Object> message = new HashMap<>();
             message.put("lwp", "/r/MessageSend/sendByReceiverScope");
             
+            String mid = generateMid();
             Map<String, String> headers = new HashMap<>();
-            headers.put("mid", generateMid());
+            headers.put("mid", mid);
             if (sessionId != null) {
                 headers.put("sid", sessionId);
             }
@@ -543,14 +708,136 @@ public class XianyuWebSocketClient extends WebSocketClient {
             body.add(receivers);
             message.put("body", body);
             
-            // 发送消息
+            CompletableFuture<Integer> future = new CompletableFuture<>();
+            pendingResponses.put(mid, future);
+            
             String messageJson = objectMapper.writeValueAsString(message);
             log.debug("【账号{}】发送消息JSON: {}", accountId, messageJson);
             send(messageJson);
-            log.info("【账号{}】✅ 消息已发送到WebSocket", accountId);
+            log.info("【账号{}】消息已发送到WebSocket，等待响应: mid={}", accountId, mid);
+            
+            try {
+                Integer code = future.get(10, TimeUnit.SECONDS);
+                boolean success = code != null && code == 200;
+                if (success) {
+                    log.info("【账号{}】✅ 消息发送成功(服务端返回200): mid={}", accountId, mid);
+                } else {
+                    log.error("【账号{}】❌ 消息发送失败(服务端返回{}): mid={}", accountId, code, mid);
+                }
+                return success;
+            } catch (java.util.concurrent.TimeoutException e) {
+                log.warn("【账号{}】消息发送超时(10秒)，视为发送成功: mid={}", accountId, mid);
+                return true;
+            } finally {
+                pendingResponses.remove(mid);
+            }
             
         } catch (Exception e) {
             log.error("【账号{}】❌ 发送消息失败: cid={}, toId={}", accountId, cid, toId, e);
+            return false;
+        }
+    }
+    
+    /**
+     * 发送图片消息
+     * 
+     * @param cid 会话ID
+     * @param toId 接收方ID
+     * @param imageUrl 图片URL
+     * @param width 图片宽度
+     * @param height 图片高度
+     */
+    public void sendImageMessage(String cid, String toId, String imageUrl, int width, int height) {
+        if (!isConnected) {
+            log.error("{}WebSocket未连接，无法发送图片消息", logPrefix());
+            return;
+        }
+        
+        try {
+            String cleanCid = cid.replace("@goofish", "");
+            String cleanToId = toId.replace("@goofish", "");
+            
+            log.info("{}准备发送图片消息: cid={}, toId={}, url={}, size={}x{}", 
+                    logPrefix(), cleanCid, cleanToId, imageUrl, width, height);
+            
+            // 构造图片消息内容
+            Map<String, Object> imageContent = new HashMap<>();
+            imageContent.put("contentType", 2);
+            
+            Map<String, Object> pics = new HashMap<>();
+            pics.put("height", height);
+            pics.put("type", 0);
+            pics.put("url", imageUrl);
+            pics.put("width", width);
+            
+            Map<String, Object> imageData = new HashMap<>();
+            imageData.put("pics", java.util.Collections.singletonList(pics));
+            imageContent.put("image", imageData);
+            
+            // Base64编码
+            String imageJson = objectMapper.writeValueAsString(imageContent);
+            String imageBase64 = java.util.Base64.getEncoder().encodeToString(imageJson.getBytes("UTF-8"));
+            
+            log.debug("{}图片内容JSON: {}", logPrefix(), imageJson);
+            
+            // 构造消息体
+            Map<String, Object> messageBody = new HashMap<>();
+            messageBody.put("uuid", generateUuid());
+            messageBody.put("cid", cleanCid + "@goofish");
+            messageBody.put("conversationType", 1);
+            
+            Map<String, Object> content = new HashMap<>();
+            content.put("contentType", 101);
+            Map<String, Object> custom = new HashMap<>();
+            custom.put("type", 1);
+            custom.put("data", imageBase64);
+            content.put("custom", custom);
+            messageBody.put("content", content);
+            
+            messageBody.put("redPointPolicy", 0);
+            
+            Map<String, String> extension = new HashMap<>();
+            extension.put("extJson", "{}");
+            messageBody.put("extension", extension);
+            
+            Map<String, String> ctx = new HashMap<>();
+            ctx.put("appVersion", "1.0");
+            ctx.put("platform", "web");
+            messageBody.put("ctx", ctx);
+            
+            messageBody.put("mtags", new HashMap<>());
+            messageBody.put("msgReadStatusSetting", 1);
+            
+            // 接收方
+            Map<String, Object> receivers = new HashMap<>();
+            java.util.List<String> actualReceivers = new java.util.ArrayList<>();
+            actualReceivers.add(cleanToId + "@goofish");
+            if (myUserId != null) {
+                actualReceivers.add(myUserId + "@goofish");
+            }
+            receivers.put("actualReceivers", actualReceivers);
+            
+            // 构造完整消息
+            Map<String, Object> message = new HashMap<>();
+            message.put("lwp", "/r/MessageSend/sendByReceiverScope");
+            
+            Map<String, String> headers = new HashMap<>();
+            headers.put("mid", generateMid());
+            message.put("headers", headers);
+            
+            java.util.List<Object> body = new java.util.ArrayList<>();
+            body.add(messageBody);
+            body.add(receivers);
+            message.put("body", body);
+            
+            // 发送
+            String messageJson = objectMapper.writeValueAsString(message);
+            log.debug("{}发送图片消息JSON: {}", logPrefix(), messageJson);
+            send(messageJson);
+            log.info("{}✅ 图片消息已发送: {}", logPrefix(), imageUrl);
+            
+        } catch (Exception e) {
+            log.error("{}❌ 发送图片消息失败: cid={}, toId={}", logPrefix(), cid, toId, e);
         }
     }
     
@@ -560,19 +847,15 @@ public class XianyuWebSocketClient extends WebSocketClient {
      * 参考Python的generate_mid方法
      */
     private String generateMid() {
-        int randomPart = (int) (Math.random() * 1000);
-        long timestamp = System.currentTimeMillis();
-        return randomPart + String.valueOf(timestamp) + " 0";
+        return com.feijimiao.xianyuassistant.utils.XianyuDeviceUtils.generateMid();
     }
     
     /**
      * 生成UUID
-     * 格式: 负数时间戳（去掉最后两位）
+     * 格式: -时间戳1
      * 参考Python的generate_uuid方法
      */
     private String generateUuid() {
-        long timestamp = System.currentTimeMillis();
-        long uuid = -(timestamp / 100);
-        return String.valueOf(uuid);
+        return com.feijimiao.xianyuassistant.utils.XianyuDeviceUtils.generateUuid();
     }
 }

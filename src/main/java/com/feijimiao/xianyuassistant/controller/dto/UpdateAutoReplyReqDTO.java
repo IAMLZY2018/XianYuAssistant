@@ -22,4 +22,9 @@ public class UpdateAutoReplyReqDTO {
      * 自动回复开关：1-开启，0-关闭
      */
     private Integer xianyuAutoReplyOn;
+    
+    /**
+     * 携带上下文开关：1-开启，0-关闭（可选，仅当xianyuAutoReplyOn=1时有意义）
+     */
+    private Integer xianyuAutoReplyContextOn;
 }

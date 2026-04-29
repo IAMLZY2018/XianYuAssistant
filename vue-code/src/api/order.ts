@@ -1,17 +1,47 @@
-import { request } from '@/utils/request';
-import type { ApiResponse } from '@/types';
+import { request } from '@/utils/request'
+import type { ApiResponse } from '@/types'
 
-// 确认收货请求参数
-export interface ConfirmShipmentRequest {
-  xianyuAccountId: number;
-  orderId: string;
+export interface DeliveryRecordQueryReq {
+  xianyuAccountId?: number
+  xyGoodsId?: string
+  pageNum?: number
+  pageSize?: number
 }
 
-// 确认收货
-export function confirmShipment(data: ConfirmShipmentRequest) {
-  return request<ApiResponse<string>>({
+export interface DeliveryRecordVO {
+  id: number
+  xianyuAccountId?: number
+  xyGoodsId: string
+  goodsTitle?: string
+  buyerUserName?: string
+  sid?: string
+  content?: string
+  state: number
+  failReason?: string
+  confirmState: number
+  orderId?: string
+  createTime: string
+}
+
+export interface DeliveryRecordPageResult {
+  records: DeliveryRecordVO[]
+  total: number
+  pageNum: number
+  pageSize: number
+}
+
+export function queryDeliveryRecordList(data: DeliveryRecordQueryReq) {
+  return request<DeliveryRecordPageResult>({
+    url: '/items/autoDeliveryRecords',
+    method: 'POST',
+    data
+  })
+}
+
+export function confirmShipment(data: { xianyuAccountId: number; orderId: string }) {
+  return request<string>({
     url: '/order/confirmShipment',
     method: 'POST',
     data
-  });
+  })
 }

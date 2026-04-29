@@ -7,10 +7,19 @@ public interface OrderService {
     
     /**
      * 确认发货
-     *
+     * 
      * @param accountId 账号ID
      * @param orderId 订单ID
-     * @return 成功返回提示信息，失败返回null
+     * @return 操作结果
      */
     String confirmShipment(Long accountId, String orderId);
+    
+    /**
+     * 调用闲鱼API确认发货
+     * 
+     * @param accountId 账号ID
+     * @param orderId 订单ID
+     * @return 操作结果
+     */
+    String confirmShipmentToXianyu(Long accountId, String orderId);
 }

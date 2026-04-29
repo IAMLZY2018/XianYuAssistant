@@ -9,6 +9,7 @@
 *.iml
 *.ipr
 *.iws
+.codeartsdoer
 
 # Build outputs
 target/
@@ -24,20 +25,21 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+nul
 
 # Data
+dbdata/
 data/
 *.db
 *.db-journal
 
 # Documentation
+docs/
 *.md
 !README.md
 
-# Docker
+# Docker (不需要复制到构建上下文)
 .dockerignore
-Dockerfile
-docker-compose*.yml
 
 # CI/CD
 .github/
@@ -49,3 +51,6 @@ docker-compose*.yml
 *.swp
 *.swo
 *~
+
+# Demo (已删除)
+demo/

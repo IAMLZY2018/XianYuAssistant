@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.feijimiao</groupId>
     <artifactId>XianYuAssistant</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.1.2</version>
     <name>XianYuAssistant</name>
     <description>XianYuAssistant</description>
     <url/>
@@ -28,11 +28,27 @@
     </scm>
     <properties>
         <java.version>21</java.version>
+        <spring-ai.version>1.1.4</spring-ai.version>
     </properties>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
         <!-- Spring Boot Validation -->
         <dependency>
@@ -84,9 +100,36 @@
             <artifactId>sqlite-jdbc</artifactId>
             <version>3.42.0.0</version>
         </dependency>
+        <!-- JWT -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.12.6</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.12.6</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.12.6</version>
+        </dependency>
+        <!-- BCrypt (only crypto, not full Spring Security) -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.0</version>
             <scope>test</scope>
         </dependency>
         <!-- Java-WebSocket -->
@@ -101,6 +144,17 @@
             <artifactId>msgpack-core</artifactId>
             <version>0.9.8</version>
         </dependency>
+        <!-- Spring AI - OpenAI -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-openai</artifactId>
+        </dependency>
+        <!-- Spring AI - Vector Store (包含 SimpleVectorStore) -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-vector-store</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

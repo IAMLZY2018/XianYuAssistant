@@ -2,6 +2,37 @@ import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse 
 import { ElMessage } from 'element-plus'
 import type { ApiResponse } from '@/types'
 
+// Token存储key
+const TOKEN_KEY = 'xianyu_auth_token'
+const USERNAME_KEY = 'xianyu_auth_username'
+
+/** 获取Token */
+export function getAuthToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY)
+}
+
+/** 设置Token */
+export function setAuthToken(token: string, username: string) {
+  localStorage.setItem(TOKEN_KEY, token)
+  localStorage.setItem(USERNAME_KEY, username)
+}
+
+/** 清除Token */
+export function clearAuthToken() {
+  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(USERNAME_KEY)
+}
+
+/** 获取用户名 */
+export function getAuthUsername(): string | null {
+  return localStorage.getItem(USERNAME_KEY)
+}
+
+/** 是否已登录 */
+export function isLoggedIn(): boolean {
+  return !!getAuthToken()
+}
+
 // 创建 axios 实例
 const service: AxiosInstance = axios.create({
   baseURL: '/api',
@@ -14,6 +45,11 @@ const service: AxiosInstance = axios.create({
 // 请求拦截器
 service.interceptors.request.use(
   (config) => {
+    // 添加Token到请求头
+    const token = getAuthToken()
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
     console.log('发送请求:', config.url, config.data)
     return config
   },
@@ -28,6 +64,17 @@ service.interceptors.response.use(
   (response: AxiosResponse<ApiResponse<any>>) => {
     console.log('收到响应:', response.config.url, response.data)
     const res = response.data
+
+    // 401未登录 -> 跳转登录页
+    if (res.code === 401) {
+      clearAuthToken()
+      // 避免在登录页重复跳转
+      if (!window.location.pathname.includes('/login')) {
+        ElMessage.error(res.msg || '登录已过期，请重新登录')
+        window.location.href = '/login'
+      }
+      return Promise.reject(new Error(res.msg || '未登录'))
+    }
 
     // 特殊处理：1001是滑块验证码，需要业务代码自己处理，不在这里拦截
     if (res.code === 1001) {

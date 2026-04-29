@@ -7,21 +7,26 @@ export interface AutoDeliveryConfig {
   xianyuAccountId: number;
   xianyuGoodsId: number;
   xyGoodsId: string;
-  type: number; // 1-文本，2-自定义
+  deliveryMode: number; // 1-自动发货，2-卡密发货，3-自定义发货
   autoDeliveryContent: string;
-  autoConfirmShipment?: number; // 自动确认发货开关：0-关闭，1-开启
+  kamiConfigIds?: string; // 卡密发货绑定的配置ID列表（逗号分隔）
+  kamiDeliveryTemplate?: string; // 卡密发货文案模板，使用{kmKey}占位符
+  autoDeliveryImageUrl?: string;
+  autoConfirmShipment?: number;
   createTime: string;
   updateTime: string;
 }
 
-// 保存配置请求
 export interface SaveAutoDeliveryConfigReq {
   xianyuAccountId: number;
   xianyuGoodsId?: number;
   xyGoodsId: string;
-  type: number;
+  deliveryMode: number;
   autoDeliveryContent: string;
-  autoConfirmShipment?: number; // 自动确认发货开关：0-关闭，1-开启
+  kamiConfigIds?: string;
+  kamiDeliveryTemplate?: string;
+  autoDeliveryImageUrl?: string;
+  autoConfirmShipment?: number;
 }
 
 // 查询配置请求

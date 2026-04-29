@@ -3,7 +3,7 @@ package com.feijimiao.xianyuassistant.controller.dto;
 import lombok.Data;
 
 /**
- * 自动发货记录DTO
+ * 自动发货记录DTO (简化版)
  */
 @Data
 public class AutoDeliveryRecordDTO {
@@ -13,30 +13,14 @@ public class AutoDeliveryRecordDTO {
      */
     private Long id;
     
-    /**
-     * 闲鱼账号ID
-     */
     private Long xianyuAccountId;
     
-    /**
-     * 本地闲鱼商品ID
-     */
-    private Long xianyuGoodsId;
-    
-    /**
-     * 闲鱼的商品ID
-     */
     private String xyGoodsId;
     
     /**
      * 商品标题
      */
     private String goodsTitle;
-    
-    /**
-     * 买家用户ID
-     */
-    private String buyerUserId;
     
     /**
      * 买家用户名称
@@ -49,19 +33,19 @@ public class AutoDeliveryRecordDTO {
     private String content;
     
     /**
-     * 状态是否成功1-成功，0-失败
+     * 发货是否成功: 1-成功, 0-失败
      */
     private Integer state;
+    
+    /**
+     * 确认发货状态: 0-未确认, 1-已确认
+     */
+    private Integer confirmState;
     
     /**
      * 订单ID
      */
     private String orderId;
-    
-    /**
-     * 确认发货状态：0-未确认发货，1-已确认发货
-     */
-    private Integer orderState;
     
     /**
      * 创建时间

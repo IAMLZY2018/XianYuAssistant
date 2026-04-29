@@ -1,0 +1,432 @@
+package com.feijimiao.xianyuassistant.service.impl;
+
+import com.feijimiao.xianyuassistant.service.EmailNotifyService;
+import com.feijimiao.xianyuassistant.service.SysSettingService;
+import jakarta.mail.internet.MimeMessage;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Properties;
+
+@Slf4j
+@Service
+public class EmailNotifyServiceImpl implements EmailNotifyService {
+
+    private static final String KEY_SMTP_HOST = "email_smtp_host";
+    private static final String KEY_SMTP_PORT = "email_smtp_port";
+    private static final String KEY_SMTP_USERNAME = "email_smtp_username";
+    private static final String KEY_SMTP_PASSWORD = "email_smtp_password";
+    private static final String KEY_SMTP_FROM = "email_smtp_from";
+    private static final String KEY_SMTP_SSL = "email_smtp_ssl";
+    private static final String KEY_WS_DISCONNECT_NOTIFY_ENABLED = "email_notify_ws_disconnect_enabled";
+    private static final String KEY_COOKIE_EXPIRE_NOTIFY_ENABLED = "email_notify_cookie_expire_enabled";
+
+    @Autowired
+    private SysSettingService sysSettingService;
+
+    @Override
+    @Async
+    public void sendWsDisconnectNotifyEmail(Long accountId, String accountNote) {
+        if (!isEmailConfigured()) {
+            log.warn("邮箱未配置，跳过发送WebSocket断开连接通知邮件");
+            return;
+        }
+        if (!isWsDisconnectNotifyEnabled()) {
+            log.debug("WebSocket断开连接邮件通知未启用，跳过");
+            return;
+        }
+
+        try {
+            JavaMailSenderImpl mailSender = buildMailSender();
+            String from = getSettingValue(KEY_SMTP_USERNAME);
+            String to = getSettingValue(KEY_SMTP_FROM);
+
+            String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
+            String subject = "【闲鱼助手】消息监听已掉线 - " + (accountNote != null && !accountNote.isEmpty() ? accountNote : "账号" + accountId);
+            String content = buildWsDisconnectEmailContent(accountId, accountNote, time);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(from);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(content, true);
+
+            mailSender.send(message);
+            log.info("WebSocket断开连接通知邮件发送成功: accountId={}, to={}", accountId, to);
+        } catch (Exception e) {
+            log.error("WebSocket断开连接通知邮件发送失败: accountId={}", accountId, e);
+        }
+    }
+
+    @Override
+    public boolean isWsDisconnectNotifyEnabled() {
+        String value = getSettingValue(KEY_WS_DISCONNECT_NOTIFY_ENABLED);
+        return "1".equals(value) || "true".equalsIgnoreCase(value);
+    }
+
+    @Override
+    @Async
+    public void sendCookieExpireNotifyEmail(Long accountId, String accountNote) {
+        if (!isEmailConfigured()) {
+            log.warn("邮箱未配置，跳过发送Cookie过期通知邮件");
+            return;
+        }
+        if (!isCookieExpireNotifyEnabled()) {
+            log.debug("Cookie过期邮件通知未启用，跳过");
+            return;
+        }
+
+        try {
+            JavaMailSenderImpl mailSender = buildMailSender();
+            String from = getSettingValue(KEY_SMTP_USERNAME);
+            String to = getSettingValue(KEY_SMTP_FROM);
+
+            String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
+            String subject = "【闲鱼助手】Cookie已过期 - " + (accountNote != null && !accountNote.isEmpty() ? accountNote : "账号" + accountId);
+            String content = buildCookieExpireEmailContent(accountId, accountNote, time);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(from);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(content, true);
+
+            mailSender.send(message);
+            log.info("Cookie过期通知邮件发送成功: accountId={}, to={}", accountId, to);
+        } catch (Exception e) {
+            log.error("Cookie过期通知邮件发送失败: accountId={}", accountId, e);
+        }
+    }
+
+    @Override
+    public boolean isCookieExpireNotifyEnabled() {
+        String value = getSettingValue(KEY_COOKIE_EXPIRE_NOTIFY_ENABLED);
+        return "1".equals(value) || "true".equalsIgnoreCase(value);
+    }
+
+    @Override
+    public boolean isEmailConfigured() {
+        String host = getSettingValue(KEY_SMTP_HOST);
+        String port = getSettingValue(KEY_SMTP_PORT);
+        String username = getSettingValue(KEY_SMTP_USERNAME);
+        String password = getSettingValue(KEY_SMTP_PASSWORD);
+        String from = getSettingValue(KEY_SMTP_FROM);
+        return isNotEmpty(host) && isNotEmpty(port) && isNotEmpty(username)
+                && isNotEmpty(password) && isNotEmpty(from);
+    }
+
+    @Override
+    public String sendTestEmail() {
+        if (!isEmailConfigured()) {
+            return "邮箱配置不完整，请先配置SMTP服务器、端口、用户名、密码和发件人邮箱";
+        }
+
+        try {
+            JavaMailSenderImpl mailSender = buildMailSender();
+            String from = getSettingValue(KEY_SMTP_USERNAME);
+            String to = getSettingValue(KEY_SMTP_FROM);
+
+            String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
+            String subject = "【闲鱼助手】邮箱配置测试";
+            String content = buildTestEmailContent(time);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(from);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(content, true);
+
+            mailSender.send(message);
+            log.info("测试邮件发送成功: to={}", to);
+            return null;
+        } catch (Exception e) {
+            log.error("测试邮件发送失败", e);
+            return "发送失败: " + e.getMessage();
+        }
+    }
+
+    private String buildTestEmailContent(String time) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;'>");
+        sb.append("<h2 style='color:#34c759;border-bottom:2px solid #34c759;padding-bottom:10px;'>✅ 闲鱼助手 - 邮箱配置测试</h2>");
+        sb.append("<div style='background:#f0f9ff;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:8px 0;'><strong>发送时间：</strong>").append(time).append("</p>");
+        sb.append("<p style='margin:8px 0;color:#34c759;'>恭喜！您的邮箱通知配置已正常工作，可以正常接收系统通知邮件。</p>");
+        sb.append("</div>");
+        sb.append("<div style='color:#999;font-size:12px;margin-top:20px;border-top:1px solid #eee;padding-top:10px;'>");
+        sb.append("此邮件由闲鱼助手自动发送，请勿回复");
+        sb.append("</div>");
+        sb.append("</div>");
+        return sb.toString();
+    }
+
+    private JavaMailSenderImpl buildMailSender() {
+        JavaMailSenderImpl sender = new JavaMailSenderImpl();
+        sender.setHost(getSettingValue(KEY_SMTP_HOST));
+        sender.setPort(Integer.parseInt(getSettingValue(KEY_SMTP_PORT)));
+        sender.setUsername(getSettingValue(KEY_SMTP_USERNAME));
+        sender.setPassword(getSettingValue(KEY_SMTP_PASSWORD));
+        sender.setDefaultEncoding("UTF-8");
+
+        String ssl = getSettingValue(KEY_SMTP_SSL);
+        Properties props = sender.getJavaMailProperties();
+        props.put("mail.transport.protocol", "smtp");
+        props.put("mail.smtp.auth", "true");
+        if (!"0".equals(ssl) && !"false".equalsIgnoreCase(ssl)) {
+            props.put("mail.smtp.ssl.enable", "true");
+            props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+        } else {
+            props.put("mail.smtp.starttls.enable", "true");
+        }
+        props.put("mail.smtp.timeout", "10000");
+        props.put("mail.smtp.connectiontimeout", "10000");
+        return sender;
+    }
+
+    private String buildWsDisconnectEmailContent(Long accountId, String accountNote, String time) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;'>");
+        sb.append("<h2 style='color:#f56c6c;border-bottom:2px solid #f56c6c;padding-bottom:10px;'>🔴 闲鱼助手 - 消息监听已掉线</h2>");
+        sb.append("<div style='background:#fef0f0;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:8px 0;'><strong>账号ID：</strong>").append(accountId).append("</p>");
+        if (accountNote != null && !accountNote.isEmpty()) {
+            sb.append("<p style='margin:8px 0;'><strong>账号备注：</strong>").append(accountNote).append("</p>");
+        }
+        sb.append("<p style='margin:8px 0;'><strong>触发时间：</strong>").append(time).append("</p>");
+        sb.append("</div>");
+        sb.append("<div style='background:#f0f9ff;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:4px 0;color:#666;'><strong>问题描述：</strong>该闲鱼账号的WebSocket消息监听连接已断开，系统尝试多次重连均失败。</p>");
+        sb.append("<p style='margin:4px 0;color:#666;'><strong>可能原因：</strong></p>");
+        sb.append("<ul style='margin:4px 0;padding-left:20px;color:#666;'>");
+        sb.append("<li>网络连接不稳定或断开</li>");
+        sb.append("<li>闲鱼服务器维护或异常</li>");
+        sb.append("<li>Cookie已过期失效</li>");
+        sb.append("</ul>");
+        sb.append("<p style='margin:4px 0;color:#666;'><strong>处理建议：</strong>请检查网络连接，确认Cookie是否有效，并在账号管理页面尝试重新连接。</p>");
+        sb.append("</div>");
+        sb.append("<div style='color:#999;font-size:12px;margin-top:20px;border-top:1px solid #eee;padding-top:10px;'>");
+        sb.append("此邮件由闲鱼助手自动发送，请勿回复");
+        sb.append("</div>");
+        sb.append("</div>");
+        return sb.toString();
+    }
+
+    private String buildCookieExpireEmailContent(Long accountId, String accountNote, String time) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;'>");
+        sb.append("<h2 style='color:#e6a23c;border-bottom:2px solid #e6a23c;padding-bottom:10px;'>⚠️ 闲鱼助手 - Cookie已过期</h2>");
+        sb.append("<div style='background:#fdf6ec;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:8px 0;'><strong>账号ID：</strong>").append(accountId).append("</p>");
+        if (accountNote != null && !accountNote.isEmpty()) {
+            sb.append("<p style='margin:8px 0;'><strong>账号备注：</strong>").append(accountNote).append("</p>");
+        }
+        sb.append("<p style='margin:8px 0;'><strong>触发时间：</strong>").append(time).append("</p>");
+        sb.append("</div>");
+        sb.append("<div style='background:#f0f9ff;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:4px 0;color:#666;'><strong>问题描述：</strong>该闲鱼账号的Cookie已过期，且系统无法自动续期。</p>");
+        sb.append("<p style='margin:4px 0;color:#666;'><strong>影响范围：</strong></p>");
+        sb.append("<ul style='margin:4px 0;padding-left:20px;color:#666;'>");
+        sb.append("<li>无法接收买家消息</li>");
+        sb.append("<li>无法自动回复</li>");
+        sb.append("<li>无法自动发货</li>");
+        sb.append("<li>无法同步商品数据</li>");
+        sb.append("</ul>");
+        sb.append("<p style='margin:4px 0;color:#666;'><strong>处理建议：</strong>请登录闲鱼APP重新获取Cookie，并在账号管理页面更新Cookie。</p>");
+        sb.append("</div>");
+        sb.append("<div style='color:#999;font-size:12px;margin-top:20px;border-top:1px solid #eee;padding-top:10px;'>");
+        sb.append("此邮件由闲鱼助手自动发送，请勿回复");
+        sb.append("</div>");
+        sb.append("</div>");
+        return sb.toString();
+    }
+
+    private String getSettingValue(String key) {
+        String value = sysSettingService.getSettingValue(key);
+        return value != null ? value : "";
+    }
+
+    private boolean isNotEmpty(String str) {
+        return str != null && !str.trim().isEmpty();
+    }
+
+    @Override
+    @Async
+    public void sendKamiAlertEmail(String toEmail, String configName, int availableCount, int totalCount) {
+        if (!isEmailConfigured()) {
+            log.warn("邮箱未配置，跳过发送卡密预警邮件");
+            return;
+        }
+        String targetEmail = toEmail;
+        if (targetEmail == null || targetEmail.trim().isEmpty()) {
+            targetEmail = getSettingValue(KEY_SMTP_FROM);
+            if (targetEmail.isEmpty()) {
+                log.warn("预警邮箱为空且系统邮箱未配置，跳过发送卡密预警邮件");
+                return;
+            }
+        }
+
+        try {
+            JavaMailSenderImpl mailSender = buildMailSender();
+            String from = getSettingValue(KEY_SMTP_USERNAME);
+
+            String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
+            String subject = "【闲鱼助手】卡密库存预警 - " + (configName != null ? configName : "卡密配置");
+            String content = buildKamiAlertEmailContent(configName, availableCount, totalCount, time);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(from);
+            helper.setTo(targetEmail);
+            helper.setSubject(subject);
+            helper.setText(content, true);
+
+            mailSender.send(message);
+            log.info("卡密预警邮件发送成功: configName={}, to={}, available={}/{}", configName, targetEmail, availableCount, totalCount);
+        } catch (Exception e) {
+            log.error("卡密预警邮件发送失败: configName={}, to={}", configName, targetEmail, e);
+        }
+    }
+
+    @Override
+    @Async
+    public void sendKamiStockOutEmail(String toEmail, String configName, String orderId) {
+        if (!isEmailConfigured()) {
+            log.warn("邮箱未配置，跳过发送卡密库存不足邮件");
+            return;
+        }
+        String targetEmail = toEmail;
+        if (targetEmail == null || targetEmail.trim().isEmpty()) {
+            targetEmail = getSettingValue(KEY_SMTP_FROM);
+            if (targetEmail.isEmpty()) {
+                log.warn("收件邮箱为空且系统邮箱未配置，跳过发送卡密库存不足邮件");
+                return;
+            }
+        }
+
+        try {
+            JavaMailSenderImpl mailSender = buildMailSender();
+            String from = getSettingValue(KEY_SMTP_USERNAME);
+
+            String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
+            String subject = "【闲鱼助手】卡密库存不足 - " + (configName != null ? configName : "卡密配置");
+            String content = buildKamiStockOutEmailContent(configName, orderId, time);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(from);
+            helper.setTo(targetEmail);
+            helper.setSubject(subject);
+            helper.setText(content, true);
+
+            mailSender.send(message);
+            log.info("卡密库存不足邮件发送成功: configName={}, orderId={}, to={}", configName, orderId, targetEmail);
+        } catch (Exception e) {
+            log.error("卡密库存不足邮件发送失败: configName={}, orderId={}, to={}", configName, orderId, targetEmail, e);
+        }
+    }
+
+    private String buildKamiStockOutEmailContent(String configName, String orderId, String time) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;'>");
+        sb.append("<h2 style='color:#f56c6c;border-bottom:2px solid #f56c6c;padding-bottom:10px;'>🔴 闲鱼助手 - 卡密库存不足</h2>");
+        sb.append("<div style='background:#fef0f0;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:8px 0;'><strong>卡密配置：</strong>").append(configName != null ? configName : "未命名").append("</p>");
+        sb.append("<p style='margin:8px 0;'><strong>触发订单：</strong>").append(orderId != null ? orderId : "未知").append("</p>");
+        sb.append("<p style='margin:8px 0;'><strong>触发时间：</strong>").append(time).append("</p>");
+        sb.append("</div>");
+        sb.append("<div style='background:#f0f9ff;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:4px 0;color:#f56c6c;font-weight:bold;'>该卡密仓库已无可用卡密，订单无法自动发货！</p>");
+        sb.append("<p style='margin:4px 0;color:#666;'>请及时补充卡密，或手动处理该订单。</p>");
+        sb.append("</div>");
+        sb.append("<div style='color:#999;font-size:12px;margin-top:20px;border-top:1px solid #eee;padding-top:10px;'>");
+        sb.append("此邮件由闲鱼助手自动发送，请勿回复");
+        sb.append("</div>");
+        sb.append("</div>");
+        return sb.toString();
+    }
+
+    @Override
+    @Async
+    public void sendAutoDeliveryFailEmail(String toEmail, String xyGoodsId, String orderId, String failReason) {
+        if (!isEmailConfigured()) {
+            log.warn("邮箱未配置，跳过发送自动发货失败邮件");
+            return;
+        }
+        String targetEmail = toEmail;
+        if (targetEmail == null || targetEmail.trim().isEmpty()) {
+            targetEmail = getSettingValue(KEY_SMTP_FROM);
+            if (targetEmail.isEmpty()) {
+                log.warn("收件邮箱为空且系统邮箱未配置，跳过发送自动发货失败邮件");
+                return;
+            }
+        }
+        try {
+            JavaMailSenderImpl mailSender = buildMailSender();
+            String from = getSettingValue(KEY_SMTP_USERNAME);
+            String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
+            String subject = "【闲鱼助手】自动发货失败 - " + (orderId != null ? orderId : "未知订单");
+            String content = buildAutoDeliveryFailEmailContent(xyGoodsId, orderId, failReason, time);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(from);
+            helper.setTo(targetEmail);
+            helper.setSubject(subject);
+            helper.setText(content, true);
+            mailSender.send(message);
+            log.info("自动发货失败邮件发送成功: xyGoodsId={}, orderId={}, to={}", xyGoodsId, orderId, targetEmail);
+        } catch (Exception e) {
+            log.error("自动发货失败邮件发送失败: xyGoodsId={}, orderId={}", xyGoodsId, orderId, e);
+        }
+    }
+
+    private String buildAutoDeliveryFailEmailContent(String xyGoodsId, String orderId, String failReason, String time) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;'>");
+        sb.append("<h2 style='color:#f56c6c;border-bottom:2px solid #f56c6c;padding-bottom:10px;'>🔴 闲鱼助手 - 自动发货失败</h2>");
+        sb.append("<div style='background:#fef0f0;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:8px 0;'><strong>商品ID：</strong>").append(xyGoodsId != null ? xyGoodsId : "未知").append("</p>");
+        sb.append("<p style='margin:8px 0;'><strong>订单ID：</strong>").append(orderId != null ? orderId : "未知").append("</p>");
+        sb.append("<p style='margin:8px 0;'><strong>失败原因：</strong><span style='color:#f56c6c;font-weight:bold;'>").append(failReason != null ? failReason : "未知").append("</span></p>");
+        sb.append("<p style='margin:8px 0;'><strong>失败时间：</strong>").append(time).append("</p>");
+        sb.append("</div>");
+        sb.append("<div style='background:#f0f9ff;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:4px 0;color:#666;'>请检查发货配置或手动处理该订单。</p>");
+        sb.append("</div>");
+        sb.append("<div style='color:#999;font-size:12px;margin-top:20px;border-top:1px solid #eee;padding-top:10px;'>");
+        sb.append("此邮件由闲鱼助手自动发送，请勿回复");
+        sb.append("</div>");
+        sb.append("</div>");
+        return sb.toString();
+    }
+
+    private String buildKamiAlertEmailContent(String configName, int availableCount, int totalCount, String time) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;'>");
+        sb.append("<h2 style='color:#e6a23c;border-bottom:2px solid #e6a23c;padding-bottom:10px;'>⚠️ 闲鱼助手 - 卡密库存预警</h2>");
+        sb.append("<div style='background:#fdf6ec;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:8px 0;'><strong>卡密配置：</strong>").append(configName != null ? configName : "未命名").append("</p>");
+        sb.append("<p style='margin:8px 0;'><strong>可用数量：</strong><span style='color:#e6a23c;font-weight:bold;'>").append(availableCount).append("</span></p>");
+        sb.append("<p style='margin:8px 0;'><strong>总数量：</strong>").append(totalCount).append("</p>");
+        sb.append("<p style='margin:8px 0;'><strong>预警时间：</strong>").append(time).append("</p>");
+        sb.append("</div>");
+        sb.append("<div style='background:#f0f9ff;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:4px 0;color:#666;'>该卡密配置的可用库存已低于预设阈值，请及时补充卡密。</p>");
+        sb.append("<p style='margin:4px 0;color:#666;'>如需关闭预警通知，请在卡密配置页面调整预警设置。</p>");
+        sb.append("</div>");
+        sb.append("<div style='color:#999;font-size:12px;margin-top:20px;border-top:1px solid #eee;padding-top:10px;'>");
+        sb.append("此邮件由闲鱼助手自动发送，请勿回复");
+        sb.append("</div>");
+        sb.append("</div>");
+        return sb.toString();
+    }
+}

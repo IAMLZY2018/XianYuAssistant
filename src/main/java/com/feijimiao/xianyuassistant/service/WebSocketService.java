@@ -53,4 +53,28 @@ public interface WebSocketService {
      * @return 是否成功
      */
     boolean sendMessage(Long accountId, String cid, String toId, String text);
+    
+    /**
+     * 发送消息并等待服务端响应结果
+     *
+     * @param accountId 账号ID
+     * @param cid 会话ID
+     * @param toId 接收方用户ID
+     * @param text 消息文本内容
+     * @return true=服务端返回200，false=失败
+     */
+    boolean sendMessageWithResult(Long accountId, String cid, String toId, String text);
+    
+    /**
+     * 发送图片消息
+     *
+     * @param accountId 账号ID
+     * @param cid 会话ID（不带@goofish后缀）
+     * @param toId 接收方用户ID（不带@goofish后缀）
+     * @param imageUrl 图片URL
+     * @param width 图片宽度
+     * @param height 图片高度
+     * @return 是否成功
+     */
+    boolean sendImageMessage(Long accountId, String cid, String toId, String imageUrl, int width, int height);
 }

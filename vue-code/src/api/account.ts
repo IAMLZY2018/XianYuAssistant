@@ -3,7 +3,7 @@ import type { ApiResponse, Account } from '@/types'
 
 // 获取账号列表
 export function getAccountList() {
-  return request<{ accounts: Account[] }>({
+  return request<{ accounts: Account[]; total?: number }>({
     url: '/account/list',
     method: 'POST',
     data: {}
@@ -40,7 +40,7 @@ export function deleteAccount(data: { id: number }) {
 }
 
 // 手动添加账号
-export function manualAddAccount(data: { accountNote: string; unb: string; cookieText: string }) {
+export function manualAddAccount(data: { accountNote: string; cookie: string }) {
   return request({
     url: '/account/manualAdd',
     method: 'POST',

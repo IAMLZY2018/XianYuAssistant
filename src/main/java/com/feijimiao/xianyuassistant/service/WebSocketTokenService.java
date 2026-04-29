@@ -9,13 +9,12 @@ public interface WebSocketTokenService {
     /**
      * 获取accessToken
      * 参考Python的refresh_token方法
-     * 
+     * 内部会自动从数据库读取最新的Cookie和deviceId
+     *
      * @param accountId 账号ID
-     * @param cookiesStr Cookie字符串
-     * @param deviceId 设备ID
      * @return accessToken，失败返回null
      */
-    String getAccessToken(Long accountId, String cookiesStr, String deviceId);
+    String getAccessToken(Long accountId);
     
     /**
      * 保存Token到数据库

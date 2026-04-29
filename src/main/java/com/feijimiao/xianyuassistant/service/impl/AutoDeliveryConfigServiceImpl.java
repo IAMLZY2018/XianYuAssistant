@@ -37,9 +37,13 @@ public class AutoDeliveryConfigServiceImpl implements AutoDeliveryConfigService 
             if (existingConfig != null) {
                 // 更新现有配置
                 config = existingConfig;
-                config.setType(reqDTO.getType());
+                config.setDeliveryMode(reqDTO.getDeliveryMode());
                 config.setAutoDeliveryContent(reqDTO.getAutoDeliveryContent());
+                config.setKamiConfigIds(reqDTO.getKamiConfigIds());
+                config.setKamiDeliveryTemplate(reqDTO.getKamiDeliveryTemplate());
+                config.setAutoDeliveryImageUrl(reqDTO.getAutoDeliveryImageUrl());
                 config.setXianyuGoodsId(reqDTO.getXianyuGoodsId());
+                config.setAutoConfirmShipment(reqDTO.getAutoConfirmShipment());
                 
                 autoDeliveryConfigMapper.updateById(config);
                 log.info("更新自动发货配置成功，ID: {}", config.getId());
@@ -99,8 +103,8 @@ public class AutoDeliveryConfigServiceImpl implements AutoDeliveryConfigService 
             AutoDeliveryConfigRespDTO respDTO = new AutoDeliveryConfigRespDTO();
             BeanUtils.copyProperties(config, respDTO);
             
-            log.info("查询自动发货配置成功: id={}, type={}, hasContent={}", 
-                    respDTO.getId(), respDTO.getType(), 
+            log.info("查询自动发货配置成功: id={}, deliveryMode={}, hasContent={}", 
+                    respDTO.getId(), respDTO.getDeliveryMode(), 
                     respDTO.getAutoDeliveryContent() != null && !respDTO.getAutoDeliveryContent().isEmpty());
             
             return ResultObject.success(respDTO);

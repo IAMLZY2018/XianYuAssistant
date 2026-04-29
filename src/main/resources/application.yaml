@@ -1,0 +1,66 @@
+server:
+  port: 12400
+
+# AI功能开关（默认开启，API Key从数据库xianyu_sys_setting表读取，未配置时AI功能自动降级）
+ai:
+  enabled: true
+  vectorstore:
+    simple:
+          file-path: dbdata/vectorstore.json
+
+# JWT配置
+jwt:
+  secret: xianyu-assistant-jwt-secret-key-2026-04-22-very-long-secret-for-hmac-sha
+  expiration: 2592000000  # 30天（毫秒）
+
+
+spring:
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+  datasource:
+    url: jdbc:sqlite:dbdata/xianyu_assistant.db
+  # AI配置说明：
+  # - ai_api_key、ai_base_url、ai_model 配置在数据库 xianyu_sys_setting 表中
+  # - 通过 DynamicAIChatClientManager 动态读取，支持热更新无需重启
+  # - 默认值：base_url=https://dashscope.aliyuncs.com/compatible-mode, model=deepseek-v3
+
+# SimpleVectorStore配置（本地文件持久化）
+
+# MyBatis配置
+mybatis-plus:
+  type-handlers-package: com.feijimiao.xianyuassistant.config
+  configuration:
+    default-enum-type-handler: org.apache.ibatis.type.EnumOrdinalTypeHandler
+
+# WebSocket配置（参考Python代码）
+websocket:
+  # 心跳间隔（秒）
+  heartbeat-interval: 15
+  # 心跳超时（秒）
+  heartbeat-timeout: 5
+  # Token刷新间隔（秒，默认1小时）
+  token-refresh-interval: 3600
+  # Token重试间隔（秒，默认5分钟）
+  token-retry-interval: 300
+  # 凭证刷新间隔（分钟），用于Cookie保活和_m_h5_tk兜底刷新
+  credential-refresh-min-minutes: 15
+  credential-refresh-max-minutes: 20
+  # 消息过期时间（毫秒，默认5分钟）
+  message-expire-time: 300000
+  # 人工接管超时（秒，默认1小时）
+  manual-mode-timeout: 3600
+  # 人工接管切换关键词
+  toggle-keywords: 。
+  # 模拟人工输入延迟
+  simulate-human-typing: false
+  # 连接重连延迟（秒）
+  reconnect-delay: 5
+  # 最大重连次数
+  max-reconnect-attempts: 10
+  # 消息发送重试次数
+  message-retry-attempts: 3
+  # 消息发送重试延迟（毫秒）
+  message-retry-delay: 1000
+  # 打印原始消息开关（解密后的消息）
+  print-raw-message: true
