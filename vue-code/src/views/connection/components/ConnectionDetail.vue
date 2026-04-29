@@ -295,9 +295,6 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="action-bar">
-          <button class="btn btn--secondary" @click="showCredentialDialog = true">
-            <IconKey /><span>凭证详情</span>
-          </button>
           <button
             v-if="connectionStatus.connected === true"
             class="btn btn--stop"
@@ -312,7 +309,10 @@ onBeforeUnmount(() => {
           >
             <IconPlay /><span>开始连接</span>
           </button>
-          <button class="btn btn--ghost" @click="handleRefresh" :disabled="statusLoading">
+          <button class="btn btn--ghost btn--small" @click="showCredentialDialog = true">
+            <IconKey /><span>凭证详情</span>
+          </button>
+          <button class="btn btn--ghost btn--small" @click="handleRefresh" :disabled="statusLoading">
             <IconRefresh /><span>刷新状态</span>
           </button>
         </div>
@@ -489,9 +489,6 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="action-bar action-bar--mobile">
-              <button class="btn btn--secondary btn--block" @click="showCredentialDialog = true">
-                <IconKey /><span>凭证详情</span>
-              </button>
               <button
                 v-if="connectionStatus.connected === true"
                 class="btn btn--stop btn--block"
@@ -506,6 +503,14 @@ onBeforeUnmount(() => {
               >
                 <IconPlay /><span>开始连接</span>
               </button>
+              <div class="action-bar__row">
+                <button class="btn btn--ghost btn--small btn--flex" @click="showCredentialDialog = true">
+                  <IconKey /><span>凭证详情</span>
+                </button>
+                <button class="btn btn--ghost btn--small btn--flex" @click="handleRefresh" :disabled="statusLoading">
+                  <IconRefresh /><span>刷新状态</span>
+                </button>
+              </div>
             </div>
 
             <div class="log-section">
@@ -967,6 +972,15 @@ onBeforeUnmount(() => {
   flex-direction: column;
 }
 
+.action-bar__row {
+  display: flex;
+  gap: 8px;
+}
+
+.btn--flex {
+  flex: 1;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -988,6 +1002,34 @@ onBeforeUnmount(() => {
 
 .btn--block {
   width: 100%;
+}
+
+.btn--mini {
+  padding: 4px 10px;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--c-text-1);
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+}
+
+.btn--mini:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.btn--mini svg {
+  width: 12px;
+  height: 12px;
+}
+
+.btn--small {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.btn--small svg {
+  width: 12px;
+  height: 12px;
 }
 
 .btn--secondary {
@@ -1205,6 +1247,11 @@ onBeforeUnmount(() => {
     padding: 12px 16px;
     font-size: 15px;
     font-weight: 600;
+  }
+  
+  .action-bar__row .btn {
+    padding: 10px 14px;
+    font-size: 13px;
   }
   
   .btn--start {
