@@ -525,11 +525,20 @@ public class WebSocketServiceImpl implements WebSocketService {
      * 2. 当 current_time - last_token_refresh_time >= token_refresh_interval 时刷新Token
      * 3. Token刷新成功后，设置connection_restart_flag=True，关闭WebSocket触发重连
      * 4. Token刷新失败后，在token_retry_interval秒后重试
+     * 
+     * 关键修复：
+     * - 记录Token获取时间（而非刷新时间），确保1小时后刷新
+     * - Token有效期20小时，但每1小时主动刷新一次，保持连接活跃
      */
     private void startTokenRefresh(Long accountId) {
-        // 初始化Token刷新时间
+        // 初始化Token刷新时间为当前时间（秒级时间戳）
         long currentTime = System.currentTimeMillis() / 1000;
         lastTokenRefreshTimes.put(accountId, currentTime);
+        
+        log.info("【账号{}】Token刷新任务已启动: 刷新间隔{}秒({}小时), 首次刷新将在{}小时后", 
+                accountId, config.getTokenRefreshInterval(), 
+                config.getTokenRefreshInterval() / 3600,
+                config.getTokenRefreshInterval() / 3600);
         
         // Token刷新任务（每分钟检查一次，参考Python）
         ScheduledFuture<?> tokenRefreshTask = tokenRefreshScheduler.scheduleAtFixedRate(
@@ -541,17 +550,25 @@ public class WebSocketServiceImpl implements WebSocketService {
                     }
                     
                     long now = System.currentTimeMillis() / 1000;
+                    long elapsedSeconds = now - lastRefreshTime;
                     
-                    // 参考Python: 检查是否需要刷新Token
-                    if (now - lastRefreshTime >= config.getTokenRefreshInterval()) {
-                        log.info("【账号{}】Token即将过期（已{}小时），准备刷新并重连...", 
-                                accountId, (now - lastRefreshTime) / 3600);
+                    // 参考Python: 检查是否需要刷新Token（每1小时刷新一次）
+                    if (elapsedSeconds >= config.getTokenRefreshInterval()) {
+                        long elapsedHours = elapsedSeconds / 3600;
+                        log.info("【账号{}】Token已使用{}小时（刷新间隔{}小时），准备刷新并重连...", 
+                                accountId, elapsedHours, config.getTokenRefreshInterval() / 3600);
                         
                         // 参考Python: 设置连接重启标志
                         connectionRestartFlags.put(accountId, true);
                         
                         // 参考Python: 刷新Token并重连（成功后关闭旧连接）
                         refreshTokenAndReconnect(accountId);
+                    } else {
+                        // 每10分钟打印一次剩余时间（避免日志过多）
+                        if (elapsedSeconds % 600 == 0) {
+                            long remainingSeconds = config.getTokenRefreshInterval() - elapsedSeconds;
+                            log.debug("【账号{}】Token刷新倒计时: 还有{}分钟", accountId, remainingSeconds / 60);
+                        }
                     }
                 } catch (Exception e) {
                     log.error("【账号{}】Token刷新检查失败", accountId, e);
@@ -561,7 +578,6 @@ public class WebSocketServiceImpl implements WebSocketService {
         );
         
         tokenRefreshTasks.put(accountId, tokenRefreshTask);
-        log.info("Token刷新任务已启动: accountId={}, 刷新间隔{}秒(1小时)", accountId, config.getTokenRefreshInterval());
     }
     
     /**

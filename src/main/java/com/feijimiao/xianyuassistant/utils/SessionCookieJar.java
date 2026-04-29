@@ -135,20 +135,65 @@ public class SessionCookieJar implements CookieJar {
      * OkHttp在发送请求前自动调用，加载Cookie。
      * <p>
      * 对齐Python: requests.Session自动在请求中携带Cookie。
-     * 所有Cookie统一设置domain为.goofish.com，匹配闲鱼所有子域名。
+     * 根据请求URL动态设置domain，确保Cookie能被正确发送。
+     * 
+     * 修复说明：
+     * - OkHttp的Cookie.Builder.domain()会验证domain是否与URL匹配
+     * - 直接使用URL的host作为domain，避免验证失败
+     * - 对于.goofish.com的子域名（如passport.goofish.com），使用实际的host
      */
     @Override
     public synchronized List<Cookie> loadForRequest(HttpUrl url) {
         List<Cookie> result = new ArrayList<>();
+        String host = url.host();
+        
+        // 确定Cookie的domain
+        // 如果是goofish.com的子域名，使用实际的host
+        String cookieDomain = host;
+        
         for (Map.Entry<String, String> entry : cookieMap.entrySet()) {
-            result.add(new Cookie.Builder()
-                    .name(entry.getKey())
-                    .value(entry.getValue())
-                    .domain(GOOFISH_DOMAIN)
-                    .path("/")
-                    .build());
+            try {
+                result.add(new Cookie.Builder()
+                        .name(entry.getKey())
+                        .value(entry.getValue())
+                        .domain(cookieDomain)
+                        .path("/")
+                        .build());
+            } catch (IllegalArgumentException e) {
+                // 如果domain验证失败，尝试使用顶级域名
+                try {
+                    // 提取顶级域名（如 passport.goofish.com -> goofish.com）
+                    String topDomain = extractTopDomain(host);
+                    result.add(new Cookie.Builder()
+                            .name(entry.getKey())
+                            .value(entry.getValue())
+                            .domain(topDomain)
+                            .path("/")
+                            .build());
+                } catch (Exception ex) {
+                    // 如果还是失败，跳过这个Cookie
+                    // 不影响其他Cookie的加载
+                }
+            }
         }
         return result;
+    }
+    
+    /**
+     * 提取顶级域名
+     * 例如：passport.goofish.com -> goofish.com
+     */
+    private String extractTopDomain(String host) {
+        if (host == null || host.isEmpty()) {
+            return host;
+        }
+        
+        String[] parts = host.split("\\.");
+        if (parts.length >= 2) {
+            // 返回最后两部分（如 goofish.com）
+            return parts[parts.length - 2] + "." + parts[parts.length - 1];
+        }
+        return host;
     }
 
     /**
