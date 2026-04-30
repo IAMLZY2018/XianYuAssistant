@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 
 /**
  * 账号服务实现类
@@ -47,6 +48,9 @@ public class AccountServiceImpl implements AccountService {
     
     @Autowired
     private XianyuGoodsAutoDeliveryConfigMapper autoDeliveryConfigMapper;
+    
+    @Autowired
+    private com.feijimiao.xianyuassistant.service.EmailNotifyService emailNotifyService;
     
     @Autowired
     private XianyuGoodsOrderMapper orderMapper;
@@ -394,8 +398,14 @@ public class AccountServiceImpl implements AccountService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateCookieStatus(Long accountId, Integer cookieStatus) {
+        return updateCookieStatus(accountId, cookieStatus, false);
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateCookieStatus(Long accountId, Integer cookieStatus, boolean sendNotify) {
         try {
-            log.info("更新Cookie状态: accountId={}, cookieStatus={}", accountId, cookieStatus);
+            log.info("更新Cookie状态: accountId={}, cookieStatus={}, sendNotify={}", accountId, cookieStatus, sendNotify);
 
             // 查询Cookie记录
             LambdaQueryWrapper<XianyuCookie> cookieQuery = new LambdaQueryWrapper<>();
@@ -407,12 +417,29 @@ public class AccountServiceImpl implements AccountService {
                 return false;
             }
 
+            Integer oldStatus = cookie.getCookieStatus();
+            
             // 更新Cookie状态
             cookie.setCookieStatus(cookieStatus);
             cookie.setUpdatedTime(getCurrentTimeString());
             cookieMapper.updateById(cookie);
 
             log.info("更新Cookie状态成功: accountId={}, cookieStatus={}", accountId, cookieStatus);
+            
+            // 只有在明确指定发送通知时才发送邮件（即确认无法自动续期后）
+            if (sendNotify && Objects.equals(cookieStatus, 2) && !Objects.equals(oldStatus, 2)) {
+                try {
+                    XianyuAccount account = accountMapper.selectById(accountId);
+                    String accountNote = account != null ? account.getAccountNote() : null;
+                    log.info("【账号{}】Cookie已确认无法自动续期，触发Cookie过期通知流程", accountId);
+                    emailNotifyService.sendCookieExpireNotifyEmail(accountId, accountNote);
+                } catch (Exception e) {
+                    log.error("【账号{}】发送Cookie过期邮件通知失败", accountId, e);
+                }
+            } else if (Objects.equals(cookieStatus, 2) && !Objects.equals(oldStatus, 2)) {
+                log.info("【账号{}】Cookie被标记为过期，但未指定发送通知（可能系统将尝试自动续期）", accountId);
+            }
+            
             return true;
 
         } catch (Exception e) {

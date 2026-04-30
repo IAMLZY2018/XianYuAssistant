@@ -55,6 +55,9 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
     @Autowired
     private OperationLogService operationLogService;
 
+    @Autowired(required = false)
+    private com.feijimiao.xianyuassistant.service.EmailNotifyService emailNotifyService;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -75,22 +78,51 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
     @Override
     public boolean checkLoginStatus(Long accountId) {
         synchronized (getRefreshLock(accountId)) {
-            return doCheckLoginStatus(accountId);
+            return doCheckLoginStatus(accountId, true); // 记录操作日志
+        }
+    }
+
+    @Override
+    public boolean checkLoginStatusQuietly(Long accountId) {
+        synchronized (getRefreshLock(accountId)) {
+            return doCheckLoginStatus(accountId, false); // 不记录操作日志
         }
     }
 
     /**
-     * 执行hasLogin检查
+     * 执行hasLogin检查（带重试机制）
      * 参考Python XianyuApis.hasLogin方法
      *
-     * 核心改造：使用SessionCookieJar自动管理Cookie
+     * 核心改造：使用SessionCookieJar自动管理Cookie + 添加重试机制
      * - OkHttp自动从CookieJar加载Cookie，无需手动设置Cookie头
      * - OkHttp自动解析响应Set-Cookie并回调saveFromResponse
      * - hasLogin成功后从jar获取更新后的Cookie持久化到数据库
+     * - 最多重试2次（retry_count < 2），与Python一致
+     * 
+     * @param accountId 账号ID
+     * @param logOperation 是否记录操作日志（true=主动保活，false=被动检查）
      */
-    private boolean doCheckLoginStatus(Long accountId) {
+    private boolean doCheckLoginStatus(Long accountId, boolean logOperation) {
+        return doCheckLoginStatusWithRetry(accountId, 0, logOperation);
+    }
+
+    /**
+     * 执行hasLogin检查（带重试计数）
+     * 参考Python: hasLogin(retry_count=0)
+     * 
+     * @param accountId 账号ID
+     * @param retryCount 重试次数
+     * @param logOperation 是否记录操作日志
+     */
+    private boolean doCheckLoginStatusWithRetry(Long accountId, int retryCount, boolean logOperation) {
+        if (retryCount >= 2) {
+            log.error("【账号{}】Login检查失败，重试次数过多", accountId);
+            return false;
+        }
+
         try {
-            log.info("【账号{}】开始检查登录状态...", accountId);
+            String logPrefix = logOperation ? "主动保活" : "被动检查";
+            log.info("【账号{}】开始{}登录状态... (重试次数: {}/2)", accountId, logPrefix, retryCount);
 
             XianyuCookie cookie = cookieMapper.selectOne(
                     new LambdaQueryWrapper<XianyuCookie>()
@@ -143,12 +175,56 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
 
             try (Response response = httpClient.newCall(request).execute()) {
                 if (!response.isSuccessful()) {
-                    log.warn("【账号{}】检查登录状态失败: HTTP {}", accountId, response.code());
-                    return false;
+                    log.warn("【账号{}】检查登录状态失败: HTTP {}, 准备重试... (重试次数: {}/2)", 
+                            accountId, response.code(), retryCount + 1);
+                    Thread.sleep(500);
+                    return doCheckLoginStatusWithRetry(accountId, retryCount + 1, logOperation);
                 }
 
                 String responseBody = response.body().string();
                 log.debug("【账号{}】hasLogin响应: {}", accountId, responseBody);
+
+                // 检测风控（参考Python实现）
+                boolean isRiskControl = responseBody != null && (
+                    responseBody.contains("RGV587_ERROR") ||
+                    responseBody.contains("被挤爆啦") ||
+                    responseBody.contains("FAIL_SYS_RGV587_ERROR"));
+
+                if (isRiskControl) {
+                    log.error("【账号{}】❌ hasLogin触发风控: {}", accountId, responseBody);
+                    log.error("【账号{}】系统目前无法自动解决，请进入闲鱼网页版-点击消息-过滑块-复制最新的Cookie", accountId);
+                    
+                    // 标记为失效（风控）
+                    cookieMapper.update(null,
+                            new LambdaUpdateWrapper<XianyuCookie>()
+                                    .eq(XianyuCookie::getXianyuAccountId, accountId)
+                                    .set(XianyuCookie::getCookieStatus, 3) // 3表示失效（风控）
+                    );
+
+                    // 记录操作日志
+                    operationLogService.log(accountId,
+                            OperationConstants.Type.VERIFY,
+                            OperationConstants.Module.COOKIE,
+                            "hasLogin触发风控验证，需要人工处理滑块",
+                            OperationConstants.Status.FAIL,
+                            OperationConstants.TargetType.COOKIE,
+                            String.valueOf(accountId),
+                            null, null, "触发风控", null);
+
+                    // 发送邮件通知
+                    try {
+                        XianyuAccount account = accountMapper.selectById(accountId);
+                        String accountNote = account != null ? account.getAccountNote() : null;
+                        if (emailNotifyService != null) {
+                            emailNotifyService.sendCaptchaRequiredEmail(accountId, accountNote, "hasLogin时触发风控验证");
+                        }
+                    } catch (Exception e) {
+                        log.error("【账号{}】发送风控验证邮件通知失败", accountId, e);
+                    }
+
+                    throw new com.feijimiao.xianyuassistant.exception.CaptchaRequiredException(
+                        "触发风控，请进入闲鱼网页版过滑块后更新Cookie");
+                }
 
                 @SuppressWarnings("unchecked")
                 Map<String, Object> responseMap = objectMapper.readValue(responseBody, Map.class);
@@ -202,45 +278,60 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
                         log.info("【账号{}】Cookie无变化，登录态仍然有效", accountId);
                     }
 
-                    operationLogService.log(accountId,
-                            OperationConstants.Type.UPDATE,
-                            OperationConstants.Module.COOKIE,
-                            "Cookie自动刷新成功",
-                            OperationConstants.Status.SUCCESS,
-                            OperationConstants.TargetType.COOKIE,
-                            String.valueOf(accountId),
-                            null, null, null, null);
+                    // 只有在主动保活时才记录操作日志
+                    if (logOperation) {
+                        operationLogService.log(accountId,
+                                OperationConstants.Type.UPDATE,
+                                OperationConstants.Module.COOKIE,
+                                "Cookie自动刷新成功",
+                                OperationConstants.Status.SUCCESS,
+                                OperationConstants.TargetType.COOKIE,
+                                String.valueOf(accountId),
+                                null, null, null, null);
+                    }
 
                     return true;
                 } else {
-                    log.warn("【账号{}】⚠️ 登录状态无效", accountId);
+                    log.warn("【账号{}】⚠️ 登录状态无效，准备重试... (重试次数: {}/2)", accountId, retryCount + 1);
 
-                    operationLogService.log(accountId,
-                            OperationConstants.Type.VERIFY,
-                            OperationConstants.Module.COOKIE,
-                            "登录状态检查失败",
-                            OperationConstants.Status.FAIL,
-                            OperationConstants.TargetType.COOKIE,
-                            String.valueOf(accountId),
-                            null, null, "登录状态无效", null);
+                    // 只有在主动保活时才记录操作日志
+                    if (logOperation) {
+                        operationLogService.log(accountId,
+                                OperationConstants.Type.VERIFY,
+                                OperationConstants.Module.COOKIE,
+                                "登录状态检查失败，准备重试",
+                                OperationConstants.Status.FAIL,
+                                OperationConstants.TargetType.COOKIE,
+                                String.valueOf(accountId),
+                                null, null, "登录状态无效", null);
+                    }
 
-                    return false;
+                    Thread.sleep(500);
+                    return doCheckLoginStatusWithRetry(accountId, retryCount + 1, logOperation);
                 }
             }
 
         } catch (Exception e) {
-            log.error("【账号{}】检查登录状态失败", accountId, e);
+            log.error("【账号{}】检查登录状态异常，准备重试... (重试次数: {}/2)", accountId, retryCount + 1, e);
 
-            operationLogService.log(accountId,
-                    OperationConstants.Type.VERIFY,
-                    OperationConstants.Module.COOKIE,
-                    "检查登录状态异常: " + e.getMessage(),
-                    OperationConstants.Status.FAIL,
-                    OperationConstants.TargetType.COOKIE,
-                    String.valueOf(accountId),
-                    null, null, e.getMessage(), null);
+            // 只有在主动保活时才记录操作日志
+            if (logOperation) {
+                operationLogService.log(accountId,
+                        OperationConstants.Type.VERIFY,
+                        OperationConstants.Module.COOKIE,
+                        "检查登录状态异常，准备重试: " + e.getMessage(),
+                        OperationConstants.Status.FAIL,
+                        OperationConstants.TargetType.COOKIE,
+                        String.valueOf(accountId),
+                        null, null, e.getMessage(), null);
+            }
 
-            return false;
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+            return doCheckLoginStatusWithRetry(accountId, retryCount + 1, logOperation);
         }
     }
 
@@ -251,7 +342,7 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
                 log.info("【账号{}】开始刷新Cookie...", accountId);
 
                 // 通过hasLogin接口刷新Cookie
-                boolean success = doCheckLoginStatus(accountId);
+                boolean success = doCheckLoginStatus(accountId, true); // 主动刷新，记录日志
                 if (!success) {
                     log.warn("【账号{}】hasLogin刷新失败，开始触发浏览器兜底刷新Cookie", accountId);
                     operationLogService.log(accountId,

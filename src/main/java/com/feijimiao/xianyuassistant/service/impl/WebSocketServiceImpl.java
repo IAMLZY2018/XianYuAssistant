@@ -599,7 +599,8 @@ public class WebSocketServiceImpl implements WebSocketService {
             try {
                 if (cookieRefreshService != null) {
                     log.info("【账号{}】刷新Token前先检查Cookie登录状态...", accountId);
-                    boolean cookieOk = cookieRefreshService.checkLoginStatus(accountId);
+                    // 使用静默检查，不记录操作日志（避免频繁记录）
+                    boolean cookieOk = cookieRefreshService.checkLoginStatusQuietly(accountId);
                     if (!cookieOk) {
                         log.warn("【账号{}】Cookie已失效(hasLogin)，触发浏览器兜底刷新Cookie（对齐Python的_refresh_cookies_via_browser）...", accountId);
                         boolean browserRefreshOk = cookieRefreshService.refreshCookie(accountId);
@@ -711,7 +712,8 @@ public class WebSocketServiceImpl implements WebSocketService {
                 try {
                     if (cookieRefreshService != null) {
                         log.info("【账号{}】重连前先检查Cookie登录状态...", accountId);
-                        boolean cookieOk = cookieRefreshService.checkLoginStatus(accountId);
+                        // 使用静默检查，不记录操作日志（避免频繁记录）
+                        boolean cookieOk = cookieRefreshService.checkLoginStatusQuietly(accountId);
                         if (!cookieOk) {
                             log.warn("【账号{}】Cookie已失效(hasLogin)，重连前触发浏览器兜底刷新Cookie（对齐Python）...", accountId);
                             boolean browserRefreshOk = cookieRefreshService.refreshCookie(accountId);

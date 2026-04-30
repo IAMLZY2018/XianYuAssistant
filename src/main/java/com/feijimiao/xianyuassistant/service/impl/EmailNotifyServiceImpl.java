@@ -429,4 +429,80 @@ public class EmailNotifyServiceImpl implements EmailNotifyService {
         sb.append("</div>");
         return sb.toString();
     }
+
+    @Override
+    @Async
+    public void sendCaptchaRequiredEmail(Long accountId, String accountNote, String reason) {
+        if (!isEmailConfigured()) {
+            log.warn("邮箱未配置，跳过发送风控验证通知邮件");
+            return;
+        }
+        if (!isCookieExpireNotifyEnabled()) {
+            log.debug("Cookie过期邮件通知未启用，跳过风控验证通知");
+            return;
+        }
+
+        try {
+            JavaMailSenderImpl mailSender = buildMailSender();
+            String from = getSettingValue(KEY_SMTP_USERNAME);
+            String to = getSettingValue(KEY_SMTP_FROM);
+
+            String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
+            String subject = "【闲鱼助手】触发风控验证 - " + (accountNote != null && !accountNote.isEmpty() ? accountNote : "账号" + accountId);
+            String content = buildCaptchaRequiredEmailContent(accountId, accountNote, reason, time);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(from);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(content, true);
+
+            mailSender.send(message);
+            log.info("风控验证通知邮件发送成功: accountId={}, to={}", accountId, to);
+        } catch (Exception e) {
+            log.error("风控验证通知邮件发送失败: accountId={}", accountId, e);
+        }
+    }
+
+    private String buildCaptchaRequiredEmailContent(Long accountId, String accountNote, String reason, String time) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;'>");
+        sb.append("<h2 style='color:#f56c6c;border-bottom:2px solid #f56c6c;padding-bottom:10px;'>🔴 闲鱼助手 - 触发风控验证</h2>");
+        sb.append("<div style='background:#fef0f0;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:8px 0;'><strong>账号ID：</strong>").append(accountId).append("</p>");
+        if (accountNote != null && !accountNote.isEmpty()) {
+            sb.append("<p style='margin:8px 0;'><strong>账号备注：</strong>").append(accountNote).append("</p>");
+        }
+        sb.append("<p style='margin:8px 0;'><strong>触发原因：</strong><span style='color:#f56c6c;font-weight:bold;'>").append(reason != null ? reason : "未知").append("</span></p>");
+        sb.append("<p style='margin:8px 0;'><strong>触发时间：</strong>").append(time).append("</p>");
+        sb.append("</div>");
+        sb.append("<div style='background:#fff3cd;border-left:4px solid #ffc107;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:4px 0;color:#856404;font-weight:bold;'>⚠️ 系统检测到闲鱼风控，需要人工处理滑块验证</p>");
+        sb.append("</div>");
+        sb.append("<div style='background:#f0f9ff;border-radius:8px;padding:16px;margin:16px 0;'>");
+        sb.append("<p style='margin:4px 0;color:#666;'><strong>处理步骤：</strong></p>");
+        sb.append("<ol style='margin:8px 0;padding-left:20px;color:#666;'>");
+        sb.append("<li>打开浏览器，访问闲鱼网页版：<a href='https://www.goofish.com/im' target='_blank'>https://www.goofish.com/im</a></li>");
+        sb.append("<li>登录对应的闲鱼账号</li>");
+        sb.append("<li>点击消息页面，完成滑块验证</li>");
+        sb.append("<li>验证通过后，按F12打开开发者工具</li>");
+        sb.append("<li>切换到Application/应用程序标签页</li>");
+        sb.append("<li>在左侧找到Cookies，点击https://www.goofish.com</li>");
+        sb.append("<li>复制所有Cookie（可使用EditThisCookie等浏览器插件）</li>");
+        sb.append("<li>在闲鱼助手的账号管理页面，更新该账号的Cookie</li>");
+        sb.append("</ol>");
+        sb.append("<p style='margin:4px 0;color:#666;'><strong>注意事项：</strong></p>");
+        sb.append("<ul style='margin:4px 0;padding-left:20px;color:#666;'>");
+        sb.append("<li>Cookie更新后，系统会自动恢复正常运行</li>");
+        sb.append("<li>如频繁触发风控，建议降低操作频率或更换账号</li>");
+        sb.append("<li>风控期间，该账号的所有自动化功能将暂停</li>");
+        sb.append("</ul>");
+        sb.append("</div>");
+        sb.append("<div style='color:#999;font-size:12px;margin-top:20px;border-top:1px solid #eee;padding-top:10px;'>");
+        sb.append("此邮件由闲鱼助手自动发送，请勿回复");
+        sb.append("</div>");
+        sb.append("</div>");
+        return sb.toString();
+    }
 }

@@ -7,13 +7,24 @@ package com.feijimiao.xianyuassistant.service;
 public interface CookieRefreshService {
     
     /**
-     * 检查登录状态
+     * 检查登录状态（记录操作日志）
      * 参考Python: hasLogin方法
+     * 用于定时任务的主动Cookie保活
      * 
      * @param accountId 账号ID
      * @return 是否登录有效
      */
     boolean checkLoginStatus(Long accountId);
+    
+    /**
+     * 检查登录状态（静默模式，不记录操作日志）
+     * 参考Python: hasLogin方法
+     * 用于Token刷新、WebSocket重连等场景的被动检查
+     * 
+     * @param accountId 账号ID
+     * @return 是否登录有效
+     */
+    boolean checkLoginStatusQuietly(Long accountId);
     
     /**
      * 刷新Cookie

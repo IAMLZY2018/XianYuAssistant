@@ -77,4 +77,13 @@ public interface EmailNotifyService {
      * @param failReason 失败原因
      */
     void sendAutoDeliveryFailEmail(String toEmail, String xyGoodsId, String orderId, String failReason);
+
+    /**
+     * 发送风控验证通知邮件（触发滑块验证）
+     *
+     * @param accountId 闲鱼账号ID
+     * @param accountNote 账号备注
+     * @param reason 触发原因
+     */
+    void sendCaptchaRequiredEmail(Long accountId, String accountNote, String reason);
 }

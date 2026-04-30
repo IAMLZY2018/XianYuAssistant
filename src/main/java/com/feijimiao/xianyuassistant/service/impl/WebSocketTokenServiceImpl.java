@@ -454,8 +454,45 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
      * 1. 非SUCCESS时，先检查响应Set-Cookie并更新cookies（clear_duplicate_cookies）
      * 2. retry_count < 2时，直接重试（此时session已有新cookie）
      * 3. retry_count >= 2时，调用hasLogin刷新Cookie，成功后重置retry_count重新获取token
+     * 4. 检测风控（RGV587_ERROR或"被挤爆啦"），提示用户手动处理
      */
     private String handleTokenFailure(Long accountId, int retryCount, String response, String reason) {
+
+        // 检测风控（参考Python实现）
+        boolean isRiskControl = response != null && (
+            response.contains("RGV587_ERROR") ||
+            response.contains("被挤爆啦") ||
+            response.contains("FAIL_SYS_RGV587_ERROR"));
+
+        if (isRiskControl) {
+            log.error("【账号{}】❌ 触发风控: {}", accountId, response);
+            log.error("【账号{}】系统目前无法自动解决，请进入闲鱼网页版-点击消息-过滑块-复制最新的Cookie", accountId);
+            
+            // 标记为失效（风控）
+            updateCookieStatus(accountId, 3); // 3表示失效（风控）
+
+            // 记录操作日志
+            operationLogService.log(accountId,
+                com.feijimiao.xianyuassistant.constants.OperationConstants.Type.REFRESH,
+                com.feijimiao.xianyuassistant.constants.OperationConstants.Module.TOKEN,
+                "触发风控验证，需要人工处理滑块",
+                com.feijimiao.xianyuassistant.constants.OperationConstants.Status.FAIL,
+                com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.TOKEN,
+                String.valueOf(accountId),
+                null, null, "触发风控", null);
+
+            // 发送邮件通知
+            try {
+                XianyuAccount account = xianyuAccountMapper.selectById(accountId);
+                String accountNote = account != null ? account.getAccountNote() : null;
+                emailNotifyService.sendCaptchaRequiredEmail(accountId, accountNote, "Token获取时触发风控验证");
+            } catch (Exception e) {
+                log.error("【账号{}】发送风控验证邮件通知失败", accountId, e);
+            }
+
+            throw new com.feijimiao.xianyuassistant.exception.CaptchaRequiredException(
+                "触发风控，请进入闲鱼网页版过滑块后更新Cookie");
+        }
 
         boolean isSessionExpired = response != null && (
             response.contains("FAIL_SYS_SESSION_EXPIRED") ||
@@ -464,20 +501,21 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
             response.contains("令牌过期"));
 
         if (isSessionExpired) {
-            log.warn("【账号{}】检测到Session/令牌过期，直接标记Cookie过期，停止重试避免触发滑块验证", accountId);
-            updateCookieStatus(accountId, 2);
+            log.warn("【账号{}】检测到Session/令牌过期，尝试通过hasLogin自动续期...", accountId);
+            // 不立即标记为过期，先尝试自动续期
+            // updateCookieStatus(accountId, 2);
 
             operationLogService.log(accountId,
                 com.feijimiao.xianyuassistant.constants.OperationConstants.Type.REFRESH,
                 com.feijimiao.xianyuassistant.constants.OperationConstants.Module.TOKEN,
-                "Session过期，Cookie已标记为过期，需手动更新Cookie",
+                "Session过期，尝试自动续期",
                 com.feijimiao.xianyuassistant.constants.OperationConstants.Status.FAIL,
                 com.feijimiao.xianyuassistant.constants.OperationConstants.TargetType.TOKEN,
                 String.valueOf(accountId),
                 null, null, "Session过期", null);
 
-            throw new com.feijimiao.xianyuassistant.exception.CookieExpiredException(
-                "账号" + accountId + " Session过期，Cookie已失效，请手动更新Cookie");
+            // 直接尝试通过hasLogin刷新，而不是抛出异常
+            return refreshTokenViaHasLogin(accountId, 0);
         }
 
         if (retryCount < MAX_TOKEN_RETRY_COUNT) {
@@ -511,8 +549,9 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
      */
     private String refreshTokenViaHasLogin(Long accountId, int hasLoginRetryCount) {
         if (hasLoginRetryCount >= MAX_COOKIE_RETRY_COUNT) {
-            log.error("【账号{}】hasLogin刷新重试次数已达上限，Cookie已彻底过期", accountId);
-            updateCookieStatus(accountId, 2);
+            log.error("【账号{}】hasLogin刷新重试次数已达上限，Cookie已彻底过期，无法自动续期", accountId);
+            // 确认无法自动续期后，才标记为过期并触发邮件通知
+            updateCookieStatus(accountId, 2, true);
 
             operationLogService.log(accountId,
                 com.feijimiao.xianyuassistant.constants.OperationConstants.Type.REFRESH,
@@ -800,8 +839,20 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
 
     /**
      * 更新Cookie状态
+     * @param accountId 账号ID
+     * @param status Cookie状态
      */
     private void updateCookieStatus(Long accountId, Integer status) {
+        updateCookieStatus(accountId, status, false);
+    }
+
+    /**
+     * 更新Cookie状态
+     * @param accountId 账号ID
+     * @param status Cookie状态
+     * @param sendNotify 是否发送邮件通知（仅当确认无法自动续期时才为true）
+     */
+    private void updateCookieStatus(Long accountId, Integer status, boolean sendNotify) {
         try {
             XianyuCookie currentCookie = xianyuCookieMapper.selectOne(
                     new LambdaQueryWrapper<XianyuCookie>()
@@ -819,11 +870,14 @@ public class WebSocketTokenServiceImpl implements WebSocketTokenService {
             String statusText = status == 2 ? "过期" : status == 3 ? "失效" : "未知";
             log.info("【账号{}】Cookie状态已更新为{}({})", accountId, status, statusText);
 
-            if (Objects.equals(status, 2) && !Objects.equals(oldStatus, 2)) {
+            // 只有在明确指定发送通知时才发送邮件（即确认无法自动续期后）
+            if (sendNotify && Objects.equals(status, 2) && !Objects.equals(oldStatus, 2)) {
                 XianyuAccount account = xianyuAccountMapper.selectById(accountId);
                 String accountNote = account != null ? account.getAccountNote() : null;
-                log.info("【账号{}】Cookie首次被标记为过期，触发Cookie过期通知流程", accountId);
+                log.info("【账号{}】Cookie已确认无法自动续期，触发Cookie过期通知流程", accountId);
                 emailNotifyService.sendCookieExpireNotifyEmail(accountId, accountNote);
+            } else if (Objects.equals(status, 2) && !Objects.equals(oldStatus, 2)) {
+                log.info("【账号{}】Cookie被标记为过期，但系统将尝试自动续期，暂不发送邮件通知", accountId);
             }
         } catch (Exception e) {
             log.error("【账号{}】更新Cookie状态失败", accountId, e);

@@ -101,6 +101,16 @@ public interface AccountService {
     boolean updateCookieStatus(Long accountId, Integer cookieStatus);
     
     /**
+     * 更新Cookie状态（支持控制是否发送邮件通知）
+     *
+     * @param accountId 账号ID
+     * @param cookieStatus Cookie状态 1:有效 2:过期 3:失效
+     * @param sendNotify 是否发送邮件通知（仅当确认无法自动续期时才为true）
+     * @return 是否更新成功
+     */
+    boolean updateCookieStatus(Long accountId, Integer cookieStatus, boolean sendNotify);
+    
+    /**
      * 更新账号Cookie（包含UNB更新）
      *
      * @param accountId 账号ID
