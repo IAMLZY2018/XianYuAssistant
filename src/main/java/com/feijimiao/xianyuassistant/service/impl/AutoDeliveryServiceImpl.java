@@ -417,21 +417,25 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
         }
         String[] imageUrls = imageUrlStr.split(",");
         for (int i = 0; i < imageUrls.length; i++) {
-            String url = imageUrls[i].trim();
-            if (url.isEmpty()) continue;
-            if (i > 0) {
-                if (needHumanLikeDelay) {
-                    HumanLikeDelayUtils.thinkingDelay();
-                } else {
-                    try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            try {
+                String url = imageUrls[i].trim();
+                if (url.isEmpty()) continue;
+                if (i > 0) {
+                    if (needHumanLikeDelay) {
+                        HumanLikeDelayUtils.thinkingDelay();
+                    } else {
+                        try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                    }
                 }
-            }
-            boolean imgSuccess = webSocketService.sendImageMessage(accountId, cid, toId, url, 800, 800);
-            if (imgSuccess) {
-                log.info("【账号{}】自动发货图片[{}/{}]发送成功: xyGoodsId={}", accountId, i + 1, imageUrls.length, xyGoodsId);
-                sentMessageSaveService.saveManualImageReply(accountId, cid, toId, url, xyGoodsId);
-            } else {
-                log.warn("【账号{}】自动发货图片[{}/{}]发送失败: xyGoodsId={}", accountId, i + 1, imageUrls.length, xyGoodsId);
+                boolean imgSuccess = webSocketService.sendImageMessage(accountId, cid, toId, url, 800, 800);
+                if (imgSuccess) {
+                    log.info("【账号{}】自动发货图片[{}/{}]发送成功: xyGoodsId={}", accountId, i + 1, imageUrls.length, xyGoodsId);
+                    sentMessageSaveService.saveManualImageReply(accountId, cid, toId, url, xyGoodsId);
+                } else {
+                    log.warn("【账号{}】自动发货图片[{}/{}]发送失败: xyGoodsId={}", accountId, i + 1, imageUrls.length, xyGoodsId);
+                }
+            } catch (Exception e) {
+                log.error("【账号{}】自动发货图片[{}/{}]发送异常: xyGoodsId={}", accountId, i + 1, imageUrls.length, xyGoodsId, e);
             }
         }
     }
