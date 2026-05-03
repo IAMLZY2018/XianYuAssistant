@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -53,7 +54,9 @@ public class AIReplyStrategy implements ReplyStrategy {
             RAGReplyResult result = aiService.chatByRAGWithFixedMaterial(buyerMessage, xyGoodsId, fixedMaterial, goodsDetail);
 
             if (result != null && result.getReplyContent() != null && !result.getReplyContent().trim().isEmpty()) {
-                return ReplyResult.text(result.getReplyContent(), REPLY_TYPE_AI);
+                return ReplyResult.of(Collections.singletonList(
+                        ReplyResult.ReplyItem.text(result.getReplyContent(), REPLY_TYPE_AI)
+                ));
             }
             return ReplyResult.fail();
         } catch (Exception e) {

@@ -163,21 +163,25 @@ public class AutoReplyServiceImpl implements AutoReplyService {
             // 6. 执行回复策略
             ReplyStrategy.ReplyResult replyResult = strategy.execute(messageList);
             
-            if (!replyResult.isSuccess() || (replyResult.getTextContent() == null && replyResult.getImageUrl() == null)) {
+            if (!replyResult.isSuccess() || replyResult.getItems() == null || replyResult.getItems().isEmpty()) {
                 log.warn("【账号{}】回复策略未生成有效内容", accountId);
                 updateRecordState(record.getId(), -1, null);
                 return;
             }
             
-            record.setReplyType(replyResult.getReplyType());
             if (replyResult.getMatchedKeyword() != null) {
                 record.setMatchedKeyword(replyResult.getMatchedKeyword());
             }
             
-            String replyText = replyResult.getTextContent();
-            log.info("【账号{}】回复策略生成内容: type={}, keyword={}, text={}", 
-                    accountId, replyResult.getReplyType(), replyResult.getMatchedKeyword(),
-                    replyText != null ? (replyText.length() > 100 ? replyText.substring(0, 100) + "..." : replyText) : "null");
+            String allReplyText = replyResult.getItems().stream()
+                    .map(ReplyStrategy.ReplyResult.ReplyItem::getTextContent)
+                    .filter(t -> t != null && !t.trim().isEmpty())
+                    .collect(java.util.stream.Collectors.joining("\n"));
+            record.setReplyType(replyResult.getItems().get(0).getReplyType());
+            
+            log.info("【账号{}】回复策略生成内容: type={}, keyword={}, itemCount={}", 
+                    accountId, replyResult.getItems().get(0).getReplyType(), replyResult.getMatchedKeyword(),
+                    replyResult.getItems().size());
             
             // 7. 保存触发上下文
             try {
@@ -209,30 +213,34 @@ public class AutoReplyServiceImpl implements AutoReplyService {
             String cid = sId.replace("@goofish", "");
             String toId = cid;
             
-            if (replyResult.getImageUrl() != null && !replyResult.getImageUrl().isEmpty()) {
-                boolean imageSent = webSocketService.sendImageMessage(accountId, cid, toId, replyResult.getImageUrl(), 0, 0);
-                if (!imageSent) {
-                    log.warn("【账号{}】发送回复图片失败", accountId);
+            for (ReplyStrategy.ReplyResult.ReplyItem item : replyResult.getItems()) {
+                if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
+                    boolean imageSent = webSocketService.sendImageMessage(accountId, cid, toId, item.getImageUrl(), 0, 0);
+                    if (!imageSent) {
+                        log.warn("【账号{}】发送回复图片失败: {}", accountId, item.getImageUrl());
+                    } else {
+                        sendSuccess = true;
+                    }
                 }
-            }
-            
-            if (replyText != null && !replyText.trim().isEmpty()) {
-                sendSuccess = webSocketService.sendMessage(accountId, cid, toId, replyText);
-            } else if (replyResult.getImageUrl() != null && !replyResult.getImageUrl().isEmpty()) {
-                sendSuccess = true;
+                if (item.getTextContent() != null && !item.getTextContent().trim().isEmpty()) {
+                    boolean textSent = webSocketService.sendMessage(accountId, cid, toId, item.getTextContent());
+                    if (textSent) {
+                        sendSuccess = true;
+                    }
+                }
             }
             
             // 9. 更新记录状态
             if (sendSuccess) {
                 log.info("【账号{}】自动回复成功: xyGoodsId={}, sId={}", accountId, xyGoodsId, sId);
-                updateRecordState(record.getId(), 1, replyText);
+                updateRecordState(record.getId(), 1, allReplyText);
                 
-                if (replyText != null && !replyText.trim().isEmpty()) {
-                    sentMessageSaveService.saveAiAssistantReply(accountId, cid, toId, replyText, xyGoodsId);
+                if (allReplyText != null && !allReplyText.trim().isEmpty()) {
+                    sentMessageSaveService.saveAiAssistantReply(accountId, cid, toId, allReplyText, xyGoodsId);
                 }
             } else {
                 log.error("【账号{}】自动回复发送失败: xyGoodsId={}, sId={}", accountId, xyGoodsId, sId);
-                updateRecordState(record.getId(), -1, replyText);
+                updateRecordState(record.getId(), -1, allReplyText);
             }
             
         } catch (Exception e) {

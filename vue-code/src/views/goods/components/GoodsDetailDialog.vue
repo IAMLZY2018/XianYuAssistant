@@ -235,6 +235,7 @@ onBeforeUnmount(() => {
     :class="{ 'mobile-dialog': isMobile }"
     :close-on-click-modal="false"
     :close-on-press-escape="false"
+    :append-to-body="false"
   >
     <div v-loading="loading" class="goods-detail">
       <div v-if="goodsDetail" class="detail-content">
@@ -290,27 +291,18 @@ onBeforeUnmount(() => {
           <div class="config-section">
             <div class="config-item">
               <span class="config-label">自动发货</span>
-              <div class="switch-container">
-                <el-switch
-                  :model-value="goodsDetail.xianyuAutoDeliveryOn === 1"
-                  disabled
-                />
-                <span class="switch-status">
-                  {{ goodsDetail.xianyuAutoDeliveryOn === 1 ? '已开启' : '已关闭' }}
-                </span>
+              <div class="config-value">
+                <span v-if="goodsDetail.xianyuAutoDeliveryOn === 1" class="detail-mode-tag detail-mode-tag--delivery">{{ (goodsDetail.autoDeliveryType ?? 1) === 2 ? '卡密发货' : '文本发货' }}</span>
+                <span v-else class="detail-mode-tag detail-mode-tag--off">未开启</span>
               </div>
             </div>
                         
             <div class="config-item">
               <span class="config-label">自动回复</span>
-              <div class="switch-container">
-                <el-switch
-                  :model-value="goodsDetail.xianyuAutoReplyOn === 1"
-                  disabled
-                />
-                <span class="switch-status">
-                  {{ goodsDetail.xianyuAutoReplyOn === 1 ? '已开启' : '已关闭' }}
-                </span>
+              <div class="config-value">
+                <span v-if="goodsDetail.xianyuAutoReplyOn === 1" class="detail-mode-tag detail-mode-tag--ai">AI回复</span>
+                <span v-if="goodsDetail.xianyuKeywordReplyOn === 1" class="detail-mode-tag detail-mode-tag--keyword">关键词回复</span>
+                <span v-if="goodsDetail.xianyuAutoReplyOn !== 1 && goodsDetail.xianyuKeywordReplyOn !== 1" class="detail-mode-tag detail-mode-tag--off">未开启</span>
               </div>
             </div>
           </div>
@@ -510,6 +502,12 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.config-value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .switch-status {
@@ -737,5 +735,35 @@ onBeforeUnmount(() => {
   .goods-detail-dialog .el-dialog__footer {
     padding: 10px 16px;
   }
+}
+
+.detail-mode-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.detail-mode-tag--ai {
+  color: #007aff;
+  background: rgba(0, 122, 255, 0.1);
+}
+
+.detail-mode-tag--keyword {
+  color: #34c759;
+  background: rgba(52, 199, 89, 0.1);
+}
+
+.detail-mode-tag--delivery {
+  color: #af52de;
+  background: rgba(175, 82, 222, 0.1);
+}
+
+.detail-mode-tag--off {
+  color: #999;
+  background: rgba(0, 0, 0, 0.04);
 }
 </style>

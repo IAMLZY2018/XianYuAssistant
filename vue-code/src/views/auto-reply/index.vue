@@ -322,6 +322,32 @@ onMounted(() => {
             </div>
           </div>
 
+          <!-- Delay Config (shared) -->
+          <div class="ar__config-section">
+            <div class="ar__delay-config">
+              <div class="ar__delay-row">
+                <span class="ar__delay-label">回复延时</span>
+                <input
+                  type="number"
+                  v-model.number="delaySeconds"
+                  class="ar__delay-input"
+                  min="5"
+                  max="120"
+                  :disabled="configSaving"
+                />
+                <span class="ar__delay-unit">秒</span>
+                <button
+                  class="ar__delay-btn"
+                  :disabled="configSaving"
+                  @click="updateDelaySeconds"
+                >
+                  保存
+                </button>
+              </div>
+              <div class="ar__delay-hint">买家发送消息后等待指定时间，若无新消息则自动回复</div>
+            </div>
+          </div>
+
           <!-- AI Reply Config -->
           <div v-if="replyModeTab === 'ai'" class="ar__config-section">
             <div class="ar__toggle-row">
@@ -354,29 +380,6 @@ onMounted(() => {
                 <span class="ar__switch-track"></span>
                 <span class="ar__switch-thumb"></span>
               </label>
-            </div>
-
-            <div v-if="selectedGoods.xianyuAutoReplyOn === 1" class="ar__delay-config">
-              <div class="ar__delay-row">
-                <span class="ar__delay-label">回复延时</span>
-                <input
-                  type="number"
-                  v-model.number="delaySeconds"
-                  class="ar__delay-input"
-                  min="5"
-                  max="120"
-                  :disabled="configSaving"
-                />
-                <span class="ar__delay-unit">秒</span>
-                <button
-                  class="ar__delay-btn"
-                  :disabled="configSaving"
-                  @click="updateDelaySeconds"
-                >
-                  保存
-                </button>
-              </div>
-              <div class="ar__delay-hint">买家发送消息后等待指定时间，若无新消息则自动回复</div>
             </div>
           </div>
 

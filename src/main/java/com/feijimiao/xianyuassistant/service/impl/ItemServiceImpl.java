@@ -317,9 +317,13 @@ public class ItemServiceImpl implements ItemService {
                     if (config != null) {
                         itemWithConfig.setXianyuAutoDeliveryOn(config.getXianyuAutoDeliveryOn());
                         itemWithConfig.setXianyuAutoReplyOn(config.getXianyuAutoReplyOn());
+                        itemWithConfig.setXianyuAutoReplyContextOn(config.getXianyuAutoReplyContextOn());
+                        itemWithConfig.setXianyuKeywordReplyOn(config.getXianyuKeywordReplyOn());
                     } else {
                         itemWithConfig.setXianyuAutoDeliveryOn(0);
                         itemWithConfig.setXianyuAutoReplyOn(0);
+                        itemWithConfig.setXianyuAutoReplyContextOn(0);
+                        itemWithConfig.setXianyuKeywordReplyOn(0);
                     }
                     
                     // 获取自动发货配置
@@ -333,6 +337,8 @@ public class ItemServiceImpl implements ItemService {
                 } else {
                     itemWithConfig.setXianyuAutoDeliveryOn(0);
                     itemWithConfig.setXianyuAutoReplyOn(0);
+                    itemWithConfig.setXianyuAutoReplyContextOn(0);
+                    itemWithConfig.setXianyuKeywordReplyOn(0);
                 }
                 
                 itemsWithConfig.add(itemWithConfig);
@@ -449,10 +455,12 @@ public class ItemServiceImpl implements ItemService {
                 itemWithConfig.setXianyuAutoDeliveryOn(config.getXianyuAutoDeliveryOn());
                 itemWithConfig.setXianyuAutoReplyOn(config.getXianyuAutoReplyOn());
                 itemWithConfig.setXianyuAutoReplyContextOn(config.getXianyuAutoReplyContextOn() != null ? config.getXianyuAutoReplyContextOn() : 1);
+                itemWithConfig.setXianyuKeywordReplyOn(config.getXianyuKeywordReplyOn());
             } else {
                 itemWithConfig.setXianyuAutoDeliveryOn(0);
                 itemWithConfig.setXianyuAutoReplyOn(0);
                 itemWithConfig.setXianyuAutoReplyContextOn(1);
+                itemWithConfig.setXianyuKeywordReplyOn(0);
             }
             
             // 获取自动发货配置
@@ -467,6 +475,7 @@ public class ItemServiceImpl implements ItemService {
             itemWithConfig.setXianyuAutoDeliveryOn(0);
             itemWithConfig.setXianyuAutoReplyOn(0);
             itemWithConfig.setXianyuAutoReplyContextOn(1);
+            itemWithConfig.setXianyuKeywordReplyOn(0);
         }
         
         return itemWithConfig;

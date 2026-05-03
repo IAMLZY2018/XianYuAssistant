@@ -13,35 +13,44 @@ public interface ReplyStrategy {
     @lombok.Data
     class ReplyResult {
         private boolean success;
-        private String textContent;
-        private String imageUrl;
-        private int replyType;
+        private List<ReplyItem> items = new ArrayList<>();
         private String matchedKeyword;
         private KeywordReplyRuleBO matchedRule;
         private List<KeywordReplyRuleBO> matchedRules = new ArrayList<>();
 
-        public static ReplyResult text(String text, int replyType) {
-            ReplyResult r = new ReplyResult();
-            r.setSuccess(true);
-            r.setTextContent(text);
-            r.setReplyType(replyType);
-            return r;
+        @lombok.Data
+        public static class ReplyItem {
+            private String textContent;
+            private String imageUrl;
+            private int replyType;
+
+            public static ReplyItem text(String text, int replyType) {
+                ReplyItem item = new ReplyItem();
+                item.setTextContent(text);
+                item.setReplyType(replyType);
+                return item;
+            }
+
+            public static ReplyItem image(String imageUrl, int replyType) {
+                ReplyItem item = new ReplyItem();
+                item.setImageUrl(imageUrl);
+                item.setReplyType(replyType);
+                return item;
+            }
+
+            public static ReplyItem textAndImage(String text, String imageUrl, int replyType) {
+                ReplyItem item = new ReplyItem();
+                item.setTextContent(text);
+                item.setImageUrl(imageUrl);
+                item.setReplyType(replyType);
+                return item;
+            }
         }
 
-        public static ReplyResult image(String imageUrl, int replyType) {
+        public static ReplyResult of(List<ReplyItem> items) {
             ReplyResult r = new ReplyResult();
             r.setSuccess(true);
-            r.setImageUrl(imageUrl);
-            r.setReplyType(replyType);
-            return r;
-        }
-
-        public static ReplyResult textAndImage(String text, String imageUrl, int replyType) {
-            ReplyResult r = new ReplyResult();
-            r.setSuccess(true);
-            r.setTextContent(text);
-            r.setImageUrl(imageUrl);
-            r.setReplyType(replyType);
+            r.setItems(items);
             return r;
         }
 

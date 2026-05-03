@@ -19,8 +19,6 @@ public class KeywordReplyStrategy implements ReplyStrategy {
     @Autowired
     private KeywordReplyService keywordReplyService;
 
-    private final Random random = new Random();
-
     @Override
     public ReplyResult execute(List<ChatMessageData> messageList) {
         ChatMessageData lastMessage = messageList.get(messageList.size() - 1);
@@ -46,24 +44,26 @@ public class KeywordReplyStrategy implements ReplyStrategy {
             return ReplyResult.fail();
         }
 
-        KeywordReplyRuleBO.KeywordReplyContentBO selected = allContents.get(random.nextInt(allContents.size()));
+        List<ReplyResult.ReplyItem> items = new ArrayList<>();
+        for (KeywordReplyRuleBO.KeywordReplyContentBO content : allContents) {
+            String text = content.getReplyText();
+            String image = content.getReplyImageUrl();
+            boolean hasText = text != null && !text.trim().isEmpty();
+            boolean hasImage = image != null && !image.trim().isEmpty();
+            if (hasText && hasImage) {
+                items.add(ReplyResult.ReplyItem.textAndImage(text, image, REPLY_TYPE_KEYWORD));
+            } else if (hasText) {
+                items.add(ReplyResult.ReplyItem.text(text, REPLY_TYPE_KEYWORD));
+            } else if (hasImage) {
+                items.add(ReplyResult.ReplyItem.image(image, REPLY_TYPE_KEYWORD));
+            }
+        }
 
-        ReplyResult result;
-        String text = selected.getReplyText();
-        String image = selected.getReplyImageUrl();
-        boolean hasText = text != null && !text.trim().isEmpty();
-        boolean hasImage = image != null && !image.trim().isEmpty();
-
-        if (hasText && hasImage) {
-            result = ReplyResult.textAndImage(text, image, REPLY_TYPE_KEYWORD);
-        } else if (hasText) {
-            result = ReplyResult.text(text, REPLY_TYPE_KEYWORD);
-        } else if (hasImage) {
-            result = ReplyResult.image(image, REPLY_TYPE_KEYWORD);
-        } else {
+        if (items.isEmpty()) {
             return ReplyResult.fail();
         }
 
+        ReplyResult result = ReplyResult.of(items);
         String keywords = matchedRules.stream()
                 .filter(r -> r.getIsFallback() == null || r.getIsFallback() == 0)
                 .map(KeywordReplyRuleBO::getKeyword)

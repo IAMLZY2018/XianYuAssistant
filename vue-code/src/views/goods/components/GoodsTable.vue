@@ -107,30 +107,10 @@ const handleImgError = (e: Event) => {
           </div>
           <div class="goods-card__meta">
             <span class="goods-card__price">{{ formatPrice(item.item.soldPrice) }}</span>
-            <div class="goods-card__switches">
-              <button
-                class="goods-card__switch"
-                :class="{ 'goods-card__switch--on': item.xianyuAutoDeliveryOn === 1 }"
-                @click.stop="emit('toggleAutoDelivery', item, item.xianyuAutoDeliveryOn !== 1)"
-              >
-                <IconSend />
-                <span>发货</span>
-              </button>
-              <span
-                v-if="item.xianyuAutoDeliveryOn === 1"
-                class="goods-card__type-tag"
-                :class="item.autoDeliveryType === 2 ? 'goods-card__type-tag--kami' : 'goods-card__type-tag--text'"
-              >
-                {{ item.autoDeliveryType === 2 ? '卡密' : '文本' }}
-              </span>
-              <button
-                class="goods-card__switch"
-                :class="{ 'goods-card__switch--on': item.xianyuAutoReplyOn === 1 }"
-                @click.stop="emit('toggleAutoReply', item, item.xianyuAutoReplyOn !== 1)"
-              >
-                <IconRobot />
-                <span>回复</span>
-              </button>
+            <div class="goods-card__tags">
+              <span v-if="item.xianyuAutoDeliveryOn === 1" class="goods-card__mode-tag goods-card__mode-tag--delivery">{{ item.autoDeliveryType === 2 ? '卡密发货' : '文本发货' }}</span>
+              <span v-if="item.xianyuAutoReplyOn === 1" class="goods-card__mode-tag goods-card__mode-tag--ai">AI</span>
+              <span v-if="item.xianyuKeywordReplyOn === 1" class="goods-card__mode-tag goods-card__mode-tag--keyword">关键词</span>
             </div>
           </div>
         </div>
@@ -171,9 +151,8 @@ const handleImgError = (e: Event) => {
           <th class="table__th">商品标题</th>
           <th class="table__th table__th--price">价格</th>
           <th class="table__th table__th--status">状态</th>
-          <th class="table__th table__th--switch">自动发货</th>
-          <th class="table__th table__th--switch">发货类型</th>
-          <th class="table__th table__th--switch">自动回复</th>
+          <th class="table__th table__th--switch">发货模式</th>
+          <th class="table__th table__th--switch">回复模式</th>
           <th class="table__th table__th--actions">操作</th>
         </tr>
       </thead>
@@ -214,36 +193,15 @@ const handleImgError = (e: Event) => {
             </span>
           </td>
           <td class="table__td table__td--switch">
-            <button
-              class="toggle-btn"
-              :class="{ 'toggle-btn--on': item.xianyuAutoDeliveryOn === 1 }"
-              @click="emit('toggleAutoDelivery', item, item.xianyuAutoDeliveryOn !== 1)"
-            >
-              <span class="toggle-btn__track">
-                <span class="toggle-btn__thumb"></span>
-              </span>
-            </button>
+            <span v-if="item.xianyuAutoDeliveryOn === 1" class="reply-mode-tag reply-mode-tag--delivery">{{ item.autoDeliveryType === 2 ? '卡密' : '文本' }}</span>
+            <span v-else class="reply-mode-tag reply-mode-tag--off">-</span>
           </td>
           <td class="table__td table__td--switch">
-            <span
-              v-if="item.xianyuAutoDeliveryOn === 1"
-              class="delivery-type-tag"
-              :class="item.autoDeliveryType === 2 ? 'delivery-type-tag--kami' : 'delivery-type-tag--text'"
-            >
-              {{ item.autoDeliveryType === 2 ? '卡密' : '文本' }}
-            </span>
-            <span v-else class="delivery-type-tag delivery-type-tag--off">-</span>
-          </td>
-          <td class="table__td table__td--switch">
-            <button
-              class="toggle-btn"
-              :class="{ 'toggle-btn--on': item.xianyuAutoReplyOn === 1 }"
-              @click="emit('toggleAutoReply', item, item.xianyuAutoReplyOn !== 1)"
-            >
-              <span class="toggle-btn__track">
-                <span class="toggle-btn__thumb"></span>
-              </span>
-            </button>
+            <div class="reply-mode-tags">
+              <span v-if="item.xianyuAutoReplyOn === 1" class="reply-mode-tag reply-mode-tag--ai">AI</span>
+              <span v-if="item.xianyuKeywordReplyOn === 1" class="reply-mode-tag reply-mode-tag--keyword">关键词</span>
+              <span v-if="item.xianyuAutoReplyOn !== 1 && item.xianyuKeywordReplyOn !== 1" class="reply-mode-tag reply-mode-tag--off">-</span>
+            </div>
           </td>
           <td class="table__td table__td--actions">
             <button class="table__action table__action--detail" @click="emit('view', item.item.xyGoodId)">
@@ -878,6 +836,73 @@ const handleImgError = (e: Event) => {
 
 .delivery-type-tag--off {
   color: var(--c-text-3);
+}
+
+.reply-mode-tags {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.reply-mode-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.reply-mode-tag--ai {
+  color: #007aff;
+  background: rgba(0, 122, 255, 0.1);
+}
+
+.reply-mode-tag--keyword {
+  color: #34c759;
+  background: rgba(52, 199, 89, 0.1);
+}
+
+.reply-mode-tag--delivery {
+  color: #af52de;
+  background: rgba(175, 82, 222, 0.1);
+}
+
+.reply-mode-tag--off {
+  color: var(--c-text-3);
+}
+
+.goods-card__mode-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.goods-card__mode-tag--ai {
+  color: #007aff;
+  background: rgba(0, 122, 255, 0.1);
+}
+
+.goods-card__mode-tag--keyword {
+  color: #34c759;
+  background: rgba(52, 199, 89, 0.1);
+}
+
+.goods-card__mode-tag--delivery {
+  color: #af52de;
+  background: rgba(175, 82, 222, 0.1);
+}
+
+.goods-card__tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
 }
 
 .goods-card__type-tag {

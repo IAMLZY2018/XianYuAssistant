@@ -40,8 +40,6 @@ public class KeywordWithAIPolishStrategy implements ReplyStrategy {
     @Autowired
     private XianyuGoodsInfoMapper goodsInfoMapper;
 
-    private final Random random = new Random();
-
     @Override
     public ReplyResult execute(List<ChatMessageData> messageList) {
         ChatMessageData lastMessage = messageList.get(messageList.size() - 1);
@@ -72,42 +70,44 @@ public class KeywordWithAIPolishStrategy implements ReplyStrategy {
             return ReplyResult.fail();
         }
 
-        KeywordReplyRuleBO.KeywordReplyContentBO selected = allContents.get(random.nextInt(allContents.size()));
+        List<ReplyResult.ReplyItem> items = new ArrayList<>();
+        for (KeywordReplyRuleBO.KeywordReplyContentBO content : allContents) {
+            String originalText = content.getReplyText();
+            String image = content.getReplyImageUrl();
+            boolean hasText = originalText != null && !originalText.trim().isEmpty();
+            boolean hasImage = image != null && !image.trim().isEmpty();
 
-        String originalText = selected.getReplyText();
-        String image = selected.getReplyImageUrl();
-        boolean hasText = originalText != null && !originalText.trim().isEmpty();
-        boolean hasImage = image != null && !image.trim().isEmpty();
-
-        String finalText = originalText;
-
-        if (hasText && dynamicAIChatClientManager.isAvailable() && aiService != null) {
-            try {
-                String polishPrompt = String.format(
-                        "你是一个闲鱼卖家，请用自然亲切的语气简单润色以下回复内容，保持原意不变，不要添加额外信息，直接输出润色后的内容：\n\n%s",
-                        originalText
-                );
-                String polishedText = aiService.simpleChat(polishPrompt);
-                if (polishedText != null && !polishedText.trim().isEmpty()) {
-                    finalText = polishedText;
+            String finalText = originalText;
+            if (hasText && dynamicAIChatClientManager.isAvailable() && aiService != null) {
+                try {
+                    String polishPrompt = String.format(
+                            "你是一个闲鱼卖家，请用自然亲切的语气简单润色以下回复内容，保持原意不变，不要添加额外信息，直接输出润色后的内容：\n\n%s",
+                            originalText
+                    );
+                    String polishedText = aiService.simpleChat(polishPrompt);
+                    if (polishedText != null && !polishedText.trim().isEmpty()) {
+                        finalText = polishedText;
+                    }
+                } catch (Exception e) {
+                    log.warn("【账号{}】AI润化失败，使用原文回复: {}", accountId, e.getMessage());
                 }
-            } catch (Exception e) {
-                log.warn("【账号{}】AI润化失败，使用原文回复: {}", accountId, e.getMessage());
+            }
+
+            boolean finalHasText = finalText != null && !finalText.trim().isEmpty();
+            if (finalHasText && hasImage) {
+                items.add(ReplyResult.ReplyItem.textAndImage(finalText, image, REPLY_TYPE_KEYWORD_AI));
+            } else if (finalHasText) {
+                items.add(ReplyResult.ReplyItem.text(finalText, REPLY_TYPE_KEYWORD_AI));
+            } else if (hasImage) {
+                items.add(ReplyResult.ReplyItem.image(image, REPLY_TYPE_KEYWORD_AI));
             }
         }
 
-        ReplyResult result;
-        boolean finalHasText = finalText != null && !finalText.trim().isEmpty();
-        if (finalHasText && hasImage) {
-            result = ReplyResult.textAndImage(finalText, image, REPLY_TYPE_KEYWORD_AI);
-        } else if (finalHasText) {
-            result = ReplyResult.text(finalText, REPLY_TYPE_KEYWORD_AI);
-        } else if (hasImage) {
-            result = ReplyResult.image(image, REPLY_TYPE_KEYWORD_AI);
-        } else {
+        if (items.isEmpty()) {
             return ReplyResult.fail();
         }
 
+        ReplyResult result = ReplyResult.of(items);
         String keywords = matchedRules.stream()
                 .filter(r -> r.getIsFallback() == null || r.getIsFallback() == 0)
                 .map(KeywordReplyRuleBO::getKeyword)
@@ -133,7 +133,9 @@ public class KeywordWithAIPolishStrategy implements ReplyStrategy {
             RAGReplyResult ragResult = aiService.chatByRAGWithFixedMaterial(buyerMessage, xyGoodsId, fixedMaterial, goodsDetail);
 
             if (ragResult != null && ragResult.getReplyContent() != null && !ragResult.getReplyContent().trim().isEmpty()) {
-                return ReplyResult.text(ragResult.getReplyContent(), REPLY_TYPE_AI);
+                return ReplyResult.of(Collections.singletonList(
+                        ReplyResult.ReplyItem.text(ragResult.getReplyContent(), REPLY_TYPE_AI)
+                ));
             }
             return ReplyResult.fail();
         } catch (Exception e) {
