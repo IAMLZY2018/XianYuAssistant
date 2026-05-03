@@ -461,7 +461,7 @@ export function useAutoReply() {
     addKeywordDialogVisible.value = false
   }
 
-  const handleUpdateMatchMode = async (ruleId: number, matchMode: number) => {
+  const handleUpdateMatchMode = async (ruleId: string | number, matchMode: number) => {
     try {
       await updateKeywordRuleMatchMode({ ruleId, matchMode })
       const rule = keywordRules.value.find(r => r.id === ruleId)
@@ -549,7 +549,7 @@ export function useAutoReply() {
       await deleteKeywordRule({ ruleId })
       keywordRules.value = keywordRules.value.filter(r => r.id !== ruleId)
       if (selectedKeywordRuleId.value === ruleId) {
-        selectedKeywordRuleId.value = keywordRules.value.length > 0 ? keywordRules.value[0].id : null
+        selectedKeywordRuleId.value = keywordRules.value.length > 0 ? keywordRules.value[0]!.id : null
       }
     } catch (e: any) {
       showError(e?.message || '删除关键词规则失败')
@@ -597,7 +597,7 @@ export function useAutoReply() {
     }
   }
 
-  const handleDeleteContent = async (contentId: number, ruleId: number) => {
+  const handleDeleteContent = async (contentId: string | number, ruleId: string | number) => {
     try {
       await deleteKeywordContent({ contentId })
       const rule = keywordRules.value.find(r => r.id === ruleId)
