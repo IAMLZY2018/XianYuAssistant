@@ -18,8 +18,8 @@ public interface XianyuGoodsConfigMapper {
     /**
      * 插入配置
      */
-    @Insert("INSERT INTO xianyu_goods_config (xianyu_account_id, xianyu_goods_id, xy_goods_id, xianyu_auto_delivery_on, xianyu_auto_reply_on, xianyu_auto_reply_context_on, xianyu_keyword_reply_on, fixed_material) " +
-            "VALUES (#{xianyuAccountId}, #{xianyuGoodsId}, #{xyGoodsId}, #{xianyuAutoDeliveryOn}, #{xianyuAutoReplyOn}, #{xianyuAutoReplyContextOn}, #{xianyuKeywordReplyOn}, #{fixedMaterial})")
+    @Insert("INSERT INTO xianyu_goods_config (xianyu_account_id, xianyu_goods_id, xy_goods_id, xianyu_auto_delivery_on, xianyu_auto_reply_on, xianyu_auto_reply_context_on, xianyu_keyword_reply_on, human_intervention_on, fixed_material) " +
+            "VALUES (#{xianyuAccountId}, #{xianyuGoodsId}, #{xyGoodsId}, #{xianyuAutoDeliveryOn}, #{xianyuAutoReplyOn}, #{xianyuAutoReplyContextOn}, #{xianyuKeywordReplyOn}, #{humanInterventionOn}, #{fixedMaterial})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(XianyuGoodsConfig config);
     
@@ -30,6 +30,7 @@ public interface XianyuGoodsConfigMapper {
             "xianyu_auto_reply_on = #{xianyuAutoReplyOn}, " +
             "xianyu_auto_reply_context_on = #{xianyuAutoReplyContextOn}, " +
             "xianyu_keyword_reply_on = #{xianyuKeywordReplyOn}, " +
+            "human_intervention_on = #{humanInterventionOn}, " +
             "fixed_material = #{fixedMaterial} WHERE id = #{id}")
     int update(XianyuGoodsConfig config);
     

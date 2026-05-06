@@ -1,8 +1,13 @@
 package com.feijimiao.xianyuassistant.service.impl;
 
+import com.feijimiao.xianyuassistant.entity.XianyuAccount;
 import com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoDeliveryConfig;
+import com.feijimiao.xianyuassistant.entity.XianyuGoodsConfig;
 import com.feijimiao.xianyuassistant.event.chatMessageEvent.ChatMessageData;
+import com.feijimiao.xianyuassistant.mapper.XianyuAccountMapper;
+import com.feijimiao.xianyuassistant.mapper.XianyuChatMessageMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoDeliveryConfigMapper;
+import com.feijimiao.xianyuassistant.mapper.XianyuGoodsConfigMapper;
 import com.feijimiao.xianyuassistant.service.AutoReplyDelayService;
 import com.feijimiao.xianyuassistant.service.AutoReplyService;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +39,15 @@ public class AutoReplyDelayServiceImpl implements AutoReplyDelayService {
 
     @Autowired
     private XianyuGoodsAutoDeliveryConfigMapper autoDeliveryConfigMapper;
+
+    @Autowired
+    private XianyuGoodsConfigMapper goodsConfigMapper;
+
+    @Autowired
+    private XianyuAccountMapper accountMapper;
+
+    @Autowired
+    private XianyuChatMessageMapper chatMessageMapper;
     
     /**
      * 延时任务调度器
@@ -137,6 +151,15 @@ public class AutoReplyDelayServiceImpl implements AutoReplyDelayService {
                 List<ChatMessageData> messageList = pendingMessages.remove(taskKey);
                 
                 if (messageList != null && !messageList.isEmpty()) {
+                    // 人工干预检查：如果开启了人工干预，且卖家已在延时期间回复，则取消本次自动回复
+                    long firstTriggerTime = messageList.stream()
+                            .mapToLong(m -> m.getMessageTime() != null ? m.getMessageTime() : 0L)
+                            .min().orElse(0L);
+                    if (isHumanInterventionEnabled(accountId, messageData.getXyGoodsId())
+                            && hasSellerRepliedAfter(accountId, sId, firstTriggerTime)) {
+                        log.info("【账号{}】人工干预生效：卖家已在延时期间回复，取消自动回复: sId={}", accountId, sId);
+                        return;
+                    }
                     log.info("【账号{}】延时任务到期，开始执行自动回复: sId={}, 触发消息数={}", accountId, sId, messageList.size());
                     // 执行自动回复，传入消息列表
                     autoReplyService.executeAutoReply(messageList);
@@ -202,5 +225,42 @@ public class AutoReplyDelayServiceImpl implements AutoReplyDelayService {
             log.warn("获取延时配置失败，使用默认值: {}", e.getMessage());
         }
         return DEFAULT_DELAY_SECONDS;
+    }
+
+    /**
+     * 检查人工干预开关是否开启
+     */
+    private boolean isHumanInterventionEnabled(Long accountId, String xyGoodsId) {
+        try {
+            if (accountId == null || xyGoodsId == null) return false;
+            XianyuGoodsConfig config = goodsConfigMapper.selectByAccountAndGoodsId(accountId, xyGoodsId);
+            return config != null && config.getHumanInterventionOn() != null && config.getHumanInterventionOn() == 1;
+        } catch (Exception e) {
+            log.warn("检查人工干预开关失败: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 检查卖家是否在指定会话中、指定时间之后发送过消息
+     */
+    private boolean hasSellerRepliedAfter(Long accountId, String sId, long afterTime) {
+        try {
+            XianyuAccount account = accountMapper.selectById(accountId);
+            if (account == null || account.getUnb() == null) return false;
+            List<com.feijimiao.xianyuassistant.entity.XianyuChatMessage> messages = chatMessageMapper.findBySId(sId);
+            String sellerUnb = account.getUnb();
+            for (com.feijimiao.xianyuassistant.entity.XianyuChatMessage msg : messages) {
+                if (sellerUnb.equals(msg.getSenderUserId())
+                        && msg.getMessageTime() != null
+                        && msg.getMessageTime() > afterTime) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            log.warn("检查卖家回复失败: {}", e.getMessage());
+            return false;
+        }
     }
 }

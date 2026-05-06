@@ -319,11 +319,13 @@ public class ItemServiceImpl implements ItemService {
                         itemWithConfig.setXianyuAutoReplyOn(config.getXianyuAutoReplyOn());
                         itemWithConfig.setXianyuAutoReplyContextOn(config.getXianyuAutoReplyContextOn());
                         itemWithConfig.setXianyuKeywordReplyOn(config.getXianyuKeywordReplyOn());
+                        itemWithConfig.setHumanInterventionOn(config.getHumanInterventionOn());
                     } else {
                         itemWithConfig.setXianyuAutoDeliveryOn(0);
                         itemWithConfig.setXianyuAutoReplyOn(0);
                         itemWithConfig.setXianyuAutoReplyContextOn(0);
                         itemWithConfig.setXianyuKeywordReplyOn(0);
+                        itemWithConfig.setHumanInterventionOn(0);
                     }
                     
                     // 获取自动发货配置
@@ -339,6 +341,7 @@ public class ItemServiceImpl implements ItemService {
                     itemWithConfig.setXianyuAutoReplyOn(0);
                     itemWithConfig.setXianyuAutoReplyContextOn(0);
                     itemWithConfig.setXianyuKeywordReplyOn(0);
+                    itemWithConfig.setHumanInterventionOn(0);
                 }
                 
                 itemsWithConfig.add(itemWithConfig);
@@ -456,11 +459,13 @@ public class ItemServiceImpl implements ItemService {
                 itemWithConfig.setXianyuAutoReplyOn(config.getXianyuAutoReplyOn());
                 itemWithConfig.setXianyuAutoReplyContextOn(config.getXianyuAutoReplyContextOn() != null ? config.getXianyuAutoReplyContextOn() : 1);
                 itemWithConfig.setXianyuKeywordReplyOn(config.getXianyuKeywordReplyOn());
+                itemWithConfig.setHumanInterventionOn(config.getHumanInterventionOn());
             } else {
                 itemWithConfig.setXianyuAutoDeliveryOn(0);
                 itemWithConfig.setXianyuAutoReplyOn(0);
                 itemWithConfig.setXianyuAutoReplyContextOn(1);
                 itemWithConfig.setXianyuKeywordReplyOn(0);
+                itemWithConfig.setHumanInterventionOn(0);
             }
             
             // 获取自动发货配置
@@ -476,6 +481,7 @@ public class ItemServiceImpl implements ItemService {
             itemWithConfig.setXianyuAutoReplyOn(0);
             itemWithConfig.setXianyuAutoReplyContextOn(1);
             itemWithConfig.setXianyuKeywordReplyOn(0);
+            itemWithConfig.setHumanInterventionOn(0);
         }
         
         return itemWithConfig;
@@ -874,6 +880,11 @@ public class ItemServiceImpl implements ItemService {
                 } else {
                     goodsConfig.setXianyuKeywordReplyOn(0);
                 }
+                if (reqDTO.getHumanInterventionOn() != null) {
+                    goodsConfig.setHumanInterventionOn(reqDTO.getHumanInterventionOn());
+                } else {
+                    goodsConfig.setHumanInterventionOn(0);
+                }
             } else {
                 // 3. 更新配置
                 goodsConfig.setXianyuAutoReplyOn(reqDTO.getXianyuAutoReplyOn());
@@ -883,6 +894,9 @@ public class ItemServiceImpl implements ItemService {
                 }
                 if (reqDTO.getXianyuKeywordReplyOn() != null) {
                     goodsConfig.setXianyuKeywordReplyOn(reqDTO.getXianyuKeywordReplyOn());
+                }
+                if (reqDTO.getHumanInterventionOn() != null) {
+                    goodsConfig.setHumanInterventionOn(reqDTO.getHumanInterventionOn());
                 }
                 goodsConfig.setUpdateTime(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date()));
             }

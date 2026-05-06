@@ -172,6 +172,7 @@ CREATE TABLE IF NOT EXISTS xianyu_goods_config (
     xianyu_auto_reply_on TINYINT DEFAULT 0,           -- AI回复开关：1-开启，0-关闭，默认关闭
     xianyu_auto_reply_context_on TINYINT DEFAULT 1,   -- 携带上下文开关：1-开启，0-关闭，默认开启，跟随AI回复开关
     xianyu_keyword_reply_on TINYINT DEFAULT 0,        -- 关键词回复开关：1-开启，0-关闭，默认关闭
+    human_intervention_on TINYINT DEFAULT 0,          -- 人工干预开关：1-开启，0-关闭，默认关闭。开启后延时任务到期时若卖家已人工回复则取消自动回复
     fixed_material TEXT,                              -- 固定资料（用于AI自动回复）
     create_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 创建时间
     update_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 更新时间

@@ -171,7 +171,7 @@ const getCookieStatusColor = (status?: number) => {
   return '#86868b'
 }
 
-const formatTimestamp = (timestamp?: number) => {
+const formatTimestamp = (timestamp?: number | string) => {
   if (!timestamp) return '未设置'
   const date = new Date(timestamp)
   return date.toLocaleString('zh-CN', {

@@ -29,4 +29,9 @@ public class UpdateAutoReplyReqDTO {
     private Integer xianyuAutoReplyContextOn;
 
     private Integer xianyuKeywordReplyOn;
+
+    /**
+     * 人工干预开关：1-开启，0-关闭
+     */
+    private Integer humanInterventionOn;
 }

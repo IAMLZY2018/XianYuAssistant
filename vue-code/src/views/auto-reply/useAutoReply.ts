@@ -435,6 +435,42 @@ export function useAutoReply() {
     }
   }
 
+  const toggleHumanIntervention = async (checked: boolean) => {
+    if (!selectedGoods.value || !selectedAccountId.value) {
+      showInfo('请先选择商品')
+      return
+    }
+
+    try {
+      const response = await updateAutoReplyStatus({
+        xianyuAccountId: selectedAccountId.value,
+        xyGoodsId: selectedGoods.value.item.xyGoodId,
+        xianyuAutoReplyOn: selectedGoods.value.xianyuAutoReplyOn,
+        xianyuAutoReplyContextOn: selectedGoods.value.xianyuAutoReplyContextOn,
+        xianyuKeywordReplyOn: selectedGoods.value.xianyuKeywordReplyOn,
+        humanInterventionOn: checked ? 1 : 0
+      } as any)
+
+      if (response.code === 0 || response.code === 200) {
+        showSuccess(`人工干预${checked ? '开启' : '关闭'}成功`)
+        if (selectedGoods.value) {
+          selectedGoods.value.humanInterventionOn = checked ? 1 : 0
+        }
+        const goodsItem = goodsList.value.find(item => item.item.xyGoodId === selectedGoods.value?.item.xyGoodId)
+        if (goodsItem) {
+          goodsItem.humanInterventionOn = checked ? 1 : 0
+        }
+      } else {
+        throw new Error(response.msg || '操作失败')
+      }
+    } catch (error: any) {
+      console.error('操作失败:', error)
+      if (selectedGoods.value) {
+        selectedGoods.value.humanInterventionOn = checked ? 0 : 1
+      }
+    }
+  }
+
   const handleAddKeyword = async () => {
     if (!selectedGoods.value || !selectedAccountId.value || !newKeyword.value.trim()) return
     try {
@@ -499,12 +535,16 @@ export function useAutoReply() {
 
       if (hasContent) {
         rule.contents = []
-        for (const image of images) {
-          const res = await addKeywordContent({ ruleId: rule.id, replyText: '', replyImageUrl: image })
+        if (images.length > 0) {
+          const res = await addKeywordContent({ ruleId: rule.id, replyText: text, replyImageUrl: images[0] })
           const content = (res as any)?.data || res
           if (content) rule.contents.push(content)
-        }
-        if (text) {
+          for (let i = 1; i < images.length; i++) {
+            const res2 = await addKeywordContent({ ruleId: rule.id, replyText: '', replyImageUrl: images[i] })
+            const content2 = (res2 as any)?.data || res2
+            if (content2) rule.contents.push(content2)
+          }
+        } else if (text) {
           const res = await addKeywordContent({ ruleId: rule.id, replyText: text, replyImageUrl: '' })
           const content = (res as any)?.data || res
           if (content) rule.contents.push(content)
@@ -526,12 +566,16 @@ export function useAutoReply() {
       const rule = keywordRules.value.find(r => r.id === selectedKeywordRuleId.value)
       if (!rule) return
       rule.contents = rule.contents || []
-      for (const image of images) {
-        const res = await addKeywordContent({ ruleId: selectedKeywordRuleId.value, replyText: '', replyImageUrl: image })
+      if (images.length > 0) {
+        const res = await addKeywordContent({ ruleId: selectedKeywordRuleId.value, replyText: text, replyImageUrl: images[0] })
         const content = (res as any)?.data || res
         if (content) rule.contents.push(content)
-      }
-      if (text) {
+        for (let i = 1; i < images.length; i++) {
+          const res2 = await addKeywordContent({ ruleId: selectedKeywordRuleId.value, replyText: '', replyImageUrl: images[i] })
+          const content2 = (res2 as any)?.data || res2
+          if (content2) rule.contents.push(content2)
+        }
+      } else {
         const res = await addKeywordContent({ ruleId: selectedKeywordRuleId.value, replyText: text, replyImageUrl: '' })
         const content = (res as any)?.data || res
         if (content) rule.contents.push(content)
@@ -1190,6 +1234,7 @@ export function useAutoReply() {
     newContentText,
     newContentImage,
     toggleKeywordReply,
+    toggleHumanIntervention,
     handleAddKeyword,
     handleDeleteRule,
     handleAddContent,

@@ -24,6 +24,7 @@ export interface GoodsItemWithConfig {
   xianyuAutoReplyOn: number;
   xianyuAutoReplyContextOn: number;
   xianyuKeywordReplyOn: number;
+  humanInterventionOn: number;
   autoDeliveryType?: number;
   autoDeliveryContent?: string;
 }
@@ -130,6 +131,8 @@ export function updateAutoReplyStatus(data: {
   xyGoodsId: string;
   xianyuAutoReplyOn: number;
   xianyuAutoReplyContextOn?: number;
+  xianyuKeywordReplyOn?: number;
+  humanInterventionOn?: number;
 }) {
   return request({
     url: '/items/updateAutoReplyStatus',

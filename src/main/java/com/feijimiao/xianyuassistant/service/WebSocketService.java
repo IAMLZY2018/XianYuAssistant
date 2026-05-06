@@ -77,4 +77,9 @@ public interface WebSocketService {
      * @return 是否成功
      */
     boolean sendImageMessage(Long accountId, String cid, String toId, String imageUrl, int width, int height);
+
+    /**
+     * 发送图片消息并等待服务端响应确认
+     */
+    boolean sendImageMessageWithResult(Long accountId, String cid, String toId, String imageUrl, int width, int height);
 }

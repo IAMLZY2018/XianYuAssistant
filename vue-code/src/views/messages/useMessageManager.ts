@@ -56,33 +56,36 @@ export function useMessageManager() {
   // 消息类型
   const getContentTypeText = (contentType: number, row: ChatMessage) => {
     if (contentType === 999) return '手动回复'
+    if (contentType === 997) return '图片回复'
     if (contentType === 888) return '自动回复'
+    if (contentType === 887) return '自动回复图片'
     if (!isUserMessage(row)) return '我发送的'
     if (contentType === 1) return '用户消息'
     return `系统消息(${contentType})`
   }
 
-  // 消息类型颜色
   const getContentTypeColor = (contentType: number, row: ChatMessage) => {
-    if (contentType === 999) return '#5856d6'
-    if (contentType === 888) return '#af52de'
+    if (contentType === 999 || contentType === 997) return '#5856d6'
+    if (contentType === 888 || contentType === 887) return '#af52de'
     if (!isUserMessage(row)) return '#007aff'
     if (contentType === 1) return '#34c759'
     return '#ff9500'
   }
 
   const getContentTypeBg = (contentType: number, row: ChatMessage) => {
-    if (contentType === 999) return 'rgba(88, 86, 214, 0.1)'
-    if (contentType === 888) return 'rgba(175, 82, 222, 0.1)'
+    if (contentType === 999 || contentType === 997) return 'rgba(88, 86, 214, 0.1)'
+    if (contentType === 888 || contentType === 887) return 'rgba(175, 82, 222, 0.1)'
     if (!isUserMessage(row)) return 'rgba(0, 122, 255, 0.1)'
     if (contentType === 1) return 'rgba(52, 199, 89, 0.1)'
     return 'rgba(255, 149, 0, 0.1)'
   }
 
   // 格式化消息时间
-  const formatMessageTime = (timestamp: number) => {
-    if (!timestamp) return '-'
-    const date = new Date(timestamp)
+  const formatMessageTime = (timestamp: string | number) => {
+    const ts = Number(timestamp)
+    if (!ts || isNaN(ts)) return '-'
+    const date = new Date(ts)
+    if (isNaN(date.getTime())) return '-'
     const now = new Date()
     const diff = now.getTime() - date.getTime()
     if (diff < 60000) return '刚刚'

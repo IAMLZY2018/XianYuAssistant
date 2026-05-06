@@ -2077,17 +2077,16 @@
 /* --- Reply text display row --- */
 
 .ar__kw-reply-text-row {
-  padding: var(--d-space-2) var(--d-space-3);
-  background: var(--d-surface-solid);
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.02);
   border-radius: var(--d-radius-sm);
-  border: 1px solid var(--d-border-strong);
 }
 
 .ar__kw-reply-text-show {
   font-size: 13px;
   color: var(--d-text-primary);
   white-space: pre-wrap;
-  word-break: break-all;
+  word-break: break-word;
   line-height: 1.5;
 }
 
@@ -2205,27 +2204,47 @@
 .ar__kw-fallback-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
   user-select: none;
-  padding: 6px 8px;
+  padding: 8px 12px;
   margin: 0 -8px;
-  border-radius: var(--d-radius-sm);
-  transition: background 0.15s;
+  border-radius: var(--d-radius-md);
+  border: 1px solid var(--d-border);
+  background: rgba(0, 0, 0, 0.02);
+  transition: background 0.15s, border-color 0.15s;
 }
 
 .ar__kw-fallback-header:hover {
   background: rgba(0, 0, 0, 0.04);
+  border-color: var(--d-border-strong);
 }
 
 .ar__kw-fallback-header:active {
   background: rgba(0, 0, 0, 0.08);
 }
 
+.ar__kw-fallback-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--d-accent);
+  color: #fff;
+  flex-shrink: 0;
+  transition: transform 0.2s, background 0.15s;
+}
+
+.ar__kw-fallback-toggle--expanded {
+  transform: rotate(90deg);
+}
+
 .ar__kw-fallback-label {
   font-size: 13px;
-  font-weight: 500;
-  color: var(--d-text-secondary);
+  font-weight: 600;
+  color: var(--d-text-primary);
   white-space: nowrap;
 }
 
@@ -2236,18 +2255,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.ar__kw-fallback-arrow {
-  font-size: 16px;
-  color: var(--d-text-secondary);
-  transition: transform 0.2s;
-  flex-shrink: 0;
-  font-weight: 600;
-}
-
-.ar__kw-fallback-arrow--collapsed {
-  transform: rotate(-90deg);
 }
 
 .ar__kw-fallback-body {
@@ -2440,30 +2447,52 @@
 .ar__kw-replies {
   display: flex;
   flex-direction: column;
-  gap: var(--d-space-3);
+  gap: 8px;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
+}
+
+.ar__kw-replies::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ar__kw-replies::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ar__kw-replies::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 2px;
 }
 
 .ar__kw-reply {
-  border: 1px solid var(--d-border-strong);
+  flex-shrink: 0;
+  border: 1px solid var(--d-border);
   border-radius: var(--d-radius-md);
-  background: rgba(0, 0, 0, 0.02);
+  background: var(--d-surface-solid);
   overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.ar__kw-reply:hover {
+  border-color: var(--d-border-strong);
 }
 
 .ar__kw-reply-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px var(--d-space-3);
-  border-bottom: 1px solid var(--d-border);
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .ar__kw-reply-num {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 500;
   color: var(--d-text-tertiary);
 }
 
@@ -2471,30 +2500,36 @@
   background: none;
   color: var(--d-danger);
   border: none;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.ar__kw-reply-del:hover {
+  opacity: 1;
 }
 
 .ar__kw-reply-body {
-  padding: var(--d-space-3);
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: var(--d-space-3);
+  gap: 6px;
 }
 
 .ar__kw-reply-img {
   position: relative;
-  max-width: 200px;
+  display: inline-block;
+  max-width: 180px;
 }
 
 .ar__kw-reply-img img {
   width: 100%;
   display: block;
   border-radius: var(--d-radius-sm);
-  border: 1px solid var(--d-border-strong);
-  max-height: 120px;
+  max-height: 100px;
   object-fit: contain;
-  background: #fff;
+  background: #fafafa;
 }
 
 .ar__kw-reply-img-del {
@@ -2561,7 +2596,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .ar__kw-back {

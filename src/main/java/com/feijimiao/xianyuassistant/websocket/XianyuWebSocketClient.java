@@ -840,6 +840,118 @@ public class XianyuWebSocketClient extends WebSocketClient {
             log.error("{}❌ 发送图片消息失败: cid={}, toId={}", logPrefix(), cid, toId, e);
         }
     }
+
+    /**
+     * 发送图片消息并等待服务端响应确认
+     */
+    public boolean sendImageMessageWithResult(String cid, String toId, String imageUrl, int width, int height) {
+        if (!isConnected) {
+            log.error("{}WebSocket未连接，无法发送图片消息", logPrefix());
+            return false;
+        }
+
+        try {
+            String cleanCid = cid.replace("@goofish", "");
+            String cleanToId = toId.replace("@goofish", "");
+
+            log.info("{}准备发送图片消息(等待结果): cid={}, toId={}, url={}, size={}x{}",
+                    logPrefix(), cleanCid, cleanToId, imageUrl, width, height);
+
+            Map<String, Object> imageContent = new HashMap<>();
+            imageContent.put("contentType", 2);
+
+            Map<String, Object> pics = new HashMap<>();
+            pics.put("height", height);
+            pics.put("type", 0);
+            pics.put("url", imageUrl);
+            pics.put("width", width);
+
+            Map<String, Object> imageData = new HashMap<>();
+            imageData.put("pics", java.util.Collections.singletonList(pics));
+            imageContent.put("image", imageData);
+
+            String imageJson = objectMapper.writeValueAsString(imageContent);
+            String imageBase64 = java.util.Base64.getEncoder().encodeToString(imageJson.getBytes("UTF-8"));
+
+            Map<String, Object> messageBody = new HashMap<>();
+            messageBody.put("uuid", generateUuid());
+            messageBody.put("cid", cleanCid + "@goofish");
+            messageBody.put("conversationType", 1);
+
+            Map<String, Object> content = new HashMap<>();
+            content.put("contentType", 101);
+            Map<String, Object> custom = new HashMap<>();
+            custom.put("type", 1);
+            custom.put("data", imageBase64);
+            content.put("custom", custom);
+            messageBody.put("content", content);
+
+            messageBody.put("redPointPolicy", 0);
+
+            Map<String, String> extension = new HashMap<>();
+            extension.put("extJson", "{}");
+            messageBody.put("extension", extension);
+
+            Map<String, String> ctx = new HashMap<>();
+            ctx.put("appVersion", "1.0");
+            ctx.put("platform", "web");
+            messageBody.put("ctx", ctx);
+
+            messageBody.put("mtags", new HashMap<>());
+            messageBody.put("msgReadStatusSetting", 1);
+
+            Map<String, Object> receivers = new HashMap<>();
+            java.util.List<String> actualReceivers = new java.util.ArrayList<>();
+            actualReceivers.add(cleanToId + "@goofish");
+            if (myUserId != null) {
+                actualReceivers.add(myUserId + "@goofish");
+            }
+            receivers.put("actualReceivers", actualReceivers);
+
+            Map<String, Object> message = new HashMap<>();
+            message.put("lwp", "/r/MessageSend/sendByReceiverScope");
+
+            String mid = generateMid();
+            Map<String, String> headers = new HashMap<>();
+            headers.put("mid", mid);
+            if (sessionId != null) {
+                headers.put("sid", sessionId);
+            }
+            message.put("headers", headers);
+
+            java.util.List<Object> body = new java.util.ArrayList<>();
+            body.add(messageBody);
+            body.add(receivers);
+            message.put("body", body);
+
+            CompletableFuture<Integer> future = new CompletableFuture<>();
+            pendingResponses.put(mid, future);
+
+            String messageJson = objectMapper.writeValueAsString(message);
+            send(messageJson);
+            log.info("{}图片消息已发送，等待响应: mid={}", logPrefix(), mid);
+
+            try {
+                Integer code = future.get(10, TimeUnit.SECONDS);
+                boolean success = code != null && code == 200;
+                if (success) {
+                    log.info("{}✅ 图片消息发送成功(服务端返回200): mid={}", logPrefix(), mid);
+                } else {
+                    log.error("{}❌ 图片消息发送失败(服务端返回{}): mid={}", logPrefix(), code, mid);
+                }
+                return success;
+            } catch (java.util.concurrent.TimeoutException e) {
+                log.warn("{}图片消息发送超时(10秒)，视为发送成功: mid={}", logPrefix(), mid);
+                return true;
+            } finally {
+                pendingResponses.remove(mid);
+            }
+
+        } catch (Exception e) {
+            log.error("{}❌ 发送图片消息失败: cid={}, toId={}", logPrefix(), cid, toId, e);
+            return false;
+        }
+    }
     
     /**
      * 生成消息ID (mid)

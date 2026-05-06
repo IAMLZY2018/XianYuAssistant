@@ -90,7 +90,7 @@ const {
   handleSyncDetailToFixedMaterial,
   toggleFixedMaterialExpanded,
   keywordRules, newKeyword, newContentText, newContentImage,
-  toggleKeywordReply, handleAddKeyword, handleDeleteRule, handleAddContent, handleDeleteContent,
+  toggleKeywordReply, toggleHumanIntervention, handleAddKeyword, handleDeleteRule, handleAddContent, handleDeleteContent,
   replyModeTab, selectedKeywordRuleId, selectedKeywordRule,
   handleContentTextChange, handleContentImageUpload, handleContentImageDelete,
   showAddKeywordInput,
@@ -348,6 +348,25 @@ onMounted(() => {
             </div>
           </div>
 
+          <!-- Human Intervention Config (shared) -->
+          <div class="ar__config-section">
+            <div class="ar__toggle-row">
+              <div class="ar__toggle-info">
+                <div class="ar__toggle-label">人工干预</div>
+                <div class="ar__toggle-hint">开启后，若卖家在延时期间已回复买家，则取消本次自动回复</div>
+              </div>
+              <label class="ar__switch">
+                <input
+                  type="checkbox"
+                  :checked="selectedGoods.humanInterventionOn === 1"
+                  @change="toggleHumanIntervention(($event.target as HTMLInputElement).checked)"
+                />
+                <span class="ar__switch-track"></span>
+                <span class="ar__switch-thumb"></span>
+              </label>
+            </div>
+          </div>
+
           <!-- AI Reply Config -->
           <div v-if="replyModeTab === 'ai'" class="ar__config-section">
             <div class="ar__toggle-row">
@@ -408,9 +427,11 @@ onMounted(() => {
 
             <div class="ar__kw-fallback">
               <div class="ar__kw-fallback-header" @click="fallbackExpanded = !fallbackExpanded">
+                <span class="ar__kw-fallback-toggle" :class="{ 'ar__kw-fallback-toggle--expanded': fallbackExpanded }">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
                 <span class="ar__kw-fallback-label">未匹配到关键词时回复</span>
                 <span v-if="!fallbackExpanded && (fallbackText || fallbackImageUrls.length)" class="ar__kw-fallback-summary">{{ fallbackText || `已配置${fallbackImageUrls.length}张图片` }}</span>
-                <span class="ar__kw-fallback-arrow" :class="{ 'ar__kw-fallback-arrow--collapsed': !fallbackExpanded }">›</span>
               </div>
               <div v-if="fallbackExpanded" class="ar__kw-fallback-body">
                 <div class="ar__kw-fallback-left">
@@ -553,7 +574,7 @@ onMounted(() => {
                         <button class="ar__dialog-img-del" @click="addReplyImageUrls.splice(idx, 1)">×</button>
                       </div>
                     </div>
-                  <div :class="addReplyImageUrls.length ? 'ar__kw-upload-sm' : 'ar__kw-upload-lg'">
+                  <div v-if="addReplyImageUrls.length === 0" class="ar__kw-upload-lg">
                     <ImageUploader v-if="selectedAccountId" :account-id="selectedAccountId" @update:model-value="(v: string) => v && addReplyImageUrls.push(v)" />
                   </div>
                   </div>

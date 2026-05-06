@@ -44,19 +44,18 @@ public class KeywordReplyStrategy implements ReplyStrategy {
             return ReplyResult.fail();
         }
 
+        KeywordReplyRuleBO.KeywordReplyContentBO selected = allContents.get(new Random().nextInt(allContents.size()));
         List<ReplyResult.ReplyItem> items = new ArrayList<>();
-        for (KeywordReplyRuleBO.KeywordReplyContentBO content : allContents) {
-            String text = content.getReplyText();
-            String image = content.getReplyImageUrl();
-            boolean hasText = text != null && !text.trim().isEmpty();
-            boolean hasImage = image != null && !image.trim().isEmpty();
-            if (hasText && hasImage) {
-                items.add(ReplyResult.ReplyItem.textAndImage(text, image, REPLY_TYPE_KEYWORD));
-            } else if (hasText) {
-                items.add(ReplyResult.ReplyItem.text(text, REPLY_TYPE_KEYWORD));
-            } else if (hasImage) {
-                items.add(ReplyResult.ReplyItem.image(image, REPLY_TYPE_KEYWORD));
-            }
+        String text = selected.getReplyText();
+        String image = selected.getReplyImageUrl();
+        boolean hasText = text != null && !text.trim().isEmpty();
+        boolean hasImage = image != null && !image.trim().isEmpty();
+        if (hasText && hasImage) {
+            items.add(ReplyResult.ReplyItem.textAndImage(text, image, REPLY_TYPE_KEYWORD));
+        } else if (hasText) {
+            items.add(ReplyResult.ReplyItem.text(text, REPLY_TYPE_KEYWORD));
+        } else if (hasImage) {
+            items.add(ReplyResult.ReplyItem.image(image, REPLY_TYPE_KEYWORD));
         }
 
         if (items.isEmpty()) {

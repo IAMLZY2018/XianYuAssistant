@@ -134,8 +134,11 @@ export function useOperationLog() {
   }
 
   // Format time
-  const formatTime = (timestamp: number) => {
-    const date = new Date(timestamp)
+  const formatTime = (timestamp: string | number) => {
+    const ts = Number(timestamp)
+    if (!ts || isNaN(ts)) return '-'
+    const date = new Date(ts)
+    if (isNaN(date.getTime())) return '-'
     return date.toLocaleString('zh-CN', {
       year: 'numeric',
       month: '2-digit',

@@ -348,10 +348,14 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             String cid = sId.replace("@goofish", "");
             String toId = cid;
 
-            sendDeliveryImages(accountId, xyGoodsId, cid, toId, deliveryConfig, needHumanLikeDelay);
-
             log.info("【账号{}】准备发送发货文本: content长度={}, deliveryMode={}", accountId, content.length(), deliveryMode);
             boolean success = webSocketService.sendMessage(accountId, cid, toId, content);
+
+            if (success && needHumanLikeDelay) {
+                HumanLikeDelayUtils.thinkingDelay();
+            }
+
+            sendDeliveryImages(accountId, xyGoodsId, cid, toId, deliveryConfig, needHumanLikeDelay);
 
             if (success) {
                 log.info("【账号{}】✅ 自动发货成功: recordId={}, xyGoodsId={}, deliveryMode={}", accountId, recordId, xyGoodsId, deliveryMode);

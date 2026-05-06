@@ -17,7 +17,7 @@ export interface ChatMessage {
   reminderUrl: string;
   xyGoodsId: string;
   completeMsg: string;
-  messageTime: number;
+  messageTime: string | number;
   createTime: string;
 }
 

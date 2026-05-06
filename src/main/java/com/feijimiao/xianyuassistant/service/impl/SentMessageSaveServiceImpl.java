@@ -35,6 +35,9 @@ public class SentMessageSaveServiceImpl implements SentMessageSaveService {
 
     /** 图片回复 contentType */
     private static final int CONTENT_TYPE_IMAGE_REPLY = 997;
+
+    /** AI自动回复图片 contentType */
+    private static final int CONTENT_TYPE_AI_IMAGE_REPLY = 887;
     
     @Override
     @Async
@@ -55,6 +58,12 @@ public class SentMessageSaveServiceImpl implements SentMessageSaveService {
     @Async
     public void saveManualImageReply(Long accountId, String cid, String toId, String imageUrl, String xyGoodsId) {
         saveSentMessage(accountId, cid, toId, "[图片]" + imageUrl, CONTENT_TYPE_IMAGE_REPLY, "图片回复", xyGoodsId);
+    }
+
+    @Override
+    @Async
+    public void saveAiImageReply(Long accountId, String cid, String toId, String imageUrl, String xyGoodsId) {
+        saveSentMessage(accountId, cid, toId, "[图片]" + imageUrl, CONTENT_TYPE_AI_IMAGE_REPLY, "自动回复", xyGoodsId);
     }
     
     /**

@@ -215,11 +215,12 @@ public class AutoReplyServiceImpl implements AutoReplyService {
             
             for (ReplyStrategy.ReplyResult.ReplyItem item : replyResult.getItems()) {
                 if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
-                    boolean imageSent = webSocketService.sendImageMessage(accountId, cid, toId, item.getImageUrl(), 0, 0);
+                    boolean imageSent = webSocketService.sendImageMessageWithResult(accountId, cid, toId, item.getImageUrl(), 0, 0);
                     if (!imageSent) {
                         log.warn("【账号{}】发送回复图片失败: {}", accountId, item.getImageUrl());
                     } else {
                         sendSuccess = true;
+                        sentMessageSaveService.saveAiImageReply(accountId, cid, toId, item.getImageUrl(), xyGoodsId);
                     }
                 }
                 if (item.getTextContent() != null && !item.getTextContent().trim().isEmpty()) {

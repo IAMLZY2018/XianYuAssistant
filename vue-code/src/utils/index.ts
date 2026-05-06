@@ -32,7 +32,10 @@ export function showConfirm(message: string, title = '确认') {
 // 格式化时间
 export function formatTime(timestamp: number | string | Date): string {
   if (!timestamp) return '-'
-  const date = new Date(timestamp)
+  const ts = typeof timestamp === 'string' || typeof timestamp === 'number' ? Number(timestamp) : timestamp
+  if (typeof ts === 'number' && isNaN(ts)) return '-'
+  const date = new Date(ts)
+  if (isNaN(date.getTime())) return '-'
   return date.toLocaleString('zh-CN', {
     year: 'numeric',
     month: '2-digit',

@@ -5,7 +5,7 @@ import { getCurrentUser, changePassword } from '@/api/system'
 import { logout } from '@/api/auth'
 import { getSetting, saveSetting, testEmail } from '@/api/setting'
 import { getAIStatus } from '@/api/ai'
-import { getBackupModules, exportBackup, importBackup, type BackupModule } from '@/api/backup'
+import { getBackupModules, exportBackup, importBackup, getLogDates, downloadLog, type BackupModule } from '@/api/backup'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { clearAuthToken } from '@/utils/request'
 
@@ -545,6 +545,11 @@ const backupImporting = ref(false)
 const backupExportProgress = ref(0)
 const backupImportProgress = ref(0)
 
+const logDates = ref<string[]>([])
+const logSelectedDate = ref('')
+const logDownloading = ref(false)
+const logDatesLoaded = ref(false)
+
 async function loadBackupModules() {
   if (backupLoaded.value) return
   try {
@@ -556,6 +561,42 @@ async function loadBackupModules() {
     }
   } catch (e) {
     console.error('获取备份模块列表失败:', e)
+  }
+}
+
+async function loadLogDates() {
+  if (logDatesLoaded.value) return
+  try {
+    const res = await getLogDates()
+    if (res.code === 200 && res.data) {
+      logDates.value = res.data
+      const today = new Date().toISOString().slice(0, 10)
+      logSelectedDate.value = res.data.includes(today) ? today : (res.data.length > 0 ? res.data[res.data.length - 1]! : '')
+      logDatesLoaded.value = true
+    }
+  } catch (e) {
+    console.error('获取日志日期列表失败:', e)
+  }
+}
+
+async function handleDownloadLog() {
+  if (!logSelectedDate.value) return
+  logDownloading.value = true
+  try {
+    const blob = await downloadLog(logSelectedDate.value)
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `logs-${logSelectedDate.value}.zip`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    console.error('下载日志失败:', e)
+    ElMessage.error('下载日志失败')
+  } finally {
+    setTimeout(() => { logDownloading.value = false }, 2000)
   }
 }
 
@@ -693,6 +734,7 @@ async function handleImportBackup() {
 
 function handleBackupMenuEnter() {
   loadBackupModules()
+  loadLogDates()
 }
 </script>
 
@@ -1307,6 +1349,23 @@ function handleBackupMenuEnter() {
               @click="handleImportBackup"
             >
               {{ backupImporting ? '导入中...' : '导入恢复' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="settings__section">
+          <div class="settings__section-title">日志打包下载</div>
+          <p class="settings__desc">选择日期，将该天的日志文件打包为 ZIP 下载</p>
+          <div class="settings__log-pack-row">
+            <select v-model="logSelectedDate" class="settings__log-select">
+              <option v-for="d in logDates" :key="d" :value="d">{{ d }}</option>
+            </select>
+            <button
+              class="settings__btn settings__btn--primary"
+              :disabled="!logSelectedDate || logDownloading"
+              @click="handleDownloadLog"
+            >
+              {{ logDownloading ? '打包中...' : '下载日志' }}
             </button>
           </div>
         </div>
@@ -2257,6 +2316,32 @@ function handleBackupMenuEnter() {
 .settings__import-file-hint {
   font-size: 13px;
   color: #86868b;
+}
+
+.settings__log-pack-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.settings__log-select {
+  flex: 1;
+  max-width: 200px;
+  padding: 8px 12px;
+  font-size: 13px;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  background: #fff;
+  color: #1d1d1f;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.settings__log-select:focus {
+  border-color: #007aff;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.12);
 }
 
 @media (max-width: 768px) {

@@ -59,16 +59,16 @@ const showContext = (msg: ChatMessage) => {
 // These will be injected from parent via provide/inject or props
 // For simplicity, we define them here and accept as part of the interface
 const getContentTypeColor = (contentType: number, isUser: boolean) => {
-  if (contentType === 999) return '#5856d6'
-  if (contentType === 888) return '#af52de'
+  if (contentType === 999 || contentType === 997) return '#5856d6'
+  if (contentType === 888 || contentType === 887) return '#af52de'
   if (!isUser) return '#007aff'
   if (contentType === 1) return '#34c759'
   return '#ff9500'
 }
 
 const getContentTypeBg = (contentType: number, isUser: boolean) => {
-  if (contentType === 999) return 'rgba(88, 86, 214, 0.1)'
-  if (contentType === 888) return 'rgba(175, 82, 222, 0.1)'
+  if (contentType === 999 || contentType === 997) return 'rgba(88, 86, 214, 0.1)'
+  if (contentType === 888 || contentType === 887) return 'rgba(175, 82, 222, 0.1)'
   if (!isUser) return 'rgba(0, 122, 255, 0.1)'
   if (contentType === 1) return 'rgba(52, 199, 89, 0.1)'
   return 'rgba(255, 149, 0, 0.1)'
@@ -76,21 +76,26 @@ const getContentTypeBg = (contentType: number, isUser: boolean) => {
 
 const getContentTypeText = (contentType: number, isUser: boolean) => {
   if (contentType === 999) return '手动回复'
+  if (contentType === 997) return '图片回复'
   if (contentType === 888) return '自动回复'
+  if (contentType === 887) return '自动回复图片'
   if (!isUser) return '我发送的'
   if (contentType === 1) return '用户消息'
   return `系统消息`
 }
 
-const formatMessageTime = (timestamp: number) => {
-  if (!timestamp) return '-'
-  const date = new Date(timestamp)
+const formatMessageTime = (timestamp: string | number) => {
+  const ts = Number(timestamp)
+  if (!ts || isNaN(ts)) return '-'
+  const date = new Date(ts)
+  if (isNaN(date.getTime())) return '-'
   const now = new Date()
   const diff = now.getTime() - date.getTime()
   if (diff < 60000) return '刚刚'
   if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
   return date.toLocaleString('zh-CN', {
+    year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',

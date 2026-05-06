@@ -135,10 +135,13 @@ watch(() => props.visible, (newVal) => {
   }
 })
 
-const formatTime = (timestamp: number) => {
-  if (!timestamp) return ''
-  const date = new Date(timestamp)
+const formatTime = (timestamp: string | number) => {
+  const ts = Number(timestamp)
+  if (!ts || isNaN(ts)) return ''
+  const date = new Date(ts)
+  if (isNaN(date.getTime())) return ''
   return date.toLocaleString('zh-CN', {
+    year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
@@ -151,7 +154,7 @@ const isUserMessage = (msg: ChatMessage) => {
 }
 
 const isMyMessage = (msg: ChatMessage) => {
-  if (msg.contentType === 999 || msg.contentType === 888) {
+  if (msg.contentType === 999 || msg.contentType === 997 || msg.contentType === 888 || msg.contentType === 887) {
     return true
   }
   return msg.contentType === 1 && msg.senderUserId === props.currentAccountUnb
@@ -163,7 +166,9 @@ const isSystemMessage = (msg: ChatMessage) => {
 
 const getMessageType = (msg: ChatMessage) => {
   if (msg.contentType === 999) return '手动回复'
+  if (msg.contentType === 997) return '图片回复'
   if (msg.contentType === 888) return 'AI回复'
+  if (msg.contentType === 887) return '自动回复图片'
   return null
 }
 

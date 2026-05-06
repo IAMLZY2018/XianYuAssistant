@@ -15,6 +15,8 @@ public class ItemWithConfigDTO {
     private Integer xianyuAutoReplyContextOn;
     
     private Integer xianyuKeywordReplyOn;
+
+    private Integer humanInterventionOn;
     
     private Integer autoDeliveryType;
     
