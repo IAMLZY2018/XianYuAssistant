@@ -2,6 +2,7 @@
 import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { getGoodsDetail, deleteItem } from '@/api/goods'
+import { getGoodsSkuDetail, type GoodsSku, type GoodsSkuProperty } from '@/api/auto-delivery-config'
 import { showSuccess, showError, showConfirm } from '@/utils'
 import { getGoodsStatusText, formatPrice, formatTime } from '@/utils'
 import type { GoodsItemWithConfig } from '@/api/goods'
@@ -35,11 +36,31 @@ const loading = ref(false)
 const goodsDetail = ref<GoodsItemWithConfig | null>(null)
 const currentImageIndex = ref(0)
 const images = ref<string[]>([])
+const skuList = ref<GoodsSku[]>([])
+const skuPropertyList = ref<GoodsSkuProperty[]>([])
 
 const isMobile = ref(false)
 const checkScreenSize = () => {
   isMobile.value = window.innerWidth < 768
 }
+
+const skuPropertyGroups = computed(() => {
+  const groups = new Map<number, { propertyId: number; propertyText: string; propertySortOrder: number; values: GoodsSkuProperty[] }>()
+  for (const prop of skuPropertyList.value) {
+    if (!groups.has(prop.propertyId)) {
+      groups.set(prop.propertyId, {
+        propertyId: prop.propertyId,
+        propertyText: prop.propertyText,
+        propertySortOrder: prop.propertySortOrder,
+        values: []
+      })
+    }
+    groups.get(prop.propertyId)!.values.push(prop)
+  }
+  return Array.from(groups.values()).sort((a, b) => a.propertySortOrder - b.propertySortOrder)
+})
+
+const showSkuDetail = ref(false)
 
 // 状态颜色
 const getStatusColor = (status: number) => {
@@ -83,6 +104,20 @@ const loadDetail = async () => {
         images.value = [goodsDetail.value.item.coverPic]
       }
       currentImageIndex.value = 0
+
+      try {
+        const skuRes = await getGoodsSkuDetail(props.goodsId)
+        if (skuRes.code === 200 || skuRes.code === 0) {
+          skuList.value = skuRes.data?.skuList || []
+          skuPropertyList.value = skuRes.data?.propertyList || []
+        } else {
+          skuList.value = []
+          skuPropertyList.value = []
+        }
+      } catch {
+        skuList.value = []
+        skuPropertyList.value = []
+      }
     } else {
       throw new Error(response.msg || '获取商品详情失败')
     }
@@ -266,6 +301,26 @@ onBeforeUnmount(() => {
               <div class="detail-info__desc">{{ goodsDetail.item.detailInfo }}</div>
             </div>
 
+            <!-- SKU Section -->
+            <div v-if="skuList.length > 0" class="detail-info__sku-section">
+              <div class="detail-info__section-title">
+                <span>商品规格 ({{ skuList.length }})</span>
+                <button class="detail-info__sku-detail-btn" @click="showSkuDetail = true">查看详情</button>
+              </div>
+              <div v-if="skuPropertyGroups.length > 0" class="detail-info__sku-dims">
+                <div v-for="group in skuPropertyGroups" :key="group.propertyId" class="detail-info__sku-dim">
+                  <div class="detail-info__sku-dim-label">{{ group.propertyText }}</div>
+                  <div class="detail-info__sku-dim-values">
+                    <span
+                      v-for="val in group.values"
+                      :key="val.valueId"
+                      class="detail-info__sku-dim-tag"
+                    >{{ val.valueText }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Config -->
             <div class="detail-info__config">
               <div class="detail-info__config-item">
@@ -421,6 +476,25 @@ onBeforeUnmount(() => {
                   <div class="detail-info__desc">{{ goodsDetail.item.detailInfo }}</div>
                 </div>
 
+                <div v-if="skuList.length > 0" class="detail-info__sku-section">
+                  <div class="detail-info__section-title">
+                    <span>商品规格 ({{ skuList.length }})</span>
+                    <button class="detail-info__sku-detail-btn" @click="showSkuDetail = true">查看详情</button>
+                  </div>
+                  <div v-if="skuPropertyGroups.length > 0" class="detail-info__sku-dims">
+                    <div v-for="group in skuPropertyGroups" :key="group.propertyId" class="detail-info__sku-dim">
+                      <div class="detail-info__sku-dim-label">{{ group.propertyText }}</div>
+                      <div class="detail-info__sku-dim-values">
+                        <span
+                          v-for="val in group.values"
+                          :key="val.valueId"
+                          class="detail-info__sku-dim-tag"
+                        >{{ val.valueText }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div class="detail-info__config">
                   <div class="detail-info__config-item">
                     <div class="detail-info__config-left">
@@ -496,6 +570,31 @@ onBeforeUnmount(() => {
       </div>
     </div>
   </Transition>
+
+  <!-- SKU Detail Popup -->
+  <Teleport to="body">
+    <Transition name="overlay-fade">
+      <div v-if="showSkuDetail" class="sku-detail-overlay" @click="showSkuDetail = false">
+        <div class="sku-detail-popup" @click.stop>
+          <div class="sku-detail-popup__header">
+            <span>规格详情</span>
+            <button class="sku-detail-popup__close" @click="showSkuDetail = false">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <div class="sku-detail-popup__body">
+            <div v-for="sku in skuList" :key="sku.skuId || sku.id" class="sku-detail-popup__item">
+              <span class="sku-detail-popup__name">{{ sku.propertyText || sku.valueText || `规格${sku.skuId}` }}</span>
+              <span class="sku-detail-popup__price">¥{{ (sku.price / 100).toFixed(2) }}</span>
+              <span class="sku-detail-popup__qty">库存: {{ sku.quantity }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -900,6 +999,8 @@ onBeforeUnmount(() => {
 }
 
 .detail-info__section-title {
+  display: flex;
+  align-items: center;
   font-size: 11px;
   font-weight: 600;
   color: var(--d-text-2);
@@ -926,6 +1027,175 @@ onBeforeUnmount(() => {
 .detail-info__desc::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.08);
   border-radius: 2px;
+}
+
+.detail-info__sku-section {
+  margin-bottom: 12px;
+}
+
+.detail-info__sku-dims {
+  margin-top: 6px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-info__sku-dim {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-info__sku-dim-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--d-text-2);
+}
+
+.detail-info__sku-dim-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.detail-info__sku-dim-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--d-text-1);
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 14px;
+  border: 1px solid var(--d-border);
+  white-space: nowrap;
+}
+
+.detail-info__sku-detail-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--d-accent);
+  background: rgba(0, 122, 255, 0.08);
+  border: none;
+  border-radius: 11px;
+  cursor: pointer;
+  transition: all var(--d-ease);
+  margin-left: 8px;
+}
+
+@media (hover: hover) {
+  .detail-info__sku-detail-btn:hover {
+    background: rgba(0, 122, 255, 0.16);
+  }
+}
+
+.sku-detail-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sku-detail-popup {
+  width: 420px;
+  max-width: 92vw;
+  max-height: 80vh;
+  background: #fff;
+  border-radius: var(--d-r-lg);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: panel-in 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.sku-detail-popup__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--d-border);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--d-text-1);
+  flex-shrink: 0;
+}
+
+.sku-detail-popup__close {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--d-text-2);
+  cursor: pointer;
+  transition: all var(--d-ease);
+}
+
+.sku-detail-popup__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 18px 18px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+}
+
+.sku-detail-popup__body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sku-detail-popup__body::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+}
+
+.sku-detail-popup__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.03);
+  font-size: 13px;
+}
+
+.sku-detail-popup__item:not(:last-child) {
+  margin-bottom: 6px;
+}
+
+.sku-detail-popup__name {
+  flex: 1;
+  font-weight: 500;
+  color: var(--d-text-1);
+}
+
+.sku-detail-popup__price {
+  font-weight: 600;
+  color: var(--d-price);
+  font-variant-numeric: tabular-nums;
+}
+
+.sku-detail-popup__qty {
+  font-size: 12px;
+  color: var(--d-text-3);
 }
 
 .detail-info__config {

@@ -5,9 +5,12 @@ import { getGoodsList, updateAutoDeliveryStatus, updateAutoConfirmShipment } fro
 import {
   getAutoDeliveryConfig,
   saveOrUpdateAutoDeliveryConfig,
+  getAutoDeliveryConfigsByGoodsId,
+  getGoodsSkuList,
   type AutoDeliveryConfig,
   type SaveAutoDeliveryConfigReq,
-  type GetAutoDeliveryConfigReq
+  type GetAutoDeliveryConfigReq,
+  type GoodsSku
 } from '@/api/auto-delivery-config'
 import {
   getAutoDeliveryRecords,
@@ -57,17 +60,18 @@ export function useAutoDelivery() {
   const selectedGoods = ref<GoodsItemWithConfig | null>(null)
   const currentConfig = ref<AutoDeliveryConfig | null>(null)
 
-  // Goods list scroll loading
+  const skuList = ref<GoodsSku[]>([])
+  const selectedSkuId = ref<string | null>(null)
+  const skuConfigs = ref<Map<string, AutoDeliveryConfig>>(new Map())
+
   const goodsCurrentPage = ref(1)
   const goodsTotal = ref(0)
   const goodsLoading = ref(false)
   const goodsListRef = ref<HTMLElement | null>(null)
 
-  // Goods detail dialog
   const detailDialogVisible = ref(false)
   const selectedGoodsId = ref<string>('')
 
-  // Config form
   const configForm = ref({
     deliveryMode: 1,
     autoDeliveryContent: '',
@@ -84,18 +88,17 @@ export function useAutoDelivery() {
     set: (val: string) => { configForm.value.kamiConfigIds = val }
   })
 
-  // Delivery records
+  const hasMultipleSku = computed(() => skuList.value.length > 1)
+
   const recordsLoading = ref(false)
   const deliveryRecords = ref<any[]>([])
   const recordsTotal = ref(0)
   const recordsPageNum = ref(1)
   const recordsPageSize = ref(20)
 
-  // Responsive
   const isMobile = ref(false)
   const mobileView = ref<'goods' | 'config'>('goods')
 
-  // Confirm dialog
   const confirmDialog = ref({
     visible: false,
     title: '',
@@ -104,7 +107,6 @@ export function useAutoDelivery() {
     onConfirm: () => {}
   })
 
-  // API hint panel
   const apiHintUrl = computed(() => '/api/order/list')
 
   const apiHintParams = computed(() => {
@@ -132,59 +134,35 @@ export function useAutoDelivery() {
 
   const confirmShipmentParamsJson = computed(() => JSON.stringify(confirmShipmentParams.value, null, 2))
 
-  const copyApiUrl = () => {
-    copyToClipboard(apiHintUrl.value)
-  }
+  const copyApiUrl = () => { copyToClipboard(apiHintUrl.value) }
+  const copyApiParams = () => { copyToClipboard(apiHintParamsJson.value) }
+  const copyConfirmShipmentUrl = () => { copyToClipboard(confirmShipmentUrl.value) }
+  const copyConfirmShipmentParams = () => { copyToClipboard(confirmShipmentParamsJson.value) }
 
-  const copyApiParams = () => {
-    copyToClipboard(apiHintParamsJson.value)
-  }
-
-  const copyConfirmShipmentUrl = () => {
-    copyToClipboard(confirmShipmentUrl.value)
-  }
-
-  const copyConfirmShipmentParams = () => {
-    copyToClipboard(confirmShipmentParamsJson.value)
-  }
-
-  // Check screen size
   const checkScreenSize = () => {
     isMobile.value = window.innerWidth < 768
-    if (!isMobile.value) {
-      mobileView.value = 'goods'
-    }
+    if (!isMobile.value) { mobileView.value = 'goods' }
   }
 
-  // Mobile go back
-  const goBackToGoods = () => {
-    mobileView.value = 'goods'
-  }
+  const goBackToGoods = () => { mobileView.value = 'goods' }
 
-  // Format time
   const formatTime = (time: string) => {
     if (!time) return '-'
     return time.replace('T', ' ').substring(0, 19)
   }
 
-  // Format price
-  const formatPrice = (price: string) => {
-    return price ? `¥${price}` : '-'
-  }
+  const formatPrice = (price: string) => { return price ? `¥${price}` : '-' }
 
-  // Get status text
   const getStatusText = (status: number) => {
     const map: Record<number, string> = { 0: '在售', 1: '已下架', 2: '已售出' }
     return map[status] || '未知'
   }
 
-  // Get status class
   const getStatusClass = (status: number) => {
     const map: Record<number, string> = { 0: 'on-sale', 1: 'off-shelf', 2: 'sold' }
     return map[status] || 'off-shelf'
   }
 
-  // Get record status
   const getRecordStatusText = (state: number) => {
     if (state === 1) return '成功'
     if (state === 0) return '待发货'
@@ -197,7 +175,6 @@ export function useAutoDelivery() {
     return 'fail'
   }
 
-  // Load accounts
   const loadAccounts = async () => {
     try {
       const response = await getAccountList()
@@ -224,7 +201,6 @@ export function useAutoDelivery() {
     }
   }
 
-  // Load goods list
   const loadGoods = async () => {
     if (!selectedAccountId.value) {
       showInfo('请先选择账号')
@@ -273,7 +249,6 @@ export function useAutoDelivery() {
     }
   }
 
-  // Check and load more
   const checkAndLoadMore = () => {
     nextTick(() => {
       if (!goodsListRef.value) return
@@ -285,7 +260,6 @@ export function useAutoDelivery() {
     })
   }
 
-  // Handle goods scroll
   const handleGoodsScroll = () => {
     if (!goodsListRef.value || goodsLoading.value) return
     const { scrollTop, scrollHeight, clientHeight } = goodsListRef.value
@@ -297,7 +271,6 @@ export function useAutoDelivery() {
     }
   }
 
-  // Account change
   const handleAccountChange = () => {
     selectedGoods.value = null
     currentConfig.value = null
@@ -305,17 +278,72 @@ export function useAutoDelivery() {
     loadGoods()
   }
 
-  // Select goods
+  const loadSkuList = async () => {
+    if (!selectedGoods.value) {
+      skuList.value = []
+      return
+    }
+    try {
+      const res = await getGoodsSkuList(selectedGoods.value.item.xyGoodId)
+      if (res.code === 200 || res.code === 0) {
+        skuList.value = res.data || []
+      } else {
+        skuList.value = []
+      }
+    } catch {
+      skuList.value = []
+    }
+  }
+
+  const loadAllSkuConfigs = async () => {
+    if (!selectedGoods.value || !selectedAccountId.value) {
+      skuConfigs.value = new Map()
+      return
+    }
+    try {
+      const res = await getAutoDeliveryConfigsByGoodsId({
+        xianyuAccountId: selectedAccountId.value,
+        xyGoodsId: selectedGoods.value.item.xyGoodId
+      })
+      if (res.code === 200 || res.code === 0) {
+        const configs = res.data || []
+        const map = new Map<string, AutoDeliveryConfig>()
+        configs.forEach(c => {
+          const key = c.skuId || ''
+          map.set(key, c)
+        })
+        skuConfigs.value = map
+      } else {
+        skuConfigs.value = new Map()
+      }
+    } catch {
+      skuConfigs.value = new Map()
+    }
+  }
+
   const selectGoods = async (goods: GoodsItemWithConfig) => {
     selectedGoods.value = goods
     recordsPageNum.value = 1
+
+    await loadSkuList()
+
+    if (skuList.value.length > 1) {
+      selectedSkuId.value = skuList.value[0]?.skuId || null
+      await loadAllSkuConfigs()
+    } else {
+      selectedSkuId.value = null
+      skuConfigs.value = new Map()
+    }
+
     await loadConfig()
     await loadDeliveryRecords()
     await loadKamiConfigOptions()
 
-    if (isMobile.value) {
-      mobileView.value = 'config'
-    }
+    if (isMobile.value) { mobileView.value = 'config' }
+  }
+
+  const handleSkuChange = async () => {
+    await loadConfig()
   }
 
   const loadKamiConfigOptions = async () => {
@@ -328,14 +356,28 @@ export function useAutoDelivery() {
     } catch {}
   }
 
-  // Load config
   const loadConfig = async () => {
     if (!selectedGoods.value || !selectedAccountId.value) return
 
     try {
+      const baseReq: GetAutoDeliveryConfigReq = {
+        xianyuAccountId: selectedAccountId.value,
+        xyGoodsId: selectedGoods.value.item.xyGoodId,
+        skuId: null
+      }
+      const baseResponse = await getAutoDeliveryConfig(baseReq)
+      if (baseResponse.code === 0 || baseResponse.code === 200) {
+        if (baseResponse.data) {
+          configForm.value.autoConfirmShipment = baseResponse.data.autoConfirmShipment || 0
+        } else {
+          configForm.value.autoConfirmShipment = 0
+        }
+      }
+
       const req: GetAutoDeliveryConfigReq = {
         xianyuAccountId: selectedAccountId.value,
-        xyGoodsId: selectedGoods.value.item.xyGoodId
+        xyGoodsId: selectedGoods.value.item.xyGoodId,
+        skuId: selectedSkuId.value
       }
 
       const response = await getAutoDeliveryConfig(req)
@@ -347,14 +389,15 @@ export function useAutoDelivery() {
           configForm.value.kamiConfigIds = response.data.kamiConfigIds || ''
           configForm.value.kamiDeliveryTemplate = response.data.kamiDeliveryTemplate || ''
           configForm.value.autoDeliveryImageUrl = response.data.autoDeliveryImageUrl || ''
-          configForm.value.autoConfirmShipment = response.data.autoConfirmShipment || 0
+          if (response.data.autoConfirmShipment != null) {
+            configForm.value.autoConfirmShipment = response.data.autoConfirmShipment
+          }
         } else {
           configForm.value.deliveryMode = 1
           configForm.value.autoDeliveryContent = ''
           configForm.value.kamiConfigIds = ''
           configForm.value.kamiDeliveryTemplate = ''
           configForm.value.autoDeliveryImageUrl = ''
-          configForm.value.autoConfirmShipment = 0
         }
       } else {
         throw new Error(response.msg || '获取配置失败')
@@ -365,7 +408,6 @@ export function useAutoDelivery() {
     }
   }
 
-  // Save config
   const saveConfig = async () => {
     if (!selectedGoods.value || !selectedAccountId.value) {
       showInfo('请先选择商品')
@@ -383,11 +425,17 @@ export function useAutoDelivery() {
 
     saving.value = true
     try {
+      const skuName = selectedSkuId.value
+        ? (skuList.value.find(s => s.skuId === selectedSkuId.value)?.valueText || '')
+        : ''
+
       const req: SaveAutoDeliveryConfigReq = {
         xianyuAccountId: selectedAccountId.value,
         xianyuGoodsId: selectedGoods.value.item.id,
         xyGoodsId: selectedGoods.value.item.xyGoodId,
         deliveryMode: configForm.value.deliveryMode,
+        skuId: selectedSkuId.value,
+        skuName,
         autoDeliveryContent: configForm.value.autoDeliveryContent.trim(),
         kamiConfigIds: configForm.value.kamiConfigIds,
         kamiDeliveryTemplate: configForm.value.kamiDeliveryTemplate.trim(),
@@ -399,6 +447,9 @@ export function useAutoDelivery() {
       if (response.code === 0 || response.code === 200) {
         showSuccess('保存配置成功')
         currentConfig.value = response.data || null
+        if (hasMultipleSku.value) {
+          await loadAllSkuConfigs()
+        }
       } else {
         throw new Error(response.msg || '保存配置失败')
       }
@@ -409,7 +460,6 @@ export function useAutoDelivery() {
     }
   }
 
-  // Toggle auto delivery
   const toggleAutoDelivery = async (value: boolean) => {
     if (!selectedGoods.value || !selectedAccountId.value) {
       showInfo('请先选择商品')
@@ -468,7 +518,6 @@ export function useAutoDelivery() {
     }
   }
 
-  // Load delivery records
   const loadDeliveryRecords = async () => {
     if (!selectedAccountId.value || !selectedGoods.value) {
       deliveryRecords.value = []
@@ -501,13 +550,11 @@ export function useAutoDelivery() {
     }
   }
 
-  // Records page change
   const handleRecordsPageChange = (page: number) => {
     recordsPageNum.value = page
     loadDeliveryRecords()
   }
 
-  // View goods detail
   const viewGoodsDetail = () => {
     if (!selectedGoods.value || !selectedAccountId.value) {
       showInfo('请先选择商品')
@@ -517,7 +564,6 @@ export function useAutoDelivery() {
     detailDialogVisible.value = true
   }
 
-  // Confirm shipment
   const handleConfirmShipment = (record: any) => {
     if (!selectedAccountId.value) {
       showInfo('请先选择账号')
@@ -551,7 +597,6 @@ export function useAutoDelivery() {
           }
         } catch (error: any) {
           console.error('确认已发货失败:', error)
-          // 只有在错误消息未显示过时才弹出提示（避免重复显示）
           if (!error.messageShown) {
             showError(error.message || '确认已发货失败')
           }
@@ -571,7 +616,6 @@ export function useAutoDelivery() {
     })
   }
 
-  // Trigger auto delivery
   const handleTriggerDelivery = async (record: any) => {
     if (!selectedAccountId.value || !selectedGoods.value) {
       showInfo('请先选择账号和商品')
@@ -601,7 +645,6 @@ export function useAutoDelivery() {
       return
     }
 
-    // 防止重复提交：检查是否正在处理
     if (loading.value) {
       showInfo('正在处理中，请稍候...')
       return
@@ -618,10 +661,7 @@ export function useAutoDelivery() {
       message: dialogMessage,
       type: 'danger',
       onConfirm: async () => {
-        // 防止重复点击确认按钮
-        if (loading.value) {
-          return
-        }
+        if (loading.value) { return }
         
         loading.value = true
         try {
@@ -639,7 +679,6 @@ export function useAutoDelivery() {
           }
         } catch (error: any) {
           console.error('触发发货失败:', error)
-          // 只有在错误消息未显示过时才弹出提示（避免重复显示）
           if (!error.messageShown) {
             showError(error.message || '触发发货失败')
           }
@@ -651,19 +690,11 @@ export function useAutoDelivery() {
     }
   }
 
-  // Confirm dialog actions
-  const handleDialogConfirm = () => {
-    confirmDialog.value.onConfirm()
-  }
+  const handleDialogConfirm = () => { confirmDialog.value.onConfirm() }
+  const handleDialogCancel = () => { confirmDialog.value.visible = false }
 
-  const handleDialogCancel = () => {
-    confirmDialog.value.visible = false
-  }
-
-  // Records total pages
   const recordsTotalPages = computed(() => Math.ceil(recordsTotal.value / recordsPageSize.value))
 
-  // Lifecycle
   onMounted(() => {
     loadAccounts()
     checkScreenSize()
@@ -675,7 +706,6 @@ export function useAutoDelivery() {
   })
 
   return {
-    // State
     loading,
     saving,
     accounts,
@@ -684,6 +714,10 @@ export function useAutoDelivery() {
     selectedGoods,
     currentConfig,
     configForm,
+    skuList,
+    selectedSkuId,
+    skuConfigs,
+    hasMultipleSku,
     goodsCurrentPage,
     goodsTotal,
     goodsLoading,
@@ -708,7 +742,6 @@ export function useAutoDelivery() {
     kamiConfigOptions,
     selectedKamiConfigId,
 
-    // Methods
     loadAccounts,
     loadGoods,
     handleAccountChange,
@@ -723,6 +756,7 @@ export function useAutoDelivery() {
     handleTriggerDelivery,
     handleDialogConfirm,
     handleDialogCancel,
+    handleSkuChange,
     copyApiUrl,
     copyApiParams,
     copyConfirmShipmentUrl,
@@ -738,5 +772,3 @@ export function useAutoDelivery() {
     checkScreenSize
   }
 }
-
-

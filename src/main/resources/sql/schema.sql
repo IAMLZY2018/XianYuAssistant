@@ -94,8 +94,9 @@ CREATE TABLE IF NOT EXISTS xianyu_goods (
     info_pic TEXT,                                -- 商品详情图片（JSON数组）
     detail_info TEXT,                             -- 商品详情信息（预留字段）
     detail_url TEXT,                              -- 商品详情页URL
-    sold_price VARCHAR(50),                       -- 商品价格
-    status TINYINT DEFAULT 0,                     -- 商品状态 0:在售 1:已下架 2:已售出
+    sold_price VARCHAR(50),                           -- 商品价格
+    sku_count INTEGER DEFAULT 0,                     -- SKU数量
+    status TINYINT DEFAULT 0,                         -- 商品状态 0:在售 1:已下架 2:已售出
     created_time DATETIME DEFAULT (datetime('now', 'localtime')),  -- 创建时间
     updated_time DATETIME DEFAULT (datetime('now', 'localtime')),  -- 更新时间
     FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
@@ -173,6 +174,7 @@ CREATE TABLE IF NOT EXISTS xianyu_goods_config (
     xianyu_auto_reply_context_on TINYINT DEFAULT 1,   -- 携带上下文开关：1-开启，0-关闭，默认开启，跟随AI回复开关
     xianyu_keyword_reply_on TINYINT DEFAULT 0,        -- 关键词回复开关：1-开启，0-关闭，默认关闭
     human_intervention_on TINYINT DEFAULT 0,          -- 人工干预开关：1-开启，0-关闭，默认关闭。开启后延时任务到期时若卖家已人工回复则取消自动回复
+    human_intervention_minutes INTEGER DEFAULT 10,    -- 人工干预不回复持续时间（分钟），默认10
     fixed_material TEXT,                              -- 固定资料（用于AI自动回复）
     create_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 创建时间
     update_time DATETIME DEFAULT (datetime('now', 'localtime')),   -- 更新时间
@@ -197,6 +199,8 @@ CREATE TABLE IF NOT EXISTS xianyu_goods_auto_delivery_config (
     xianyu_goods_id BIGINT,                           -- 本地闲鱼商品ID
     xy_goods_id VARCHAR(100) NOT NULL,                -- 闲鱼的商品ID
     delivery_mode TINYINT DEFAULT 1,                  -- 发货模式：1-自动发货，2-卡密发货，3-自定义发货
+    sku_id VARCHAR(32),                              -- SKU ID，NULL表示商品级别配置（无SKU或默认）
+    sku_name VARCHAR(200),                            -- SKU名称，如"新号"、"30级"
     auto_delivery_content TEXT,                       -- 自动发货的文本内容
     kami_config_ids TEXT,                             -- 卡密发货：绑定的卡密配置ID列表（逗号分隔）
     kami_delivery_template TEXT,                      -- 卡密发货文案模板，使用{kmKey}占位符替换卡密内容
@@ -211,7 +215,7 @@ CREATE TABLE IF NOT EXISTS xianyu_goods_auto_delivery_config (
 -- 创建自动发货配置表索引
 CREATE INDEX IF NOT EXISTS idx_auto_delivery_config_account_id ON xianyu_goods_auto_delivery_config(xianyu_account_id);
 CREATE INDEX IF NOT EXISTS idx_auto_delivery_config_xy_goods_id ON xianyu_goods_auto_delivery_config(xy_goods_id);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_auto_delivery_config_unique ON xianyu_goods_auto_delivery_config(xianyu_account_id, xy_goods_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_auto_delivery_config_unique ON xianyu_goods_auto_delivery_config(xianyu_account_id, xy_goods_id, sku_id);
 
 -- 创建自动发货配置表更新时间触发器
 CREATE TRIGGER IF NOT EXISTS update_xianyu_goods_auto_delivery_config_time
@@ -235,6 +239,8 @@ CREATE TABLE IF NOT EXISTS xianyu_goods_order (
     fail_reason VARCHAR(500),                         -- 失败理由
     confirm_state TINYINT DEFAULT 0,                  -- 确认发货状态: 0-未确认, 1-已确认
     create_time DATETIME DEFAULT (datetime('now', 'localtime')),  -- 创建时间(本地时间)
+    goods_title VARCHAR(256),                        -- 商品标题
+    sku_name VARCHAR(200),                           -- SKU名称，如"新号"、"30级"
     FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
 );
 
@@ -440,4 +446,71 @@ CREATE TABLE IF NOT EXISTS xianyu_keyword_reply_content (
 );
 
 CREATE INDEX IF NOT EXISTS idx_keyword_content_rule_id ON xianyu_keyword_reply_content(rule_id);
+
+-- 商品SKU表
+CREATE TABLE IF NOT EXISTS xianyu_goods_sku (
+    id VARCHAR(32) PRIMARY KEY,                      -- 表ID
+    xy_goods_id VARCHAR(100) NOT NULL,               -- 闲鱼商品ID
+    sku_id VARCHAR(32),                              -- 闲鱼SKU ID，无SKU时为NULL
+    price INTEGER,                                   -- SKU价格（分）
+    quantity INTEGER DEFAULT 0,                      -- SKU库存数量
+    property_text VARCHAR(500),                      -- SKU属性文本，如"等级:新号"
+    property_id INTEGER,                             -- 属性ID
+    value_id INTEGER,                                -- 属性值ID
+    value_text VARCHAR(200),                         -- 属性值文本，如"新号"、"30级"
+    property_sort_order INTEGER DEFAULT 0,           -- 属性排序
+    value_sort_order INTEGER DEFAULT 0,              -- 属性值排序
+    features TEXT,                                   -- SKU特征JSON
+    xianyu_account_id BIGINT,                        -- 关联的闲鱼账号ID
+    created_time DATETIME DEFAULT (datetime('now', 'localtime')),
+    updated_time DATETIME DEFAULT (datetime('now', 'localtime')),
+    FOREIGN KEY (xianyu_account_id) REFERENCES xianyu_account(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_goods_sku_xy_goods_id ON xianyu_goods_sku(xy_goods_id);
+CREATE INDEX IF NOT EXISTS idx_goods_sku_sku_id ON xianyu_goods_sku(sku_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_goods_sku_unique ON xianyu_goods_sku(xy_goods_id, sku_id);
+
+CREATE TRIGGER IF NOT EXISTS update_xianyu_goods_sku_time
+AFTER UPDATE ON xianyu_goods_sku
+BEGIN
+    UPDATE xianyu_goods_sku SET updated_time = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
+-- 商品SKU属性维度表
+CREATE TABLE IF NOT EXISTS xianyu_goods_sku_property (
+    id VARCHAR(32) PRIMARY KEY,
+    xy_goods_id VARCHAR(100) NOT NULL,
+    property_id INTEGER NOT NULL,
+    property_text VARCHAR(200) NOT NULL,
+    property_sort_order INTEGER DEFAULT 0,
+    value_id INTEGER NOT NULL,
+    value_text VARCHAR(200) NOT NULL,
+    value_sort_order INTEGER DEFAULT 0,
+    xianyu_account_id BIGINT,
+    created_time DATETIME DEFAULT (datetime('now', 'localtime')),
+    updated_time DATETIME DEFAULT (datetime('now', 'localtime'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_sku_property_goods_id ON xianyu_goods_sku_property(xy_goods_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_sku_property_unique ON xianyu_goods_sku_property(xy_goods_id, property_id, value_id);
+
+CREATE TRIGGER IF NOT EXISTS update_xianyu_goods_sku_property_time
+AFTER UPDATE ON xianyu_goods_sku_property
+BEGIN
+    UPDATE xianyu_goods_sku_property SET updated_time = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
+-- 人工干预记录表
+CREATE TABLE IF NOT EXISTS xianyu_human_intervention_record (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    xianyu_account_id BIGINT NOT NULL,
+    xy_goods_id VARCHAR(100) NOT NULL,
+    s_id VARCHAR(200) NOT NULL,
+    end_time DATETIME NOT NULL,
+    created_time DATETIME DEFAULT (datetime('now', 'localtime'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_human_intervention_s_id ON xianyu_human_intervention_record(s_id);
+CREATE INDEX IF NOT EXISTS idx_human_intervention_end_time ON xianyu_human_intervention_record(end_time);
 

@@ -34,6 +34,9 @@ public class WebSocketController {
     
     @Autowired
     private com.feijimiao.xianyuassistant.service.SentMessageSaveService sentMessageSaveService;
+
+    @Autowired
+    private com.feijimiao.xianyuassistant.service.AutoReplyDelayService autoReplyDelayService;
     
     @Autowired
     private com.feijimiao.xianyuassistant.service.OperationLogService operationLogService;
@@ -220,13 +223,18 @@ public class WebSocketController {
             );
             
             if (success) {
-                // 发送成功后，将消息入库（contentType=999，手动回复）
                 sentMessageSaveService.saveManualReply(
                         reqDTO.getXianyuAccountId(),
                         reqDTO.getCid(),
                         reqDTO.getToId(),
                         reqDTO.getText(),
                         reqDTO.getXyGoodsId()
+                );
+                String sId = reqDTO.getToId() + "@goofish";
+                autoReplyDelayService.recordSellerManualReply(
+                        reqDTO.getXianyuAccountId(),
+                        reqDTO.getXyGoodsId(),
+                        sId
                 );
                 return ResultObject.success("消息发送成功");
             } else {
@@ -288,6 +296,12 @@ public class WebSocketController {
                         reqDTO.getToId(),
                         reqDTO.getImageUrl(),
                         reqDTO.getXyGoodsId()
+                );
+                String sId = reqDTO.getToId() + "@goofish";
+                autoReplyDelayService.recordSellerManualReply(
+                        reqDTO.getXianyuAccountId(),
+                        reqDTO.getXyGoodsId(),
+                        sId
                 );
                 return ResultObject.success("图片消息发送成功");
             } else {

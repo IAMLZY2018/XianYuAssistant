@@ -4,9 +4,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.feijimiao.xianyuassistant.controller.dto.ItemDTO;
 import com.feijimiao.xianyuassistant.controller.dto.SyncProgressRespDTO;
+import com.feijimiao.xianyuassistant.entity.XianyuGoodsSku;
+import com.feijimiao.xianyuassistant.entity.XianyuGoodsSkuProperty;
 import com.feijimiao.xianyuassistant.service.AccountService;
 import com.feijimiao.xianyuassistant.service.GoodsInfoService;
+import com.feijimiao.xianyuassistant.service.GoodsSkuService;
+import com.feijimiao.xianyuassistant.service.GoodsSkuPropertyService;
 import com.feijimiao.xianyuassistant.service.ItemDetailSyncService;
+import com.feijimiao.xianyuassistant.utils.ItemDetailUtils;
 import com.feijimiao.xianyuassistant.utils.XianyuApiUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -25,6 +31,12 @@ public class ItemDetailSyncServiceImpl implements ItemDetailSyncService {
 
     @Autowired
     private GoodsInfoService goodsInfoService;
+
+    @Autowired
+    private GoodsSkuService goodsSkuService;
+
+    @Autowired
+    private GoodsSkuPropertyService goodsSkuPropertyService;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -147,16 +159,30 @@ public class ItemDetailSyncServiceImpl implements ItemDetailSyncService {
                 return false;
             }
 
+            log.info("mtop.taobao.idle.pc.detail 完整响应: itemId={}, response={}", itemId, response);
+
             String extractedDesc = extractDescFromDetailJson(response);
             
             if (extractedDesc != null && !extractedDesc.isEmpty()) {
                 goodsInfoService.updateDetailInfo(itemId, extractedDesc);
-                log.debug("商品详情同步成功: itemId={}", itemId);
-                return true;
-            } else {
-                log.warn("商品详情提取失败: itemId={}", itemId);
-                return false;
             }
+
+            List<XianyuGoodsSku> skuList = ItemDetailUtils.extractSkuList(response);
+            if (!skuList.isEmpty()) {
+                goodsSkuService.saveSkus(itemId, accountId, skuList);
+                goodsInfoService.updateSkuCount(itemId, skuList.size());
+                List<XianyuGoodsSkuProperty> propertyList = ItemDetailUtils.extractSkuPropertyList(response);
+                if (!propertyList.isEmpty()) {
+                    goodsSkuPropertyService.saveProperties(itemId, accountId, propertyList);
+                }
+            } else {
+                goodsSkuService.deleteByXyGoodsId(itemId);
+                goodsSkuPropertyService.deleteByXyGoodsId(itemId);
+                goodsInfoService.updateSkuCount(itemId, 0);
+            }
+
+            log.debug("商品详情同步成功: itemId={}", itemId);
+            return true;
 
         } catch (Exception e) {
             log.error("获取商品详情异常: itemId={}", itemId, e);

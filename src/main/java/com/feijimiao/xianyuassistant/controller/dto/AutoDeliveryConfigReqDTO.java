@@ -32,9 +32,10 @@ public class AutoDeliveryConfigReqDTO {
      */
     private Integer deliveryMode = 1;
 
-    /**
-     * 自动发货的文本内容
-     */
+    private String skuId;
+
+    private String skuName;
+
     private String autoDeliveryContent;
 
     /**

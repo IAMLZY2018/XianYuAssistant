@@ -12,6 +12,7 @@ export interface GoodsItem {
   detailInfo: string;
   detailUrl: string;
   soldPrice: string;
+  skuCount: number;
   status: number;
   createdTime: string;
   updatedTime: string;
@@ -25,6 +26,7 @@ export interface GoodsItemWithConfig {
   xianyuAutoReplyContextOn: number;
   xianyuKeywordReplyOn: number;
   humanInterventionOn: number;
+  humanInterventionMinutes: number;
   autoDeliveryType?: number;
   autoDeliveryContent?: string;
 }
@@ -133,6 +135,7 @@ export function updateAutoReplyStatus(data: {
   xianyuAutoReplyContextOn?: number;
   xianyuKeywordReplyOn?: number;
   humanInterventionOn?: number;
+  humanInterventionMinutes?: number;
 }) {
   return request({
     url: '/items/updateAutoReplyStatus',

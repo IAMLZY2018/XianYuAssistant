@@ -8,6 +8,8 @@ import com.feijimiao.xianyuassistant.event.chatMessageEvent.ChatMessageReceivedE
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsOrderMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsInfoMapper;
 import com.feijimiao.xianyuassistant.service.AutoDeliveryService;
+import com.feijimiao.xianyuassistant.entity.XianyuGoodsConfig;
+import com.feijimiao.xianyuassistant.mapper.XianyuGoodsConfigMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
@@ -38,6 +40,9 @@ public class ChatMessageEventAutoDeliveryListener {
     private XianyuGoodsInfoMapper goodsInfoMapper;
 
     @Autowired
+    private XianyuGoodsConfigMapper goodsConfigMapper;
+
+    @Autowired
     private AutoDeliveryService autoDeliveryService;
 
     @Async
@@ -66,6 +71,12 @@ public class ChatMessageEventAutoDeliveryListener {
 
             Long xianyuGoodsId = resolveXianyuGoodsId(accountId, message.getXyGoodsId());
             if (xianyuGoodsId == null) {
+                return;
+            }
+
+            XianyuGoodsConfig goodsConfig = goodsConfigMapper.selectByAccountAndGoodsId(accountId, message.getXyGoodsId());
+            if (goodsConfig == null || goodsConfig.getXianyuAutoDeliveryOn() == null || goodsConfig.getXianyuAutoDeliveryOn() != 1) {
+                log.info("【账号{}】商品未开启自动发货，跳过: xyGoodsId={}", accountId, message.getXyGoodsId());
                 return;
             }
 

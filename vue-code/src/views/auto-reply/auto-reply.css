@@ -1605,6 +1605,52 @@
   margin-top: var(--d-space-2);
 }
 
+.ar__intervention-minutes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--d-border);
+}
+
+.ar__intervention-label {
+  font-size: 12px;
+  color: var(--d-text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.ar__intervention-input-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ar__intervention-input {
+  width: 60px;
+  height: 28px;
+  padding: 0 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--d-text-primary);
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--d-border);
+  border-radius: 6px;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.ar__intervention-input:focus {
+  border-color: var(--d-accent);
+}
+
+.ar__intervention-unit {
+  font-size: 12px;
+  color: var(--d-text-tertiary);
+}
+
 /* --- Records Toggle Row --- */
 .ar__records-toggle-row {
   display: flex;

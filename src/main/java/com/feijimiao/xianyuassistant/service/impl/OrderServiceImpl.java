@@ -93,4 +93,45 @@ public class OrderServiceImpl implements OrderService {
             return null;
         }
     }
+
+    @Override
+    public String getOrderDetail(Long accountId, String orderId) {
+        try {
+            log.info("【账号{}】开始获取订单详情: orderId={}", accountId, orderId);
+
+            String cookieStr = accountService.getCookieByAccountId(accountId);
+            if (cookieStr == null || cookieStr.isEmpty()) {
+                log.error("【账号{}】未找到Cookie", accountId);
+                return null;
+            }
+
+            Map<String, Object> dataMap = new HashMap<>();
+            dataMap.put("tid", orderId);
+
+            XianyuApiCallUtils.ApiCallResult result = xianyuApiCallUtils.callApiWithRetry(
+                    accountId,
+                    "mtop.taobao.idle.trade.merchant.full.info",
+                    dataMap,
+                    cookieStr
+            );
+
+            if (!result.isSuccess()) {
+                log.warn("【账号{}】获取订单详情失败: orderId={}, error={}", accountId, orderId, result.getErrorMessage());
+                return null;
+            }
+
+            Map<String, Object> responseData = result.extractData();
+            if (responseData == null) {
+                log.warn("【账号{}】订单详情响应数据为空: orderId={}", accountId, orderId);
+                return null;
+            }
+
+            String json = objectMapper.writeValueAsString(responseData);
+            log.info("【账号{}】获取订单详情成功: orderId={}", accountId, orderId);
+            return json;
+        } catch (Exception e) {
+            log.error("【账号{}】获取订单详情异常: orderId={}", accountId, orderId, e);
+            return null;
+        }
+    }
 }

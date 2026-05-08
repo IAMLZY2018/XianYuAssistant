@@ -6,7 +6,6 @@ import com.feijimiao.xianyuassistant.entity.XianyuGoodsInfo;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsInfoMapper;
 import com.feijimiao.xianyuassistant.controller.dto.ItemDTO;
 import com.feijimiao.xianyuassistant.service.GoodsInfoService;
-import com.feijimiao.xianyuassistant.utils.ItemDetailUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -230,9 +229,6 @@ public class GoodsInfoServiceImpl implements GoodsInfoService {
     @Transactional(rollbackFor = Exception.class)
     public boolean updateDetailInfo(String xyGoodId, String detailInfo) {
         try {
-            // 提取desc字段
-            String extractedDesc = ItemDetailUtils.extractDescFromDetailJson(detailInfo);
-            
             LambdaQueryWrapper<XianyuGoodsInfo> queryWrapper = new LambdaQueryWrapper<>();
             queryWrapper.eq(XianyuGoodsInfo::getXyGoodId, xyGoodId);
             XianyuGoodsInfo existingGoods = goodsInfoMapper.selectOne(queryWrapper);
@@ -242,13 +238,12 @@ public class GoodsInfoServiceImpl implements GoodsInfoService {
                 return false;
             }
             
-            existingGoods.setDetailInfo(extractedDesc);
+            existingGoods.setDetailInfo(detailInfo);
             existingGoods.setUpdatedTime(getCurrentTimeString());
             int updated = goodsInfoMapper.updateById(existingGoods);
             
-            log.info("更新商品详情成功: xyGoodId={}, 原始详情长度={}, 提取后长度={}", 
-                    xyGoodId, detailInfo != null ? detailInfo.length() : 0, 
-                    extractedDesc != null ? extractedDesc.length() : 0);
+            log.info("更新商品详情成功: xyGoodId={}, 详情长度={}", 
+                    xyGoodId, detailInfo != null ? detailInfo.length() : 0);
             return updated > 0;
         } catch (Exception e) {
             log.error("更新商品详情失败: xyGoodId={}", xyGoodId, e);
@@ -288,6 +283,31 @@ public class GoodsInfoServiceImpl implements GoodsInfoService {
         } catch (Exception e) {
             log.error("删除商品失败: xyGoodId={}, accountId={}", xyGoodId, xianyuAccountId, e);
             throw new RuntimeException("删除商品失败: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateSkuCount(String xyGoodId, int skuCount) {
+        try {
+            LambdaQueryWrapper<XianyuGoodsInfo> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(XianyuGoodsInfo::getXyGoodId, xyGoodId);
+            XianyuGoodsInfo existingGoods = goodsInfoMapper.selectOne(queryWrapper);
+
+            if (existingGoods == null) {
+                log.warn("商品不存在，无法更新SKU数量: xyGoodId={}", xyGoodId);
+                return false;
+            }
+
+            existingGoods.setSkuCount(skuCount);
+            existingGoods.setUpdatedTime(getCurrentTimeString());
+            int updated = goodsInfoMapper.updateById(existingGoods);
+
+            log.info("更新商品SKU数量成功: xyGoodId={}, skuCount={}", xyGoodId, skuCount);
+            return updated > 0;
+        } catch (Exception e) {
+            log.error("更新商品SKU数量失败: xyGoodId={}", xyGoodId, e);
+            return false;
         }
     }
 }

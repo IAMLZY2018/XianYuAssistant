@@ -22,4 +22,13 @@ public interface OrderService {
      * @return 操作结果
      */
     String confirmShipmentToXianyu(Long accountId, String orderId);
+
+    /**
+     * 获取订单详情
+     *
+     * @param accountId 账号ID
+     * @param orderId 订单ID
+     * @return 订单详情JSON
+     */
+    String getOrderDetail(Long accountId, String orderId);
 }

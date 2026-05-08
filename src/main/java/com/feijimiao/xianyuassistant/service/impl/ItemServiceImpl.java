@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.feijimiao.xianyuassistant.common.ResultObject;
 import com.feijimiao.xianyuassistant.controller.dto.*;
 import com.feijimiao.xianyuassistant.entity.XianyuGoodsInfo;
+import com.feijimiao.xianyuassistant.entity.XianyuGoodsSku;
+import com.feijimiao.xianyuassistant.entity.XianyuGoodsSkuProperty;
 import com.feijimiao.xianyuassistant.service.ItemService;
 import com.feijimiao.xianyuassistant.utils.XianyuApiUtils;
 import com.feijimiao.xianyuassistant.utils.XianyuSignUtils;
@@ -28,6 +30,12 @@ public class ItemServiceImpl implements ItemService {
     
     @Autowired
     private com.feijimiao.xianyuassistant.service.GoodsInfoService goodsInfoService;
+    
+    @Autowired
+    private com.feijimiao.xianyuassistant.service.GoodsSkuService goodsSkuService;
+
+    @Autowired
+    private com.feijimiao.xianyuassistant.service.GoodsSkuPropertyService goodsSkuPropertyService;
     
     @Autowired
     private com.feijimiao.xianyuassistant.service.AutoDeliveryService autoDeliveryService;
@@ -320,12 +328,14 @@ public class ItemServiceImpl implements ItemService {
                         itemWithConfig.setXianyuAutoReplyContextOn(config.getXianyuAutoReplyContextOn());
                         itemWithConfig.setXianyuKeywordReplyOn(config.getXianyuKeywordReplyOn());
                         itemWithConfig.setHumanInterventionOn(config.getHumanInterventionOn());
+                        itemWithConfig.setHumanInterventionMinutes(config.getHumanInterventionMinutes());
                     } else {
                         itemWithConfig.setXianyuAutoDeliveryOn(0);
                         itemWithConfig.setXianyuAutoReplyOn(0);
                         itemWithConfig.setXianyuAutoReplyContextOn(0);
                         itemWithConfig.setXianyuKeywordReplyOn(0);
                         itemWithConfig.setHumanInterventionOn(0);
+                        itemWithConfig.setHumanInterventionMinutes(10);
                     }
                     
                     // 获取自动发货配置
@@ -342,6 +352,7 @@ public class ItemServiceImpl implements ItemService {
                     itemWithConfig.setXianyuAutoReplyContextOn(0);
                     itemWithConfig.setXianyuKeywordReplyOn(0);
                     itemWithConfig.setHumanInterventionOn(0);
+                    itemWithConfig.setHumanInterventionMinutes(10);
                 }
                 
                 itemsWithConfig.add(itemWithConfig);
@@ -460,12 +471,14 @@ public class ItemServiceImpl implements ItemService {
                 itemWithConfig.setXianyuAutoReplyContextOn(config.getXianyuAutoReplyContextOn() != null ? config.getXianyuAutoReplyContextOn() : 1);
                 itemWithConfig.setXianyuKeywordReplyOn(config.getXianyuKeywordReplyOn());
                 itemWithConfig.setHumanInterventionOn(config.getHumanInterventionOn());
+                itemWithConfig.setHumanInterventionMinutes(config.getHumanInterventionMinutes());
             } else {
                 itemWithConfig.setXianyuAutoDeliveryOn(0);
                 itemWithConfig.setXianyuAutoReplyOn(0);
                 itemWithConfig.setXianyuAutoReplyContextOn(1);
                 itemWithConfig.setXianyuKeywordReplyOn(0);
                 itemWithConfig.setHumanInterventionOn(0);
+                itemWithConfig.setHumanInterventionMinutes(10);
             }
             
             // 获取自动发货配置
@@ -482,6 +495,7 @@ public class ItemServiceImpl implements ItemService {
             itemWithConfig.setXianyuAutoReplyContextOn(1);
             itemWithConfig.setXianyuKeywordReplyOn(0);
             itemWithConfig.setHumanInterventionOn(0);
+            itemWithConfig.setHumanInterventionMinutes(10);
         }
         
         return itemWithConfig;
@@ -579,6 +593,7 @@ public class ItemServiceImpl implements ItemService {
             }
             
             log.info("API响应成功，响应长度: {}, itemId={}", response.length(), itemId);
+            log.info("mtop.taobao.idle.pc.detail 完整响应: itemId={}, response={}", itemId, response);
             
             // 检查响应是否成功
             if (!XianyuApiUtils.isSuccess(response)) {
@@ -609,6 +624,18 @@ public class ItemServiceImpl implements ItemService {
             String extractedDesc = ItemDetailUtils.extractDescFromDetailJson(detailJson);
             log.info("提取desc字段成功: itemId={}, 原始长度={}, 提取后长度={}", 
                     itemId, detailJson.length(), extractedDesc.length());
+            
+            List<XianyuGoodsSku> skuList = ItemDetailUtils.extractSkuList(detailJson);
+            if (!skuList.isEmpty()) {
+                XianyuGoodsInfo goodsInfo = goodsInfoService.getByXyGoodId(itemId);
+                Long accountId = goodsInfo != null ? goodsInfo.getXianyuAccountId() : null;
+                goodsSkuService.saveSkus(itemId, accountId, skuList);
+                goodsInfoService.updateSkuCount(itemId, skuList.size());
+                List<XianyuGoodsSkuProperty> propertyList = ItemDetailUtils.extractSkuPropertyList(detailJson);
+                if (!propertyList.isEmpty()) {
+                    goodsSkuPropertyService.saveProperties(itemId, accountId, propertyList);
+                }
+            }
             
             return extractedDesc;
             
@@ -885,6 +912,11 @@ public class ItemServiceImpl implements ItemService {
                 } else {
                     goodsConfig.setHumanInterventionOn(0);
                 }
+                if (reqDTO.getHumanInterventionMinutes() != null && reqDTO.getHumanInterventionMinutes() > 0) {
+                    goodsConfig.setHumanInterventionMinutes(reqDTO.getHumanInterventionMinutes());
+                } else {
+                    goodsConfig.setHumanInterventionMinutes(10);
+                }
             } else {
                 // 3. 更新配置
                 goodsConfig.setXianyuAutoReplyOn(reqDTO.getXianyuAutoReplyOn());
@@ -897,6 +929,9 @@ public class ItemServiceImpl implements ItemService {
                 }
                 if (reqDTO.getHumanInterventionOn() != null) {
                     goodsConfig.setHumanInterventionOn(reqDTO.getHumanInterventionOn());
+                }
+                if (reqDTO.getHumanInterventionMinutes() != null && reqDTO.getHumanInterventionMinutes() > 0) {
+                    goodsConfig.setHumanInterventionMinutes(reqDTO.getHumanInterventionMinutes());
                 }
                 goodsConfig.setUpdateTime(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date()));
             }
@@ -1003,7 +1038,7 @@ public class ItemServiceImpl implements ItemService {
             String xyGoodsId = reqDTO.getXyGoodsId();
 
             com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoDeliveryConfig config = 
-                    autoDeliveryConfigMapper.findByAccountIdAndGoodsId(accountId, xyGoodsId);
+                    autoDeliveryConfigMapper.findByAccountIdAndGoodsIdNoSku(accountId, xyGoodsId);
 
             RagAutoReplyConfigRespDTO respDTO = new RagAutoReplyConfigRespDTO();
             if (config != null && config.getRagDelaySeconds() != null) {
@@ -1029,7 +1064,7 @@ public class ItemServiceImpl implements ItemService {
             Integer ragDelaySeconds = reqDTO.getRagDelaySeconds();
 
             com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoDeliveryConfig config = 
-                    autoDeliveryConfigMapper.findByAccountIdAndGoodsId(accountId, xyGoodsId);
+                    autoDeliveryConfigMapper.findByAccountIdAndGoodsIdNoSku(accountId, xyGoodsId);
 
             if (config == null) {
                 config = new com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoDeliveryConfig();

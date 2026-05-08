@@ -29,6 +29,10 @@ const {
   selectedGoods,
   currentConfig,
   configForm,
+  skuList,
+  selectedSkuId,
+  skuConfigs,
+  hasMultipleSku,
   goodsTotal,
   goodsLoading,
   goodsListRef,
@@ -56,6 +60,7 @@ const {
   handleTriggerDelivery,
   handleDialogConfirm,
   handleDialogCancel,
+  handleSkuChange,
   handleGoodsScroll,
   goBackToGoods,
   formatTime,
@@ -181,6 +186,7 @@ onMounted(() => {
               <div class="ad__goods-title">{{ goods.item.title }}</div>
               <div class="ad__goods-meta">
                 <span class="ad__goods-price">{{ formatPrice(goods.item.soldPrice) }}</span>
+                <span v-if="goods.item.skuCount > 1" class="ad__goods-sku-tag">{{ goods.item.skuCount }}规格</span>
                 <span
                   class="ad__goods-status"
                   :class="`ad__goods-status--${getStatusClass(goods.item.status)}`"
@@ -268,6 +274,54 @@ onMounted(() => {
 
         <!-- Config content -->
         <div v-if="selectedGoods" class="ad__config-scroll">
+          <!-- Master Toggles: 自动发货 + 自动确认发货 -->
+          <div class="ad__config-section ad__config-section--no-pad-bottom">
+            <div class="ad__master-toggles">
+              <div class="ad__master-toggle">
+                <div class="ad__toggle-label">自动发货</div>
+                <label class="ad__switch ad__switch--sm">
+                  <input
+                    type="checkbox"
+                    :checked="selectedGoods.xianyuAutoDeliveryOn === 1"
+                    @change="toggleAutoDelivery(($event.target as HTMLInputElement).checked)"
+                  />
+                  <span class="ad__switch-track"></span>
+                  <span class="ad__switch-thumb"></span>
+                </label>
+              </div>
+              <div class="ad__master-toggle">
+                <div class="ad__toggle-label">自动确认发货</div>
+                <label class="ad__switch ad__switch--sm">
+                  <input
+                    type="checkbox"
+                    :checked="configForm.autoConfirmShipment === 1"
+                    :disabled="selectedGoods.xianyuAutoDeliveryOn !== 1"
+                    @change="toggleAutoConfirmShipment(($event.target as HTMLInputElement).checked)"
+                  />
+                  <span class="ad__switch-track"></span>
+                  <span class="ad__switch-thumb"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- SKU Selector -->
+          <div v-if="hasMultipleSku" class="ad__config-section ad__config-section--no-pad-bottom">
+            <div class="ad__config-section-title">选择规格</div>
+            <div class="ad__sku-tabs">
+              <button
+                v-for="sku in skuList"
+                :key="sku.skuId || sku.id"
+                class="ad__sku-tab"
+                :class="{ 'ad__sku-tab--active': selectedSkuId === sku.skuId, 'ad__sku-tab--configured': skuConfigs.has(sku.skuId || '') }"
+                @click="selectedSkuId = sku.skuId || null; handleSkuChange()"
+              >
+                <span class="ad__sku-tab__name">{{ sku.valueText || `规格${sku.skuId}` }}</span>
+                <span class="ad__sku-tab__price">¥{{ (sku.price / 100).toFixed(2) }}</span>
+              </button>
+            </div>
+          </div>
+
           <!-- Top Tab Switch -->
           <div class="ad__config-section ad__config-section--no-pad-bottom">
             <div class="ad__tab-group">
@@ -300,48 +354,6 @@ onMounted(() => {
 
           <!-- ====== 自动发货视图 ====== -->
           <template v-if="configForm.deliveryMode === 1">
-            <!-- Delivery Toggle Section -->
-            <div class="ad__config-section">
-              <div class="ad__config-section-title">发货设置</div>
-
-              <div class="ad__toggle-row">
-                <div class="ad__toggle-info">
-                  <div class="ad__toggle-label">自动发货</div>
-                  <div class="ad__toggle-hint">买家下单后自动发送发货内容</div>
-                </div>
-                <label class="ad__switch">
-                  <input
-                    type="checkbox"
-                    :checked="selectedGoods.xianyuAutoDeliveryOn === 1"
-                    @change="toggleAutoDelivery(($event.target as HTMLInputElement).checked)"
-                  />
-                  <span class="ad__switch-track"></span>
-                  <span class="ad__switch-thumb"></span>
-                </label>
-              </div>
-
-              <div class="ad__toggle-row">
-                <div class="ad__toggle-info">
-                  <div class="ad__toggle-label">自动确认发货</div>
-                  <div class="ad__toggle-hint">
-                    {{ selectedGoods.xianyuAutoDeliveryOn === 1
-                      ? '发货成功后自动确认已发货'
-                      : '需先开启自动发货' }}
-                  </div>
-                </div>
-                <label class="ad__switch">
-                  <input
-                    type="checkbox"
-                    :checked="configForm.autoConfirmShipment === 1"
-                    :disabled="selectedGoods.xianyuAutoDeliveryOn !== 1"
-                    @change="toggleAutoConfirmShipment(($event.target as HTMLInputElement).checked)"
-                  />
-                  <span class="ad__switch-track"></span>
-                  <span class="ad__switch-thumb"></span>
-                </label>
-              </div>
-            </div>
-
             <!-- Content Section -->
             <div class="ad__config-section">
               <div class="ad__config-section-title">发货内容</div>
@@ -386,47 +398,6 @@ onMounted(() => {
 
           <!-- ====== 卡密发货视图 ====== -->
           <template v-if="configForm.deliveryMode === 2">
-            <div class="ad__config-section">
-              <div class="ad__config-section-title">发货设置</div>
-
-              <div class="ad__toggle-row">
-                <div class="ad__toggle-info">
-                  <div class="ad__toggle-label">自动发货</div>
-                  <div class="ad__toggle-hint">买家下单后自动发送卡密</div>
-                </div>
-                <label class="ad__switch">
-                  <input
-                    type="checkbox"
-                    :checked="selectedGoods.xianyuAutoDeliveryOn === 1"
-                    @change="toggleAutoDelivery(($event.target as HTMLInputElement).checked)"
-                  />
-                  <span class="ad__switch-track"></span>
-                  <span class="ad__switch-thumb"></span>
-                </label>
-              </div>
-
-              <div class="ad__toggle-row">
-                <div class="ad__toggle-info">
-                  <div class="ad__toggle-label">自动确认发货</div>
-                  <div class="ad__toggle-hint">
-                    {{ selectedGoods.xianyuAutoDeliveryOn === 1
-                      ? '卡密发送成功后自动确认已发货'
-                      : '需先开启自动发货' }}
-                  </div>
-                </div>
-                <label class="ad__switch">
-                  <input
-                    type="checkbox"
-                    :checked="configForm.autoConfirmShipment === 1"
-                    :disabled="selectedGoods.xianyuAutoDeliveryOn !== 1"
-                    @change="toggleAutoConfirmShipment(($event.target as HTMLInputElement).checked)"
-                  />
-                  <span class="ad__switch-track"></span>
-                  <span class="ad__switch-thumb"></span>
-                </label>
-              </div>
-            </div>
-
             <div class="ad__config-section">
               <div class="ad__config-section-title">卡密配置绑定</div>
               <div style="margin-bottom: 12px;">

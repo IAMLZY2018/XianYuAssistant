@@ -38,9 +38,10 @@ public class XianyuGoodsAutoDeliveryConfig {
      */
     private Integer deliveryMode;
 
-    /**
-     * 自动发货的文本内容
-     */
+    private String skuId;
+
+    private String skuName;
+
     private String autoDeliveryContent;
 
     /**

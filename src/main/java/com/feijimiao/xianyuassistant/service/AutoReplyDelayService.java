@@ -40,9 +40,8 @@ public interface AutoReplyDelayService {
      * @return 任务数量
      */
     int getPendingTaskCount();
-    
-    /**
-     * 关闭调度器，清理所有任务
-     */
+
+    void recordSellerManualReply(Long accountId, String xyGoodsId, String sId);
+
     void shutdown();
 }

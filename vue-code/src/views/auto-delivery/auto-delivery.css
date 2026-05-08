@@ -1,5 +1,5 @@
 /* ============================================================
-   Auto Delivery �?Apple-style Design System
+   Auto Delivery ï¿½?Apple-style Design System
    ============================================================ */
 
 .ad {
@@ -431,6 +431,18 @@
   height: 10px;
 }
 
+.ad__goods-sku-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: 3px;
+  color: #ff9500;
+  background: rgba(255, 149, 0, 0.1);
+  white-space: nowrap;
+}
+
 /* --- Config Panel --- */
 .ad__config-panel {
   display: flex;
@@ -541,6 +553,42 @@
 
 .ad__config-section--no-pad-bottom {
   padding-bottom: 0;
+}
+
+.ad__master-toggles {
+  display: flex;
+  gap: var(--d-space-4);
+}
+
+.ad__master-toggle {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--d-space-3) var(--d-space-4);
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: var(--d-radius-sm);
+}
+
+.ad__master-toggle .ad__toggle-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--d-text-primary);
+}
+
+.ad__switch--sm .ad__switch-track {
+  width: 40px;
+  height: 24px;
+  border-radius: 12px;
+}
+
+.ad__switch--sm .ad__switch-thumb {
+  width: 20px;
+  height: 20px;
+}
+
+.ad__switch--sm input:checked ~ .ad__switch-thumb {
+  transform: translateX(16px);
 }
 
 .ad__config-section-title {
@@ -719,6 +767,74 @@
   background: rgba(0, 122, 255, 0.08);
   border-color: rgba(0, 122, 255, 0.2);
   font-weight: 600;
+}
+
+/* --- SKU Tabs --- */
+.ad__sku-tabs {
+  display: flex;
+  gap: var(--d-space-2);
+  flex-wrap: wrap;
+}
+
+.ad__sku-tab {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 72px;
+  height: auto;
+  padding: var(--d-space-2) var(--d-space-3);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--d-text-secondary);
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid transparent;
+  border-radius: var(--d-radius-sm);
+  cursor: pointer;
+  transition: all var(--d-transition);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ad__sku-tab__name {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.ad__sku-tab__price {
+  font-size: 11px;
+  color: var(--d-text-tertiary);
+}
+
+@media (hover: hover) {
+  .ad__sku-tab:hover {
+    background: rgba(0, 0, 0, 0.06);
+  }
+}
+
+.ad__sku-tab--active {
+  color: var(--d-accent);
+  background: rgba(0, 122, 255, 0.08);
+  border-color: rgba(0, 122, 255, 0.2);
+  font-weight: 600;
+}
+
+.ad__sku-tab--active .ad__sku-tab__price {
+  color: var(--d-accent);
+}
+
+.ad__sku-tab--configured::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--d-success);
+}
+
+.ad__sku-tab--configured {
+  position: relative;
 }
 
 /* --- Textarea --- */

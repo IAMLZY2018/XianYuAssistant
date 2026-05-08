@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { formatTime } from '@/utils'
+import { showSuccess, showError } from '@/utils'
+import { getOrderDetail } from '@/api/order'
 import type { DeliveryRecordItem } from '../useOrderManager'
 
 import IconEmpty from '@/components/icons/IconEmpty.vue'
@@ -9,6 +11,7 @@ import IconTruck from '@/components/icons/IconTruck.vue'
 import IconUser from '@/components/icons/IconUser.vue'
 import IconClock from '@/components/icons/IconClock.vue'
 import IconShoppingBag from '@/components/icons/IconShoppingBag.vue'
+import IconEye from '@/components/icons/IconImage.vue'
 
 interface Props {
   orderList: DeliveryRecordItem[]
@@ -18,10 +21,55 @@ interface Props {
 interface Emits {
   (e: 'copySid', sid: string): void
   (e: 'confirmShipment', item: DeliveryRecordItem): void
+  (e: 'viewDetail', item: DeliveryRecordItem): void
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+
+const detailVisible = ref(false)
+const detailLoading = ref(false)
+const detailData = ref<any>(null)
+const detailSkuText = ref('')
+
+const handleViewDetail = async (order: DeliveryRecordItem) => {
+  if (!order.orderId || !order.xianyuAccountId) return
+  detailLoading.value = true
+  detailVisible.value = true
+  detailData.value = null
+  detailSkuText.value = ''
+  try {
+    const res = await getOrderDetail({ xianyuAccountId: order.xianyuAccountId, orderId: order.orderId })
+    if (res.code === 200 || res.code === 0) {
+      const parsed = JSON.parse(res.data || '{}')
+      detailData.value = parsed
+
+      const module = parsed.module || {}
+      const orderInfoVO = module.orderInfoVO || {}
+      const itemInfo = orderInfoVO.itemInfo || {}
+      const merchantItemVO = module.merchantItemVO || {}
+      const merchantCommonData = module.merchantCommonData || {}
+      const merchantPriceVO = module.merchantPriceVO || {}
+
+      const skuInfo = itemInfo.skuInfo || ''
+      const itemInfoLines: any[] = merchantItemVO.itemInfoLines || []
+      const specLine = itemInfoLines.find((l: any) => l.key === '规格')
+      if (skuInfo || specLine) {
+        detailSkuText.value = specLine?.value || skuInfo.split(':').pop() || ''
+      } else {
+        detailSkuText.value = ''
+      }
+    } else {
+      showError(res.msg || '获取订单详情失败')
+      detailVisible.value = false
+    }
+  } catch (e: any) {
+    showError('获取订单详情失败')
+    detailVisible.value = false
+  } finally {
+    detailLoading.value = false
+  }
+}
 
 const isMobile = ref(false)
 const checkScreenSize = () => {
@@ -118,6 +166,11 @@ const getConfirmBg = (state: number) => {
           <span class="order-card__label">商品</span>
           <span class="order-card__value">{{ order.goodsTitle || '-' }}</span>
         </div>
+        <div v-if="order.skuName" class="order-card__row">
+          <span class="order-card__label"></span>
+          <span class="order-card__label">规格</span>
+          <span class="order-card__value order-card__sku">{{ order.skuName }}</span>
+        </div>
         <div class="order-card__row">
           <IconUser />
           <span class="order-card__label">买家</span>
@@ -134,6 +187,14 @@ const getConfirmBg = (state: number) => {
         <button class="order-card__action order-card__action--copy" @click="emit('copySid', order.orderId || '')">
           <IconCopy />
           <span>复制订单ID</span>
+        </button>
+        <button
+          v-if="order.orderId"
+          class="order-card__action order-card__action--detail"
+          @click="handleViewDetail(order)"
+        >
+          <IconEye />
+          <span>详情</span>
         </button>
         <button
           v-if="order.orderId"
@@ -159,6 +220,7 @@ const getConfirmBg = (state: number) => {
         <tr>
           <th class="table__th">订单ID</th>
           <th class="table__th">商品名称</th>
+          <th class="table__th table__th--center">规格</th>
           <th class="table__th table__th--center">买家</th>
           <th class="table__th table__th--center">发货内容</th>
           <th class="table__th table__th--center">发货状态</th>
@@ -176,6 +238,9 @@ const getConfirmBg = (state: number) => {
             <div class="order-title-cell">
               <span class="order-title-cell__name">{{ order.goodsTitle || '-' }}</span>
             </div>
+          </td>
+          <td class="table__td table__td--center">
+            <span v-if="order.skuName" class="sku-name-tag">{{ order.skuName }}</span>
           </td>
           <td class="table__td table__td--center">
             <span class="buyer-name">{{ order.buyerUserName || '-' }}</span>
@@ -212,6 +277,14 @@ const getConfirmBg = (state: number) => {
           <td class="table__td table__td--actions">
             <button
               v-if="order.orderId"
+              class="table__action table__action--detail"
+              @click="handleViewDetail(order)"
+            >
+              <IconEye />
+              <span>详情</span>
+            </button>
+            <button
+              v-if="order.orderId"
               class="table__action table__action--ship"
               :class="{ 'table__action--loading': order.confirming }"
               @click="emit('confirmShipment', order)"
@@ -219,7 +292,7 @@ const getConfirmBg = (state: number) => {
               <IconTruck />
               <span>{{ order.confirming ? '处理中' : '确认发货' }}</span>
             </button>
-            <span v-else class="table__action-placeholder">-</span>
+            <span v-if="!order.orderId" class="table__action-placeholder">-</span>
           </td>
         </tr>
       </tbody>
@@ -230,9 +303,91 @@ const getConfirmBg = (state: number) => {
       <p class="empty-state__text">暂无发货记录</p>
     </div>
   </div>
+
+  <!-- Order Detail Dialog -->
+  <Transition name="overlay-fade">
+    <div v-if="detailVisible" class="detail-overlay" @click.self="detailVisible = false">
+      <div class="detail-dialog">
+        <div class="detail-dialog__header">
+          <h3 class="detail-dialog__title">订单详情</h3>
+          <button class="detail-dialog__close" @click="detailVisible = false">&times;</button>
+        </div>
+        <div class="detail-dialog__body">
+          <div v-if="detailLoading" class="detail-dialog__loading">
+            <div class="detail-dialog__spinner"></div>
+            <span>加载中...</span>
+          </div>
+          <template v-else-if="detailData">
+            <div class="detail-dialog__section">
+              <div class="detail-dialog__rows">
+                <template v-if="detailData.module">
+                  <div v-if="detailData.module.merchantCommonData" class="detail-dialog__rows">
+                    <div v-if="detailData.module.merchantCommonData.orderId" class="detail-dialog__row">
+                      <span class="detail-dialog__label">订单ID</span>
+                      <span class="detail-dialog__value">{{ detailData.module.merchantCommonData.orderId }}</span>
+                    </div>
+                    <div v-if="detailData.module.merchantCommonData.orderStatus" class="detail-dialog__row">
+                      <span class="detail-dialog__label">状态</span>
+                      <span class="detail-dialog__value">{{ detailData.module.merchantCommonData.orderStatus }}</span>
+                    </div>
+                    <div v-if="detailData.module.merchantCommonData.createTime" class="detail-dialog__row">
+                      <span class="detail-dialog__label">下单时间</span>
+                      <span class="detail-dialog__value">{{ detailData.module.merchantCommonData.createTime }}</span>
+                    </div>
+                    <div v-if="detailData.module.merchantCommonData.paySuccessTime" class="detail-dialog__row">
+                      <span class="detail-dialog__label">付款时间</span>
+                      <span class="detail-dialog__value">{{ detailData.module.merchantCommonData.paySuccessTime }}</span>
+                    </div>
+                  </div>
+                  <div v-if="detailData.module.merchantItemVO" class="detail-dialog__rows">
+                    <div v-if="detailData.module.merchantItemVO.title" class="detail-dialog__row">
+                      <span class="detail-dialog__label">商品</span>
+                      <span class="detail-dialog__value">{{ detailData.module.merchantItemVO.title }}</span>
+                    </div>
+                  </div>
+                  <div v-if="detailSkuText" class="detail-dialog__row detail-dialog__row--highlight">
+                    <span class="detail-dialog__label">规格</span>
+                    <span class="detail-dialog__value detail-dialog__sku">{{ detailSkuText }}</span>
+                  </div>
+                  <div v-if="detailData.module.merchantPriceVO" class="detail-dialog__rows">
+                    <div v-if="detailData.module.merchantPriceVO.totalPrice" class="detail-dialog__row">
+                      <span class="detail-dialog__label">金额</span>
+                      <span class="detail-dialog__value">¥{{ detailData.module.merchantPriceVO.totalPrice }}</span>
+                    </div>
+                    <div v-if="detailData.module.merchantPriceVO.buyNum" class="detail-dialog__row">
+                      <span class="detail-dialog__label">数量</span>
+                      <span class="detail-dialog__value">{{ detailData.module.merchantPriceVO.buyNum }}</span>
+                    </div>
+                  </div>
+                  <div v-if="detailData.module.merchantBuyerVO" class="detail-dialog__rows">
+                    <div v-if="detailData.module.merchantBuyerVO.userNick" class="detail-dialog__row">
+                      <span class="detail-dialog__label">买家</span>
+                      <span class="detail-dialog__value">{{ detailData.module.merchantBuyerVO.userNick }}</span>
+                    </div>
+                  </div>
+                </template>
+                <div v-if="!detailData.module" class="detail-dialog__raw">
+                  <pre>{{ JSON.stringify(detailData, null, 2) }}</pre>
+                </div>
+              </div>
+            </div>
+          </template>
+          <div v-else class="detail-dialog__empty">暂无数据</div>
+        </div>
+      </div>
+    </div>
+  </Transition>
 </template>
 
 <style scoped>
+.overlay-fade-enter-active,
+.overlay-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.overlay-fade-enter-from,
+.overlay-fade-leave-to {
+  opacity: 0;
+}
 .card-list,
 .table-container {
   --c-bg: transparent;
@@ -543,6 +698,23 @@ const getConfirmBg = (state: number) => {
   white-space: nowrap;
 }
 
+.sku-name-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 4px;
+  color: #ff9500;
+  background: rgba(255, 149, 0, 0.1);
+  white-space: nowrap;
+}
+
+.order-card__sku {
+  font-size: 11px;
+  color: #ff9500;
+}
+
 .table__action {
   display: inline-flex;
   align-items: center;
@@ -569,6 +741,28 @@ const getConfirmBg = (state: number) => {
 @media (hover: hover) {
   .table__action--ship:hover {
     background: rgba(52, 199, 89, 0.06);
+  }
+}
+
+.table__action--detail {
+  border-color: rgba(0, 122, 255, 0.2);
+  color: var(--c-accent);
+}
+
+@media (hover: hover) {
+  .table__action--detail:hover {
+    background: rgba(0, 122, 255, 0.06);
+  }
+}
+
+.order-card__action--detail {
+  color: var(--c-accent);
+  border-color: rgba(0, 122, 255, 0.2);
+}
+
+@media (hover: hover) {
+  .order-card__action--detail:hover {
+    background: rgba(0, 122, 255, 0.06);
   }
 }
 
@@ -618,6 +812,156 @@ const getConfirmBg = (state: number) => {
 .table-container--loading {
   opacity: 0.5;
   pointer-events: none;
+}
+
+/* Detail Dialog */
+.detail-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 950;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.detail-dialog {
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.detail-dialog__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.detail-dialog__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0;
+}
+
+.detail-dialog__close {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #86868b;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.detail-dialog__close:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.detail-dialog__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  min-height: 120px;
+}
+
+.detail-dialog__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 0;
+  color: #86868b;
+  font-size: 13px;
+}
+
+.detail-dialog__spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  border-top-color: #007aff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.detail-dialog__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detail-dialog__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.detail-dialog__label {
+  color: #86868b;
+  min-width: 60px;
+  flex-shrink: 0;
+  line-height: 1.5;
+}
+
+.detail-dialog__value {
+  color: #1d1d1f;
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.detail-dialog__row--highlight .detail-dialog__label,
+.detail-dialog__row--highlight .detail-dialog__value {
+  font-weight: 600;
+}
+
+.detail-dialog__sku {
+  color: #ff9500;
+  background: rgba(255, 149, 0, 0.08);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.detail-dialog__raw {
+  overflow-x: auto;
+}
+
+.detail-dialog__raw pre {
+  font-size: 11px;
+  color: #6e6e73;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.detail-dialog__empty {
+  text-align: center;
+  color: #86868b;
+  font-size: 13px;
+  padding: 40px 0;
 }
 
 @media screen and (max-width: 480px) {

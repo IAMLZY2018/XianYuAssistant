@@ -150,6 +150,7 @@ const handleImgError = (e: Event) => {
           <th class="table__th table__th--image">图片</th>
           <th class="table__th">商品标题</th>
           <th class="table__th table__th--price">价格</th>
+          <th class="table__th table__th--sku">规格</th>
           <th class="table__th table__th--status">状态</th>
           <th class="table__th table__th--switch">发货模式</th>
           <th class="table__th table__th--switch">回复模式</th>
@@ -180,6 +181,10 @@ const handleImgError = (e: Event) => {
           </td>
           <td class="table__td table__td--price">
             <span class="price-text">{{ formatPrice(item.item.soldPrice) }}</span>
+          </td>
+          <td class="table__td table__td--sku">
+            <span v-if="item.item.skuCount > 1" class="sku-count-tag">{{ item.item.skuCount }}规格</span>
+            <span v-else class="sku-count-tag sku-count-tag--single">1</span>
           </td>
           <td class="table__td table__td--status">
             <span
@@ -514,6 +519,7 @@ const handleImgError = (e: Event) => {
 
 .table__th--image { width: 64px; }
 .table__th--price { width: 100px; text-align: right; }
+.table__th--sku { width: 70px; text-align: center; }
 .table__th--status { width: 80px; }
 .table__th--switch { width: 90px; text-align: center; }
 .table__th--actions { width: 130px; text-align: center; }
@@ -608,6 +614,29 @@ const handleImgError = (e: Event) => {
 /* Price */
 .table__td--price {
   text-align: right;
+}
+
+/* SKU Count */
+.table__td--sku {
+  text-align: center;
+}
+
+.sku-count-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: 4px;
+  color: #ff9500;
+  background: rgba(255, 149, 0, 0.1);
+  white-space: nowrap;
+}
+
+.sku-count-tag--single {
+  color: var(--c-text-3);
+  background: transparent;
+  font-weight: 400;
 }
 
 .price-text {

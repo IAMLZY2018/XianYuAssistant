@@ -50,6 +50,8 @@ public class XianyuGoodsConfig {
      * 开启后延时任务到期时若卖家已人工回复则取消自动回复
      */
     private Integer humanInterventionOn;
+
+    private Integer humanInterventionMinutes;
     
     /**
      * 固定资料（用于AI自动回复）

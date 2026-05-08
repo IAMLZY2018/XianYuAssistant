@@ -108,4 +108,6 @@ public interface GoodsInfoService {
      * @return 是否删除成功
      */
     boolean deleteGoodsInfo(Long xianyuAccountId, String xyGoodId);
+
+    boolean updateSkuCount(String xyGoodId, int skuCount);
 }

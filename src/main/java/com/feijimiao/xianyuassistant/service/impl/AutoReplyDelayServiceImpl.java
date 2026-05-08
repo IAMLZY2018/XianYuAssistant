@@ -3,11 +3,13 @@ package com.feijimiao.xianyuassistant.service.impl;
 import com.feijimiao.xianyuassistant.entity.XianyuAccount;
 import com.feijimiao.xianyuassistant.entity.XianyuGoodsAutoDeliveryConfig;
 import com.feijimiao.xianyuassistant.entity.XianyuGoodsConfig;
+import com.feijimiao.xianyuassistant.entity.XianyuHumanInterventionRecord;
 import com.feijimiao.xianyuassistant.event.chatMessageEvent.ChatMessageData;
 import com.feijimiao.xianyuassistant.mapper.XianyuAccountMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuChatMessageMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsAutoDeliveryConfigMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuGoodsConfigMapper;
+import com.feijimiao.xianyuassistant.mapper.XianyuHumanInterventionRecordMapper;
 import com.feijimiao.xianyuassistant.service.AutoReplyDelayService;
 import com.feijimiao.xianyuassistant.service.AutoReplyService;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +18,8 @@ import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +52,9 @@ public class AutoReplyDelayServiceImpl implements AutoReplyDelayService {
 
     @Autowired
     private XianyuChatMessageMapper chatMessageMapper;
+
+    @Autowired
+    private XianyuHumanInterventionRecordMapper humanInterventionRecordMapper;
     
     /**
      * 延时任务调度器
@@ -151,14 +158,23 @@ public class AutoReplyDelayServiceImpl implements AutoReplyDelayService {
                 List<ChatMessageData> messageList = pendingMessages.remove(taskKey);
                 
                 if (messageList != null && !messageList.isEmpty()) {
-                    // 人工干预检查：如果开启了人工干预，且卖家已在延时期间回复，则取消本次自动回复
+                    // 人工干预检查
                     long firstTriggerTime = messageList.stream()
                             .mapToLong(m -> m.getMessageTime() != null ? m.getMessageTime() : 0L)
                             .min().orElse(0L);
-                    if (isHumanInterventionEnabled(accountId, messageData.getXyGoodsId())
-                            && hasSellerRepliedAfter(accountId, sId, firstTriggerTime)) {
-                        log.info("【账号{}】人工干预生效：卖家已在延时期间回复，取消自动回复: sId={}", accountId, sId);
-                        return;
+                    
+                    if (isHumanInterventionEnabled(accountId, messageData.getXyGoodsId())) {
+                        // 检查1：该会话是否在人工干预有效期内
+                        if (isInHumanInterventionPeriod(sId)) {
+                            log.info("【账号{}】人工干预生效：该会话在人工干预有效期内，取消自动回复: sId={}", accountId, sId);
+                            return;
+                        }
+                        // 检查2：卖家是否在延时期间已回复
+                        if (hasSellerRepliedAfter(accountId, sId, firstTriggerTime)) {
+                            log.info("【账号{}】人工干预生效：卖家已在延时期间回复，取消自动回复: sId={}", accountId, sId);
+                            recordHumanIntervention(accountId, messageData.getXyGoodsId(), sId);
+                            return;
+                        }
                     }
                     log.info("【账号{}】延时任务到期，开始执行自动回复: sId={}, 触发消息数={}", accountId, sId, messageList.size());
                     // 执行自动回复，传入消息列表
@@ -217,7 +233,7 @@ public class AutoReplyDelayServiceImpl implements AutoReplyDelayService {
                 return DEFAULT_DELAY_SECONDS;
             }
             
-            XianyuGoodsAutoDeliveryConfig config = autoDeliveryConfigMapper.findByAccountIdAndGoodsId(accountId, xyGoodsId);
+            XianyuGoodsAutoDeliveryConfig config = autoDeliveryConfigMapper.findByAccountIdAndGoodsIdNoSku(accountId, xyGoodsId);
             if (config != null && config.getRagDelaySeconds() != null && config.getRagDelaySeconds() > 0) {
                 return config.getRagDelaySeconds();
             }
@@ -261,6 +277,51 @@ public class AutoReplyDelayServiceImpl implements AutoReplyDelayService {
         } catch (Exception e) {
             log.warn("检查卖家回复失败: {}", e.getMessage());
             return false;
+        }
+    }
+
+    private boolean isInHumanInterventionPeriod(String sId) {
+        try {
+            XianyuHumanInterventionRecord active = humanInterventionRecordMapper.findActiveBySId(sId);
+            if (active != null) {
+                log.debug("会话 {} 在人工干预有效期内，endTime={}", sId, active.getEndTime());
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            log.warn("检查人工干预有效期失败: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private void recordHumanIntervention(Long accountId, String xyGoodsId, String sId) {
+        try {
+            XianyuGoodsConfig config = goodsConfigMapper.selectByAccountAndGoodsId(accountId, xyGoodsId);
+            int minutes = (config != null && config.getHumanInterventionMinutes() != null && config.getHumanInterventionMinutes() > 0)
+                    ? config.getHumanInterventionMinutes() : 10;
+            LocalDateTime endTime = LocalDateTime.now().plusMinutes(minutes);
+            String endTimeStr = endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+            XianyuHumanInterventionRecord record = new XianyuHumanInterventionRecord();
+            record.setXianyuAccountId(accountId);
+            record.setXyGoodsId(xyGoodsId);
+            record.setSId(sId);
+            record.setEndTime(endTimeStr);
+            humanInterventionRecordMapper.insert(record);
+            log.info("记录人工干预: sId={}, minutes={}, endTime={}", sId, minutes, endTimeStr);
+        } catch (Exception e) {
+            log.warn("记录人工干预失败: {}", e.getMessage());
+        }
+    }
+
+    @Override
+    public void recordSellerManualReply(Long accountId, String xyGoodsId, String sId) {
+        if (accountId == null || sId == null) return;
+        try {
+            if (!isHumanInterventionEnabled(accountId, xyGoodsId)) return;
+            recordHumanIntervention(accountId, xyGoodsId, sId);
+        } catch (Exception e) {
+            log.warn("记录卖家手动回复干预失败: {}", e.getMessage());
         }
     }
 }

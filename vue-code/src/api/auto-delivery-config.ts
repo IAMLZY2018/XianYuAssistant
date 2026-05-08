@@ -1,16 +1,17 @@
 import { request } from '@/utils/request';
 import type { ApiResponse } from '@/types';
 
-// 自动发货配置
 export interface AutoDeliveryConfig {
   id: number;
   xianyuAccountId: number;
   xianyuGoodsId: number;
   xyGoodsId: string;
-  deliveryMode: number; // 1-自动发货，2-卡密发货，3-自定义发货
+  deliveryMode: number;
+  skuId: string | null;
+  skuName?: string;
   autoDeliveryContent: string;
-  kamiConfigIds?: string; // 卡密发货绑定的配置ID列表（逗号分隔）
-  kamiDeliveryTemplate?: string; // 卡密发货文案模板，使用{kmKey}占位符
+  kamiConfigIds?: string;
+  kamiDeliveryTemplate?: string;
   autoDeliveryImageUrl?: string;
   autoConfirmShipment?: number;
   createTime: string;
@@ -22,6 +23,8 @@ export interface SaveAutoDeliveryConfigReq {
   xianyuGoodsId?: number;
   xyGoodsId: string;
   deliveryMode: number;
+  skuId?: string | null;
+  skuName?: string;
   autoDeliveryContent: string;
   kamiConfigIds?: string;
   kamiDeliveryTemplate?: string;
@@ -29,13 +32,12 @@ export interface SaveAutoDeliveryConfigReq {
   autoConfirmShipment?: number;
 }
 
-// 查询配置请求
 export interface GetAutoDeliveryConfigReq {
   xianyuAccountId: number;
   xyGoodsId?: string;
+  skuId?: string | null;
 }
 
-// 保存或更新自动发货配置
 export function saveOrUpdateAutoDeliveryConfig(data: SaveAutoDeliveryConfigReq) {
   return request<AutoDeliveryConfig>({
     url: '/auto-delivery-config/save',
@@ -44,7 +46,6 @@ export function saveOrUpdateAutoDeliveryConfig(data: SaveAutoDeliveryConfigReq) 
   });
 }
 
-// 查询自动发货配置
 export function getAutoDeliveryConfig(data: GetAutoDeliveryConfigReq) {
   return request<AutoDeliveryConfig>({
     url: '/auto-delivery-config/get',
@@ -53,7 +54,14 @@ export function getAutoDeliveryConfig(data: GetAutoDeliveryConfigReq) {
   });
 }
 
-// 根据账号ID查询所有配置
+export function getAutoDeliveryConfigsByGoodsId(data: { xianyuAccountId: number; xyGoodsId: string }) {
+  return request<AutoDeliveryConfig[]>({
+    url: '/auto-delivery-config/listByGoods',
+    method: 'POST',
+    data
+  });
+}
+
 export function getAutoDeliveryConfigsByAccountId(xianyuAccountId: number) {
   return request<AutoDeliveryConfig[]>({
     url: '/auto-delivery-config/list',
@@ -62,11 +70,59 @@ export function getAutoDeliveryConfigsByAccountId(xianyuAccountId: number) {
   });
 }
 
-// 删除自动发货配置
 export function deleteAutoDeliveryConfig(xianyuAccountId: number, xyGoodsId: string) {
   return request({
     url: '/auto-delivery-config/delete',
     method: 'POST',
     params: { xianyuAccountId, xyGoodsId }
+  });
+}
+
+export interface GoodsSku {
+  id: string;
+  xyGoodsId: string;
+  skuId: string | null;
+  price: number;
+  quantity: number;
+  propertyText: string;
+  propertyId: number;
+  valueId: number;
+  valueText: string;
+  propertySortOrder: number;
+  valueSortOrder: number;
+  features: string;
+  xianyuAccountId: number;
+}
+
+export interface GoodsSkuProperty {
+  id: string;
+  xyGoodsId: string;
+  propertyId: number;
+  propertyText: string;
+  propertySortOrder: number;
+  valueId: number;
+  valueText: string;
+  valueSortOrder: number;
+  xianyuAccountId: number;
+}
+
+export interface GoodsSkuDetail {
+  skuList: GoodsSku[];
+  propertyList: GoodsSkuProperty[];
+}
+
+export function getGoodsSkuList(xyGoodsId: string) {
+  return request<GoodsSku[]>({
+    url: '/goods-sku/list',
+    method: 'POST',
+    params: { xyGoodsId }
+  });
+}
+
+export function getGoodsSkuDetail(xyGoodsId: string) {
+  return request<GoodsSkuDetail>({
+    url: '/goods-sku/detail',
+    method: 'POST',
+    params: { xyGoodsId }
   });
 }

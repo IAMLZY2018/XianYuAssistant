@@ -20,6 +20,7 @@ export interface DeliveryRecordVO {
   failReason?: string
   confirmState: number
   orderId?: string
+  skuName?: string
   createTime: string
 }
 
@@ -41,6 +42,14 @@ export function queryDeliveryRecordList(data: DeliveryRecordQueryReq) {
 export function confirmShipment(data: { xianyuAccountId: number; orderId: string }) {
   return request<string>({
     url: '/order/confirmShipment',
+    method: 'POST',
+    data
+  })
+}
+
+export function getOrderDetail(data: { xianyuAccountId: number; orderId: string }) {
+  return request<string>({
+    url: '/order/detail',
     method: 'POST',
     data
   })

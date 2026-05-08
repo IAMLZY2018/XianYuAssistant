@@ -49,7 +49,8 @@ public interface XianyuGoodsOrderMapper {
         @Result(property = "failReason", column = "fail_reason"),
         @Result(property = "confirmState", column = "confirm_state"),
         @Result(property = "createTime", column = "create_time"),
-        @Result(property = "goodsTitle", column = "goods_title")
+        @Result(property = "goodsTitle", column = "goods_title"),
+        @Result(property = "skuName", column = "sku_name")
     })
     List<XianyuGoodsOrder> selectByAccountIdWithPage(
             @Param("accountId") Long accountId,
@@ -104,4 +105,7 @@ public interface XianyuGoodsOrderMapper {
 
     @Select("SELECT COUNT(*) FROM xianyu_goods_order WHERE state = -1 AND date(create_time) = #{date}")
     int countDeliveryFailByDate(@Param("date") String date);
+
+    @Update("UPDATE xianyu_goods_order SET sku_name = #{skuName} WHERE id = #{id}")
+    int updateSkuName(@Param("id") Long id, @Param("skuName") String skuName);
 }

@@ -90,7 +90,7 @@ const {
   handleSyncDetailToFixedMaterial,
   toggleFixedMaterialExpanded,
   keywordRules, newKeyword, newContentText, newContentImage,
-  toggleKeywordReply, toggleHumanIntervention, handleAddKeyword, handleDeleteRule, handleAddContent, handleDeleteContent,
+  toggleKeywordReply, toggleHumanIntervention, updateHumanInterventionMinutes, handleAddKeyword, handleDeleteRule, handleAddContent, handleDeleteContent,
   replyModeTab, selectedKeywordRuleId, selectedKeywordRule,
   handleContentTextChange, handleContentImageUpload, handleContentImageDelete,
   showAddKeywordInput,
@@ -353,7 +353,7 @@ onMounted(() => {
             <div class="ar__toggle-row">
               <div class="ar__toggle-info">
                 <div class="ar__toggle-label">人工干预</div>
-                <div class="ar__toggle-hint">开启后，若卖家在延时期间已回复买家，则取消本次自动回复</div>
+                <div class="ar__toggle-hint">开启后，若卖家在延时期间已回复买家，则在指定时间内不再自动回复</div>
               </div>
               <label class="ar__switch">
                 <input
@@ -364,6 +364,20 @@ onMounted(() => {
                 <span class="ar__switch-track"></span>
                 <span class="ar__switch-thumb"></span>
               </label>
+            </div>
+            <div v-if="selectedGoods.humanInterventionOn === 1" class="ar__intervention-minutes">
+              <span class="ar__intervention-label">不回复持续时间</span>
+              <div class="ar__intervention-input-wrap">
+                <input
+                  type="number"
+                  class="ar__intervention-input"
+                  :value="selectedGoods.humanInterventionMinutes || 10"
+                  min="1"
+                  max="120"
+                  @change="updateHumanInterventionMinutes(Math.max(1, Math.min(120, Number(($event.target as HTMLInputElement).value) || 10)))"
+                />
+                <span class="ar__intervention-unit">分钟</span>
+              </div>
             </div>
           </div>
 

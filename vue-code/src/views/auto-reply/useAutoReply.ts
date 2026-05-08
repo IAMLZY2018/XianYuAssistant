@@ -448,7 +448,8 @@ export function useAutoReply() {
         xianyuAutoReplyOn: selectedGoods.value.xianyuAutoReplyOn,
         xianyuAutoReplyContextOn: selectedGoods.value.xianyuAutoReplyContextOn,
         xianyuKeywordReplyOn: selectedGoods.value.xianyuKeywordReplyOn,
-        humanInterventionOn: checked ? 1 : 0
+        humanInterventionOn: checked ? 1 : 0,
+        humanInterventionMinutes: selectedGoods.value.humanInterventionMinutes || 10
       } as any)
 
       if (response.code === 0 || response.code === 200) {
@@ -468,6 +469,35 @@ export function useAutoReply() {
       if (selectedGoods.value) {
         selectedGoods.value.humanInterventionOn = checked ? 0 : 1
       }
+    }
+  }
+
+  const updateHumanInterventionMinutes = async (minutes: number) => {
+    if (!selectedGoods.value || !selectedAccountId.value) return
+    if (minutes < 1 || minutes > 120) return
+
+    try {
+      const response = await updateAutoReplyStatus({
+        xianyuAccountId: selectedAccountId.value,
+        xyGoodsId: selectedGoods.value.item.xyGoodId,
+        xianyuAutoReplyOn: selectedGoods.value.xianyuAutoReplyOn,
+        xianyuAutoReplyContextOn: selectedGoods.value.xianyuAutoReplyContextOn,
+        xianyuKeywordReplyOn: selectedGoods.value.xianyuKeywordReplyOn,
+        humanInterventionOn: selectedGoods.value.humanInterventionOn,
+        humanInterventionMinutes: minutes
+      } as any)
+
+      if (response.code === 0 || response.code === 200) {
+        if (selectedGoods.value) {
+          selectedGoods.value.humanInterventionMinutes = minutes
+        }
+        const goodsItem = goodsList.value.find(item => item.item.xyGoodId === selectedGoods.value?.item.xyGoodId)
+        if (goodsItem) {
+          goodsItem.humanInterventionMinutes = minutes
+        }
+      }
+    } catch (error: any) {
+      console.error('更新人工干预时长失败:', error)
     }
   }
 
@@ -1235,6 +1265,7 @@ export function useAutoReply() {
     newContentImage,
     toggleKeywordReply,
     toggleHumanIntervention,
+    updateHumanInterventionMinutes,
     handleAddKeyword,
     handleDeleteRule,
     handleAddContent,

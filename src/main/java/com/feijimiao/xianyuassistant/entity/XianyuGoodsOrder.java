@@ -37,4 +37,6 @@ public class XianyuGoodsOrder {
     private String createTime;
     
     private String goodsTitle;
+
+    private String skuName;
 }
