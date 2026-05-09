@@ -119,4 +119,14 @@ public class KamiConfigController {
             return ResultObject.failed("重置卡密状态失败: " + e.getMessage());
         }
     }
+
+    @PostMapping("/item/export")
+    public ResultObject<List<KamiItemRespDTO>> exportKamiItems(@RequestBody KamiExportReqDTO reqDTO) {
+        try {
+            return kamiConfigService.exportKamiItems(reqDTO);
+        } catch (Exception e) {
+            log.error("导出卡密失败", e);
+            return ResultObject.failed("导出卡密失败: " + e.getMessage());
+        }
+    }
 }

@@ -359,6 +359,13 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
             }
 
             OrderDetailInfo orderDetail = fetchOrderDetailInfo(accountId, xyGoodsId, orderId);
+            if (orderDetail == null && orderId != null && !orderId.isEmpty()) {
+                log.warn("【账号{}】获取订单详情失败(可能Cookie过期或API异常)，中断发货: orderId={}", accountId, orderId);
+                String failReason = "获取订单详情失败(可能Cookie过期)，请检查Cookie状态";
+                updateRecordState(recordId, -1, null, failReason);
+                emailNotifyService.sendAutoDeliveryFailEmail(null, xyGoodsId, orderId, failReason);
+                return;
+            }
             String orderSkuId = orderDetail != null ? orderDetail.skuId : null;
             String skuName = orderDetail != null ? orderDetail.skuName : null;
             int buyNum = (orderDetail != null && orderDetail.buyNum != null && orderDetail.buyNum > 0) ? orderDetail.buyNum : 1;

@@ -32,17 +32,27 @@ export function showConfirm(message: string, title = '确认') {
 // 格式化时间
 export function formatTime(timestamp: number | string | Date): string {
   if (!timestamp) return '-'
-  const ts = typeof timestamp === 'string' || typeof timestamp === 'number' ? Number(timestamp) : timestamp
-  if (typeof ts === 'number' && isNaN(ts)) return '-'
-  const date = new Date(ts)
+  if (typeof timestamp === 'string') {
+    if (/^\d{4}-\d{2}-\d{2}/.test(timestamp)) {
+      return timestamp.replace('T', ' ').substring(0, 19)
+    }
+    const num = Number(timestamp)
+    if (!isNaN(num)) {
+      const date = new Date(num)
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleString('zh-CN', {
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', second: '2-digit'
+        })
+      }
+    }
+    return '-'
+  }
+  const date = new Date(timestamp)
   if (isNaN(date.getTime())) return '-'
   return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
   })
 }
 

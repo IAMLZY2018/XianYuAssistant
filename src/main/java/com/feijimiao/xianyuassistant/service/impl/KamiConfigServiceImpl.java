@@ -317,6 +317,31 @@ public class KamiConfigServiceImpl implements KamiConfigService {
         return kamiConfigMapper.selectById(kamiConfigId);
     }
 
+    @Override
+    public ResultObject<List<KamiItemRespDTO>> exportKamiItems(KamiExportReqDTO reqDTO) {
+        try {
+            List<XianyuKamiItem> items = new ArrayList<>();
+            boolean includeUnused = reqDTO.getIncludeUnused() != null && reqDTO.getIncludeUnused();
+            boolean includeUsed = reqDTO.getIncludeUsed() != null && reqDTO.getIncludeUsed();
+
+            if (includeUnused && includeUsed) {
+                items = kamiItemMapper.findByConfigId(reqDTO.getKamiConfigId());
+            } else if (includeUnused) {
+                items = kamiItemMapper.findByConfigIdAndStatus(reqDTO.getKamiConfigId(), 0);
+            } else if (includeUsed) {
+                items = kamiItemMapper.findByConfigIdAndStatus(reqDTO.getKamiConfigId(), 1);
+            }
+
+            List<KamiItemRespDTO> result = items.stream()
+                    .map(this::toItemRespDTO)
+                    .collect(Collectors.toList());
+            return ResultObject.success(result);
+        } catch (Exception e) {
+            log.error("导出卡密失败", e);
+            return ResultObject.failed("导出卡密失败: " + e.getMessage());
+        }
+    }
+
     private void refreshConfigCounts(Long kamiConfigId) {
         int total = kamiItemMapper.countByConfigId(kamiConfigId);
         int used = kamiItemMapper.countUsed(kamiConfigId);

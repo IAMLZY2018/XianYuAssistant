@@ -53,4 +53,7 @@ public interface XianyuKamiItemMapper extends BaseMapper<XianyuKamiItem> {
 
     @Update("UPDATE xianyu_kami_item SET status = 0, order_id = NULL, used_time = NULL WHERE id = #{id} AND status = 1")
     int markUnused(@Param("id") Long id);
+
+    @Select("SELECT * FROM xianyu_kami_item WHERE kami_config_id = #{kamiConfigId} AND status = #{status} ORDER BY sort_order ASC")
+    List<XianyuKamiItem> findByConfigIdAndStatus(@Param("kamiConfigId") Long kamiConfigId, @Param("status") Integer status);
 }

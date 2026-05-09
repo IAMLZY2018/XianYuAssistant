@@ -37,9 +37,34 @@ public class AccountBackupHandler implements DataBackupHandler {
         List<XianyuAccount> accounts = accountMapper.selectList(null);
         List<XianyuCookie> cookies = cookieMapper.selectList(null);
 
+        List<Map<String, Object>> accountList = new ArrayList<>();
+        for (XianyuAccount account : accounts) {
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("unb", account.getUnb());
+            map.put("accountNote", account.getAccountNote());
+            map.put("deviceId", account.getDeviceId());
+            map.put("status", account.getStatus());
+            accountList.add(map);
+        }
+
+        List<Map<String, Object>> cookieList = new ArrayList<>();
+        for (XianyuCookie cookie : cookies) {
+            XianyuAccount account = accountMapper.selectById(cookie.getXianyuAccountId());
+            if (account == null) continue;
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("unb", account.getUnb());
+            map.put("cookieText", cookie.getCookieText());
+            map.put("mH5Tk", cookie.getMH5Tk());
+            map.put("cookieStatus", cookie.getCookieStatus());
+            map.put("expireTime", cookie.getExpireTime());
+            map.put("websocketToken", cookie.getWebsocketToken());
+            map.put("tokenExpireTime", cookie.getTokenExpireTime());
+            cookieList.add(map);
+        }
+
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("accounts", accounts);
-        data.put("cookies", cookies);
+        data.put("accounts", accountList);
+        data.put("cookies", cookieList);
         return data;
     }
 
@@ -47,62 +72,73 @@ public class AccountBackupHandler implements DataBackupHandler {
     public void importData(Map<String, Object> data, Map<String, Object> context) {
         if (data == null) return;
 
-        Map<Long, Long> oldToNewAccountId = new HashMap<>();
+        Map<String, Long> unbToAccountId = new HashMap<>();
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> accountMaps = (List<Map<String, Object>>) data.get("accounts");
         if (accountMaps != null) {
             for (Map<String, Object> map : accountMaps) {
                 try {
-                    Long oldId = map.get("id") != null ? ((Number) map.get("id")).longValue() : null;
-                    XianyuAccount account = mapToAccount(map);
-                    if (account == null) continue;
+                    String unb = (String) map.get("unb");
+                    if (unb == null) continue;
 
                     LambdaQueryWrapper<XianyuAccount> wrapper = new LambdaQueryWrapper<>();
-                    wrapper.eq(XianyuAccount::getUnb, account.getUnb());
+                    wrapper.eq(XianyuAccount::getUnb, unb);
                     XianyuAccount existing = accountMapper.selectOne(wrapper);
+
+                    XianyuAccount account;
                     if (existing == null) {
-                        if (oldId != null) {
-                            account.setId(oldId);
-                        } else {
-                            account.setId(null);
-                        }
+                        account = new XianyuAccount();
+                        account.setUnb(unb);
+                        account.setAccountNote((String) map.get("accountNote"));
+                        account.setDeviceId((String) map.get("deviceId"));
+                        account.setStatus(map.get("status") != null ? ((Number) map.get("status")).intValue() : null);
                         accountMapper.insert(account);
-                        if (oldId != null && !oldId.equals(account.getId())) {
-                            oldToNewAccountId.put(oldId, account.getId());
-                        }
                     } else {
-                        if (oldId != null) {
-                            oldToNewAccountId.put(oldId, existing.getId());
+                        account = existing;
+                        if (map.get("accountNote") != null) {
+                            account.setAccountNote((String) map.get("accountNote"));
                         }
-                        account.setId(existing.getId());
+                        if (map.get("deviceId") != null) {
+                            account.setDeviceId((String) map.get("deviceId"));
+                        }
+                        if (map.get("status") != null) {
+                            account.setStatus(((Number) map.get("status")).intValue());
+                        }
                         accountMapper.updateById(account);
                     }
+                    unbToAccountId.put(unb, account.getId());
                 } catch (Exception e) {
                     log.warn("[AccountBackup] 导入单条账号数据失败: {}", e.getMessage());
                 }
             }
         }
 
-        context.put("accountIdMapping", oldToNewAccountId);
+        context.put("unbToAccountId", unbToAccountId);
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> cookieMaps = (List<Map<String, Object>>) data.get("cookies");
         if (cookieMaps != null) {
             for (Map<String, Object> map : cookieMaps) {
                 try {
-                    XianyuCookie cookie = mapToCookie(map);
-                    if (cookie == null) continue;
+                    String unb = (String) map.get("unb");
+                    if (unb == null || !unbToAccountId.containsKey(unb)) continue;
 
-                    if (cookie.getXianyuAccountId() != null && oldToNewAccountId.containsKey(cookie.getXianyuAccountId())) {
-                        cookie.setXianyuAccountId(oldToNewAccountId.get(cookie.getXianyuAccountId()));
-                    }
-
+                    Long accountId = unbToAccountId.get(unb);
                     LambdaQueryWrapper<XianyuCookie> wrapper = new LambdaQueryWrapper<>();
-                    wrapper.eq(XianyuCookie::getXianyuAccountId, cookie.getXianyuAccountId());
+                    wrapper.eq(XianyuCookie::getXianyuAccountId, accountId);
                     XianyuCookie existing = cookieMapper.selectOne(wrapper);
+
+                    XianyuCookie cookie = new XianyuCookie();
+                    cookie.setXianyuAccountId(accountId);
+                    cookie.setCookieText((String) map.get("cookieText"));
+                    cookie.setMH5Tk((String) map.get("mH5Tk"));
+                    cookie.setCookieStatus(map.get("cookieStatus") != null ? ((Number) map.get("cookieStatus")).intValue() : null);
+                    cookie.setExpireTime((String) map.get("expireTime"));
+                    cookie.setWebsocketToken((String) map.get("websocketToken"));
+                    cookie.setTokenExpireTime(map.get("tokenExpireTime") != null ? ((Number) map.get("tokenExpireTime")).longValue() : null);
+
                     if (existing == null) {
-                        cookie.setId(null);
                         cookieMapper.insert(cookie);
                     } else {
                         cookie.setId(existing.getId());
@@ -112,41 +148,6 @@ public class AccountBackupHandler implements DataBackupHandler {
                     log.warn("[AccountBackup] 导入单条Cookie数据失败: {}", e.getMessage());
                 }
             }
-        }
-    }
-
-    private XianyuAccount mapToAccount(Map<String, Object> map) {
-        try {
-            XianyuAccount a = new XianyuAccount();
-            a.setAccountNote((String) map.get("accountNote"));
-            a.setUnb((String) map.get("unb"));
-            a.setDeviceId((String) map.get("deviceId"));
-            a.setStatus(map.get("status") != null ? ((Number) map.get("status")).intValue() : null);
-            a.setCreatedTime((String) map.get("createdTime"));
-            a.setUpdatedTime((String) map.get("updatedTime"));
-            return a;
-        } catch (Exception e) {
-            log.warn("解析账号数据失败", e);
-            return null;
-        }
-    }
-
-    private XianyuCookie mapToCookie(Map<String, Object> map) {
-        try {
-            XianyuCookie c = new XianyuCookie();
-            c.setXianyuAccountId(map.get("xianyuAccountId") != null ? ((Number) map.get("xianyuAccountId")).longValue() : null);
-            c.setCookieText((String) map.get("cookieText"));
-            c.setMH5Tk((String) map.get("mH5Tk"));
-            c.setCookieStatus(map.get("cookieStatus") != null ? ((Number) map.get("cookieStatus")).intValue() : null);
-            c.setExpireTime((String) map.get("expireTime"));
-            c.setWebsocketToken((String) map.get("websocketToken"));
-            c.setTokenExpireTime(map.get("tokenExpireTime") != null ? ((Number) map.get("tokenExpireTime")).longValue() : null);
-            c.setCreatedTime((String) map.get("createdTime"));
-            c.setUpdatedTime((String) map.get("updatedTime"));
-            return c;
-        } catch (Exception e) {
-            log.warn("解析Cookie数据失败", e);
-            return null;
         }
     }
 }

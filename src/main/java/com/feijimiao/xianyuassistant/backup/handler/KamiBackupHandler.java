@@ -2,8 +2,10 @@ package com.feijimiao.xianyuassistant.backup.handler;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.feijimiao.xianyuassistant.backup.DataBackupHandler;
+import com.feijimiao.xianyuassistant.entity.XianyuAccount;
 import com.feijimiao.xianyuassistant.entity.XianyuKamiConfig;
 import com.feijimiao.xianyuassistant.entity.XianyuKamiItem;
+import com.feijimiao.xianyuassistant.mapper.XianyuAccountMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuKamiConfigMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuKamiItemMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +24,9 @@ public class KamiBackupHandler implements DataBackupHandler {
     @Autowired
     private XianyuKamiItemMapper kamiItemMapper;
 
+    @Autowired
+    private XianyuAccountMapper accountMapper;
+
     @Override
     public String getModuleKey() {
         return "kami";
@@ -35,11 +40,42 @@ public class KamiBackupHandler implements DataBackupHandler {
     @Override
     public Map<String, Object> exportData() {
         List<XianyuKamiConfig> kamiConfigs = kamiConfigMapper.selectList(null);
-        List<XianyuKamiItem> kamiItems = kamiItemMapper.selectList(null);
+
+        List<Map<String, Object>> configList = new ArrayList<>();
+        Map<Long, String> configIdToUnb = new HashMap<>();
+        for (XianyuKamiConfig config : kamiConfigs) {
+            XianyuAccount account = accountMapper.selectById(config.getXianyuAccountId());
+            if (account == null) continue;
+
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("unb", account.getUnb());
+            map.put("aliasName", config.getAliasName());
+            map.put("alertEnabled", config.getAlertEnabled());
+            map.put("alertThresholdType", config.getAlertThresholdType());
+            map.put("alertThresholdValue", config.getAlertThresholdValue());
+            map.put("alertEmail", config.getAlertEmail());
+            configList.add(map);
+            configIdToUnb.put(config.getId(), account.getUnb());
+        }
+
+        List<Map<String, Object>> itemList = new ArrayList<>();
+        for (XianyuKamiConfig config : kamiConfigs) {
+            List<XianyuKamiItem> items = kamiItemMapper.findByConfigIdAndStatus(config.getId(), 0);
+            String unb = configIdToUnb.get(config.getId());
+            if (unb == null) continue;
+
+            for (XianyuKamiItem item : items) {
+                Map<String, Object> map = new LinkedHashMap<>();
+                map.put("unb", unb);
+                map.put("aliasName", config.getAliasName());
+                map.put("kamiContent", item.getKamiContent());
+                itemList.add(map);
+            }
+        }
 
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("kamiConfigs", kamiConfigs);
-        data.put("kamiItems", kamiItems);
+        data.put("kamiConfigs", configList);
+        data.put("kamiItems", itemList);
         return data;
     }
 
@@ -48,109 +84,98 @@ public class KamiBackupHandler implements DataBackupHandler {
         if (data == null) return;
 
         @SuppressWarnings("unchecked")
-        Map<Long, Long> accountIdMapping = context.get("accountIdMapping") != null
-                ? (Map<Long, Long>) context.get("accountIdMapping")
+        Map<String, Long> unbToAccountId = context.get("unbToAccountId") != null
+                ? (Map<String, Long>) context.get("unbToAccountId")
                 : Collections.emptyMap();
 
-        Map<Long, Long> oldToNewConfigId = new HashMap<>();
+        Map<String, Long> configKeyToId = new HashMap<>();
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> configMaps = (List<Map<String, Object>>) data.get("kamiConfigs");
         if (configMaps != null) {
+            int skippedCount = 0;
             for (Map<String, Object> map : configMaps) {
                 try {
-                    XianyuKamiConfig config = mapToKamiConfig(map);
-                    if (config == null) continue;
+                    String unb = (String) map.get("unb");
+                    String aliasName = (String) map.get("aliasName");
+                    if (unb == null || aliasName == null) continue;
 
-                    if (config.getXianyuAccountId() != null && accountIdMapping.containsKey(config.getXianyuAccountId())) {
-                        config.setXianyuAccountId(accountIdMapping.get(config.getXianyuAccountId()));
+                    Long accountId = unbToAccountId.get(unb);
+                    if (accountId == null) {
+                        log.warn("[KamiBackup] 跳过配置: 找不到账号, unb={}, aliasName={}", unb, aliasName);
+                        skippedCount++;
+                        continue;
                     }
-
-                    Long oldId = map.get("id") != null ? ((Number) map.get("id")).longValue() : null;
 
                     LambdaQueryWrapper<XianyuKamiConfig> wrapper = new LambdaQueryWrapper<>();
-                    wrapper.eq(XianyuKamiConfig::getAliasName, config.getAliasName())
-                           .eq(XianyuKamiConfig::getXianyuAccountId, config.getXianyuAccountId());
+                    wrapper.eq(XianyuKamiConfig::getXianyuAccountId, accountId)
+                           .eq(XianyuKamiConfig::getAliasName, aliasName);
                     XianyuKamiConfig existing = kamiConfigMapper.selectOne(wrapper);
+
+                    XianyuKamiConfig config = new XianyuKamiConfig();
+                    config.setXianyuAccountId(accountId);
+                    config.setAliasName(aliasName);
+                    config.setAlertEnabled(map.get("alertEnabled") != null ? ((Number) map.get("alertEnabled")).intValue() : null);
+                    config.setAlertThresholdType(map.get("alertThresholdType") != null ? ((Number) map.get("alertThresholdType")).intValue() : null);
+                    config.setAlertThresholdValue(map.get("alertThresholdValue") != null ? ((Number) map.get("alertThresholdValue")).intValue() : null);
+                    config.setAlertEmail((String) map.get("alertEmail"));
+
                     if (existing == null) {
-                        config.setId(null);
+                        config.setTotalCount(0);
+                        config.setUsedCount(0);
                         kamiConfigMapper.insert(config);
-                        if (oldId != null) {
-                            oldToNewConfigId.put(oldId, config.getId());
-                        }
                     } else {
-                        if (oldId != null) {
-                            oldToNewConfigId.put(oldId, existing.getId());
-                        }
                         config.setId(existing.getId());
+                        config.setTotalCount(existing.getTotalCount());
+                        config.setUsedCount(existing.getUsedCount());
                         kamiConfigMapper.updateById(config);
                     }
+                    configKeyToId.put(unb + ":" + aliasName, config.getId());
                 } catch (Exception e) {
                     log.warn("[KamiBackup] 导入单条卡密配置失败: {}", e.getMessage());
                 }
+            }
+            if (skippedCount > 0) {
+                log.warn("[KamiBackup] 共跳过 {} 条配置数据（账号不存在）", skippedCount);
             }
         }
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> itemMaps = (List<Map<String, Object>>) data.get("kamiItems");
         if (itemMaps != null) {
+            int skippedCount = 0;
             for (Map<String, Object> map : itemMaps) {
                 try {
-                    XianyuKamiItem item = mapToKamiItem(map);
-                    if (item == null) continue;
+                    String unb = (String) map.get("unb");
+                    String aliasName = (String) map.get("aliasName");
+                    String kamiContent = (String) map.get("kamiContent");
+                    if (unb == null || aliasName == null || kamiContent == null) continue;
 
-                    Long oldConfigId = map.get("kamiConfigId") != null ? ((Number) map.get("kamiConfigId")).longValue() : null;
-                    if (oldConfigId != null && oldToNewConfigId.containsKey(oldConfigId)) {
-                        item.setKamiConfigId(oldToNewConfigId.get(oldConfigId));
+                    Long configId = configKeyToId.get(unb + ":" + aliasName);
+                    if (configId == null) {
+                        skippedCount++;
+                        continue;
                     }
-
-                    if (item.getKamiConfigId() == null) continue;
 
                     LambdaQueryWrapper<XianyuKamiItem> wrapper = new LambdaQueryWrapper<>();
-                    wrapper.eq(XianyuKamiItem::getKamiConfigId, item.getKamiConfigId())
-                           .eq(XianyuKamiItem::getKamiContent, item.getKamiContent());
+                    wrapper.eq(XianyuKamiItem::getKamiConfigId, configId)
+                           .eq(XianyuKamiItem::getKamiContent, kamiContent);
                     XianyuKamiItem existing = kamiItemMapper.selectOne(wrapper);
-                    if (existing == null) {
-                        item.setId(null);
-                        kamiItemMapper.insert(item);
-                    }
+                    if (existing != null) continue;
+
+                    XianyuKamiItem item = new XianyuKamiItem();
+                    item.setKamiConfigId(configId);
+                    item.setKamiContent(kamiContent);
+                    item.setStatus(0);
+                    item.setSortOrder(0);
+                    kamiItemMapper.insert(item);
                 } catch (Exception e) {
                     log.warn("[KamiBackup] 导入单条卡密项失败: {}", e.getMessage());
                 }
             }
-        }
-    }
-
-    private XianyuKamiConfig mapToKamiConfig(Map<String, Object> map) {
-        try {
-            XianyuKamiConfig c = new XianyuKamiConfig();
-            c.setXianyuAccountId(map.get("xianyuAccountId") != null ? ((Number) map.get("xianyuAccountId")).longValue() : null);
-            c.setAliasName((String) map.get("aliasName"));
-            c.setAlertEnabled(map.get("alertEnabled") != null ? ((Number) map.get("alertEnabled")).intValue() : null);
-            c.setAlertThresholdType(map.get("alertThresholdType") != null ? ((Number) map.get("alertThresholdType")).intValue() : null);
-            c.setAlertThresholdValue(map.get("alertThresholdValue") != null ? ((Number) map.get("alertThresholdValue")).intValue() : null);
-            c.setAlertEmail((String) map.get("alertEmail"));
-            c.setTotalCount(map.get("totalCount") != null ? ((Number) map.get("totalCount")).intValue() : null);
-            c.setUsedCount(map.get("usedCount") != null ? ((Number) map.get("usedCount")).intValue() : null);
-            return c;
-        } catch (Exception e) {
-            log.warn("解析卡密配置数据失败", e);
-            return null;
-        }
-    }
-
-    private XianyuKamiItem mapToKamiItem(Map<String, Object> map) {
-        try {
-            XianyuKamiItem i = new XianyuKamiItem();
-            i.setKamiConfigId(map.get("kamiConfigId") != null ? ((Number) map.get("kamiConfigId")).longValue() : null);
-            i.setKamiContent((String) map.get("kamiContent"));
-            i.setStatus(map.get("status") != null ? ((Number) map.get("status")).intValue() : null);
-            i.setOrderId((String) map.get("orderId"));
-            i.setSortOrder(map.get("sortOrder") != null ? ((Number) map.get("sortOrder")).intValue() : null);
-            return i;
-        } catch (Exception e) {
-            log.warn("解析卡密项数据失败", e);
-            return null;
+            if (skippedCount > 0) {
+                log.warn("[KamiBackup] 共跳过 {} 条卡密项数据（配置不存在）", skippedCount);
+            }
         }
     }
 }

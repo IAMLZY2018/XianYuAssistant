@@ -2204,23 +2204,24 @@
 .ar__kw-item:active { transform: scale(0.98); background: rgba(0, 122, 255, 0.08); }
 .ar__kw-item--active { background: rgba(0, 122, 255, 0.06); }
 
-.ar__kw-item-del {
+.ar__kw-item-edit {
   display: none;
   align-items: center;
   justify-content: center;
-  width: 20px;
   height: 20px;
+  padding: 0 6px;
   border: none;
-  border-radius: 50%;
-  background: rgba(255, 59, 48, 0.1);
-  color: #ff3b30;
-  font-size: 12px;
+  border-radius: 4px;
+  background: rgba(0, 122, 255, 0.1);
+  color: #007aff;
+  font-size: 11px;
+  font-weight: 500;
   cursor: pointer;
   flex-shrink: 0;
   line-height: 1;
 }
 
-.ar__kw-item:hover .ar__kw-item-del {
+.ar__kw-item:hover .ar__kw-item-edit {
   display: flex;
 }
 

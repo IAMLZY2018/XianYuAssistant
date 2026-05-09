@@ -32,4 +32,6 @@ public interface KamiConfigService {
     XianyuKamiItem acquireKami(Long kamiConfigId, String orderId);
 
     XianyuKamiConfig getConfig(Long kamiConfigId);
+
+    ResultObject<List<KamiItemRespDTO>> exportKamiItems(KamiExportReqDTO reqDTO);
 }

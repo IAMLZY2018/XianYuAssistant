@@ -98,7 +98,9 @@ const {
   addReplyText, addReplyImageUrls,
   handleAddKeywordFromDialog, handleAddReplyFromDialog,
   handleUpdateMatchMode,
-  fallbackRule, fallbackText, fallbackImageUrls, fallbackExpanded, handleSaveFallbackText
+  fallbackRule, fallbackText, fallbackImageUrls, fallbackExpanded, handleSaveFallbackText,
+  editKeywordDialogVisible, editKeywordId, editKeywordName,
+  handleOpenEditKeyword, handleSaveEditKeyword, handleDeleteFromEditDialog
 } = useAutoReply()
 
 // 导航栏注入
@@ -478,7 +480,7 @@ onMounted(() => {
                       <span class="ar__kw-item-text">{{ rule.keyword }}</span>
                       <span class="ar__kw-item-mode">{{ rule.matchMode === 2 ? '精准' : '模糊' }}</span>
                       <span class="ar__kw-item-count">{{ rule.contents?.length || 0 }}条</span>
-                      <button class="ar__kw-item-del" @click.stop="handleDeleteRule(rule.id as number)">×</button>
+                      <button class="ar__kw-item-edit" @click.stop="handleOpenEditKeyword(rule)">编辑</button>
                     </div>
                   </div>
                   <div v-else class="ar__kw-empty">添加关键词开始配置</div>
@@ -524,7 +526,7 @@ onMounted(() => {
                       <span class="ar__kw-item-text">{{ rule.keyword }}</span>
                       <span class="ar__kw-item-mode">{{ rule.matchMode === 2 ? '精准' : '模糊' }}</span>
                       <span class="ar__kw-item-count">{{ rule.contents?.length || 0 }}</span>
-                      <button class="ar__kw-item-del" @click.stop="handleDeleteRule(rule.id as number)">×</button>
+                      <button class="ar__kw-item-edit" @click.stop="handleOpenEditKeyword(rule)">编辑</button>
                     </div>
                   </div>
                   <div v-else class="ar__kw-empty">点击上方添加关键词</div>
@@ -576,6 +578,23 @@ onMounted(() => {
                 <div class="ar__dialog-actions">
                   <button class="ar__dialog-btn ar__dialog-btn--cancel" @click="addKeywordDialogVisible = false; newKeyword = ''">取消</button>
                   <button class="ar__dialog-btn ar__dialog-btn--confirm" @click="handleAddKeywordFromDialog" :disabled="!newKeyword.trim()">确定</button>
+                </div>
+              </div>
+            </div>
+          </Teleport>
+
+          <!-- Edit Keyword Dialog -->
+          <Teleport to="body">
+            <div v-if="editKeywordDialogVisible" class="ar__dialog-overlay" @click.self="editKeywordDialogVisible = false">
+              <div class="ar__dialog">
+                <div class="ar__dialog-header">编辑关键词</div>
+                <div class="ar__dialog-body">
+                  <input type="text" v-model="editKeywordName" class="ar__dialog-input" placeholder="输入关键词" @keydown.enter="handleSaveEditKeyword" />
+                </div>
+                <div class="ar__dialog-actions">
+                  <button class="ar__dialog-btn ar__dialog-btn--danger" @click="handleDeleteFromEditDialog">删除</button>
+                  <button class="ar__dialog-btn ar__dialog-btn--cancel" @click="editKeywordDialogVisible = false">取消</button>
+                  <button class="ar__dialog-btn ar__dialog-btn--confirm" @click="handleSaveEditKeyword" :disabled="!editKeywordName.trim()">保存</button>
                 </div>
               </div>
             </div>

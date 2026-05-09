@@ -186,7 +186,7 @@ const getConfirmBg = (state: number) => {
         <div class="order-card__row">
           <IconShoppingBag />
           <span class="order-card__label">商品</span>
-          <span class="order-card__value">{{ order.goodsTitle || '-' }}</span>
+          <span class="order-card__value text-ellipsis-10" :title="order.goodsTitle || '-'">{{ order.goodsTitle || '-' }}</span>
         </div>
         <div v-if="order.skuName" class="order-card__row">
           <span class="order-card__label"></span>
@@ -200,8 +200,8 @@ const getConfirmBg = (state: number) => {
         </div>
         <div class="order-card__row">
           <IconClock />
-          <span class="order-card__label">时间</span>
-          <span class="order-card__value">{{ formatTime(order.createTime) }}</span>
+          <span class="order-card__label">下单时间</span>
+          <span class="order-card__value">{{ formatTime(order.orderCreateTime || order.createTime) }}</span>
         </div>
       </div>
 
@@ -213,7 +213,7 @@ const getConfirmBg = (state: number) => {
         <button
           v-if="order.orderId"
           class="order-card__action order-card__action--detail"
-          title="单击查本地，双击同步闲鱼"
+          title="单击查询本地，双击查询闲鱼服务器"
           @click="handleClickDetail(order)"
         >
           <IconEye />
@@ -248,7 +248,7 @@ const getConfirmBg = (state: number) => {
           <th class="table__th table__th--center">发货内容</th>
           <th class="table__th table__th--center">发货状态</th>
           <th class="table__th table__th--center">确认状态</th>
-          <th class="table__th table__th--center">创建时间</th>
+          <th class="table__th table__th--center">下单时间</th>
           <th class="table__th table__th--actions">操作</th>
         </tr>
       </thead>
@@ -259,17 +259,18 @@ const getConfirmBg = (state: number) => {
           </td>
           <td class="table__td table__td--title">
             <div class="order-title-cell">
-              <span class="order-title-cell__name">{{ order.goodsTitle || '-' }}</span>
+              <span class="order-title-cell__name text-ellipsis-10" :title="order.goodsTitle || '-'">{{ order.goodsTitle || '-' }}</span>
             </div>
           </td>
           <td class="table__td table__td--center">
             <span v-if="order.skuName" class="sku-name-tag">{{ order.skuName }}</span>
+            <span v-else class="table__td-placeholder">-</span>
           </td>
           <td class="table__td table__td--center">
             <span class="buyer-name">{{ order.buyerUserName || '-' }}</span>
           </td>
           <td class="table__td">
-            <span class="content-text">{{ order.content || '-' }}</span>
+            <span class="content-text text-ellipsis-10" :title="order.content || '-'">{{ order.content || '-' }}</span>
           </td>
           <td class="table__td table__td--center">
             <span
@@ -295,13 +296,13 @@ const getConfirmBg = (state: number) => {
             </span>
           </td>
           <td class="table__td table__td--center">
-            <span class="time-text">{{ formatTime(order.createTime) }}</span>
+            <span class="time-text">{{ formatTime(order.orderCreateTime || order.createTime) }}</span>
           </td>
           <td class="table__td table__td--actions">
             <button
               v-if="order.orderId"
               class="table__action table__action--detail"
-              title="单击查本地，双击同步闲鱼"
+              title="单击查询本地，双击查询闲鱼服务器"
               @click="handleClickDetail(order)"
             >
               <IconEye />
@@ -720,6 +721,18 @@ const getConfirmBg = (state: number) => {
   max-width: 280px;
 }
 
+.text-ellipsis-10 {
+  max-width: 10em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.table__td-placeholder {
+  color: var(--c-text-3);
+}
+
 .buyer-name {
   font-size: 13px;
   color: var(--c-text-2);
@@ -728,11 +741,6 @@ const getConfirmBg = (state: number) => {
 .content-text {
   font-size: 12px;
   color: var(--c-text-2);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 200px;
-  display: inline-block;
 }
 
 .time-text {

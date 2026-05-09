@@ -11,6 +11,7 @@ import {
   batchImportKamiItems,
   deleteKamiItem,
   resetKamiItem,
+  exportKamiItems,
   type KamiConfig,
   type KamiItem
 } from '@/api/kami-config'
@@ -49,6 +50,9 @@ const alertForm = ref({
   alertEmail: ''
 })
 const alertLoading = ref(false)
+
+const showExportDialog = ref(false)
+const exportStatus = ref<{ unused: boolean; used: boolean }>({ unused: true, used: true })
 
 const isMobile = ref(false)
 const rulesExpanded = ref(false)
@@ -335,6 +339,53 @@ const handleSaveAlert = async () => {
   }
 }
 
+const openExportDialog = () => {
+  exportStatus.value = { unused: true, used: true }
+  showExportDialog.value = true
+}
+
+const handleExport = async () => {
+  if (!selectedConfigId.value) return
+  if (!exportStatus.value.unused && !exportStatus.value.used) {
+    ElMessage.warning('请至少选择一种状态')
+    return
+  }
+
+  try {
+    const res = await exportKamiItems({
+      kamiConfigId: selectedConfigId.value,
+      includeUnused: exportStatus.value.unused,
+      includeUsed: exportStatus.value.used
+    })
+    const allItems = res.data || []
+
+    if (allItems.length === 0) {
+      ElMessage.warning('没有可导出的数据')
+      return
+    }
+
+    const configName = selectedConfig.value?.aliasName || `配置${selectedConfigId.value}`
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '').replace('T', '_')
+
+    const header = '序号\t卡密内容\t状态\t订单ID\t使用时间\t添加时间\n'
+    const rows = allItems.map(item =>
+      `${item.sortOrder}\t${item.kamiContent}\t${item.status === 0 ? '未使用' : '已使用'}\t${item.orderId || ''}\t${item.usedTime || ''}\t${item.createTime}`
+    ).join('\n')
+    const content = header + rows
+    const blob = new Blob(['\ufeff' + content], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${configName}_${timestamp}.txt`
+    a.click()
+    URL.revokeObjectURL(url)
+    ElMessage.success(`已导出 ${allItems.length} 条数据`)
+    showExportDialog.value = false
+  } catch (e) {
+    ElMessage.error('导出失败')
+  }
+}
+
 watch(selectedAccountId, () => {
   if (selectedAccountId.value) {
     selectedConfigId.value = null
@@ -407,6 +458,7 @@ onMounted(async () => {
           <div class="kami-mobile__detail-actions">
             <el-button size="small" @click="showAddDialog = true">添加</el-button>
             <el-button size="small" type="primary" @click="showImportDialog = true">批量导入</el-button>
+            <el-button size="small" type="success" @click="openExportDialog">导出</el-button>
             <el-button size="small" type="warning" @click="openAlertDialog">预警</el-button>
           </div>
         </header>
@@ -519,6 +571,7 @@ onMounted(async () => {
               <div class="kami-detail__actions">
                 <el-button @click="showAddDialog = true">添加卡密</el-button>
                 <el-button type="primary" @click="showImportDialog = true">批量导入</el-button>
+                <el-button type="success" @click="openExportDialog">导出</el-button>
                 <el-button type="warning" @click="openAlertDialog">预警配置</el-button>
               </div>
             </div>
@@ -633,6 +686,20 @@ onMounted(async () => {
       <template #footer>
         <el-button @click="showAlertDialog = false">取消</el-button>
         <el-button type="primary" @click="handleSaveAlert" :loading="alertLoading">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="showExportDialog" title="导出卡密" width="480" :close-on-click-modal="false">
+      <el-form label-width="90px">
+        <el-form-item label="导出状态">
+          <el-checkbox v-model="exportStatus.unused" label="未使用" />
+          <el-checkbox v-model="exportStatus.used" label="已使用" style="margin-left: 12px;" />
+        </el-form-item>
+        <p style="color: #909399; font-size: 12px; margin: 0 0 0 90px;">导出为Excel格式（.txt文件，Excel可直接打开）</p>
+      </el-form>
+      <template #footer>
+        <el-button @click="showExportDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleExport">导出</el-button>
       </template>
     </el-dialog>
   </div>

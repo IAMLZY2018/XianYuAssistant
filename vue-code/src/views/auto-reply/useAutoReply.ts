@@ -363,6 +363,9 @@ export function useAutoReply() {
   const fallbackText = ref('')
   const fallbackImageUrls = ref<string[]>([])
   const fallbackExpanded = ref(true)
+  const editKeywordDialogVisible = ref(false)
+  const editKeywordId = ref<number | null>(null)
+  const editKeywordName = ref('')
 
   const selectedKeywordRule = computed(() => {
     if (!selectedKeywordRuleId.value) return null
@@ -627,6 +630,42 @@ export function useAutoReply() {
       }
     } catch (e: any) {
       showError(e?.message || '删除关键词规则失败')
+    }
+  }
+
+  const handleOpenEditKeyword = (rule: KeywordReplyRule) => {
+    editKeywordId.value = rule.id as number
+    editKeywordName.value = rule.keyword
+    editKeywordDialogVisible.value = true
+  }
+
+  const handleSaveEditKeyword = async () => {
+    if (!editKeywordId.value || !editKeywordName.value.trim()) return
+    try {
+      await updateKeyword({ ruleId: editKeywordId.value, keyword: editKeywordName.value.trim() })
+      const rule = keywordRules.value.find(r => r.id === editKeywordId.value)
+      if (rule) {
+        rule.keyword = editKeywordName.value.trim()
+      }
+      editKeywordDialogVisible.value = false
+      showSuccess('关键词修改成功')
+    } catch (e: any) {
+      showError(e?.message || '修改关键词失败')
+    }
+  }
+
+  const handleDeleteFromEditDialog = async () => {
+    if (!editKeywordId.value) return
+    try {
+      await deleteKeywordRule({ ruleId: editKeywordId.value })
+      keywordRules.value = keywordRules.value.filter(r => r.id !== editKeywordId.value)
+      if (selectedKeywordRuleId.value === editKeywordId.value) {
+        selectedKeywordRuleId.value = keywordRules.value.length > 0 ? keywordRules.value[0]!.id : null
+      }
+      editKeywordDialogVisible.value = false
+      showSuccess('关键词删除成功')
+    } catch (e: any) {
+      showError(e?.message || '删除关键词失败')
     }
   }
 
@@ -1302,6 +1341,12 @@ export function useAutoReply() {
     fallbackText,
     fallbackImageUrls,
     fallbackExpanded,
-    handleSaveFallbackText
+    handleSaveFallbackText,
+    editKeywordDialogVisible,
+    editKeywordId,
+    editKeywordName,
+    handleOpenEditKeyword,
+    handleSaveEditKeyword,
+    handleDeleteFromEditDialog
   }
 }

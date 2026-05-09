@@ -121,3 +121,11 @@ export function resetKamiItem(id: number) {
     params: { id }
   });
 }
+
+export function exportKamiItems(data: { kamiConfigId: number; includeUnused: boolean; includeUsed: boolean }) {
+  return request<KamiItem[]>({
+    url: '/kami-config/item/export',
+    method: 'POST',
+    data
+  });
+}
