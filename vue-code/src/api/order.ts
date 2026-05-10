@@ -59,3 +59,11 @@ export function getOrderDetail(data: { xianyuAccountId: number; orderId: string;
     data
   })
 }
+
+export function manualDelivery(data: { xianyuAccountId: number; orderId: string; content: string }) {
+  return request<string>({
+    url: '/autoDelivery/manual',
+    method: 'POST',
+    data
+  })
+}

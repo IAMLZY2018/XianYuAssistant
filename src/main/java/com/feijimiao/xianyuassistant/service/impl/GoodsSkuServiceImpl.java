@@ -30,7 +30,7 @@ public class GoodsSkuServiceImpl implements GoodsSkuService {
     public List<XianyuGoodsSku> listByXyGoodsId(String xyGoodsId) {
         LambdaQueryWrapper<XianyuGoodsSku> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(XianyuGoodsSku::getXyGoodsId, xyGoodsId);
-        wrapper.orderByAsc(XianyuGoodsSku::getSkuId);
+        wrapper.orderByAsc(XianyuGoodsSku::getPropertySortOrder, XianyuGoodsSku::getValueSortOrder);
         return goodsSkuMapper.selectList(wrapper);
     }
 

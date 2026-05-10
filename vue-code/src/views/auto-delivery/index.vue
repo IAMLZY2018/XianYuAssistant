@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, defineComponent, h, onMounted } from 'vue'
+import { inject, defineComponent, h, onMounted, ref } from 'vue'
 import { useAutoDelivery } from './useAutoDelivery'
 import './auto-delivery.css'
 import '@/styles/header-selectors.css'
@@ -18,7 +18,7 @@ import IconClock from '@/components/icons/IconClock.vue'
 import IconPackage from '@/components/icons/IconPackage.vue'
 import IconCopy from '@/components/icons/IconCopy.vue'
 
-import GoodsDetailDialog from '../goods/components/GoodsDetailDialog.vue'
+import GoodsDetail from '../goods/components/GoodsDetail.vue'
 import MultiImageUploader from '@/components/MultiImageUploader.vue'
 
 const {
@@ -69,17 +69,19 @@ const {
   getStatusClass,
   getRecordStatusText,
   getRecordStatusClass,
+  kamiConfigOptions,
+  selectedKamiConfigId,
   apiHintUrl,
   apiHintParamsJson,
   confirmShipmentUrl,
   confirmShipmentParamsJson,
-  kamiConfigOptions,
-  selectedKamiConfigId,
   copyApiUrl,
   copyApiParams,
   copyConfirmShipmentUrl,
   copyConfirmShipmentParams
 } = useAutoDelivery()
+
+const showCustomDelivery = ref(false)
 
 // 注入导航栏内容 — inject 必须在 setup 顶层
 const setHeaderContent = inject<(content: any) => void>('setHeaderContent')
@@ -130,9 +132,9 @@ onMounted(() => {
       <div class="ad__actions">
         <div class="ad__select-wrap">
           <select
-            v-model="selectedAccountId"
+            :value="selectedAccountId"
             class="ad__select"
-            @change="handleAccountChange"
+            @change="(e: Event) => { selectedAccountId = (e.target as HTMLSelectElement).value ? parseInt((e.target as HTMLSelectElement).value) : null; handleAccountChange() }"
           >
             <option :value="null" disabled>选择账号</option>
             <option v-for="acc in accounts" :key="acc.id" :value="acc.id">
@@ -247,6 +249,14 @@ onMounted(() => {
             <div class="ad__config-goods-title">{{ selectedGoods.item.title }}</div>
             <div class="ad__config-goods-sub">{{ formatPrice(selectedGoods.item.soldPrice) }}</div>
           </div>
+          <button class="btn btn--ghost btn--sm" @click="viewGoodsDetail">
+            <IconImage />
+            <span class="mobile-hidden">详情</span>
+          </button>
+          <button class="btn btn--ghost btn--sm ad__custom-delivery-btn" @click="showCustomDelivery = !showCustomDelivery">
+            <IconRobot />
+            <span class="mobile-hidden">自定义发货</span>
+          </button>
         </div>
 
         <!-- Desktop config header -->
@@ -263,6 +273,10 @@ onMounted(() => {
           <button class="btn btn--ghost btn--sm" @click="viewGoodsDetail">
             <IconImage />
             <span class="mobile-hidden">详情</span>
+          </button>
+          <button class="btn btn--ghost btn--sm ad__custom-delivery-btn" @click="showCustomDelivery = !showCustomDelivery">
+            <IconRobot />
+            <span class="mobile-hidden">自定义发货</span>
           </button>
         </div>
 
@@ -340,14 +354,6 @@ onMounted(() => {
               >
                 🔑
                 卡密发货
-              </button>
-              <button
-                class="ad__tab-btn"
-                :class="{ 'ad__tab-btn--active': configForm.deliveryMode === 3 }"
-                @click="configForm.deliveryMode = 3"
-              >
-                <IconRobot />
-                自定义发货
               </button>
             </div>
           </div>
@@ -465,102 +471,6 @@ onMounted(() => {
                 <span v-if="currentConfig" class="ad__save-time">
                   更新于 {{ formatTime(currentConfig.updateTime) }}
                 </span>
-              </div>
-            </div>
-          </template>
-
-          <!-- ====== 自定义发货视图 ====== -->
-          <template v-if="configForm.deliveryMode === 3">
-            <!-- API Hint Panel -->
-            <div class="ad__config-section">
-              <div class="ad__api-hint">
-                <div class="ad__api-hint-header">
-                  <span class="ad__api-hint-title">API 接入指南</span>
-                </div>
-                <div class="ad__api-hint-desc">
-                  自定义发货需调用 <code>/api/order/list</code> 获取待发货订单，再调用 <code>/api/order/confirmShipment</code> 确认发货。
-                </div>
-
-                <div class="ad__api-hint-cols">
-                  <!-- Left: /api/order/list -->
-                  <div class="ad__api-hint-col">
-                    <div class="ad__api-hint-col-title">获取订单列表</div>
-
-                    <div class="ad__api-hint-section">
-                      <div class="ad__api-hint-label">
-                        接口地址
-                        <button class="ad__api-hint-copy-btn" @click="copyApiUrl">
-                          <IconCopy /> 复制
-                        </button>
-                      </div>
-                      <div class="ad__api-hint-code">POST {{ apiHintUrl }}</div>
-                    </div>
-
-                    <div class="ad__api-hint-section">
-                      <div class="ad__api-hint-label">
-                        请求参数
-                        <button class="ad__api-hint-copy-btn" @click="copyApiParams">
-                          <IconCopy /> 复制
-                        </button>
-                      </div>
-                      <pre class="ad__api-hint-pre"><code>{{ apiHintParamsJson }}</code></pre>
-                    </div>
-
-                    <div class="ad__api-hint-params-desc">
-                      <div class="ad__api-hint-params-title">参数说明</div>
-                      <table class="ad__api-hint-table">
-                        <thead>
-                          <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
-                        </thead>
-                        <tbody>
-                          <tr><td>xianyuAccountId</td><td>number</td><td>否</td><td>闲鱼账号ID</td></tr>
-                          <tr><td>xyGoodsId</td><td>string</td><td>否</td><td>闲鱼商品ID</td></tr>
-                          <tr><td>orderStatus</td><td>number</td><td>否</td><td>1=待付款 2=待发货 3=已发货 4=已完成 5=已关闭</td></tr>
-                          <tr><td>pageNum</td><td>number</td><td>是</td><td>页码</td></tr>
-                          <tr><td>pageSize</td><td>number</td><td>是</td><td>每页条数</td></tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  <!-- Right: /api/order/confirmShipment -->
-                  <div class="ad__api-hint-col">
-                    <div class="ad__api-hint-col-title">确认发货</div>
-
-                    <div class="ad__api-hint-section">
-                      <div class="ad__api-hint-label">
-                        接口地址
-                        <button class="ad__api-hint-copy-btn" @click="copyConfirmShipmentUrl">
-                          <IconCopy /> 复制
-                        </button>
-                      </div>
-                      <div class="ad__api-hint-code">POST {{ confirmShipmentUrl }}</div>
-                    </div>
-
-                    <div class="ad__api-hint-section">
-                      <div class="ad__api-hint-label">
-                        请求参数
-                        <button class="ad__api-hint-copy-btn" @click="copyConfirmShipmentParams">
-                          <IconCopy /> 复制
-                        </button>
-                      </div>
-                      <pre class="ad__api-hint-pre"><code>{{ confirmShipmentParamsJson }}</code></pre>
-                    </div>
-
-                    <div class="ad__api-hint-params-desc">
-                      <div class="ad__api-hint-params-title">参数说明</div>
-                      <table class="ad__api-hint-table">
-                        <thead>
-                          <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
-                        </thead>
-                        <tbody>
-                          <tr><td>xianyuAccountId</td><td>number</td><td>是</td><td>闲鱼账号ID</td></tr>
-                          <tr><td>orderId</td><td>string</td><td>是</td><td>订单ID</td></tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </template>
@@ -716,7 +626,7 @@ onMounted(() => {
     </div>
 
     <!-- Goods Detail Dialog -->
-    <GoodsDetailDialog
+    <GoodsDetail
       v-model="detailDialogVisible"
       :goods-id="selectedGoodsId"
       :account-id="selectedAccountId"
@@ -750,6 +660,82 @@ onMounted(() => {
             >
               确定
             </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- Custom Delivery API Hint Dialog -->
+    <Transition name="overlay-fade">
+      <div v-if="showCustomDelivery" class="ad__overlay" @click.self="showCustomDelivery = false">
+        <div class="ad__dialog ad__dialog--wide">
+          <div class="ad__dialog-header">
+            <h3 class="ad__dialog-title">API 接入指南</h3>
+            <button class="ad__dialog-close" @click="showCustomDelivery = false">&times;</button>
+          </div>
+          <div class="ad__dialog-body">
+            <div class="ad__api-hint-desc">
+              自定义发货需调用 <code>/api/order/list</code> 获取待发货订单，再调用 <code>/api/order/confirmShipment</code> 确认发货。
+            </div>
+            <div class="ad__api-hint-cols">
+              <div class="ad__api-hint-col">
+                <div class="ad__api-hint-col-title">获取订单列表</div>
+                <div class="ad__api-hint-section">
+                  <div class="ad__api-hint-label">
+                    接口地址
+                    <button class="ad__api-hint-copy-btn" @click="copyApiUrl"><IconCopy /> 复制</button>
+                  </div>
+                  <div class="ad__api-hint-code">POST {{ apiHintUrl }}</div>
+                </div>
+                <div class="ad__api-hint-section">
+                  <div class="ad__api-hint-label">
+                    请求参数
+                    <button class="ad__api-hint-copy-btn" @click="copyApiParams"><IconCopy /> 复制</button>
+                  </div>
+                  <pre class="ad__api-hint-pre"><code>{{ apiHintParamsJson }}</code></pre>
+                </div>
+                <div class="ad__api-hint-params-desc">
+                  <div class="ad__api-hint-params-title">参数说明</div>
+                  <table class="ad__api-hint-table">
+                    <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+                    <tbody>
+                      <tr><td>xianyuAccountId</td><td>number</td><td>否</td><td>闲鱼账号ID</td></tr>
+                      <tr><td>xyGoodsId</td><td>string</td><td>否</td><td>闲鱼商品ID</td></tr>
+                      <tr><td>orderStatus</td><td>number</td><td>否</td><td>1=待付款 2=待发货 3=已发货 4=已完成 5=已关闭</td></tr>
+                      <tr><td>pageNum</td><td>number</td><td>是</td><td>页码</td></tr>
+                      <tr><td>pageSize</td><td>number</td><td>是</td><td>每页条数</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="ad__api-hint-col">
+                <div class="ad__api-hint-col-title">确认发货</div>
+                <div class="ad__api-hint-section">
+                  <div class="ad__api-hint-label">
+                    接口地址
+                    <button class="ad__api-hint-copy-btn" @click="copyConfirmShipmentUrl"><IconCopy /> 复制</button>
+                  </div>
+                  <div class="ad__api-hint-code">POST {{ confirmShipmentUrl }}</div>
+                </div>
+                <div class="ad__api-hint-section">
+                  <div class="ad__api-hint-label">
+                    请求参数
+                    <button class="ad__api-hint-copy-btn" @click="copyConfirmShipmentParams"><IconCopy /> 复制</button>
+                  </div>
+                  <pre class="ad__api-hint-pre"><code>{{ confirmShipmentParamsJson }}</code></pre>
+                </div>
+                <div class="ad__api-hint-params-desc">
+                  <div class="ad__api-hint-params-title">参数说明</div>
+                  <table class="ad__api-hint-table">
+                    <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+                    <tbody>
+                      <tr><td>xianyuAccountId</td><td>number</td><td>是</td><td>闲鱼账号ID</td></tr>
+                      <tr><td>orderId</td><td>string</td><td>是</td><td>订单ID</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -805,4 +791,72 @@ onMounted(() => {
 .kami-option__total {
   color: #909399;
 }
+.ad__record-action-btn--manual {
+  color: #ff9500;
+  border-color: rgba(255, 149, 0, 0.2);
+  margin-left: 4px;
+}
+@media (hover: hover) {
+  .ad__record-action-btn--manual:hover {
+    background: rgba(255, 149, 0, 0.06);
+  }
+}
+.ad__overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 950;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.ad__dialog {
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ad__dialog--wide {
+  max-width: 720px;
+}
+.ad__dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.ad__dialog-title { font-size: 16px; font-weight: 600; color: #1d1d1f; margin: 0; }
+.ad__dialog-close {
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: #86868b; background: none; border: none; cursor: pointer; border-radius: 6px;
+}
+.ad__dialog-close:hover { background: rgba(0,0,0,0.04); }
+.ad__dialog-body { flex: 1; overflow-y: auto; padding: 16px 20px; text-align: left; }
+.ad__dialog-rows { display: flex; flex-direction: column; gap: 10px; }
+.ad__dialog-row { display: flex; align-items: flex-start; gap: 12px; font-size: 13px; }
+.ad__dialog-label { color: #86868b; min-width: 60px; flex-shrink: 0; line-height: 1.5; }
+.ad__dialog-value { color: #1d1d1f; word-break: break-all; line-height: 1.5; }
+.ad__manual-textarea {
+  width: 100%; padding: 10px 12px; font-size: 13px; line-height: 1.5;
+  border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; resize: vertical;
+  font-family: inherit; color: #1d1d1f; background: #fafafa; box-sizing: border-box;
+}
+.ad__manual-textarea:focus { outline: none; border-color: #007aff; background: #fff; }
+.ad__manual-btn {
+  height: 32px; padding: 0 16px; font-size: 13px; font-weight: 500;
+  border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s ease;
+}
+.ad__manual-btn--cancel { background: rgba(0,0,0,0.06); color: #6e6e73; }
+.ad__manual-btn--confirm { background: #007aff; color: #fff; }
+.ad__manual-btn--confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+
 </style>

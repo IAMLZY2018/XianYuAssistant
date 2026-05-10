@@ -215,7 +215,9 @@ CREATE TABLE IF NOT EXISTS xianyu_goods_auto_delivery_config (
 -- 创建自动发货配置表索引
 CREATE INDEX IF NOT EXISTS idx_auto_delivery_config_account_id ON xianyu_goods_auto_delivery_config(xianyu_account_id);
 CREATE INDEX IF NOT EXISTS idx_auto_delivery_config_xy_goods_id ON xianyu_goods_auto_delivery_config(xy_goods_id);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_auto_delivery_config_unique ON xianyu_goods_auto_delivery_config(xianyu_account_id, xy_goods_id, sku_id);
+DROP INDEX IF EXISTS idx_auto_delivery_config_unique;
+UPDATE xianyu_goods_auto_delivery_config SET sku_id = NULL WHERE sku_id = '';
+CREATE UNIQUE INDEX IF NOT EXISTS idx_auto_delivery_config_unique_v2 ON xianyu_goods_auto_delivery_config(xianyu_account_id, xy_goods_id, COALESCE(sku_id, ''));
 
 -- 创建自动发货配置表更新时间触发器
 CREATE TRIGGER IF NOT EXISTS update_xianyu_goods_auto_delivery_config_time

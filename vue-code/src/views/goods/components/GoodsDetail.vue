@@ -62,6 +62,27 @@ const skuPropertyGroups = computed(() => {
 
 const showSkuDetail = ref(false)
 
+const sortSkuList = (skus: GoodsSku[], properties: GoodsSkuProperty[]): GoodsSku[] => {
+  if (skus.length <= 1 || properties.length === 0) return skus
+  const propGroups = new Map<number, Map<string, number>>()
+  for (const prop of properties) {
+    if (!propGroups.has(prop.propertyId)) propGroups.set(prop.propertyId, new Map())
+    propGroups.get(prop.propertyId)!.set(prop.valueText, prop.valueSortOrder ?? 0)
+  }
+  const dimOrders = Array.from(propGroups.values())
+  return [...skus].sort((a, b) => {
+    const aValues = a.valueText.split(' ')
+    const bValues = b.valueText.split(' ')
+    for (let i = 0; i < dimOrders.length; i++) {
+      const orderMap = dimOrders[i]!
+      const aOrder = orderMap.get(aValues[i] ?? '') ?? 0
+      const bOrder = orderMap.get(bValues[i] ?? '') ?? 0
+      if (aOrder !== bOrder) return aOrder - bOrder
+    }
+    return 0
+  })
+}
+
 // 状态颜色
 const getStatusColor = (status: number) => {
   const info = getGoodsStatusText(status)
@@ -108,8 +129,10 @@ const loadDetail = async () => {
       try {
         const skuRes = await getGoodsSkuDetail(props.goodsId)
         if (skuRes.code === 200 || skuRes.code === 0) {
-          skuList.value = skuRes.data?.skuList || []
-          skuPropertyList.value = skuRes.data?.propertyList || []
+          const rawSkuList = skuRes.data?.skuList || []
+          const rawPropList = skuRes.data?.propertyList || []
+          skuList.value = sortSkuList(rawSkuList, rawPropList)
+          skuPropertyList.value = rawPropList
         } else {
           skuList.value = []
           skuPropertyList.value = []

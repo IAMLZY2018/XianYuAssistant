@@ -78,4 +78,9 @@ public interface AutoDeliveryService {
      * 更新自动确认发货开关
      */
     void updateAutoConfirmShipment(Long accountId, String xyGoodsId, Integer autoConfirmShipment);
+
+    /**
+     * 手动自定义发货（卖家手动输入内容发送）
+     */
+    ResultObject<String> manualDelivery(Long xianyuAccountId, String orderId, String content);
 }

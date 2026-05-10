@@ -489,10 +489,10 @@ onMounted(() => {
                   <button class="ar__kw-back" @click="selectedKeywordRuleId = null">‹ 返回关键词</button>
                   <template v-if="selectedKeywordRule">
                     <div class="ar__kw-detail-header">
-                      <span class="ar__kw-detail-title" @dblclick="($event.target as HTMLElement).contentEditable = 'true'; ($event.target as HTMLElement).focus()" @blur="handleUpdateKeyword(selectedKeywordRule!.id as number, ($event.target as HTMLElement).textContent || ''); ($event.target as HTMLElement).contentEditable = 'false'" @keydown.enter="($event.target as HTMLElement).blur()">{{ selectedKeywordRule.keyword }}</span>
+                      <span class="ar__kw-detail-title">{{ selectedKeywordRule.keyword }}</span>
                       <div class="ar__kw-detail-actions">
                         <button class="ar__kw-add-reply-btn" @click="addReplyDialogVisible = true">+ 添加回复</button>
-                        <button class="ar__kw-del-rule-btn" @click="handleDeleteRule(selectedKeywordRule!.id as number)">删除</button>
+                        <button class="ar__kw-del-rule-btn" @click="handleOpenEditKeyword(selectedKeywordRule!)">编辑</button>
                       </div>
                     </div>
                     <div class="ar__kw-detail-meta">
@@ -534,10 +534,10 @@ onMounted(() => {
                 <div class="ar__kw-main">
                   <template v-if="selectedKeywordRule">
                     <div class="ar__kw-detail-header">
-                      <span class="ar__kw-detail-title" @dblclick="($event.target as HTMLElement).contentEditable = 'true'; ($event.target as HTMLElement).focus()" @blur="handleUpdateKeyword(selectedKeywordRule!.id as number, ($event.target as HTMLElement).textContent || ''); ($event.target as HTMLElement).contentEditable = 'false'" @keydown.enter="($event.target as HTMLElement).blur()">{{ selectedKeywordRule.keyword }}</span>
+                      <span class="ar__kw-detail-title">{{ selectedKeywordRule.keyword }}</span>
                       <div class="ar__kw-detail-actions">
                         <button class="ar__kw-add-reply-btn" @click="addReplyDialogVisible = true">+ 添加回复</button>
-                        <button class="ar__kw-del-rule-btn" @click="handleDeleteRule(selectedKeywordRule!.id as number)">删除关键词</button>
+                        <button class="ar__kw-del-rule-btn" @click="handleOpenEditKeyword(selectedKeywordRule!)">编辑关键词</button>
                       </div>
                     </div>
                     <div class="ar__kw-detail-meta">

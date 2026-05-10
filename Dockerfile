@@ -11,7 +11,7 @@ RUN npm config set registry https://registry.npmmirror.com
 # 先复制依赖文件，利用缓存
 COPY vue-code/package.json vue-code/package-lock.json ./
 RUN npm ci
-
+·
 # 复制前端源码并构建
 COPY vue-code/ ./
 RUN npm run build:spring
@@ -47,7 +47,7 @@ WORKDIR /app
 RUN mkdir -p /app/dbdata /app/logs
 
 # 从构建阶段复制 JAR
-COPY --from=backend-build /app/target/XianYuAssistant-1.1.5.jar app.jar
+COPY --from=backend-build /app/target/XianYuAssistant-1.1.6.jar app.jar
 
 # 暴露端口
 EXPOSE 12400

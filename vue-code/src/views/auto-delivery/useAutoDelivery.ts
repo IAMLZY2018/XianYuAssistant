@@ -286,7 +286,10 @@ export function useAutoDelivery() {
     try {
       const res = await getGoodsSkuList(selectedGoods.value.item.xyGoodId)
       if (res.code === 200 || res.code === 0) {
-        skuList.value = res.data || []
+        skuList.value = (res.data || []).sort((a, b) => {
+          if (a.propertySortOrder !== b.propertySortOrder) return (a.propertySortOrder ?? 0) - (b.propertySortOrder ?? 0)
+          return (a.valueSortOrder ?? 0) - (b.valueSortOrder ?? 0)
+        })
       } else {
         skuList.value = []
       }
@@ -734,10 +737,8 @@ export function useAutoDelivery() {
     mobileView,
     confirmDialog,
     apiHintUrl,
-    apiHintParams,
     apiHintParamsJson,
     confirmShipmentUrl,
-    confirmShipmentParams,
     confirmShipmentParamsJson,
     kamiConfigOptions,
     selectedKamiConfigId,

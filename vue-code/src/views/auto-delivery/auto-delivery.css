@@ -945,6 +945,7 @@
   color: var(--d-text-secondary);
   line-height: 1.6;
   margin-bottom: var(--d-space-3);
+  text-align: left;
 }
 
 .ad__api-hint-desc code {
@@ -991,6 +992,7 @@
   font-weight: 600;
   color: var(--d-text-secondary);
   margin-bottom: 6px;
+  text-align: left;
 }
 
 .ad__api-hint-copy-btn {
@@ -1031,6 +1033,7 @@
   background: rgba(0, 0, 0, 0.04);
   padding: 6px 10px;
   border-radius: 4px;
+  text-align: left;
 }
 
 .ad__api-hint-pre {
@@ -1044,6 +1047,7 @@
   margin: 0;
   overflow-x: auto;
   white-space: pre;
+  text-align: left;
 }
 
 .ad__api-hint-pre--curl {
