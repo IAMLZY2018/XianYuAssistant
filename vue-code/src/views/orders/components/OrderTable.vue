@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { formatTime } from '@/utils'
 import { showSuccess, showError } from '@/utils'
-import { getOrderDetail, manualDelivery } from '@/api/order'
+import { getOrderDetail } from '@/api/order'
 import type { DeliveryRecordItem } from '../useOrderManager'
 
 import IconEmpty from '@/components/icons/IconEmpty.vue'
@@ -12,7 +12,6 @@ import IconUser from '@/components/icons/IconUser.vue'
 import IconClock from '@/components/icons/IconClock.vue'
 import IconShoppingBag from '@/components/icons/IconShoppingBag.vue'
 import IconEye from '@/components/icons/IconImage.vue'
-import IconEdit from '@/components/icons/IconEdit.vue'
 
 interface Props {
   orderList: DeliveryRecordItem[]
@@ -97,39 +96,6 @@ const handleClickDetail = (order: DeliveryRecordItem) => {
 const isMobile = ref(false)
 const checkScreenSize = () => {
   isMobile.value = window.innerWidth < 768
-}
-
-const manualDeliveryVisible = ref(false)
-const manualDeliveryOrder = ref<DeliveryRecordItem | null>(null)
-const manualDeliveryContent = ref('')
-const manualDeliverySending = ref(false)
-
-const openManualDelivery = (order: DeliveryRecordItem) => {
-  manualDeliveryOrder.value = order
-  manualDeliveryContent.value = ''
-  manualDeliveryVisible.value = true
-}
-
-const handleManualDelivery = async () => {
-  if (!manualDeliveryOrder.value || !manualDeliveryContent.value.trim()) return
-  manualDeliverySending.value = true
-  try {
-    const res = await manualDelivery({
-      xianyuAccountId: manualDeliveryOrder.value.xianyuAccountId!,
-      orderId: manualDeliveryOrder.value.orderId!,
-      content: manualDeliveryContent.value.trim()
-    })
-    if (res.code === 200 || res.code === 0) {
-      showSuccess('自定义发货成功')
-      manualDeliveryVisible.value = false
-    } else {
-      showError(res.msg || '自定义发货失败')
-    }
-  } catch {
-    showError('自定义发货失败')
-  } finally {
-    manualDeliverySending.value = false
-  }
 }
 
 onMounted(() => {
@@ -254,14 +220,6 @@ const getConfirmBg = (state: number) => {
           <span class="detail-tooltip">单击查询本地，双击查询闲鱼服务器</span>
         </button>
         <button
-          v-if="order.orderId && order.state !== 1"
-          class="order-card__action order-card__action--manual"
-          @click="openManualDelivery(order)"
-        >
-          <IconEdit />
-          <span>自定义发货</span>
-        </button>
-        <button
           v-if="order.orderId"
           class="order-card__action order-card__action--ship"
           :class="{ 'order-card__action--loading': order.confirming }"
@@ -349,14 +307,6 @@ const getConfirmBg = (state: number) => {
               <IconEye />
               <span>详情</span>
               <span class="detail-tooltip">单击查询本地，双击查询闲鱼服务器</span>
-            </button>
-            <button
-              v-if="order.orderId && order.state !== 1"
-              class="table__action table__action--manual"
-              @click="openManualDelivery(order)"
-            >
-              <IconEdit />
-              <span>自定义</span>
             </button>
             <button
               v-if="order.orderId"
@@ -499,58 +449,6 @@ const getConfirmBg = (state: number) => {
             </div>
           </template>
           <div v-else class="detail-dialog__empty">暂无数据</div>
-        </div>
-      </div>
-    </div>
-  </Transition>
-
-  <!-- Manual Delivery Dialog -->
-  <Transition name="overlay-fade">
-    <div v-if="manualDeliveryVisible" class="detail-overlay" @click.self="manualDeliveryVisible = false">
-      <div class="detail-dialog">
-        <div class="detail-dialog__header">
-          <h3 class="detail-dialog__title">自定义发货</h3>
-          <button class="detail-dialog__close" @click="manualDeliveryVisible = false">&times;</button>
-        </div>
-        <div class="detail-dialog__body">
-          <div class="detail-dialog__rows">
-            <div v-if="manualDeliveryOrder?.orderId" class="detail-dialog__row">
-              <span class="detail-dialog__label">订单ID</span>
-              <span class="detail-dialog__value" style="font-family:'SF Mono','Menlo',monospace;font-size:12px">{{ manualDeliveryOrder.orderId }}</span>
-            </div>
-            <div v-if="manualDeliveryOrder?.goodsTitle" class="detail-dialog__row">
-              <span class="detail-dialog__label">商品</span>
-              <span class="detail-dialog__value">{{ manualDeliveryOrder.goodsTitle }}</span>
-            </div>
-            <div v-if="manualDeliveryOrder?.skuName" class="detail-dialog__row detail-dialog__row--highlight">
-              <span class="detail-dialog__label">规格</span>
-              <span class="detail-dialog__value detail-dialog__sku">{{ manualDeliveryOrder.skuName }}</span>
-            </div>
-            <div v-if="manualDeliveryOrder?.buyerUserName" class="detail-dialog__row">
-              <span class="detail-dialog__label">买家</span>
-              <span class="detail-dialog__value">{{ manualDeliveryOrder.buyerUserName }}</span>
-            </div>
-          </div>
-          <div style="margin-top:16px">
-            <div class="detail-dialog__label" style="margin-bottom:8px">发货内容</div>
-            <textarea
-              v-model="manualDeliveryContent"
-              class="manual-delivery__textarea"
-              placeholder="请输入发货内容"
-              rows="4"
-            ></textarea>
-          </div>
-          <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px">
-            <button class="manual-delivery__btn manual-delivery__btn--cancel" @click="manualDeliveryVisible = false">取消</button>
-            <button
-              class="manual-delivery__btn manual-delivery__btn--confirm"
-              :class="{ 'manual-delivery__btn--loading': manualDeliverySending }"
-              :disabled="!manualDeliveryContent.trim() || manualDeliverySending"
-              @click="handleManualDelivery"
-            >
-              {{ manualDeliverySending ? '发送中...' : '发送' }}
-            </button>
-          </div>
         </div>
       </div>
     </div>
@@ -766,7 +664,7 @@ const getConfirmBg = (state: number) => {
 }
 
 .table__th--actions {
-  width: 160px;
+  width: 100px;
   text-align: center;
 }
 
@@ -1202,79 +1100,6 @@ const getConfirmBg = (state: number) => {
   color: #86868b;
   font-size: 13px;
   padding: 40px 0;
-}
-
-.order-card__action--manual {
-  color: #ff9500;
-  border-color: rgba(255, 149, 0, 0.2);
-}
-
-@media (hover: hover) {
-  .order-card__action--manual:hover {
-    background: rgba(255, 149, 0, 0.06);
-  }
-}
-
-.table__action--manual {
-  border-color: rgba(255, 149, 0, 0.2);
-  color: #ff9500;
-}
-
-@media (hover: hover) {
-  .table__action--manual:hover {
-    background: rgba(255, 149, 0, 0.06);
-  }
-}
-
-.manual-delivery__textarea {
-  width: 100%;
-  padding: 10px 12px;
-  font-size: 13px;
-  line-height: 1.5;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 8px;
-  resize: vertical;
-  font-family: inherit;
-  color: #1d1d1f;
-  background: #fafafa;
-  box-sizing: border-box;
-}
-
-.manual-delivery__textarea:focus {
-  outline: none;
-  border-color: #007aff;
-  background: #fff;
-}
-
-.manual-delivery__btn {
-  height: 32px;
-  padding: 0 16px;
-  font-size: 13px;
-  font-weight: 500;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.manual-delivery__btn--cancel {
-  background: rgba(0, 0, 0, 0.06);
-  color: #6e6e73;
-}
-
-.manual-delivery__btn--confirm {
-  background: #007aff;
-  color: #fff;
-}
-
-.manual-delivery__btn--confirm:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.manual-delivery__btn--loading {
-  opacity: 0.6;
-  pointer-events: none;
 }
 
 @media screen and (max-width: 480px) {
