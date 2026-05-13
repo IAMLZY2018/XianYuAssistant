@@ -63,8 +63,8 @@ public class ItemController {
     @PostMapping("/list")
     public ResultObject<ItemListFromDbRespDTO> getItemsFromDb(@RequestBody ItemListFromDbReqDTO reqDTO) {
         try {
-            log.info("从数据库获取商品列表: status={}, pageNum={}, pageSize={}", 
-                    reqDTO.getStatus(), reqDTO.getPageNum(), reqDTO.getPageSize());
+            log.info("从数据库获取商品列表: onlyOnSale={}, pageNum={}, pageSize={}", 
+                    reqDTO.getOnlyOnSale(), reqDTO.getPageNum(), reqDTO.getPageSize());
             return itemService.getItemsFromDb(reqDTO);
         } catch (Exception e) {
             log.error("获取数据库商品失败", e);

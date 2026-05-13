@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 商品信息服务实现类
@@ -211,6 +212,22 @@ public class GoodsInfoServiceImpl implements GoodsInfoService {
     }
     
     @Override
+    public List<XianyuGoodsInfo> listByAccountId(Long xianyuAccountId, int pageNum, int pageSize) {
+        try {
+            LambdaQueryWrapper<XianyuGoodsInfo> queryWrapper = new LambdaQueryWrapper<>();
+            if (xianyuAccountId != null) {
+                queryWrapper.eq(XianyuGoodsInfo::getXianyuAccountId, xianyuAccountId);
+            }
+            queryWrapper.orderByDesc(XianyuGoodsInfo::getUpdatedTime);
+            int offset = (pageNum - 1) * pageSize;
+            return goodsInfoMapper.selectList(queryWrapper.last("LIMIT " + offset + ", " + pageSize));
+        } catch (Exception e) {
+            log.error("根据账号ID查询商品列表失败: accountId={}, pageNum={}, pageSize={}", xianyuAccountId, pageNum, pageSize, e);
+            return new java.util.ArrayList<>();
+        }
+    }
+    
+    @Override
     public int countByStatusAndAccountId(Integer status, Long xianyuAccountId) {
         try {
             LambdaQueryWrapper<XianyuGoodsInfo> queryWrapper = new LambdaQueryWrapper<>();
@@ -221,6 +238,20 @@ public class GoodsInfoServiceImpl implements GoodsInfoService {
             return Math.toIntExact(goodsInfoMapper.selectCount(queryWrapper));
         } catch (Exception e) {
             log.error("根据状态和账号ID统计商品数量失败: status={}, accountId={}", status, xianyuAccountId, e);
+            return 0;
+        }
+    }
+    
+    @Override
+    public int countByAccountId(Long xianyuAccountId) {
+        try {
+            LambdaQueryWrapper<XianyuGoodsInfo> queryWrapper = new LambdaQueryWrapper<>();
+            if (xianyuAccountId != null) {
+                queryWrapper.eq(XianyuGoodsInfo::getXianyuAccountId, xianyuAccountId);
+            }
+            return Math.toIntExact(goodsInfoMapper.selectCount(queryWrapper));
+        } catch (Exception e) {
+            log.error("根据账号ID统计商品数量失败: accountId={}", xianyuAccountId, e);
             return 0;
         }
     }
@@ -308,6 +339,33 @@ public class GoodsInfoServiceImpl implements GoodsInfoService {
         } catch (Exception e) {
             log.error("更新商品SKU数量失败: xyGoodId={}", xyGoodId, e);
             return false;
+        }
+    }
+
+    @Override
+    public void markOfflineIfNotInRemote(Long xianyuAccountId, Set<String> remoteItemIds) {
+        if (xianyuAccountId == null || remoteItemIds == null) return;
+        try {
+            LambdaQueryWrapper<XianyuGoodsInfo> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(XianyuGoodsInfo::getXianyuAccountId, xianyuAccountId);
+            queryWrapper.eq(XianyuGoodsInfo::getStatus, 0);
+            List<XianyuGoodsInfo> localOnSaleItems = goodsInfoMapper.selectList(queryWrapper);
+
+            int markedCount = 0;
+            for (XianyuGoodsInfo localItem : localOnSaleItems) {
+                if (!remoteItemIds.contains(localItem.getXyGoodId())) {
+                    localItem.setStatus(1);
+                    localItem.setUpdatedTime(getCurrentTimeString());
+                    goodsInfoMapper.updateById(localItem);
+                    markedCount++;
+                    log.info("商品已下架(同步时标记): xyGoodId={}, title={}", localItem.getXyGoodId(), localItem.getTitle());
+                }
+            }
+            if (markedCount > 0) {
+                log.info("【账号{}】同步时标记{}个商品为已下架", xianyuAccountId, markedCount);
+            }
+        } catch (Exception e) {
+            log.error("标记下架商品失败: accountId={}", xianyuAccountId, e);
         }
     }
 }

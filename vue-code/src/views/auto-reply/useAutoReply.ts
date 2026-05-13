@@ -46,6 +46,7 @@ export function useAutoReply() {
   const goodsTotal = ref(0)
   const goodsLoading = ref(false)
   const goodsListRef = ref<HTMLElement | null>(null)
+  const onlyOnSale = ref(true)
 
   // Goods detail dialog
   const detailDialogVisible = ref(false)
@@ -178,6 +179,7 @@ export function useAutoReply() {
     try {
       const params = {
         xianyuAccountId: selectedAccountId.value,
+        onlyOnSale: onlyOnSale.value,
         pageNum: goodsCurrentPage.value,
         pageSize: 20
       }
@@ -1162,6 +1164,20 @@ export function useAutoReply() {
     detailDialogVisible.value = true
   }
 
+  const goToAutoDelivery = () => {
+    if (!selectedGoods.value || !selectedAccountId.value) {
+      showInfo('请先选择商品')
+      return
+    }
+    router.push({
+      path: '/auto-delivery',
+      query: {
+        accountId: String(selectedAccountId.value),
+        goodsId: selectedGoods.value.item.xyGoodId
+      }
+    })
+  }
+
   // Load auto reply records
   const loadRecords = async () => {
     if (!selectedGoods.value || !selectedAccountId.value) return
@@ -1227,6 +1243,13 @@ export function useAutoReply() {
     confirmDialog.value.visible = false
   }
 
+  const toggleOnlyOnSale = () => {
+    onlyOnSale.value = !onlyOnSale.value
+    goodsCurrentPage.value = 1
+    selectedGoods.value = null
+    loadGoods()
+  }
+
   // Lifecycle
   onMounted(() => {
     loadAccounts()
@@ -1248,6 +1271,7 @@ export function useAutoReply() {
     goodsTotal,
     goodsLoading,
     goodsListRef,
+    onlyOnSale,
     detailDialogVisible,
     selectedGoodsId,
     rightTab,
@@ -1292,7 +1316,9 @@ export function useAutoReply() {
     handleChatKeydown,
     handleGoodsScroll,
     goBackToGoods,
+    toggleOnlyOnSale,
     viewGoodsDetail,
+    goToAutoDelivery,
     handleDialogConfirm,
     handleDialogCancel,
     formatTime,

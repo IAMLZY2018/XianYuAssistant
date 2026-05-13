@@ -202,8 +202,18 @@ public class AutoReplyDelayServiceImpl implements AutoReplyDelayService {
      */
     @Override
     public void recordSellerManualReply(Long accountId, String xyGoodsId, String sId) {
-        if (accountId == null || sId == null) return;
-        if (!configProvider.isHumanInterventionEnabled(accountId, xyGoodsId)) return;
+        if (accountId == null || sId == null) {
+            log.warn("recordSellerManualReply参数无效: accountId={}, sId={}, xyGoodsId={}", accountId, sId, xyGoodsId);
+            return;
+        }
+
+        boolean interventionEnabled = configProvider.isHumanInterventionEnabled(accountId, xyGoodsId);
+        log.info("【账号{}】卖家手动回复，检查人工干预开关: sId={}, xyGoodsId={}, enabled={}", accountId, sId, xyGoodsId, interventionEnabled);
+
+        if (!interventionEnabled) {
+            log.info("【账号{}】人工干预未开启或xyGoodsId无效，跳过接管: sId={}, xyGoodsId={}", accountId, sId, xyGoodsId);
+            return;
+        }
 
         int minutes = configProvider.getInterventionMinutes(accountId, xyGoodsId);
         takeoverManager.takeover(accountId, sId, minutes);
@@ -212,7 +222,7 @@ public class AutoReplyDelayServiceImpl implements AutoReplyDelayService {
         cancelDelayTask(accountId, sId);
         pendingMessages.remove(buildTaskKey(accountId, sId));
 
-        log.info("【账号{}】卖家手动回复，人工接管: sId={}, {}分钟后恢复", accountId, sId, minutes);
+        log.info("【账号{}】卖家手动回复，人工接管: sId={}, xyGoodsId={}, {}分钟后恢复", accountId, sId, xyGoodsId, minutes);
     }
     
     private String buildTaskKey(Long accountId, String sId) {

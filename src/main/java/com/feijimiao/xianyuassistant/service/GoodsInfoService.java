@@ -4,6 +4,7 @@ import com.feijimiao.xianyuassistant.entity.XianyuGoodsInfo;
 import com.feijimiao.xianyuassistant.controller.dto.ItemDTO;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * 商品信息服务接口
@@ -75,6 +76,16 @@ public interface GoodsInfoService {
     List<XianyuGoodsInfo> listByStatusAndAccountId(Integer status, Long xianyuAccountId, int pageNum, int pageSize);
     
     /**
+     * 根据账号ID查询全部商品列表（分页，不限状态）
+     *
+     * @param xianyuAccountId 闲鱼账号ID
+     * @param pageNum 页码
+     * @param pageSize 每页数量
+     * @return 商品列表
+     */
+    List<XianyuGoodsInfo> listByAccountId(Long xianyuAccountId, int pageNum, int pageSize);
+    
+    /**
      * 根据状态和账号ID统计商品数量
      *
      * @param status 商品状态
@@ -82,6 +93,14 @@ public interface GoodsInfoService {
      * @return 商品数量
      */
     int countByStatusAndAccountId(Integer status, Long xianyuAccountId);
+    
+    /**
+     * 根据账号ID统计全部商品数量（不限状态）
+     *
+     * @param xianyuAccountId 闲鱼账号ID
+     * @return 商品数量
+     */
+    int countByAccountId(Long xianyuAccountId);
     
     /**
      * 更新商品详情信息
@@ -110,4 +129,12 @@ public interface GoodsInfoService {
     boolean deleteGoodsInfo(Long xianyuAccountId, String xyGoodId);
 
     boolean updateSkuCount(String xyGoodId, int skuCount);
+
+    /**
+     * 标记本地在售但远程不存在的商品为已下架
+     *
+     * @param xianyuAccountId 闲鱼账号ID
+     * @param remoteItemIds 远程商品ID集合
+     */
+    void markOfflineIfNotInRemote(Long xianyuAccountId, Set<String> remoteItemIds);
 }

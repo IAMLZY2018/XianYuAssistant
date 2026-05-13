@@ -68,6 +68,7 @@ export function useAutoDelivery() {
   const goodsTotal = ref(0)
   const goodsLoading = ref(false)
   const goodsListRef = ref<HTMLElement | null>(null)
+  const onlyOnSale = ref(true)
 
   const detailDialogVisible = ref(false)
   const selectedGoodsId = ref<string>('')
@@ -211,6 +212,7 @@ export function useAutoDelivery() {
     try {
       const params = {
         xianyuAccountId: selectedAccountId.value,
+        onlyOnSale: onlyOnSale.value,
         pageNum: goodsCurrentPage.value,
         pageSize: 20
       }
@@ -567,6 +569,20 @@ export function useAutoDelivery() {
     detailDialogVisible.value = true
   }
 
+  const goToAutoReply = () => {
+    if (!selectedGoods.value || !selectedAccountId.value) {
+      showInfo('请先选择商品')
+      return
+    }
+    router.push({
+      path: '/auto-reply',
+      query: {
+        accountId: String(selectedAccountId.value),
+        goodsId: selectedGoods.value.item.xyGoodId
+      }
+    })
+  }
+
   const handleConfirmShipment = (record: any) => {
     if (!selectedAccountId.value) {
       showInfo('请先选择账号')
@@ -698,6 +714,13 @@ export function useAutoDelivery() {
 
   const recordsTotalPages = computed(() => Math.ceil(recordsTotal.value / recordsPageSize.value))
 
+  const toggleOnlyOnSale = () => {
+    onlyOnSale.value = !onlyOnSale.value
+    goodsCurrentPage.value = 1
+    selectedGoods.value = null
+    loadGoods()
+  }
+
   onMounted(() => {
     loadAccounts()
     checkScreenSize()
@@ -725,6 +748,7 @@ export function useAutoDelivery() {
     goodsTotal,
     goodsLoading,
     goodsListRef,
+    onlyOnSale,
     detailDialogVisible,
     selectedGoodsId,
     deliveryRecords,
@@ -753,6 +777,7 @@ export function useAutoDelivery() {
     loadDeliveryRecords,
     handleRecordsPageChange,
     viewGoodsDetail,
+    goToAutoReply,
     handleConfirmShipment,
     handleTriggerDelivery,
     handleDialogConfirm,
@@ -764,6 +789,7 @@ export function useAutoDelivery() {
     copyConfirmShipmentParams,
     handleGoodsScroll,
     goBackToGoods,
+    toggleOnlyOnSale,
     formatTime,
     formatPrice,
     getStatusText,

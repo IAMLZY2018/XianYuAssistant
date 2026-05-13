@@ -235,6 +235,17 @@ public class ItemServiceImpl implements ItemService {
                 // 使用账号ID保存商品
                 Long accountId = reqDTO.getXianyuAccountId();
                 
+                // 收集远程商品ID
+                java.util.Set<String> remoteItemIds = new java.util.HashSet<>();
+                for (ItemDTO item : allItems) {
+                    if (item.getDetailParams() != null && item.getDetailParams().getItemId() != null) {
+                        remoteItemIds.add(item.getDetailParams().getItemId());
+                    }
+                }
+                
+                // 标记本地有但远程没有的在售商品为已下架
+                goodsInfoService.markOfflineIfNotInRemote(accountId, remoteItemIds);
+                
                 // 保存商品并收集成功的商品ID
                 for (ItemDTO item : allItems) {
                     try {
@@ -274,8 +285,8 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public ResultObject<ItemListFromDbRespDTO> getItemsFromDb(ItemListFromDbReqDTO reqDTO) {
         try {
-            log.info("从数据库获取商品列表: status={}, xianyuAccountId={}, pageNum={}, pageSize={}", 
-                    reqDTO.getStatus(), reqDTO.getXianyuAccountId(), reqDTO.getPageNum(), reqDTO.getPageSize());
+            log.info("从数据库获取商品列表: onlyOnSale={}, xianyuAccountId={}, pageNum={}, pageSize={}", 
+                    reqDTO.getOnlyOnSale(), reqDTO.getXianyuAccountId(), reqDTO.getPageNum(), reqDTO.getPageSize());
             
             // 获取分页参数
             int pageSize = reqDTO.getPageSize() != null ? reqDTO.getPageSize() : 20;
@@ -286,8 +297,15 @@ public class ItemServiceImpl implements ItemService {
                 pageNum = 1;
             }
             
-            // 统计总数（使用count查询，提高性能）
-            int totalCount = goodsInfoService.countByStatusAndAccountId(reqDTO.getStatus(), reqDTO.getXianyuAccountId());
+            boolean onlyOnSale = reqDTO.getOnlyOnSale() == null || reqDTO.getOnlyOnSale();
+            
+            // 统计总数
+            int totalCount;
+            if (onlyOnSale) {
+                totalCount = goodsInfoService.countByStatusAndAccountId(0, reqDTO.getXianyuAccountId());
+            } else {
+                totalCount = goodsInfoService.countByAccountId(reqDTO.getXianyuAccountId());
+            }
             
             // 计算总页数
             int totalPage = (int) Math.ceil((double) totalCount / pageSize);
@@ -302,9 +320,13 @@ public class ItemServiceImpl implements ItemService {
                 pageNum = totalPage;
             }
             
-            // 获取当前页的商品列表（带账号ID筛选）
-            List<XianyuGoodsInfo> pagedItems = goodsInfoService.listByStatusAndAccountId(
-                    reqDTO.getStatus(), reqDTO.getXianyuAccountId(), pageNum, pageSize);
+            // 获取当前页的商品列表
+            List<XianyuGoodsInfo> pagedItems;
+            if (onlyOnSale) {
+                pagedItems = goodsInfoService.listByStatusAndAccountId(0, reqDTO.getXianyuAccountId(), pageNum, pageSize);
+            } else {
+                pagedItems = goodsInfoService.listByAccountId(reqDTO.getXianyuAccountId(), pageNum, pageSize);
+            }
             
             // 如果分页查询结果为null，创建空列表
             if (pagedItems == null) {

@@ -48,6 +48,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', checkScreenSize)
+  stopRefresh()
 })
 
 const totalCount = computed(() => messages.value.length)
@@ -129,9 +130,42 @@ const loadMore = async () => {
   }
 }
 
+let refreshTimer: ReturnType<typeof setInterval> | null = null
+
+const startRefresh = () => {
+  stopRefresh()
+  refreshTimer = setInterval(() => {
+    if (props.visible && props.sid) {
+      refreshMessages()
+    }
+  }, 1000)
+}
+
+const stopRefresh = () => {
+  if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null }
+}
+
+const refreshMessages = async () => {
+  if (!props.sid) return
+  try {
+    const res = await getContextMessages({ sid: props.sid, limit: 20, offset: 0 })
+    const msgList = res?.data || []
+    const newMessages = Array.isArray(msgList) ? msgList.reverse() : []
+    if (newMessages.length !== messages.value.length || JSON.stringify(newMessages) !== JSON.stringify(messages.value)) {
+      messages.value = newMessages
+      scrollToBottom()
+    }
+  } catch {
+    // 静默失败，不影响体验
+  }
+}
+
 watch(() => props.visible, (newVal) => {
   if (newVal && props.sid) {
     loadContext()
+    startRefresh()
+  } else {
+    stopRefresh()
   }
 })
 

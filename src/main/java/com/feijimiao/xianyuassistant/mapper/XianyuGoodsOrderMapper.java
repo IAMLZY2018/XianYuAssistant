@@ -108,6 +108,68 @@ public interface XianyuGoodsOrderMapper {
     @Select("SELECT COUNT(*) FROM xianyu_goods_order WHERE date(create_time) = #{date}")
     int countOrdersByDate(@Param("date") String date);
 
+    @Select("<script>" +
+            "SELECT r.*, g.title as goods_title " +
+            "FROM xianyu_goods_order r " +
+            "LEFT JOIN xianyu_goods g ON r.xy_goods_id = g.xy_good_id " +
+            "WHERE 1=1 " +
+            "<if test='accountId != null'>" +
+            "AND r.xianyu_account_id = #{accountId} " +
+            "</if>" +
+            "<if test='xyGoodsId != null and xyGoodsId != \"\"'>" +
+            "AND r.xy_goods_id = #{xyGoodsId} " +
+            "</if>" +
+            "<if test='orderStatus != null'>" +
+            "AND r.state = #{orderStatus} " +
+            "</if>" +
+            "ORDER BY r.create_time DESC " +
+            "LIMIT #{limit} OFFSET #{offset}" +
+            "</script>")
+    @Results({
+        @Result(property = "id", column = "id"),
+        @Result(property = "xianyuAccountId", column = "xianyu_account_id"),
+        @Result(property = "xianyuGoodsId", column = "xianyu_goods_id"),
+        @Result(property = "xyGoodsId", column = "xy_goods_id"),
+        @Result(property = "pnmId", column = "pnm_id"),
+        @Result(property = "orderId", column = "order_id"),
+        @Result(property = "buyerUserId", column = "buyer_user_id"),
+        @Result(property = "buyerUserName", column = "buyer_user_name"),
+        @Result(property = "sid", column = "sid"),
+        @Result(property = "content", column = "content"),
+        @Result(property = "state", column = "state"),
+        @Result(property = "failReason", column = "fail_reason"),
+        @Result(property = "confirmState", column = "confirm_state"),
+        @Result(property = "createTime", column = "create_time"),
+        @Result(property = "goodsTitle", column = "goods_title"),
+        @Result(property = "skuName", column = "sku_name"),
+        @Result(property = "orderCreateTime", column = "order_create_time"),
+        @Result(property = "paySuccessTime", column = "pay_success_time"),
+        @Result(property = "consignTime", column = "consign_time"),
+        @Result(property = "totalPrice", column = "total_price"),
+        @Result(property = "buyNum", column = "buy_num")
+    })
+    List<XianyuGoodsOrder> selectByConditionWithPage(
+            @Param("accountId") Long accountId,
+            @Param("xyGoodsId") String xyGoodsId,
+            @Param("orderStatus") Integer orderStatus,
+            @Param("limit") int limit,
+            @Param("offset") int offset);
+
+    @Select("<script>" +
+            "SELECT COUNT(*) FROM xianyu_goods_order " +
+            "WHERE 1=1 " +
+            "<if test='accountId != null'>" +
+            "AND xianyu_account_id = #{accountId} " +
+            "</if>" +
+            "<if test='xyGoodsId != null and xyGoodsId != \"\"'>" +
+            "AND xy_goods_id = #{xyGoodsId} " +
+            "</if>" +
+            "<if test='orderStatus != null'>" +
+            "AND state = #{orderStatus} " +
+            "</if>" +
+            "</script>")
+    long countByCondition(@Param("accountId") Long accountId, @Param("xyGoodsId") String xyGoodsId, @Param("orderStatus") Integer orderStatus);
+
     @Select("SELECT COUNT(*) FROM xianyu_goods_order WHERE state = 1 AND date(create_time) = #{date}")
     int countDeliverySuccessByDate(@Param("date") String date);
 

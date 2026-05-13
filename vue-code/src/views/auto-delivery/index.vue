@@ -17,6 +17,7 @@ import IconCheck from '@/components/icons/IconCheck.vue'
 import IconClock from '@/components/icons/IconClock.vue'
 import IconPackage from '@/components/icons/IconPackage.vue'
 import IconCopy from '@/components/icons/IconCopy.vue'
+import IconChat from '@/components/icons/IconChat.vue'
 
 import GoodsDetail from '../goods/components/GoodsDetail.vue'
 import MultiImageUploader from '@/components/MultiImageUploader.vue'
@@ -36,6 +37,7 @@ const {
   goodsTotal,
   goodsLoading,
   goodsListRef,
+  onlyOnSale,
   detailDialogVisible,
   selectedGoodsId,
   deliveryRecords,
@@ -56,6 +58,7 @@ const {
   loadDeliveryRecords,
   handleRecordsPageChange,
   viewGoodsDetail,
+  goToAutoReply,
   handleConfirmShipment,
   handleTriggerDelivery,
   handleDialogConfirm,
@@ -63,6 +66,7 @@ const {
   handleSkuChange,
   handleGoodsScroll,
   goBackToGoods,
+  toggleOnlyOnSale,
   formatTime,
   formatPrice,
   getStatusText,
@@ -158,6 +162,9 @@ onMounted(() => {
         <div class="ad__goods-toolbar">
           <span class="ad__goods-toolbar-title">商品列表</span>
           <span v-if="goodsTotal > 0" class="ad__goods-toolbar-count">共 {{ goodsTotal }} 件</span>
+          <button class="ad__only-on-sale-btn" :class="{ 'ad__only-on-sale-btn--active': onlyOnSale }" @click="toggleOnlyOnSale">
+            {{ onlyOnSale ? '在售' : '全部' }}
+          </button>
         </div>
 
         <div
@@ -176,7 +183,7 @@ onMounted(() => {
             v-for="goods in goodsList"
             :key="goods.item.xyGoodId"
             class="ad__goods-item"
-            :class="{ 'ad__goods-item--active': selectedGoods?.item.xyGoodId === goods.item.xyGoodId }"
+            :class="{ 'ad__goods-item--active': selectedGoods?.item.xyGoodId === goods.item.xyGoodId, 'ad__goods-item--offline': goods.item.status !== 0 }"
             @click="selectGoods(goods)"
           >
             <img
@@ -253,6 +260,10 @@ onMounted(() => {
             <IconImage />
             <span class="mobile-hidden">详情</span>
           </button>
+          <button class="btn btn--ghost btn--sm" @click="goToAutoReply">
+            <IconChat />
+            <span class="mobile-hidden">回复</span>
+          </button>
           <button class="btn btn--ghost btn--sm ad__custom-delivery-btn" @click="showCustomDelivery = !showCustomDelivery">
             <IconRobot />
             <span class="mobile-hidden">自定义发货</span>
@@ -273,6 +284,10 @@ onMounted(() => {
           <button class="btn btn--ghost btn--sm" @click="viewGoodsDetail">
             <IconImage />
             <span class="mobile-hidden">详情</span>
+          </button>
+          <button class="btn btn--ghost btn--sm" @click="goToAutoReply">
+            <IconChat />
+            <span class="mobile-hidden">回复</span>
           </button>
           <button class="btn btn--ghost btn--sm ad__custom-delivery-btn" @click="showCustomDelivery = !showCustomDelivery">
             <IconRobot />

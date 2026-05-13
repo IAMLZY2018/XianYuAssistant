@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { checkUserExists, login, register } from '@/api/auth'
 import { setAuthToken, isLoggedIn } from '@/utils/request'
-
-const router = useRouter()
 
 // 'checking' -> 'login' -> 'register'
 const mode = ref<'checking' | 'login' | 'register'>('checking')
@@ -20,7 +17,7 @@ const showConfirmPassword = ref(false)
 onMounted(async () => {
   // 已登录则跳转首页
   if (isLoggedIn()) {
-    router.replace('/dashboard')
+    window.location.href = '/dashboard'
     return
   }
   // 检查是否有用户，决定显示登录还是注册
@@ -46,10 +43,14 @@ async function handleLogin() {
   loading.value = true
   try {
     const res = await login({ username: username.value.trim(), password: password.value })
-    if (res.code === 200 && res.data) {
+    if (res.code === 200 && res.data && res.data.token) {
       setAuthToken(res.data.token, res.data.username)
-      router.replace('/dashboard')
+      window.location.href = '/dashboard'
+    } else {
+      console.error('[Login] login response invalid:', res)
     }
+  } catch (e) {
+    console.error('[Login] login failed:', e)
   } finally {
     loading.value = false
   }
@@ -68,10 +69,14 @@ async function handleRegister() {
       password: password.value,
       confirmPassword: confirmPassword.value
     })
-    if (res.code === 200 && res.data) {
+    if (res.code === 200 && res.data && res.data.token) {
       setAuthToken(res.data.token, res.data.username)
-      router.replace('/dashboard')
+      window.location.href = '/dashboard'
+    } else {
+      console.error('[Login] register response invalid:', res)
     }
+  } catch (e) {
+    console.error('[Login] register failed:', e)
   } finally {
     loading.value = false
   }

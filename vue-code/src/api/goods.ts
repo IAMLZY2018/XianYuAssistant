@@ -73,7 +73,7 @@ export interface SyncProgressResponse {
 // 获取商品列表
 export function getGoodsList(data: {
   xianyuAccountId: number;
-  status?: number;
+  onlyOnSale?: boolean;
   pageNum?: number;
   pageSize?: number;
 }) {

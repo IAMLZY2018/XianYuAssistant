@@ -267,8 +267,8 @@
 
 .ad__goods-toolbar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 8px;
   padding: var(--d-space-3) var(--d-space-4);
   border-bottom: 1px solid var(--d-border);
   flex-shrink: 0;
@@ -283,6 +283,30 @@
 .ad__goods-toolbar-count {
   font-size: 12px;
   color: var(--d-text-tertiary);
+}
+
+.ad__only-on-sale-btn {
+  margin-left: auto;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 10px;
+  border: 1px solid var(--d-border);
+  background: transparent;
+  color: var(--d-text-tertiary);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.ad__only-on-sale-btn--active {
+  background: var(--d-text-primary);
+  color: #fff;
+  border-color: var(--d-text-primary);
+}
+
+.ad__goods-item--offline {
+  opacity: 0.5;
 }
 
 .ad__goods-list {

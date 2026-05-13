@@ -29,6 +29,7 @@ const {
   goodsTotal,
   goodsLoading,
   goodsListRef,
+  onlyOnSale,
   detailDialogVisible,
   selectedGoodsId,
   rightTab,
@@ -73,7 +74,9 @@ const {
   handleChatKeydown,
   handleGoodsScroll,
   goBackToGoods,
+  toggleOnlyOnSale,
   viewGoodsDetail,
+  goToAutoDelivery,
   handleDialogConfirm,
   handleDialogCancel,
   formatTime,
@@ -176,6 +179,9 @@ onMounted(() => {
         <div class="ar__goods-toolbar">
           <span class="ar__goods-toolbar-title">商品列表</span>
           <span v-if="goodsTotal > 0" class="ar__goods-toolbar-count">共 {{ goodsTotal }} 件</span>
+          <button class="ar__only-on-sale-btn" :class="{ 'ar__only-on-sale-btn--active': onlyOnSale }" @click="toggleOnlyOnSale">
+            {{ onlyOnSale ? '在售' : '全部' }}
+          </button>
         </div>
 
         <div
@@ -194,7 +200,7 @@ onMounted(() => {
             v-for="goods in goodsList"
             :key="goods.item.xyGoodId"
             class="ar__goods-item"
-            :class="{ 'ar__goods-item--active': selectedGoods?.item.xyGoodId === goods.item.xyGoodId }"
+            :class="{ 'ar__goods-item--active': selectedGoods?.item.xyGoodId === goods.item.xyGoodId, 'ar__goods-item--offline': goods.item.status !== 0 }"
             @click="selectGoods(goods)"
           >
             <img
@@ -289,6 +295,10 @@ onMounted(() => {
           <button class="btn btn--ghost btn--sm" @click="viewGoodsDetail">
             <IconImage />
             <span class="mobile-hidden">详情</span>
+          </button>
+          <button class="btn btn--ghost btn--sm" @click="goToAutoDelivery">
+            <IconPackage />
+            <span class="mobile-hidden">发货</span>
           </button>
         </div>
 
