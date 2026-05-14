@@ -15,6 +15,11 @@ export interface DataPanelTrend {
   aiReplies: number[];
 }
 
+export interface SalesRevenueData {
+  labels: string[];
+  values: number[];
+}
+
 export function getDataPanelStats(date?: string) {
   return request<DataPanelStats>({
     url: '/data-panel/stats',
@@ -35,5 +40,13 @@ export function getRealtimeRevenue() {
   return request<number>({
     url: '/data-panel/realtimeRevenue',
     method: 'GET'
+  });
+}
+
+export function getSalesRevenue(dimension: string, startDate: string, endDate: string) {
+  return request<SalesRevenueData>({
+    url: '/data-panel/salesRevenue',
+    method: 'POST',
+    data: { dimension, startDate, endDate }
   });
 }

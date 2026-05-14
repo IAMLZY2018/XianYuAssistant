@@ -5,6 +5,7 @@ import com.feijimiao.xianyuassistant.event.chatMessageEvent.ChatMessageReceivedE
 import com.feijimiao.xianyuassistant.service.AccountService;
 import com.feijimiao.xianyuassistant.service.AutoReplyDelayService;
 import com.feijimiao.xianyuassistant.service.AutoReplyService;
+import com.feijimiao.xianyuassistant.service.reply.HumanTakeoverManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
@@ -48,6 +49,9 @@ public class ChatMessageEventAutoReplyListener {
     
     @Autowired
     private AutoReplyService autoReplyService;
+
+    @Autowired
+    private HumanTakeoverManager takeoverManager;
     
     /**
      * 处理聊天消息接收事件 - 判断并触发自动回复
@@ -100,7 +104,14 @@ public class ChatMessageEventAutoReplyListener {
                 return;
             }
             
-            // 5. 检查商品是否开启自动回复开关
+            // 5. 检查会话是否已被人工接管
+            if (message.getSId() != null && takeoverManager.isTakenOver(message.getXianyuAccountId(), message.getSId())) {
+                log.info("【账号{}】会话已被人工接管，跳过自动回复: sId={}", 
+                        message.getXianyuAccountId(), message.getSId());
+                return;
+            }
+            
+            // 7. 检查商品是否开启自动回复开关
             if (!autoReplyService.isAutoReplyEnabled(message.getXianyuAccountId(), message.getXyGoodsId())) {
                 log.info("【账号{}】商品未开启自动回复开关，跳过: xyGoodsId={}", 
                         message.getXianyuAccountId(), message.getXyGoodsId());
@@ -111,7 +122,7 @@ public class ChatMessageEventAutoReplyListener {
                     message.getXianyuAccountId(), message.getXyGoodsId(), 
                     message.getSId(), message.getMsgContent());
             
-            // 6. 提交延时任务（N秒后执行自动回复）
+            // 8. 提交延时任务（N秒后执行自动回复）
             // 如果该会话已有待执行的任务，会先取消旧任务再提交新任务
             autoReplyDelayService.submitDelayTask(message);
             

@@ -18,6 +18,7 @@ import MultiImageUploader from '@/components/MultiImageUploader.vue'
 
 const {
   loading,
+  silentLoading,
   accounts,
   selectedAccountId,
   goodsIdFilter,
@@ -153,7 +154,7 @@ onMounted(async () => {
   }
   refreshTimer = setInterval(() => {
     if (selectedAccountId.value) {
-      loadMessages()
+      loadMessages(true)
     }
   }, 3000)
 })
@@ -207,7 +208,7 @@ const checkScreenSize = () => {
             class="btn btn--secondary"
             :class="{ 'btn--loading': loading }"
             :disabled="loading"
-            @click="loadMessages"
+            @click="loadMessages()"
           >
             <IconRefresh />
             <span>刷新</span>
@@ -401,7 +402,7 @@ const checkScreenSize = () => {
             />
             <span class="mobile-messages__goods-name">{{ selectedGoodsForMobile.item.title }}</span>
           </div>
-          <button class="mobile-messages__refresh" @click="loadMessages">
+          <button class="mobile-messages__refresh" @click="loadMessages()">
             <IconRefresh />
           </button>
         </div>

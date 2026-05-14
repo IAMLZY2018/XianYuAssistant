@@ -11,6 +11,7 @@ import type { GoodsItemWithConfig } from '@/api/goods'
 
 export function useMessageManager() {
   const loading = ref(false)
+  const silentLoading = ref(false)
   const accounts = ref<Account[]>([])
   const selectedAccountId = ref<number | null>(null)
   const goodsIdFilter = ref('')
@@ -118,12 +119,16 @@ export function useMessageManager() {
   }
 
   // 加载消息列表
-  const loadMessages = async () => {
+  const loadMessages = async (silent = false) => {
     if (!selectedAccountId.value) {
       showInfo('请先选择账号')
       return
     }
-    loading.value = true
+    if (!silent) {
+      loading.value = true
+    } else {
+      silentLoading.value = true
+    }
     try {
       const params: any = {
         xianyuAccountId: selectedAccountId.value,
@@ -136,16 +141,34 @@ export function useMessageManager() {
       }
       const response = await getMessageList(params)
       if (response.code === 0 || response.code === 200) {
-        messageList.value = response.data?.list || []
-        total.value = response.data?.totalCount || 0
+        const newList = response.data?.list || []
+        const newTotal = response.data?.totalCount || 0
+
+        if (silent && messageList.value.length > 0) {
+          const existingIds = new Set(messageList.value.map(m => m.id))
+          const newItems = newList.filter((m: ChatMessage) => !existingIds.has(m.id))
+          if (newItems.length > 0) {
+            newItems.forEach((m: ChatMessage) => { m.isNew = true })
+            messageList.value = [...newItems, ...messageList.value.map(m => ({ ...m, isNew: false }))]
+            total.value = newTotal
+          } else if (newTotal !== total.value) {
+            total.value = newTotal
+          }
+        } else {
+          messageList.value = newList
+          total.value = newTotal
+        }
       } else {
         throw new Error(response.msg || '获取消息列表失败')
       }
     } catch (error: any) {
       console.error('加载消息列表失败:', error)
-      messageList.value = []
+      if (!silent) {
+        messageList.value = []
+      }
     } finally {
       loading.value = false
+      silentLoading.value = false
     }
   }
 
@@ -325,6 +348,7 @@ export function useMessageManager() {
 
   return {
     loading,
+    silentLoading,
     accounts,
     selectedAccountId,
     goodsIdFilter,

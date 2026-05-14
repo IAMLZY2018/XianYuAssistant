@@ -7,7 +7,7 @@ export interface ChatMessage {
   xianyuAccountId: number;
   lwp: string;
   pnmId: string;
-  sid: string;  // 注意：后端返回的是全小写的 sid
+  sid: string;
   contentType: number;
   msgContent: string;
   senderUserName: string;
@@ -19,6 +19,7 @@ export interface ChatMessage {
   completeMsg: string;
   messageTime: string | number;
   createTime: string;
+  isNew?: boolean;
 }
 
 // 消息列表响应

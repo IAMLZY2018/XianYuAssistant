@@ -111,7 +111,7 @@ const formatMessageTime = (timestamp: string | number) => {
       v-for="msg in messageList"
       :key="msg.id"
       class="msg-card"
-      :class="{ 'msg-card--user': true }"
+      :class="{ 'msg-card--user': true, 'msg-card--new': msg.isNew }"
     >
       <div class="msg-card__header">
         <span
@@ -175,7 +175,7 @@ const formatMessageTime = (timestamp: string | number) => {
         </tr>
       </thead>
       <tbody class="table__body">
-        <tr v-for="(msg, idx) in messageList" :key="msg.id" class="table__tr">
+        <tr v-for="(msg, idx) in messageList" :key="msg.id" class="table__tr" :class="{ 'table__tr--new': msg.isNew }">
           <td class="table__td table__td--center">
             <span class="msg-idx">{{ idx + 1 }}</span>
           </td>
@@ -264,6 +264,23 @@ const formatMessageTime = (timestamp: string | number) => {
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   transition: background 0.15s ease;
   overflow: hidden;
+}
+
+.msg-card--new {
+  animation: msg-enter 0.35s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+}
+
+@keyframes msg-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 200px;
+  }
 }
 
 .msg-card:nth-child(even) {
@@ -426,6 +443,21 @@ const formatMessageTime = (timestamp: string | number) => {
   transition: background var(--c-ease);
 }
 
+.table__tr--new {
+  animation: row-enter 0.35s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+}
+
+@keyframes row-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 .table__tr:not(:last-child) .table__td {
   border-bottom: 1px solid var(--c-border);
 }
@@ -574,10 +606,5 @@ const formatMessageTime = (timestamp: string | number) => {
   color: var(--c-text-3);
 }
 
-/* Loading */
-.card-list--loading,
-.table-container--loading {
-  opacity: 0.5;
-  pointer-events: none;
-}
+/* Loading - 不再整体半透明闪烁，由调用方控制加载状态 */
 </style>

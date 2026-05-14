@@ -90,8 +90,12 @@ const handleStartConnection = async () => {
   try {
     const response = await startConnection(props.accountId)
     if (response.code === 0 || response.code === 200) {
-      showSuccess('连接启动成功')
       await loadConnectionStatus()
+      ElMessageBox.alert(
+        '1、请勿使用闲鱼网页版进行消息回复，不然容易触发风控；<br><br>2、刚开始使用会掉线且无法自动刷新的情况，属于正常，多挂几天就好了；<br><br>3、有问题可以在"系统设置"->"关于"加入交流群；',
+        '连接已经建立',
+        { confirmButtonText: '我知道了', type: 'success', dangerouslyUseHTMLString: true }
+      )
     } else if (response.code === 1001 && response.data?.needCaptcha) {
       showCaptchaGuideDialog.value = true
     } else {

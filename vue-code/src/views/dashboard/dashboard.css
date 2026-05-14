@@ -706,3 +706,64 @@
     grid-template-columns: repeat(6, 1fr);
   }
 }
+
+/* === Chart Tooltip === */
+.dp__chart-tooltip-zone {
+  position: relative;
+}
+
+.dp__chart-hitarea {
+  cursor: pointer;
+}
+
+.dp__chart-hitarea:hover {
+  fill-opacity: 0.15;
+}
+
+.dp__y-tick {
+  font-variant-numeric: tabular-nums;
+}
+
+.dp__data-label {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.dp__chart-tooltip {
+  position: absolute;
+  pointer-events: none;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #1d1d1f;
+  white-space: nowrap;
+  transform: translate(-50%, -100%) translateY(-10px);
+  transition: opacity 0.15s ease;
+}
+
+.dp__chart-tooltip-label {
+  font-size: 11px;
+  color: #86868b;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.dp__chart-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.6;
+}
+
+.dp__chart-tooltip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
