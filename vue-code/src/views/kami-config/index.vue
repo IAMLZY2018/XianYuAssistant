@@ -633,75 +633,143 @@ onMounted(async () => {
     </template>
 
     <!-- ===== 弹窗（共用） ===== -->
-    <el-dialog v-model="showCreateDialog" title="新建卡密配置" width="460" :close-on-click-modal="false">
-      <el-form label-width="80px">
-        <el-form-item label="别名">
-          <el-input v-model="createForm.aliasName" placeholder="请输入别名" maxlength="50" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showCreateDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleCreate" :loading="createLoading">确定</el-button>
-      </template>
-    </el-dialog>
+    <Teleport to="body">
+      <!-- 新建卡密配置 -->
+      <Transition name="modal">
+        <div v-if="showCreateDialog" class="modal-overlay" @click.self="showCreateDialog = false">
+          <div class="modal-container">
+            <div class="modal-header">
+              <h2 class="modal-title">新建卡密配置</h2>
+              <button class="modal-close" @click="showCreateDialog = false">×</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-row">
+                <label class="form-label">别名</label>
+                <input v-model="createForm.aliasName" class="form-input" placeholder="请输入别名" maxlength="50" />
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" @click="showCreateDialog = false">取消</button>
+              <button class="btn btn-primary" :class="{ 'is-loading': createLoading }" :disabled="createLoading" @click="handleCreate">确定</button>
+            </div>
+          </div>
+        </div>
+      </Transition>
 
-    <el-dialog v-model="showAddDialog" title="添加卡密" width="460" :close-on-click-modal="false">
-      <el-input v-model="addContent" type="textarea" :rows="3" placeholder="请输入卡密内容" />
-      <template #footer>
-        <el-button @click="showAddDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleAddKami" :loading="addLoading">确定</el-button>
-      </template>
-    </el-dialog>
+      <!-- 添加卡密 -->
+      <Transition name="modal">
+        <div v-if="showAddDialog" class="modal-overlay" @click.self="showAddDialog = false">
+          <div class="modal-container">
+            <div class="modal-header">
+              <h2 class="modal-title">添加卡密</h2>
+              <button class="modal-close" @click="showAddDialog = false">×</button>
+            </div>
+            <div class="modal-body">
+              <textarea v-model="addContent" class="form-textarea" :rows="3" placeholder="请输入卡密内容"></textarea>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" @click="showAddDialog = false">取消</button>
+              <button class="btn btn-primary" :class="{ 'is-loading': addLoading }" :disabled="addLoading" @click="handleAddKami">确定</button>
+            </div>
+          </div>
+        </div>
+      </Transition>
 
-    <el-dialog v-model="showImportDialog" title="批量导入卡密" width="560" :close-on-click-modal="false">
-      <p style="color: #909399; font-size: 13px; margin-bottom: 8px;">每行一条卡密，重复卡密将自动跳过</p>
-      <el-input v-model="importContent" type="textarea" :rows="10" placeholder="卡密1&#10;卡密2&#10;卡密3" />
-      <template #footer>
-        <el-button @click="showImportDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleBatchImport" :loading="importLoading">导入</el-button>
-      </template>
-    </el-dialog>
+      <!-- 批量导入 -->
+      <Transition name="modal">
+        <div v-if="showImportDialog" class="modal-overlay" @click.self="showImportDialog = false">
+          <div class="modal-container modal-container--lg">
+            <div class="modal-header">
+              <h2 class="modal-title">批量导入卡密</h2>
+              <button class="modal-close" @click="showImportDialog = false">×</button>
+            </div>
+            <div class="modal-body">
+              <p class="form-hint">每行一条卡密，重复卡密将自动跳过</p>
+              <textarea v-model="importContent" class="form-textarea" :rows="10" placeholder="卡密1&#10;卡密2&#10;卡密3"></textarea>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" @click="showImportDialog = false">取消</button>
+              <button class="btn btn-primary" :class="{ 'is-loading': importLoading }" :disabled="importLoading" @click="handleBatchImport">导入</button>
+            </div>
+          </div>
+        </div>
+      </Transition>
 
-    <el-dialog v-model="showAlertDialog" title="预警配置" width="480" :close-on-click-modal="false">
-      <el-form label-width="90px">
-        <el-form-item label="开启预警">
-          <el-switch v-model="alertForm.alertEnabled" :active-value="1" :inactive-value="0" />
-        </el-form-item>
-        <el-form-item label="阈值类型">
-          <el-radio-group v-model="alertForm.alertThresholdType">
-            <el-radio :value="1">数量</el-radio>
-            <el-radio :value="2">百分比</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="阈值数值">
-          <el-input-number v-model="alertForm.alertThresholdValue" :min="1" :max="alertForm.alertThresholdType === 2 ? 100 : 99999" />
-          <span style="margin-left: 8px; color: #909399; font-size: 12px;">
-            {{ alertForm.alertThresholdType === 1 ? '可用卡密低于此数量时预警' : '可用比例低于此百分比时预警' }}
-          </span>
-        </el-form-item>
-        <el-form-item label="预警邮箱">
-          <el-input v-model="alertForm.alertEmail" placeholder="留空则使用系统设置的邮箱" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showAlertDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleSaveAlert" :loading="alertLoading">保存</el-button>
-      </template>
-    </el-dialog>
+      <!-- 预警配置 -->
+      <Transition name="modal">
+        <div v-if="showAlertDialog" class="modal-overlay" @click.self="showAlertDialog = false">
+          <div class="modal-container">
+            <div class="modal-header">
+              <h2 class="modal-title">预警配置</h2>
+              <button class="modal-close" @click="showAlertDialog = false">×</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-row">
+                <label class="form-label">开启预警</label>
+                <label class="form-switch">
+                  <input type="checkbox" :checked="alertForm.alertEnabled === 1" @change="alertForm.alertEnabled = alertForm.alertEnabled === 1 ? 0 : 1" />
+                  <span class="form-switch-track"></span>
+                </label>
+              </div>
+              <div class="form-row">
+                <label class="form-label">阈值类型</label>
+                <div class="form-radio-group">
+                  <label class="form-radio" :class="{ 'is-active': alertForm.alertThresholdType === 1 }">
+                    <input type="radio" :value="1" v-model="alertForm.alertThresholdType" />数量
+                  </label>
+                  <label class="form-radio" :class="{ 'is-active': alertForm.alertThresholdType === 2 }">
+                    <input type="radio" :value="2" v-model="alertForm.alertThresholdType" />百分比
+                  </label>
+                </div>
+              </div>
+              <div class="form-row">
+                <label class="form-label">阈值数值</label>
+                <input type="number" v-model.number="alertForm.alertThresholdValue" class="form-input form-input--num" :min="1" :max="alertForm.alertThresholdType === 2 ? 100 : 99999" />
+                <span class="form-suffix">{{ alertForm.alertThresholdType === 1 ? '可用卡密低于此数量时预警' : '可用比例低于此百分比时预警' }}</span>
+              </div>
+              <div class="form-row">
+                <label class="form-label">预警邮箱</label>
+                <input v-model="alertForm.alertEmail" class="form-input" placeholder="留空则使用系统设置的邮箱" />
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" @click="showAlertDialog = false">取消</button>
+              <button class="btn btn-primary" :class="{ 'is-loading': alertLoading }" :disabled="alertLoading" @click="handleSaveAlert">保存</button>
+            </div>
+          </div>
+        </div>
+      </Transition>
 
-    <el-dialog v-model="showExportDialog" title="导出卡密" width="480" :close-on-click-modal="false">
-      <el-form label-width="90px">
-        <el-form-item label="导出状态">
-          <el-checkbox v-model="exportStatus.unused" label="未使用" />
-          <el-checkbox v-model="exportStatus.used" label="已使用" style="margin-left: 12px;" />
-        </el-form-item>
-        <p style="color: #909399; font-size: 12px; margin: 0 0 0 90px;">导出为Excel格式（.txt文件，Excel可直接打开）</p>
-      </el-form>
-      <template #footer>
-        <el-button @click="showExportDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleExport">导出</el-button>
-      </template>
-    </el-dialog>
+      <!-- 导出卡密 -->
+      <Transition name="modal">
+        <div v-if="showExportDialog" class="modal-overlay" @click.self="showExportDialog = false">
+          <div class="modal-container">
+            <div class="modal-header">
+              <h2 class="modal-title">导出卡密</h2>
+              <button class="modal-close" @click="showExportDialog = false">×</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-row">
+                <label class="form-label">导出状态</label>
+                <div class="form-checkbox-group">
+                  <label class="form-checkbox">
+                    <input type="checkbox" v-model="exportStatus.unused" />未使用
+                  </label>
+                  <label class="form-checkbox">
+                    <input type="checkbox" v-model="exportStatus.used" />已使用
+                  </label>
+                </div>
+              </div>
+              <p class="form-hint form-hint--indent">导出为Excel格式（.txt文件，Excel可直接打开）</p>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" @click="showExportDialog = false">取消</button>
+              <button class="btn btn-primary" @click="handleExport">导出</button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -946,5 +1014,292 @@ onMounted(async () => {
 .kami-item-card__actions {
   display: flex;
   gap: 4px;
+}
+
+/* ===== 弹窗样式 ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 24px;
+}
+
+.modal-container {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.14), 0 12px 32px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-container--lg {
+  max-width: 480px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0;
+}
+
+.modal-close {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: #86868b;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modal-close:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #1d1d1f;
+}
+
+.modal-body {
+  padding: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  flex-shrink: 0;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-label {
+  font-size: 13px;
+  color: #1d1d1f;
+  font-weight: 500;
+  min-width: 70px;
+  flex-shrink: 0;
+}
+
+.form-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  font-size: 13px;
+  background: #fff;
+  color: #1d1d1f;
+  transition: border-color 0.15s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #0071e3;
+}
+
+.form-input--num {
+  width: 100px;
+  flex: none;
+}
+
+.form-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: none;
+  background: #fff;
+  color: #1d1d1f;
+  font-family: inherit;
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: #0071e3;
+}
+
+.form-hint {
+  font-size: 12px;
+  color: #86868b;
+  margin: 0;
+}
+
+.form-hint--indent {
+  margin-left: 70px;
+}
+
+.form-suffix {
+  font-size: 12px;
+  color: #86868b;
+}
+
+.form-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.form-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.form-switch-track {
+  position: absolute;
+  inset: 0;
+  background: #e5e5e5;
+  border-radius: 12px;
+  transition: background 0.2s ease;
+}
+
+.form-switch-track::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  left: 2px;
+  top: 2px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.form-switch input:checked + .form-switch-track {
+  background: #34c759;
+}
+
+.form-switch input:checked + .form-switch-track::after {
+  transform: translateX(16px);
+}
+
+.form-radio-group {
+  display: flex;
+  gap: 12px;
+}
+
+.form-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: #1d1d1f;
+  cursor: pointer;
+}
+
+.form-radio input {
+  margin: 0;
+}
+
+.form-checkbox-group {
+  display: flex;
+  gap: 16px;
+}
+
+.form-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #1d1d1f;
+  cursor: pointer;
+}
+
+.form-checkbox input {
+  margin: 0;
+}
+
+.btn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+}
+
+.btn-secondary {
+  background: rgba(0, 0, 0, 0.06);
+  color: #1d1d1f;
+}
+
+.btn-secondary:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary {
+  background: #0071e3;
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #0077ed;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn.is-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Transitions */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.modal-enter-active .modal-container,
+.modal-leave-active .modal-container {
+  transition: transform 0.3s cubic-bezier(0.32, 0.94, 0.6, 1), opacity 0.2s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-from .modal-container,
+.modal-leave-to .modal-container {
+  transform: scale(0.92) translateY(8px);
+  opacity: 0;
 }
 </style>

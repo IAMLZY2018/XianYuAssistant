@@ -131,7 +131,10 @@ public class AutoReplyDelayServiceImpl implements AutoReplyDelayService {
         String taskKey = buildTaskKey(accountId, sId);
         
         // 防线1：消息到来时立即检查人工接管
-        if (takeoverManager.isTakenOver(accountId, sId)) {
+        boolean isTakenOver = takeoverManager.isTakenOver(accountId, sId);
+        log.info("【账号{}】提交延时任务前检查人工接管: sId={}, isTakenOver={}", accountId, sId, isTakenOver);
+        
+        if (isTakenOver) {
             log.info("【账号{}】会话已被人工接管，跳过自动回复: sId={}", accountId, sId);
             return;
         }

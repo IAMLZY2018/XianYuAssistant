@@ -8,6 +8,7 @@ import com.feijimiao.xianyuassistant.service.AutoReplyService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
@@ -53,11 +54,12 @@ public class ChatMessageEventAutoReplyListener {
      * 
      * @param event 聊天消息接收事件
      */
+    @Order(10)  // 优先级较低，确保在 HumanInterventionListener 之后执行
     @Async
     @EventListener
     public void handleChatMessageReceived(ChatMessageReceivedEvent event) {
         ChatMessageData message = event.getMessageData();
-        
+
         log.info("【账号{}】[AutoReplyListener]收到ChatMessageReceivedEvent事件: pnmId={}, contentType={}, senderUserId={}, msgContent={}, xyGoodsId={}, sId={}", 
                 message.getXianyuAccountId(), message.getPnmId(), message.getContentType(),
                 message.getSenderUserId(), message.getMsgContent(), message.getXyGoodsId(), message.getSId());
@@ -74,14 +76,15 @@ public class ChatMessageEventAutoReplyListener {
             String senderUserId = message.getSenderUserId();
             String ownUserId = accountService.getXianyuUserId(message.getXianyuAccountId());
             
+            log.info("【账号{}】[AutoReplyListener]消息发送者判断: senderUserId={}, ownUserId={}, equals={}", 
+                    message.getXianyuAccountId(), senderUserId, ownUserId, 
+                    (senderUserId != null && ownUserId != null && senderUserId.equals(ownUserId)));
+            
             if (senderUserId != null && ownUserId != null && senderUserId.equals(ownUserId)) {
-                log.debug("【账号{}】[AutoReplyListener]自己发送的消息，跳过自动回复: senderUserId={}, ownUserId={}", 
+                log.info("【账号{}】[AutoReplyListener]自己发送的消息，跳过自动回复: senderUserId={}, ownUserId={}", 
                         message.getXianyuAccountId(), senderUserId, ownUserId);
                 return;
             }
-            
-            log.debug("【账号{}】[AutoReplyListener]消息发送者: senderUserId={}, ownUserId={}", 
-                    message.getXianyuAccountId(), senderUserId, ownUserId);
             
             // 3. 检查是否有商品ID和会话ID
             if (message.getXyGoodsId() == null || message.getSId() == null) {

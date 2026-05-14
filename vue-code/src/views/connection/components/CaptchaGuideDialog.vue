@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 
 interface Props {
   modelValue: boolean;
@@ -13,24 +13,11 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-// 响应式检测
 const isMobile = ref(false);
-const isTablet = ref(false);
-const isDesktop = ref(false);
 
 const checkDevice = () => {
-  const width = window.innerWidth;
-  isMobile.value = width < 768;
-  isTablet.value = width >= 768 && width < 1024;
-  isDesktop.value = width >= 1024;
+  isMobile.value = window.innerWidth < 768;
 };
-
-// 计算对话框宽度
-const dialogWidth = computed(() => {
-  if (isMobile.value) return '92%';
-  if (isTablet.value) return '480px';
-  return '420px';
-});
 
 const handleClose = () => {
   emit('update:modelValue', false);
@@ -45,99 +32,160 @@ onMounted(() => {
   checkDevice();
   window.addEventListener('resize', checkDevice);
 });
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkDevice);
+});
 </script>
 
 <template>
-  <el-dialog
-    :model-value="modelValue"
-    title="需要滑块验证"
-    :width="dialogWidth"
-    @close="handleClose"
-    class="captcha-guide-dialog"
-    :class="{ 'is-mobile': isMobile, 'is-tablet': isTablet, 'is-desktop': isDesktop }"
-    :close-on-click-modal="false"
-    :close-on-press-escape="false"
-    :show-close="true"
-  >
-    <div class="captcha-content">
-      <!-- 警告提示 -->
-      <div class="captcha-alert">
-        <div class="alert-icon">⚠️</div>
-        <div class="alert-text">检测到账号需要完成滑块验证</div>
-      </div>
-      
-      <!-- 操作步骤 -->
-      <div class="captcha-steps">
-        <div class="step-item">
-          <div class="step-number">1</div>
-          <div class="step-text">点击下方按钮访问闲鱼IM页面</div>
+  <Teleport to="body">
+    <Transition name="modal">
+      <div v-if="modelValue" class="modal-overlay" @click.self="handleClose">
+        <div class="modal-container" :class="{ 'is-mobile': isMobile }">
+          <div class="modal-header">
+            <h2 class="modal-title">需要滑块验证</h2>
+            <button class="modal-close" @click="handleClose">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="captcha-alert">
+              <span class="alert-icon">⚠️</span>
+              <span class="alert-text">检测到账号需要完成滑块验证</span>
+            </div>
+            <div class="captcha-steps">
+              <div class="step-item">
+                <span class="step-number">1</span>
+                <span class="step-text">点击下方按钮访问闲鱼IM页面</span>
+              </div>
+              <div class="step-item">
+                <span class="step-number">2</span>
+                <span class="step-text">在闲鱼页面完成滑块验证</span>
+              </div>
+              <div class="step-item">
+                <span class="step-number">3</span>
+                <span class="step-text">按F12打开开发者工具，复制Cookie</span>
+              </div>
+              <div class="step-item">
+                <span class="step-number">4</span>
+                <span class="step-text">返回本页面，点击"手动更新"粘贴Cookie</span>
+              </div>
+            </div>
+            <div class="captcha-tip">
+              <span class="tip-icon">💡</span>
+              <span class="tip-text">更新Cookie后点击"启动连接"，会自动更新WebSocket Token，滑块校验生效会延迟，稍等片刻会自动连接闲鱼服务器</span>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" @click="handleClose">取消</button>
+            <button class="btn btn-primary" @click="handleConfirm">访问闲鱼IM</button>
+          </div>
         </div>
-        
-        <div class="step-item">
-          <div class="step-number">2</div>
-          <div class="step-text">在闲鱼页面完成滑块验证</div>
-        </div>
-        
-        <div class="step-item">
-          <div class="step-number">3</div>
-          <div class="step-text">按F12打开开发者工具，复制Cookie</div>
-        </div>
-        
-        <div class="step-item">
-          <div class="step-number">4</div>
-          <div class="step-text">返回本页面，点击"手动更新"粘贴Cookie</div>
-        </div>
       </div>
-      
-      <!-- 提示 -->
-      <div class="captcha-tip">
-        <span class="tip-icon">💡</span>
-        <span class="tip-text">更新Cookie后点击"启动连接"，会自动更新WebSocket Token，滑块校验生效会延迟，稍等片刻会自动连接闲鱼服务器</span>
-      </div>
-    </div>
-
-    <template #footer>
-      <div class="dialog-footer">
-        <el-button @click="handleClose" class="btn-cancel">取消</el-button>
-        <el-button type="primary" @click="handleConfirm" class="btn-confirm">
-          访问闲鱼IM
-        </el-button>
-      </div>
-    </template>
-  </el-dialog>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>
-.captcha-content {
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 24px;
 }
 
-/* 警告提示 */
+.modal-container {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.14), 0 12px 32px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-container.is-mobile {
+  max-width: 94vw;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0;
+}
+
+.modal-close {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: #86868b;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modal-close:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #1d1d1f;
+}
+
+.modal-body {
+  padding: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  flex-shrink: 0;
+}
+
 .captcha-alert {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
   background: #fff3cd;
-  border-radius: 8px;
-  border-left: 3px solid #ffc107;
+  border-radius: 10px;
 }
 
 .alert-icon {
-  font-size: 20px;
+  font-size: 18px;
   flex-shrink: 0;
 }
 
 .alert-text {
-  font-size: 14px;
+  font-size: 13px;
   color: #856404;
   font-weight: 500;
   line-height: 1.4;
 }
 
-/* 操作步骤 */
 .captcha-steps {
   display: flex;
   flex-direction: column;
@@ -147,304 +195,97 @@ onMounted(() => {
 .step-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   padding: 10px 12px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
-
-.step-item:hover {
-  background: #f0f2f5;
+  background: #f5f5f7;
+  border-radius: 10px;
 }
 
 .step-number {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: #007aff;
-  color: white;
+  background: #0071e3;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
-  font-weight: 600;
   flex-shrink: 0;
 }
 
 .step-text {
   font-size: 13px;
-  color: #333;
-  line-height: 1.4;
+  color: #1d1d1f;
 }
 
-/* 提示 */
 .captcha-tip {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   padding: 10px 12px;
-  background: #e7f3ff;
-  border-radius: 8px;
+  background: rgba(0, 113, 227, 0.06);
+  border-radius: 10px;
 }
 
 .tip-icon {
-  font-size: 16px;
+  font-size: 14px;
   flex-shrink: 0;
 }
 
 .tip-text {
   font-size: 12px;
-  color: #007aff;
+  color: #1d1d1f;
+  line-height: 1.5;
+}
+
+.btn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 14px;
   font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
 }
 
-/* 底部按钮 */
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
+.btn-secondary {
+  background: rgba(0, 0, 0, 0.06);
+  color: #1d1d1f;
 }
 
-.btn-cancel {
-  padding: 8px 16px;
-  font-size: 13px;
-  border-radius: 6px;
+.btn-secondary:hover {
+  background: rgba(0, 0, 0, 0.1);
 }
 
-.btn-confirm {
-  padding: 8px 16px;
-  font-size: 13px;
-  border-radius: 6px;
-  font-weight: 500;
+.btn-primary {
+  background: #0071e3;
+  color: #fff;
 }
 
-/* 移动端样式 - iOS 18 风格 */
-@media (max-width: 767px) {
-  .captcha-alert {
-    padding: 10px 12px;
-    border-radius: 10px;
-  }
-
-  .alert-icon {
-    font-size: 18px;
-  }
-
-  .alert-text {
-    font-size: 13px;
-  }
-
-  .step-item {
-    padding: 8px 10px;
-    border-radius: 10px;
-  }
-
-  .step-number {
-    width: 22px;
-    height: 22px;
-    font-size: 12px;
-  }
-
-  .step-text {
-    font-size: 12px;
-  }
-
-  .captcha-tip {
-    padding: 8px 10px;
-    border-radius: 10px;
-  }
-
-  .tip-text {
-    font-size: 11px;
-  }
-
-  .dialog-footer {
-    flex-direction: column-reverse;
-    gap: 8px;
-  }
-
-  .btn-cancel,
-  .btn-confirm {
-    width: 100%;
-    padding: 12px 16px;
-    font-size: 15px;
-    border-radius: 10px;
-  }
+.btn-primary:hover {
+  background: #0077ed;
 }
 
-/* 平板端样式 - iPadOS 18 风格 */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .captcha-alert {
-    padding: 14px 16px;
-    border-radius: 12px;
-  }
-
-  .step-item {
-    padding: 12px 14px;
-    border-radius: 10px;
-  }
-
-  .step-number {
-    width: 26px;
-    height: 26px;
-    font-size: 14px;
-  }
-
-  .step-text {
-    font-size: 14px;
-  }
-
-  .btn-cancel,
-  .btn-confirm {
-    padding: 10px 20px;
-    font-size: 14px;
-    border-radius: 8px;
-  }
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.2s ease;
 }
 
-/* 桌面端样式 - macOS 风格 */
-@media (min-width: 1024px) {
-  .captcha-content {
-    gap: 14px;
-  }
-
-  .captcha-alert {
-    padding: 10px 12px;
-    border-radius: 6px;
-  }
-
-  .alert-icon {
-    font-size: 18px;
-  }
-
-  .alert-text {
-    font-size: 13px;
-  }
-
-  .step-item {
-    padding: 8px 10px;
-    border-radius: 6px;
-  }
-
-  .step-number {
-    width: 22px;
-    height: 22px;
-    font-size: 12px;
-  }
-
-  .step-text {
-    font-size: 12px;
-  }
-
-  .captcha-tip {
-    padding: 8px 10px;
-    border-radius: 6px;
-  }
-
-  .tip-text {
-    font-size: 11px;
-  }
-
-  .btn-cancel,
-  .btn-confirm {
-    padding: 6px 14px;
-    font-size: 12px;
-    border-radius: 4px;
-  }
-}
-</style>
-
-<style>
-/* 全局样式：滑块验证引导对话框 */
-.captcha-guide-dialog {
-  border-radius: 12px !important;
+.modal-enter-active .modal-container,
+.modal-leave-active .modal-container {
+  transition: transform 0.3s cubic-bezier(0.32, 0.94, 0.6, 1), opacity 0.2s ease;
 }
 
-.captcha-guide-dialog .el-dialog__header {
-  padding: 16px 20px 12px !important;
-  border-bottom: 1px solid #e5e5e5 !important;
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
 }
 
-.captcha-guide-dialog .el-dialog__title {
-  font-size: 16px !important;
-  font-weight: 600 !important;
-  color: #1d1d1f !important;
-}
-
-.captcha-guide-dialog .el-dialog__body {
-  padding: 16px 20px !important;
-}
-
-.captcha-guide-dialog .el-dialog__footer {
-  padding: 12px 20px 16px !important;
-  border-top: 1px solid #e5e5e5 !important;
-}
-
-/* iOS 风格 - 移动端 */
-.captcha-guide-dialog.is-mobile {
-  border-radius: 16px !important;
-}
-
-.captcha-guide-dialog.is-mobile .el-dialog__header {
-  padding: 20px 20px 16px !important;
-  border-bottom: none !important;
-  text-align: center !important;
-}
-
-.captcha-guide-dialog.is-mobile .el-dialog__title {
-  font-size: 17px !important;
-  font-weight: 600 !important;
-}
-
-.captcha-guide-dialog.is-mobile .el-dialog__body {
-  padding: 0 20px 16px !important;
-}
-
-.captcha-guide-dialog.is-mobile .el-dialog__footer {
-  padding: 0 20px 20px !important;
-  border-top: none !important;
-}
-
-/* iPadOS 风格 - 平板端 */
-.captcha-guide-dialog.is-tablet {
-  border-radius: 14px !important;
-}
-
-.captcha-guide-dialog.is-tablet .el-dialog__header {
-  padding: 18px 24px 14px !important;
-}
-
-.captcha-guide-dialog.is-tablet .el-dialog__title {
-  font-size: 17px !important;
-}
-
-.captcha-guide-dialog.is-tablet .el-dialog__body {
-  padding: 18px 24px !important;
-}
-
-.captcha-guide-dialog.is-tablet .el-dialog__footer {
-  padding: 14px 24px 18px !important;
-}
-
-/* macOS 风格 - 桌面端 */
-.captcha-guide-dialog.is-desktop {
-  border-radius: 10px !important;
-}
-
-.captcha-guide-dialog.is-desktop .el-dialog__header {
-  padding: 14px 18px 10px !important;
-}
-
-.captcha-guide-dialog.is-desktop .el-dialog__title {
-  font-size: 14px !important;
-  font-weight: 600 !important;
-}
-
-.captcha-guide-dialog.is-desktop .el-dialog__body {
-  padding: 14px 18px !important;
-}
-
-.captcha-guide-dialog.is-desktop .el-dialog__footer {
-  padding: 10px 18px 14px !important;
+.modal-enter-from .modal-container,
+.modal-leave-to .modal-container {
+  transform: scale(0.92) translateY(8px);
+  opacity: 0;
 }
 </style>

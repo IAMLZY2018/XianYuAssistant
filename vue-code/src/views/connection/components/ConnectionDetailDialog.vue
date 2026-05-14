@@ -366,20 +366,16 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <el-dialog
-    :model-value="modelValue"
-    title="连接详情"
-    :width="dialogWidth"
-    @close="handleClose"
-    class="connection-detail-dialog"
-    :class="{ 'mobile-dialog': isMobile }"
-    :close-on-click-modal="false"
-    :close-on-press-escape="false"
-    top="0"
-    :destroy-on-close="true"
-  >
-    <div v-loading="statusLoading" class="connection-detail">
-      <div v-if="connectionStatus" class="detail-content">
+  <Teleport to="body">
+    <Transition name="modal">
+      <div v-if="modelValue" class="modal-overlay" @click.self="handleClose">
+        <div class="modal-container" :class="{ 'is-mobile': isMobile }">
+          <div class="modal-header">
+            <h2 class="modal-title">连接详情</h2>
+            <button class="modal-close" @click="handleClose">×</button>
+          </div>
+          <div class="modal-body" v-loading="statusLoading">
+            <div v-if="connectionStatus" class="detail-content">
         <!-- 主标题区域 -->
         <div class="main-card-header">
           <div class="header-left">
@@ -604,10 +600,106 @@ onBeforeUnmount(() => {
       v-model="showCaptchaGuideDialog"
       @confirm="handleCaptchaConfirm"
     />
-  </el-dialog>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 24px;
+}
+
+.modal-container {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 88vh;
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.14), 0 12px 32px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-container.is-mobile {
+  max-width: 94vw;
+  border-radius: 20px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0;
+}
+
+.modal-close {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: #86868b;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modal-close:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #1d1d1f;
+}
+
+.modal-body {
+  flex: 1;
+  padding: 0 20px 20px;
+  overflow-y: auto;
+}
+
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.modal-enter-active .modal-container,
+.modal-leave-active .modal-container {
+  transition: transform 0.3s cubic-bezier(0.32, 0.94, 0.6, 1), opacity 0.2s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-from .modal-container,
+.modal-leave-to .modal-container {
+  transform: scale(0.92) translateY(8px);
+  opacity: 0;
+}
+
 .connection-detail {
   min-height: 400px;
 }
@@ -1055,98 +1147,4 @@ onBeforeUnmount(() => {
 }
 </style>
 
-<style>
-/* 全局样式：连接详情对话框 */
-.connection-detail-dialog {
-  display: flex !important;
-  flex-direction: column !important;
-  margin: 0 !important;
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  max-height: 90vh !important;
-}
-
-.connection-detail-dialog .el-dialog__body {
-  padding: 16px 20px;
-  overflow-y: auto;
-  flex: 1;
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.connection-detail-dialog .el-dialog__body::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-}
-
-.connection-detail-dialog .el-dialog__header {
-  padding: 16px 20px;
-  border-bottom: 1px solid #ebeef5;
-  flex-shrink: 0;
-}
-
-.connection-detail-dialog .el-dialog__footer {
-  padding: 12px 20px;
-  border-top: 1px solid #ebeef5;
-  flex-shrink: 0;
-}
-
-/* 手机端弹窗样式 */
-.mobile-dialog {
-  border-radius: 16px !important;
-  max-height: 85vh !important;
-  max-width: 95vw !important;
-  animation: fadeIn 0.2s ease-out !important;
-}
-
-.mobile-dialog .el-dialog__header {
-  padding: 16px 16px 12px !important;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.mobile-dialog .el-dialog__body {
-  padding: 12px 16px !important;
-  max-height: calc(85vh - 140px) !important;
-}
-
-.mobile-dialog .el-dialog__footer {
-  padding: 10px 16px !important;
-  border-top: 1px solid #ebeef5;
-}
-
-/* 淡入动画 */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* 遮罩层样式 */
-.mobile-dialog + .el-overlay {
-  background-color: rgba(0, 0, 0, 0.5) !important;
-}
-
-@media (max-width: 768px) {
-  .connection-detail-dialog {
-    max-height: 85vh !important;
-  }
-
-  .connection-detail-dialog .el-dialog__body {
-    padding: 12px 16px;
-    max-height: calc(85vh - 140px);
-  }
-
-  .connection-detail-dialog .el-dialog__header {
-    padding: 12px 16px;
-  }
-
-  .connection-detail-dialog .el-dialog__footer {
-    padding: 10px 16px;
-  }
-}
 </style>

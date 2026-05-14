@@ -80,9 +80,12 @@ public class HumanTakeoverManager {
      */
     public void takeover(Long accountId, String sId, int minutes) {
         String key = buildKey(accountId, sId);
-        long expireTime = System.currentTimeMillis() + minutes * 60 * 1000L;
+        long now = System.currentTimeMillis();
+        long expireTime = now + minutes * 60 * 1000L;
         takeoverMap.put(key, expireTime);
-        log.info("【账号{}】人工接管会话: sId={}, {}分钟后恢复自动回复", accountId, sId, minutes);
+        
+        log.info("【账号{}】人工接管会话: sId={}, minutes={}, now={}, expireTime={}, duration={}ms", 
+                accountId, sId, minutes, now, expireTime, (expireTime - now));
     }
 
     /**
@@ -104,9 +107,15 @@ public class HumanTakeoverManager {
     public boolean isTakenOver(Long accountId, String sId) {
         String key = buildKey(accountId, sId);
         Long expireTime = takeoverMap.get(key);
+        long now = System.currentTimeMillis();
+        
+        log.debug("【账号{}】检查人工接管状态: sId={}, expireTime={}, now={}, isTakenOver={}", 
+                accountId, sId, expireTime, now, (expireTime != null && now <= expireTime));
+        
         if (expireTime == null) return false;
-        if (System.currentTimeMillis() > expireTime) {
+        if (now > expireTime) {
             takeoverMap.remove(key, expireTime);
+            log.info("【账号{}】人工接管已过期，自动恢复AI回复: sId={}", accountId, sId);
             return false;
         }
         return true;

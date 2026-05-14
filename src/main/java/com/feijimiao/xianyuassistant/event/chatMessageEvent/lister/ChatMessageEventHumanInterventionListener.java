@@ -7,6 +7,7 @@ import com.feijimiao.xianyuassistant.service.AutoReplyDelayService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
@@ -47,6 +48,7 @@ public class ChatMessageEventHumanInterventionListener {
      *
      * @param event 聊天消息接收事件
      */
+    @Order(1)  // 优先级最高，确保先于 AutoReplyListener 执行
     @Async
     @EventListener
     public void handleChatMessageReceived(ChatMessageReceivedEvent event) {

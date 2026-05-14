@@ -1,1 +1,0 @@
-import{h as t}from"./index-8hVZMoXN.js";function r(e,n){const a=new FormData;return a.append("accountId",String(e)),a.append("file",n),t({url:"/image/upload",method:"POST",data:a,headers:{"Content-Type":"multipart/form-data"}})}function s(e){return t({url:"/websocket/sendImageMessage",method:"POST",data:e})}export{s,r as u};
