@@ -50,7 +50,7 @@ WORKDIR /app
 RUN mkdir -p /app/dbdata /app/logs
 
 # 从构建阶段复制 JAR
-COPY --from=backend-build /app/target/XianYuAssistant-1.1.7.jar app.jar
+COPY --from=backend-build /app/target/XianYuAssistant-1.1.8.jar app.jar
 
 # 暴露端口
 EXPOSE 12400

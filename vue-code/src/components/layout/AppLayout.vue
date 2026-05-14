@@ -2,6 +2,8 @@
 import { ref, shallowRef, onMounted, onUnmounted, computed, provide, markRaw } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import NavMenu from './NavMenu.vue'
+import UpdateDialog from './UpdateDialog.vue'
+import { getVersion, checkUpdate } from '@/api/system'
 
 // 导入所有页面图标
 import IconChart from '@/components/icons/IconChart.vue'
@@ -16,6 +18,25 @@ import IconLog from '@/components/icons/IconLog.vue'
 import IconShield from '@/components/icons/IconShield.vue'
 
 const route = useRoute()
+
+const currentVersion = ref('')
+const hasNewVersion = ref(false)
+const updateDialog = ref<InstanceType<typeof UpdateDialog> | null>(null)
+
+const loadVersion = async () => {
+  try {
+    const res = await getVersion()
+    currentVersion.value = res.data || ''
+    const updateRes = await checkUpdate()
+    hasNewVersion.value = updateRes.data?.hasUpdate || false
+  } catch {
+    // ignore
+  }
+}
+
+const openUpdateDialog = () => {
+  updateDialog.value?.open()
+}
 
 // 响应式设备类型
 const isMobile = ref(false)  // < 768px
@@ -103,6 +124,7 @@ const closeDrawer = () => {
 onMounted(() => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
+  loadVersion()
 })
 
 onUnmounted(() => {
@@ -145,9 +167,15 @@ onUnmounted(() => {
       <div v-if="(isMobile || isTablet) && drawerVisible" class="drawer-overlay" @click="closeDrawer">
         <div class="drawer-menu" @click.stop>
           <div class="drawer-header">
-            <div class="logo">
+            <div class="logo" @click="openUpdateDialog" style="cursor: pointer">
               <div class="logo-icon">X</div>
-              <div class="logo-text">XianYuAssistant</div>
+              <div class="logo-text-wrap">
+                <div class="logo-text">XianYuAssistant</div>
+                <div class="version-tag" :class="{ 'has-update': hasNewVersion }">
+                  v{{ currentVersion }}
+                  <span v-if="hasNewVersion" class="update-dot"></span>
+                </div>
+              </div>
             </div>
             <el-button class="drawer-close-btn" @click="closeDrawer" circle size="small">
               <span class="close-icon">✕</span>
@@ -163,9 +191,15 @@ onUnmounted(() => {
     <!-- 桌面端: 固定侧边栏 -->
     <el-container v-if="isDesktop" class="layout-container">
       <el-aside width="240px" class="sidebar">
-        <div class="logo">
+        <div class="logo" @click="openUpdateDialog" style="cursor: pointer">
           <div class="logo-icon">X</div>
-          <div class="logo-text">XianYuAssistant</div>
+          <div class="logo-text-wrap">
+            <div class="logo-text">XianYuAssistant</div>
+            <div class="version-tag" :class="{ 'has-update': hasNewVersion }">
+              v{{ currentVersion }}
+              <span v-if="hasNewVersion" class="update-dot"></span>
+            </div>
+          </div>
         </div>
         <NavMenu />
       </el-aside>
@@ -190,6 +224,8 @@ onUnmounted(() => {
         <RouterView />
       </el-main>
     </el-container>
+
+    <UpdateDialog ref="updateDialog" />
   </div>
 </template>
 
@@ -250,6 +286,39 @@ onUnmounted(() => {
   font-size: 16px;
   font-weight: 600;
   color: #1a1a1a;
+}
+
+.logo-text-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.version-tag {
+  font-size: 11px;
+  color: #999;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.version-tag.has-update {
+  color: #409eff;
+}
+
+.update-dot {
+  width: 6px;
+  height: 6px;
+  background: #f56c6c;
+  border-radius: 50%;
+  display: inline-block;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 :deep(.el-menu-item) {

@@ -138,6 +138,8 @@ const HeaderSelectors = defineComponent({
   }
 })
 
+let refreshTimer: ReturnType<typeof setInterval> | null = null
+
 onMounted(async () => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
@@ -149,10 +151,19 @@ onMounted(async () => {
   if (setHeaderContent) {
     setHeaderContent(HeaderSelectors)
   }
+  refreshTimer = setInterval(() => {
+    if (selectedAccountId.value) {
+      loadMessages()
+    }
+  }, 3000)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', checkScreenSize)
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
 })
 
 const checkScreenSize = () => {

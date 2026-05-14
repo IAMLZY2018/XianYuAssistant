@@ -83,6 +83,17 @@ public class DataPanelController {
         }
     }
 
+    @GetMapping("/realtimeRevenue")
+    public ResultObject<Double> getRealtimeRevenue() {
+        try {
+            double amount = orderMapper.sumDeliverySuccessAmount();
+            return ResultObject.success(amount);
+        } catch (Exception e) {
+            log.error("获取实时销售额失败", e);
+            return ResultObject.failed("获取实时销售额失败: " + e.getMessage());
+        }
+    }
+
     @lombok.Data
     public static class StatsReq {
         private String date;

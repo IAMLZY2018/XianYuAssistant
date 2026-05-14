@@ -1,6 +1,9 @@
 server:
   port: 12400
 
+app:
+  version: 1.1.8
+
 # AI功能开关（默认开启，API Key从数据库xianyu_sys_setting表读取，未配置时AI功能自动降级）
 ai:
   enabled: true

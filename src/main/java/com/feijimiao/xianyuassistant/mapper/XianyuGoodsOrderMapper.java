@@ -176,6 +176,9 @@ public interface XianyuGoodsOrderMapper {
     @Select("SELECT COUNT(*) FROM xianyu_goods_order WHERE state = -1 AND date(create_time) = #{date}")
     int countDeliveryFailByDate(@Param("date") String date);
 
+    @Select("SELECT COALESCE(SUM(CAST(total_price AS REAL)), 0) FROM xianyu_goods_order WHERE state = 1 AND confirm_state = 1")
+    double sumDeliverySuccessAmount();
+
     @Update("UPDATE xianyu_goods_order SET sku_name = #{skuName} WHERE id = #{id}")
     int updateSkuName(@Param("id") Long id, @Param("skuName") String skuName);
 

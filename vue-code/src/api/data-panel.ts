@@ -30,3 +30,10 @@ export function getDataPanelTrend() {
     data: {}
   });
 }
+
+export function getRealtimeRevenue() {
+  return request<number>({
+    url: '/data-panel/realtimeRevenue',
+    method: 'GET'
+  });
+}

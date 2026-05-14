@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useDashboard } from './useDashboard';
-import { getDataPanelStats, getDataPanelTrend } from '@/api/data-panel';
+import { getDataPanelStats, getDataPanelTrend, getRealtimeRevenue } from '@/api/data-panel';
 import type { DataPanelStats, DataPanelTrend } from '@/api/data-panel';
 
 import IconAccount from '@/components/icons/IconAccount.vue';
@@ -187,12 +187,45 @@ const getLineMax = (arrs: number[][]) => Math.max(...arrs.flat(), 1)
 // === Tab 切换 ===
 const activeTab = ref<'guide' | 'data'>('guide')
 
+// === 实时销售额 ===
+const revenueValue = ref(0)
+const revenueDisplay = ref('0.00')
+let revenueTimer: ReturnType<typeof setInterval> | null = null
+
+const formatRevenue = (val: number): string => {
+  return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+const loadRevenue = async () => {
+  try {
+    const res = await getRealtimeRevenue()
+    if (res && (res.code === 200 || res.code === 0) && res.data != null) {
+      revenueValue.value = res.data
+      revenueDisplay.value = formatRevenue(res.data)
+    }
+  } catch {
+    // ignore
+  }
+}
+
+const startRevenueRefresh = () => {
+  stopRevenueRefresh()
+  loadRevenue()
+  revenueTimer = setInterval(loadRevenue, 3000)
+}
+
+const stopRevenueRefresh = () => {
+  if (revenueTimer) { clearInterval(revenueTimer); revenueTimer = null }
+}
+
 const switchTab = (tab: 'guide' | 'data') => {
   activeTab.value = tab
   if (tab === 'data') {
     loadDataPanel().then(() => startRealtimeRefresh())
+    startRevenueRefresh()
   } else {
     stopRealtimeRefresh()
+    stopRevenueRefresh()
   }
 }
 
@@ -201,12 +234,14 @@ onMounted(() => {
     if (dataPanelStats.value.hasData) {
       activeTab.value = 'data'
       startRealtimeRefresh()
+      startRevenueRefresh()
     }
   })
 })
 
 onUnmounted(() => {
   stopRealtimeRefresh()
+  stopRevenueRefresh()
 })
 </script>
 
@@ -404,6 +439,26 @@ onUnmounted(() => {
           </div>
         </div>
 
+        <!-- 实时销售额 -->
+        <div class="dp__revenue">
+          <div class="dp__revenue-inner">
+            <div class="dp__revenue-header">
+              <div class="dp__revenue-label">
+                <IconFire />
+                <span>本助手为你打理销售额：</span>
+              </div>
+              <div class="dp__revenue-tip-wrap">
+                <IconHelp class="dp__revenue-tip-icon" />
+                <div class="dp__revenue-tooltip">发货成功 + 确认发货的订单金额总和，每3秒刷新</div>
+              </div>
+            </div>
+            <div class="dp__revenue-value">
+              <span class="dp__revenue-symbol">¥</span>
+              <span class="dp__revenue-num">{{ revenueDisplay }}</span>
+            </div>
+          </div>
+        </div>
+
         <div class="dp__charts">
           <!-- 发货情况 -->
           <div class="dp__chart-card">
@@ -563,6 +618,21 @@ onUnmounted(() => {
 .dp__card-value { font-size: 28px; font-weight: 700; color: #1a1a1a; line-height: 1; }
 .dp__card-label { font-size: 13px; color: #86868b; margin-top: 4px; }
 
+.dp__revenue { margin-bottom: 24px; }
+.dp__revenue-inner { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); border-radius: 14px; padding: 28px 32px; display: flex; flex-direction: column; gap: 16px; position: relative; overflow: hidden; }
+.dp__revenue-inner::before { content: ''; position: absolute; top: -50%; right: -20%; width: 300px; height: 300px; background: radial-gradient(circle, rgba(255,149,0,0.08) 0%, transparent 70%); pointer-events: none; }
+.dp__revenue-header { display: flex; align-items: center; justify-content: space-between; }
+.dp__revenue-label { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.7); font-size: 14px; font-weight: 500; }
+.dp__revenue-label svg { width: 18px; height: 18px; color: #ff9500; }
+.dp__revenue-tip-wrap { position: relative; cursor: pointer; }
+.dp__revenue-tip-icon { width: 16px; height: 16px; color: rgba(255,255,255,0.5); transition: color 0.2s; }
+.dp__revenue-tip-wrap:hover .dp__revenue-tip-icon { color: rgba(255,255,255,0.8); }
+.dp__revenue-tooltip { position: absolute; top: 100%; right: 0; margin-top: 8px; background: rgba(0,0,0,0.85); color: #fff; font-size: 12px; padding: 8px 12px; border-radius: 6px; white-space: nowrap; opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; transition-delay: 0.3s; z-index: 10; }
+.dp__revenue-tip-wrap:hover .dp__revenue-tooltip { opacity: 1; visibility: visible; }
+.dp__revenue-value { display: flex; align-items: baseline; gap: 4px; position: relative; z-index: 1; }
+.dp__revenue-symbol { font-size: 28px; font-weight: 600; color: rgba(255,255,255,0.8); }
+.dp__revenue-num { font-size: 42px; font-weight: 800; color: #fff; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+
 .dp__charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .dp__chart-card { padding: 24px; background: #fff; border-radius: 14px; border: 1px solid #e5e5e5; }
 .dp__chart-title { font-size: 16px; font-weight: 600; color: #1a1a1a; }
@@ -604,6 +674,9 @@ onUnmounted(() => {
   .dp__card-value { font-size: 22px; }
   .dp__charts { grid-template-columns: 1fr; gap: 14px; }
   .dp__chart-card { padding: 18px; }
+  .dp__revenue-inner { padding: 20px; }
+  .dp__revenue-num { font-size: 32px; }
+  .dp__revenue-symbol { font-size: 22px; }
 }
 
 @media (min-width: 769px) and (max-width: 1024px) {
