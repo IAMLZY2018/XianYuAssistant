@@ -37,10 +37,10 @@ const emit = defineEmits<Emits>()
 const h5Token = computed(() => props.connectionStatus?.mH5Tk || props.connectionStatus?.mh5Tk)
 
 const getCookieStatusColor = (status?: number) => {
-  if (status === 1) return '#34c759'
-  if (status === 2) return '#ff9500'
-  if (status === 3) return '#ff3b30'
-  return '#86868b'
+  if (status === 1) return '#30D158'
+  if (status === 2) return '#FF9F0A'
+  if (status === 3) return '#FF453A'
+  return 'rgba(28,28,30,.55)'
 }
 
 const getCookieStatusText = (status?: number) => {
@@ -56,8 +56,8 @@ const getTokenStatusText = (timestamp?: number) => {
 }
 
 const getTokenStatusColor = (timestamp?: number) => {
-  if (!timestamp) return '#86868b'
-  return Date.now() > timestamp ? '#ff3b30' : '#34c759'
+  if (!timestamp) return 'rgba(28,28,30,.55)'
+  return Date.now() > timestamp ? '#FF453A' : '#30D158'
 }
 
 const getMH5TkStatusText = (token?: string) => {
@@ -66,8 +66,8 @@ const getMH5TkStatusText = (token?: string) => {
 }
 
 const getMH5TkStatusColor = (token?: string) => {
-  if (!token) return '#86868b'
-  return '#34c759'
+  if (!token) return 'rgba(28,28,30,.55)'
+  return '#30D158'
 }
 
 const formatTimestamp = (timestamp?: number) => {
@@ -217,10 +217,10 @@ const handleRefresh = () => {
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  border-bottom: 0.5px solid rgba(60,60,67,.12);
   flex-shrink: 0;
   gap: 12px;
 }
@@ -231,7 +231,7 @@ const handleRefresh = () => {
   gap: 4px;
   background: none;
   border: none;
-  color: #007aff;
+  color: #0A84FF;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -256,7 +256,7 @@ const handleRefresh = () => {
 .mobile-modal__title {
   font-size: 17px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   margin: 0;
   letter-spacing: -0.01em;
   flex: 1;
@@ -266,7 +266,7 @@ const handleRefresh = () => {
 .mobile-modal__refresh {
   background: none;
   border: none;
-  color: #007aff;
+  color: #0A84FF;
   cursor: pointer;
   padding: 8px;
   border-radius: 8px;
@@ -332,7 +332,7 @@ const handleRefresh = () => {
 }
 
 .btn--primary {
-  background: #007aff;
+  background: #0A84FF;
   color: white;
   box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
 }
@@ -342,8 +342,8 @@ const handleRefresh = () => {
 }
 
 .btn--secondary {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  background: rgba(60,60,67,.12);
+  color: #1c1c1e;
 }
 
 .btn--secondary:active {
@@ -358,10 +358,10 @@ const handleRefresh = () => {
 
 .credential-item {
   background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
   border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 12px;
   transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
@@ -378,7 +378,7 @@ const handleRefresh = () => {
   gap: 8px;
   margin-bottom: 10px;
   padding-bottom: 10px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 0.5px solid rgba(60,60,67,.12);
 }
 
 .credential-item__left {
@@ -406,23 +406,23 @@ const handleRefresh = () => {
 
 .credential-item__icon--cookie {
   background: rgba(255, 149, 0, 0.15);
-  color: #ff9500;
+  color: #FF9F0A;
 }
 
 .credential-item__icon--token {
   background: rgba(52, 199, 89, 0.15);
-  color: #34c759;
+  color: #30D158;
 }
 
 .credential-item__icon--h5 {
   background: rgba(0, 122, 255, 0.15);
-  color: #007aff;
+  color: #0A84FF;
 }
 
 .credential-item__name {
   font-size: 13px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   letter-spacing: -0.01em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -434,34 +434,34 @@ const handleRefresh = () => {
   font-weight: 600;
   padding: 3px 8px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.06);
+  background: rgba(60,60,67,.12);
   flex-shrink: 0;
 }
 
 .credential-item__value {
   font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
   font-size: 11px;
-  color: #6e6e73;
+  color: rgba(28,28,30,.55);
   word-break: break-all;
   line-height: 1.5;
   padding: 8px;
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(255,255,255,0.38);
   border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(60,60,67,.12);
 }
 
 .credential-item__value--empty {
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   font-style: italic;
-  background: rgba(0, 0, 0, 0.02);
+  background: rgba(255,255,255,0.15);
 }
 
 .credential-item__expire {
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  border-top: 0.5px solid rgba(60,60,67,.12);
   font-size: 11px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
 }
 
 .slide-up-enter-active,

@@ -170,7 +170,7 @@ onUnmounted(() => {
 .connection__detail {
   flex: 1;
   min-width: 0;
-  border-left: 1px solid rgba(0, 0, 0, 0.06);
+  border-left: 1px solid rgba(60,60,67,.12);
   overflow: hidden;
 }
 

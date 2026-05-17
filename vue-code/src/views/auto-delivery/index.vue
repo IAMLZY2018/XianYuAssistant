@@ -22,6 +22,8 @@ import IconChat from '@/components/icons/IconChat.vue'
 import GoodsDetail from '../goods/components/GoodsDetail.vue'
 import MultiImageUploader from '@/components/MultiImageUploader.vue'
 
+const goodsPanelCollapsed = ref(true)
+
 const {
   saving,
   accounts,
@@ -157,82 +159,106 @@ onMounted(() => {
       <!-- Goods Panel -->
       <div
         class="ad__goods-panel"
-        :class="{ 'ad__goods-panel--hidden': isMobile && mobileView === 'config' }"
+        :class="{ 'ad__goods-panel--hidden': isMobile && mobileView === 'config', 'ad__goods-panel--collapsed': goodsPanelCollapsed }"
       >
-        <div class="ad__goods-toolbar">
-          <span class="ad__goods-toolbar-title">商品列表</span>
-          <span v-if="goodsTotal > 0" class="ad__goods-toolbar-count">共 {{ goodsTotal }} 件</span>
-          <button class="ad__only-on-sale-btn" :class="{ 'ad__only-on-sale-btn--active': onlyOnSale }" @click="toggleOnlyOnSale">
-            {{ onlyOnSale ? '在售' : '全部' }}
-          </button>
-        </div>
-
-        <div
-          class="ad__goods-list"
-          ref="goodsListRef"
-          @scroll="handleGoodsScroll"
-        >
-          <!-- Loading first page -->
-          <div v-if="goodsLoading && goodsList.length === 0" class="ad__loading">
-            <div class="ad__spinner"></div>
-            <span>加载中...</span>
+        <template v-if="!goodsPanelCollapsed">
+          <div class="ad__goods-toolbar">
+            <span class="ad__goods-toolbar-title">商品列表</span>
+            <span v-if="goodsTotal > 0" class="ad__goods-toolbar-count">共 {{ goodsTotal }} 件</span>
+            <button class="ad__only-on-sale-btn" :class="{ 'ad__only-on-sale-btn--active': onlyOnSale }" @click="toggleOnlyOnSale">
+              {{ onlyOnSale ? '在售' : '全部' }}
+            </button>
           </div>
 
-          <!-- Goods items -->
           <div
-            v-for="goods in goodsList"
-            :key="goods.item.xyGoodId"
-            class="ad__goods-item"
-            :class="{ 'ad__goods-item--active': selectedGoods?.item.xyGoodId === goods.item.xyGoodId, 'ad__goods-item--offline': goods.item.status !== 0 }"
-            @click="selectGoods(goods)"
+            class="ad__goods-list"
+            ref="goodsListRef"
+            @scroll="handleGoodsScroll"
           >
-            <img
-              :src="goods.item.coverPic"
-              :alt="goods.item.title"
-              class="ad__goods-cover"
-            />
-            <div class="ad__goods-info">
-              <div class="ad__goods-title">{{ goods.item.title }}</div>
-              <div class="ad__goods-meta">
-                <span class="ad__goods-price">{{ formatPrice(goods.item.soldPrice) }}</span>
-                <span v-if="goods.item.skuCount > 1" class="ad__goods-sku-tag">{{ goods.item.skuCount }}规格</span>
-                <span
-                  class="ad__goods-status"
-                  :class="`ad__goods-status--${getStatusClass(goods.item.status)}`"
-                >
-                  {{ getStatusText(goods.item.status) }}
-                </span>
-                <span
-                  v-if="goods.xianyuAutoDeliveryOn === 1"
-                  class="ad__goods-auto-badge ad__goods-auto-badge--on"
-                >
-                  <IconSparkle />
-                  {{ goods.autoDeliveryType === 2 ? '卡密' : '文本' }}
-                </span>
+            <!-- Loading first page -->
+            <div v-if="goodsLoading && goodsList.length === 0" class="ad__loading">
+              <div class="ad__spinner"></div>
+              <span>加载中...</span>
+            </div>
+
+            <!-- Goods items -->
+            <div
+              v-for="goods in goodsList"
+              :key="goods.item.xyGoodId"
+              class="ad__goods-item"
+              :class="{ 'ad__goods-item--active': selectedGoods?.item.xyGoodId === goods.item.xyGoodId, 'ad__goods-item--offline': goods.item.status !== 0 }"
+              @click="selectGoods(goods)"
+            >
+              <img
+                :src="goods.item.coverPic"
+                :alt="goods.item.title"
+                class="ad__goods-cover"
+              />
+              <div class="ad__goods-info">
+                <div class="ad__goods-title">{{ goods.item.title }}</div>
+                <div class="ad__goods-meta">
+                  <span class="ad__goods-price">{{ formatPrice(goods.item.soldPrice) }}</span>
+                  <span v-if="goods.item.skuCount > 1" class="ad__goods-sku-tag">{{ goods.item.skuCount }}规格</span>
+                  <span
+                    class="ad__goods-status"
+                    :class="`ad__goods-status--${getStatusClass(goods.item.status)}`"
+                  >
+                    {{ getStatusText(goods.item.status) }}
+                  </span>
+                  <span
+                    v-if="goods.xianyuAutoDeliveryOn === 1"
+                    class="ad__goods-auto-badge ad__goods-auto-badge--on"
+                  >
+                    <IconSparkle />
+                    {{ goods.autoDeliveryType === 2 ? '卡密' : '文本' }}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Loading more -->
-          <div v-if="goodsLoading && goodsList.length > 0" class="ad__loading">
-            <div class="ad__spinner"></div>
-            <span>加载中...</span>
-          </div>
+            <!-- Loading more -->
+            <div v-if="goodsLoading && goodsList.length > 0" class="ad__loading">
+              <div class="ad__spinner"></div>
+              <span>加载中...</span>
+            </div>
 
-          <!-- No more data -->
-          <div
-            v-if="!goodsLoading && goodsList.length > 0 && goodsList.length >= goodsTotal"
-            class="ad__no-more"
-          >
-            已加载全部
-          </div>
+            <!-- No more data -->
+            <div
+              v-if="!goodsLoading && goodsList.length > 0 && goodsList.length >= goodsTotal"
+              class="ad__no-more"
+            >
+              已加载全部
+            </div>
 
-          <!-- Empty -->
-          <div v-if="!goodsLoading && goodsList.length === 0" class="ad__empty">
-            <IconPackage />
-            <span class="ad__empty-text">暂无商品</span>
+            <!-- Empty -->
+            <div v-if="!goodsLoading && goodsList.length === 0" class="ad__empty">
+              <IconPackage />
+              <span class="ad__empty-text">暂无商品</span>
+            </div>
           </div>
-        </div>
+        </template>
+        <template v-else>
+          <div class="ad__goods-icons">
+            <div
+              v-for="goods in goodsList"
+              :key="goods.item.xyGoodId"
+              class="ad__goods-icon-item"
+              :class="{ 'ad__goods-icon-item--active': selectedGoods?.item.xyGoodId === goods.item.xyGoodId }"
+              :title="goods.item.title"
+              @click="selectGoods(goods)"
+            >
+              <img :src="goods.item.coverPic" class="ad__goods-icon-img" />
+            </div>
+          </div>
+        </template>
+        <button
+          class="ad__goods-toggle"
+          :title="goodsPanelCollapsed ? '展开商品列表' : '折叠商品列表'"
+          @click="goodsPanelCollapsed = !goodsPanelCollapsed"
+        >
+          <svg v-if="goodsPanelCollapsed" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
       </div>
 
       <!-- Config Panel -->
@@ -445,14 +471,14 @@ onMounted(() => {
                     </div>
                   </el-option>
                 </el-select>
-                <div v-if="kamiConfigOptions.length === 0" style="color: #86868b; font-size: 13px; margin-top: 8px;">
+                <div v-if="kamiConfigOptions.length === 0" style="color: rgba(28,28,30,.55); font-size: 13px; margin-top: 8px;">
                   暂无卡密配置，请先在「卡密配置」页面创建
                 </div>
               </div>
 
               <div style="margin-bottom: 12px;">
                 <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
-                  <span style="font-size: 13px; color: #6e6e73;">发货文案</span>
+                  <span style="font-size: 13px; color: rgba(28,28,30,.55);">发货文案</span>
                   <el-tag size="small" type="info" effect="plain" style="font-size: 11px;">占位符 {kmKey}</el-tag>
                 </div>
                 <el-input
@@ -783,7 +809,7 @@ onMounted(() => {
 }
 .kami-option__name {
   font-size: 14px;
-  color: #1d1d1f;
+  color: #1c1c1e;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -797,7 +823,7 @@ onMounted(() => {
   flex-shrink: 0;
 }
 .kami-option__avail {
-  color: #34c759;
+  color: #30D158;
   font-weight: 600;
 }
 .kami-option__divider {
@@ -807,7 +833,7 @@ onMounted(() => {
   color: #909399;
 }
 .ad__record-action-btn--manual {
-  color: #ff9500;
+  color: #FF9F0A;
   border-color: rgba(255, 149, 0, 0.2);
   margin-left: 4px;
 }
@@ -819,10 +845,10 @@ onMounted(() => {
 .ad__overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0,0,0,0.20);
   z-index: 950;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -832,9 +858,12 @@ onMounted(() => {
   width: 100%;
   max-width: 480px;
   max-height: 80vh;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(40px) saturate(2);
+  -webkit-backdrop-filter: blur(40px) saturate(2);
+  border: 1px solid rgba(255,255,255,0.75);
+  border-radius: 20px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -847,31 +876,31 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(0,0,0,0.06);
+  border-bottom: 1px solid rgba(60,60,67,.12);
 }
-.ad__dialog-title { font-size: 16px; font-weight: 600; color: #1d1d1f; margin: 0; }
+.ad__dialog-title { font-size: 16px; font-weight: 600; color: #1c1c1e; margin: 0; }
 .ad__dialog-close {
   width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
-  font-size: 20px; color: #86868b; background: none; border: none; cursor: pointer; border-radius: 6px;
+  font-size: 20px; color: rgba(28,28,30,.55); background: none; border: none; cursor: pointer; border-radius: 6px;
 }
 .ad__dialog-close:hover { background: rgba(0,0,0,0.04); }
 .ad__dialog-body { flex: 1; overflow-y: auto; padding: 16px 20px; text-align: left; }
 .ad__dialog-rows { display: flex; flex-direction: column; gap: 10px; }
 .ad__dialog-row { display: flex; align-items: flex-start; gap: 12px; font-size: 13px; }
-.ad__dialog-label { color: #86868b; min-width: 60px; flex-shrink: 0; line-height: 1.5; }
-.ad__dialog-value { color: #1d1d1f; word-break: break-all; line-height: 1.5; }
+.ad__dialog-label { color: rgba(28,28,30,.55); min-width: 60px; flex-shrink: 0; line-height: 1.5; }
+.ad__dialog-value { color: #1c1c1e; word-break: break-all; line-height: 1.5; }
 .ad__manual-textarea {
   width: 100%; padding: 10px 12px; font-size: 13px; line-height: 1.5;
-  border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; resize: vertical;
-  font-family: inherit; color: #1d1d1f; background: #fafafa; box-sizing: border-box;
+  border: 1px solid rgba(60,60,67,.12); border-radius: 8px; resize: vertical;
+  font-family: inherit; color: #1c1c1e; background: transparent; box-sizing: border-box;
 }
-.ad__manual-textarea:focus { outline: none; border-color: #007aff; background: #fff; }
+.ad__manual-textarea:focus { outline: none; border-color: #0A84FF; background: rgba(255,255,255,0.55); }
 .ad__manual-btn {
   height: 32px; padding: 0 16px; font-size: 13px; font-weight: 500;
   border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s ease;
 }
-.ad__manual-btn--cancel { background: rgba(0,0,0,0.06); color: #6e6e73; }
-.ad__manual-btn--confirm { background: #007aff; color: #fff; }
+.ad__manual-btn--cancel { background: rgba(60,60,67,.12); color: rgba(28,28,30,.55); }
+.ad__manual-btn--confirm { background: #0A84FF; color: rgba(255,255,255,0.55); }
 .ad__manual-btn--confirm:disabled { opacity: 0.5; cursor: not-allowed; }
 
 </style>

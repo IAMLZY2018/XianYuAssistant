@@ -9,12 +9,10 @@ import IconRefresh from '@/components/icons/IconRefresh.vue'
 import IconChevronDown from '@/components/icons/IconChevronDown.vue'
 import IconChevronLeft from '@/components/icons/IconChevronLeft.vue'
 import IconChevronRight from '@/components/icons/IconChevronRight.vue'
-import IconSend from '@/components/icons/IconSend.vue'
 import IconImage from '@/components/icons/IconImage.vue'
 
 import GoodsSidebar from './components/GoodsSidebar.vue'
 import MessageList from './components/MessageList.vue'
-import MultiImageUploader from '@/components/MultiImageUploader.vue'
 
 const {
   loading,
@@ -32,11 +30,6 @@ const {
   goodsTotal,
   goodsLoading,
   goodsListRef,
-  quickReplyVisible,
-  quickReplyMessage,
-  quickReplySending,
-  currentReplyMessage,
-  quickReplyImage,
   isMobile,
   mobileView,
   selectedGoodsForMobile,
@@ -50,8 +43,6 @@ const {
   goBackToGoods,
   clearFilter,
   handlePageChange,
-  openQuickReply,
-  handleQuickReply,
   isUserMessage,
   getContentTypeText,
   getContentTypeColor,
@@ -74,6 +65,7 @@ const getPageButtons = () => {
 
 // 手机端商品列表滚动容器
 const mobileGoodsRef = ref<HTMLElement | null>(null)
+const sidebarCollapsed = ref(true)
 
 const handleMobileGoodsScroll = () => {
   if (!mobileGoodsRef.value || goodsLoading.value) return
@@ -232,15 +224,47 @@ const checkScreenSize = () => {
       <!-- Content: Sidebar + Main -->
       <div class="messages__content">
         <!-- Goods Sidebar -->
-        <div class="messages__sidebar">
-          <GoodsSidebar
-            :goods-list="goodsList"
-            :goods-total="goodsTotal"
-            :goods-loading="goodsLoading"
-            :goods-id-filter="goodsIdFilter"
-            @select="selectGoods"
-            @clear-filter="clearFilter"
-          />
+        <div class="messages__sidebar" :class="{ 'messages__sidebar--collapsed': sidebarCollapsed }">
+          <template v-if="!sidebarCollapsed">
+            <GoodsSidebar
+              :goods-list="goodsList"
+              :goods-total="goodsTotal"
+              :goods-loading="goodsLoading"
+              :goods-id-filter="goodsIdFilter"
+              @select="selectGoods"
+              @clear-filter="clearFilter"
+            />
+          </template>
+          <template v-else>
+            <div class="messages__sidebar-icons">
+              <div
+                v-for="goods in goodsList"
+                :key="goods.item.id"
+                class="messages__sidebar-icon-item"
+                :class="{ 'messages__sidebar-icon-item--active': goodsIdFilter === goods.item.xyGoodId }"
+                :title="goods.item.title"
+                @click="selectGoods(goods.item.xyGoodId, goods)"
+              >
+                <img
+                  v-if="goods.item.coverPic"
+                  :src="goods.item.coverPic"
+                  class="messages__sidebar-icon-img"
+                  @error="handleImgError"
+                />
+                <div v-else class="messages__sidebar-icon-placeholder">
+                  <IconImage />
+                </div>
+              </div>
+            </div>
+          </template>
+          <button
+            class="messages__sidebar-toggle"
+            :title="sidebarCollapsed ? '展开商品列表' : '折叠商品列表'"
+            @click="sidebarCollapsed = !sidebarCollapsed"
+          >
+            <svg v-if="sidebarCollapsed" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
         </div>
 
         <!-- Message Main -->
@@ -263,7 +287,6 @@ const checkScreenSize = () => {
               :xianyu-account-id="selectedAccountId || undefined"
               :goods-list="goodsList"
               :current-account-unb="getCurrentAccountUnb"
-              @reply="openQuickReply"
             />
           </div>
 
@@ -408,13 +431,12 @@ const checkScreenSize = () => {
         </div>
 
         <div class="mobile-messages__body">
-          <MessageList
+           <MessageList
             :message-list="messageList"
             :loading="loading"
             :xianyu-account-id="selectedAccountId || undefined"
             :goods-list="goodsList"
             :current-account-unb="getCurrentAccountUnb"
-            @reply="openQuickReply"
           />
         </div>
 
@@ -448,52 +470,6 @@ const checkScreenSize = () => {
       </div>
     </template>
 
-    <!-- ========== Quick Reply Dialog ========== -->
-    <Transition name="overlay-fade">
-      <div v-if="quickReplyVisible" class="messages__dialog-overlay" @click.self="quickReplyVisible = false">
-        <div class="messages__dialog">
-          <div class="messages__dialog-header">
-            <h3 class="messages__dialog-title">快速回复</h3>
-          </div>
-          <div class="messages__dialog-body">
-            <div class="messages__reply-info" v-if="currentReplyMessage">
-              <div class="messages__reply-row">
-                <span class="messages__reply-label">回复给：</span>
-                <span class="messages__reply-value">{{ currentReplyMessage.senderUserName }}</span>
-              </div>
-              <div class="messages__reply-row">
-                <span class="messages__reply-label">原消息：</span>
-                <span class="messages__reply-value">{{ currentReplyMessage.msgContent }}</span>
-              </div>
-            </div>
-            <textarea
-              v-model="quickReplyMessage"
-              class="messages__reply-textarea"
-              placeholder="请输入回复内容..."
-              maxlength="500"
-            ></textarea>
-            <div class="messages__reply-image">
-              <MultiImageUploader
-                :account-id="selectedAccountId || 0"
-                v-model="quickReplyImage"
-              />
-            </div>
-          </div>
-          <div class="messages__dialog-footer">
-            <button class="btn btn--secondary" @click="quickReplyVisible = false">取消</button>
-            <button
-              class="btn btn--primary"
-              :class="{ 'btn--loading': quickReplySending }"
-              :disabled="quickReplySending"
-              @click="handleQuickReply"
-            >
-              <IconSend />
-              <span>发送</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </Transition>
   </div>
 </template>
 
@@ -751,16 +727,4 @@ const checkScreenSize = () => {
   height: 16px;
 }
 
-/* ============================================================
-   Transition
-   ============================================================ */
-.overlay-fade-enter-active,
-.overlay-fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.overlay-fade-enter-from,
-.overlay-fade-leave-to {
-  opacity: 0;
-}
 </style>

@@ -150,9 +150,9 @@ const toggleHelpImage = () => {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(0,0,0,0.20);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -170,7 +170,7 @@ const toggleHelpImage = () => {
 }
 
 .modal-container {
-  background: #ffffff;
+  background: rgba(255,255,255,0.72);
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
@@ -196,10 +196,10 @@ const toggleHelpImage = () => {
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 0.5px solid rgba(60,60,67,.12);
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
   flex-shrink: 0;
   gap: 12px;
 }
@@ -207,7 +207,7 @@ const toggleHelpImage = () => {
 .modal-title {
   font-size: 18px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   margin: 0;
   letter-spacing: -0.01em;
   flex: 1;
@@ -219,7 +219,7 @@ const toggleHelpImage = () => {
   gap: 6px;
   background: none;
   border: none;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -231,7 +231,7 @@ const toggleHelpImage = () => {
 }
 
 .help-link:hover {
-  color: #007aff;
+  color: #0A84FF;
   background: rgba(0, 122, 255, 0.08);
 }
 
@@ -249,7 +249,7 @@ const toggleHelpImage = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   cursor: pointer;
   border-radius: 8px;
   transition: all 0.2s;
@@ -258,8 +258,8 @@ const toggleHelpImage = () => {
 }
 
 .modal-close:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  background: rgba(60,60,67,.12);
+  color: #1c1c1e;
 }
 
 .modal-close svg {
@@ -307,7 +307,7 @@ const toggleHelpImage = () => {
 .form-label {
   font-size: 15px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   letter-spacing: -0.01em;
 }
 
@@ -318,21 +318,21 @@ const toggleHelpImage = () => {
   line-height: 1.5;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 12px;
-  background: rgba(0, 0, 0, 0.02);
-  color: #1d1d1f;
+  background: rgba(255,255,255,0.15);
+  color: #1c1c1e;
   resize: vertical;
   transition: all 0.2s;
 }
 
 .form-textarea:focus {
   outline: none;
-  border-color: #007aff;
-  background: #ffffff;
+  border-color: #0A84FF;
+  background: rgba(255,255,255,0.55);
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
 
 .form-textarea::placeholder {
-  color: #86868b;
+  color: rgba(28,28,30,.55);
 }
 
 .tips-container {
@@ -345,7 +345,7 @@ const toggleHelpImage = () => {
 .tips-title {
   font-size: 13px;
   font-weight: 600;
-  color: #007aff;
+  color: #0A84FF;
   margin-bottom: 8px;
 }
 
@@ -357,34 +357,34 @@ const toggleHelpImage = () => {
 
 .tips-text {
   font-size: 12px;
-  color: #6e6e73;
+  color: rgba(28,28,30,.55);
   margin: 0;
   line-height: 1.5;
 }
 
 .tips-text--highlight {
-  color: #1d1d1f;
+  color: #1c1c1e;
 }
 
 .tips-text--bold {
   font-weight: 500;
-  color: #1d1d1f;
+  color: #1c1c1e;
 }
 
 .tips-label {
-  color: #ff9500;
+  color: #FF9F0A;
   font-weight: 600;
 }
 
 .tips-field {
-  color: #ff3b30;
+  color: #FF453A;
   font-weight: 500;
 }
 
 .tips-example {
   font-size: 11px;
   font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
-  color: #6e6e73;
+  color: rgba(28,28,30,.55);
   line-height: 1.6;
   word-break: break-all;
   margin: 0;
@@ -394,8 +394,8 @@ const toggleHelpImage = () => {
   display: flex;
   gap: 12px;
   padding: 16px 24px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(255, 255, 255, 0.95);
+  border-top: 0.5px solid rgba(60,60,67,.12);
+  background: rgba(255,255,255,0.72);
   flex-shrink: 0;
 }
 
@@ -413,7 +413,7 @@ const toggleHelpImage = () => {
 }
 
 .btn--primary {
-  background: #007aff;
+  background: #0A84FF;
   color: white;
   box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
 }
@@ -433,8 +433,8 @@ const toggleHelpImage = () => {
 }
 
 .btn--secondary {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  background: rgba(60,60,67,.12);
+  color: #1c1c1e;
 }
 
 .btn--secondary:hover {
@@ -450,7 +450,7 @@ const toggleHelpImage = () => {
   .modal-container {
     width: 90%;
     max-height: 90vh;
-    border-radius: 16px;
+    border-radius: 20px;
   }
 
   .modal-header {

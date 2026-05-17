@@ -1,10 +1,8 @@
-import { ref, reactive, computed, nextTick } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { getAccountList } from '@/api/account'
 import { getMessageList } from '@/api/message'
 import { getGoodsList } from '@/api/goods'
-import { sendMessage } from '@/api/websocket'
-import { sendImageMessage } from '@/api/image'
-import { showSuccess, showError, showInfo } from '@/utils'
+import { showInfo } from '@/utils'
 import type { Account } from '@/types'
 import type { ChatMessage } from '@/api/message'
 import type { GoodsItemWithConfig } from '@/api/goods'
@@ -27,13 +25,6 @@ export function useMessageManager() {
   const goodsTotal = ref(0)
   const goodsLoading = ref(false)
   const goodsListRef = ref<HTMLElement | null>(null)
-
-  // 快速回复
-  const quickReplyVisible = ref(false)
-  const quickReplyMessage = ref('')
-  const quickReplySending = ref(false)
-  const currentReplyMessage = ref<ChatMessage | null>(null)
-  const quickReplyImage = ref('')
 
   // 手机端
   const isMobile = ref(false)
@@ -268,78 +259,6 @@ export function useMessageManager() {
     loadMessages()
   }
 
-  // 打开快速回复
-  const openQuickReply = (message: ChatMessage) => {
-    currentReplyMessage.value = message
-    quickReplyMessage.value = ''
-    quickReplyImage.value = ''
-    quickReplyVisible.value = true
-  }
-
-  // 发送快速回复
-  const handleQuickReply = async () => {
-    if (!quickReplyMessage.value.trim() && !quickReplyImage.value) {
-      showInfo('请输入回复内容或上传图片')
-      return
-    }
-    if (!currentReplyMessage.value || !selectedAccountId.value) {
-      showError('消息信息不完整')
-      return
-    }
-    if (!currentReplyMessage.value.sid) {
-      showError('会话ID不存在')
-      return
-    }
-    if (!currentReplyMessage.value.senderUserId) {
-      showError('接收方ID不存在')
-      return
-    }
-    quickReplySending.value = true
-    try {
-      // 发送文本消息
-      if (quickReplyMessage.value.trim()) {
-        const response = await sendMessage({
-          xianyuAccountId: selectedAccountId.value,
-          cid: currentReplyMessage.value.sid,
-          toId: currentReplyMessage.value.senderUserId,
-          text: quickReplyMessage.value.trim(),
-          xyGoodsId: currentReplyMessage.value.xyGoodsId
-        })
-        if (response.code !== 0 && response.code !== 200) {
-          showError('文本消息发送失败')
-        }
-      }
-      
-      // 发送图片消息
-      if (quickReplyImage.value && quickReplyImage.value.split(',').some((s: string) => s.trim())) {
-        const urls = quickReplyImage.value.split(',').map((s: string) => s.trim()).filter((s: string) => s)
-        for (const url of urls) {
-          const imageResponse = await sendImageMessage({
-            xianyuAccountId: selectedAccountId.value,
-            cid: currentReplyMessage.value.sid,
-            toId: currentReplyMessage.value.senderUserId,
-            imageUrl: url,
-            xyGoodsId: currentReplyMessage.value.xyGoodsId
-          })
-          if (imageResponse.code !== 0 && imageResponse.code !== 200) {
-            showError('图片消息发送失败')
-          }
-        }
-      }
-      
-      showSuccess('消息发送成功')
-      quickReplyVisible.value = false
-      quickReplyMessage.value = ''
-      quickReplyImage.value = ''
-      currentReplyMessage.value = null
-      loadMessages()
-    } catch (error: any) {
-      console.error('发送消息失败:', error)
-    } finally {
-      quickReplySending.value = false
-    }
-  }
-
   // 图片加载失败
   const handleImgError = (e: Event) => {
     const img = e.target as HTMLImageElement
@@ -363,11 +282,6 @@ export function useMessageManager() {
     goodsTotal,
     goodsLoading,
     goodsListRef,
-    quickReplyVisible,
-    quickReplyMessage,
-    quickReplySending,
-    currentReplyMessage,
-    quickReplyImage,
     isMobile,
     mobileView,
     selectedGoodsForMobile,
@@ -381,8 +295,6 @@ export function useMessageManager() {
     goBackToGoods,
     clearFilter,
     handlePageChange,
-    openQuickReply,
-    handleQuickReply,
     isUserMessage,
     getContentTypeText,
     getContentTypeColor,

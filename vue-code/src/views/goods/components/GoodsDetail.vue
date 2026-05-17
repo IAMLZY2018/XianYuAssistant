@@ -87,20 +87,20 @@ const sortSkuList = (skus: GoodsSku[], properties: GoodsSkuProperty[]): GoodsSku
 const getStatusColor = (status: number) => {
   const info = getGoodsStatusText(status)
   switch (info.type) {
-    case 'success': return '#34c759'
-    case 'warning': return '#ff9500'
-    case 'info': return '#86868b'
-    default: return '#007aff'
+    case 'success': return '#30D158'
+    case 'warning': return '#FF9F0A'
+    case 'info': return 'rgba(28,28,30,.55)'
+    default: return '#0A84FF'
   }
 }
 
 const getStatusBg = (status: number) => {
   const info = getGoodsStatusText(status)
   switch (info.type) {
-    case 'success': return 'rgba(52, 199, 89, 0.1)'
-    case 'warning': return 'rgba(255, 149, 0, 0.1)'
-    case 'info': return 'rgba(134, 134, 139, 0.1)'
-    default: return 'rgba(0, 122, 255, 0.1)'
+    case 'success': return 'rgba(48,209,88,.2)'
+    case 'warning': return 'rgba(255,159,10,.18)'
+    case 'info': return 'rgba(120,120,128,.12)'
+    default: return 'rgba(10,132,255,.15)'
   }
 }
 
@@ -628,20 +628,20 @@ onBeforeUnmount(() => {
 .detail-panel,
 .detail-mobile {
   --d-bg: transparent;
-  --d-surface: rgba(255, 255, 255, 0.82);
-  --d-surface-hover: rgba(255, 255, 255, 0.95);
-  --d-border: rgba(0, 0, 0, 0.06);
-  --d-border-strong: rgba(0, 0, 0, 0.12);
-  --d-text-1: #1d1d1f;
-  --d-text-2: #6e6e73;
-  --d-text-3: #86868b;
-  --d-accent: #007aff;
-  --d-danger: #ff3b30;
-  --d-success: #34c759;
-  --d-price: #ff3b30;
-  --d-r-sm: 8px;
-  --d-r-md: 12px;
-  --d-r-lg: 16px;
+  --d-surface: rgba(255,255,255,0.55);
+  --d-surface-hover: rgba(255,255,255,0.72);
+  --d-border: rgba(255,255,255,0.75);
+  --d-border-strong: rgba(60,60,67,.12);
+  --d-text-1: #1c1c1e;
+  --d-text-2: rgba(28,28,30,.55);
+  --d-text-3: rgba(28,28,30,.55);
+  --d-accent: #0A84FF;
+  --d-danger: #FF453A;
+  --d-success: #30D158;
+  --d-price: #FF453A;
+  --d-r-sm: 10px;
+  --d-r-md: 14px;
+  --d-r-lg: 22px;
   --d-ease: 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
@@ -654,7 +654,7 @@ onBeforeUnmount(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0,0,0,0.20);
   z-index: 900;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
@@ -670,9 +670,12 @@ onBeforeUnmount(() => {
   width: 720px;
   max-width: 90vw;
   max-height: 90vh;
-  background: #fff;
-  border-radius: var(--d-r-lg);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.06);
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(40px) saturate(2);
+  -webkit-backdrop-filter: blur(40px) saturate(2);
+  border: 1px solid rgba(255,255,255,0.75);
+  border-radius: 20px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -689,7 +692,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--d-border);
+  border-bottom: 0.5px solid var(--d-border-strong);
   flex-shrink: 0;
 }
 
@@ -770,7 +773,9 @@ onBeforeUnmount(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: #fff;
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(40px) saturate(2);
+  -webkit-backdrop-filter: blur(40px) saturate(2);
   z-index: 901;
   display: flex;
   flex-direction: column;
@@ -1124,7 +1129,7 @@ onBeforeUnmount(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0,0,0,0.20);
   z-index: 1000;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
@@ -1137,9 +1142,12 @@ onBeforeUnmount(() => {
   width: 420px;
   max-width: 92vw;
   max-height: 80vh;
-  background: #fff;
-  border-radius: var(--d-r-lg);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(40px) saturate(2);
+  -webkit-backdrop-filter: blur(40px) saturate(2);
+  border: 1px solid rgba(255,255,255,0.75);
+  border-radius: 20px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
   display: flex;
   flex-direction: column;
   overflow: hidden;

@@ -161,10 +161,10 @@ const getCookieStatusText = (status?: number) => {
 }
 
 const getCookieStatusColor = (status?: number) => {
-  if (status === 1) return '#34c759'
-  if (status === 2) return '#ff9500'
-  if (status === 3) return '#ff3b30'
-  return '#86868b'
+  if (status === 1) return '#30D158'
+  if (status === 2) return '#FF9F0A'
+  if (status === 3) return '#FF453A'
+  return 'rgba(28,28,30,.55)'
 }
 
 const formatTimestamp = (timestamp?: number | string) => {
@@ -187,8 +187,8 @@ const getTokenStatusText = (timestamp?: number) => {
 }
 
 const getTokenStatusColor = (timestamp?: number) => {
-  if (!timestamp) return '#86868b'
-  return isTokenExpired(timestamp) ? '#ff3b30' : '#34c759'
+  if (!timestamp) return 'rgba(28,28,30,.55)'
+  return isTokenExpired(timestamp) ? '#FF453A' : '#30D158'
 }
 
 const getMH5TkStatusText = (mH5Tk?: string) => {
@@ -197,8 +197,8 @@ const getMH5TkStatusText = (mH5Tk?: string) => {
 }
 
 const getMH5TkStatusColor = (mH5Tk?: string) => {
-  if (!mH5Tk) return '#86868b'
-  return '#34c759'
+  if (!mH5Tk) return 'rgba(28,28,30,.55)'
+  return '#30D158'
 }
 
 const h5Token = computed(() => connectionStatus.value?.mH5Tk || connectionStatus.value?.mh5Tk)
@@ -209,10 +209,10 @@ const getOperationStatusText = (status: number) => {
 }
 
 const getOperationStatusColor = (status: number) => {
-  if (status === 1) return '#34c759'
-  if (status === 2) return '#ff3b30'
-  if (status === 3) return '#ff9500'
-  return '#86868b'
+  if (status === 1) return '#30D158'
+  if (status === 2) return '#FF453A'
+  if (status === 3) return '#FF9F0A'
+  return 'rgba(28,28,30,.55)'
 }
 
 const canSyncGoods = computed(() => connectionStatus.value?.cookieStatus === 1)
@@ -370,13 +370,13 @@ onBeforeUnmount(() => {
   --c-bg: transparent;
   --c-surface: #ffffff;
   --c-border: rgba(0, 0, 0, 0.06);
-  --c-text-1: #1d1d1f;
-  --c-text-2: #6e6e73;
-  --c-text-3: #86868b;
-  --c-accent: #007aff;
-  --c-danger: #ff3b30;
-  --c-success: #34c759;
-  --c-warning: #ff9500;
+  --c-text-1: #1c1c1e;
+  --c-text-2: rgba(28,28,30,.55);
+  --c-text-3: rgba(28,28,30,.55);
+  --c-accent: #0A84FF;
+  --c-danger: #FF453A;
+  --c-success: #30D158;
+  --c-warning: #FF9F0A;
   --c-r-sm: 8px;
   --c-r-md: 12px;
   --c-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
@@ -446,8 +446,8 @@ onBeforeUnmount(() => {
   gap: 12px;
   padding: 14px 16px;
   background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
   border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
@@ -555,8 +555,8 @@ onBeforeUnmount(() => {
   border-radius: 16px;
   border: 1px solid;
   background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
   transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
   flex: 1;
 }

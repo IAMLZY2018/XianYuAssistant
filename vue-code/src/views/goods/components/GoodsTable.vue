@@ -45,20 +45,20 @@ onUnmounted(() => {
 const getStatusColor = (status: number) => {
   const info = getGoodsStatusText(status)
   switch (info.type) {
-    case 'success': return '#34c759'
-    case 'warning': return '#ff9500'
-    case 'info': return '#86868b'
-    default: return '#007aff'
+    case 'success': return '#30D158'
+    case 'warning': return '#FF9F0A'
+    case 'info': return 'rgba(28,28,30,.55)'
+    default: return '#0A84FF'
   }
 }
 
 const getStatusBg = (status: number) => {
   const info = getGoodsStatusText(status)
   switch (info.type) {
-    case 'success': return 'rgba(52, 199, 89, 0.1)'
-    case 'warning': return 'rgba(255, 149, 0, 0.1)'
-    case 'info': return 'rgba(134, 134, 139, 0.1)'
-    default: return 'rgba(0, 122, 255, 0.1)'
+    case 'success': return 'rgba(48,209,88,.2)'
+    case 'warning': return 'rgba(255,159,10,.18)'
+    case 'info': return 'rgba(120,120,128,.12)'
+    default: return 'rgba(10,132,255,.15)'
   }
 }
 
@@ -242,18 +242,19 @@ const handleImgError = (e: Event) => {
 .card-list,
 .table-container {
   --c-bg: transparent;
-  --c-surface: #ffffff;
-  --c-border: rgba(0, 0, 0, 0.06);
-  --c-border-strong: rgba(0, 0, 0, 0.1);
-  --c-text-1: #1d1d1f;
-  --c-text-2: #6e6e73;
-  --c-text-3: #86868b;
-  --c-accent: #007aff;
-  --c-danger: #ff3b30;
-  --c-success: #34c759;
-  --c-price: #ff3b30;
-  --c-r-sm: 8px;
-  --c-r-md: 12px;
+  --c-surface: rgba(255,255,255,0.55);
+  --c-surface-hover: rgba(255,255,255,0.72);
+  --c-border: rgba(255,255,255,0.75);
+  --c-border-strong: rgba(60,60,67,.12);
+  --c-text-1: #1c1c1e;
+  --c-text-2: rgba(28,28,30,.55);
+  --c-text-3: rgba(28,28,30,.55);
+  --c-accent: #0A84FF;
+  --c-danger: #FF453A;
+  --c-success: #30D158;
+  --c-price: #FF453A;
+  --c-r-sm: 10px;
+  --c-r-md: 14px;
   --c-ease: 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
@@ -271,18 +272,20 @@ const handleImgError = (e: Event) => {
 
 .goods-card {
   background: var(--c-surface);
-  border: 1px solid var(--c-border-strong);
+  border: 1px solid var(--c-border);
   border-radius: var(--c-r-md);
   overflow: hidden;
   transition: all var(--c-ease);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10), 0 1.5px 4px rgba(0,0,0,0.06);
   cursor: pointer;
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
 }
 
 @media (hover: hover) {
   .goods-card:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border-color: rgba(0, 0, 0, 0.15);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08);
+    border-color: rgba(255,255,255,0.85);
   }
 }
 
@@ -436,8 +439,8 @@ const handleImgError = (e: Event) => {
   display: flex;
   gap: 8px;
   padding: 10px 12px;
-  border-top: 1px solid var(--c-border);
-  background: var(--c-surface);
+  border-top: 1px solid var(--c-border-strong);
+  background: transparent;
 }
 
 .goods-card__action {
@@ -516,8 +519,8 @@ const handleImgError = (e: Event) => {
   font-weight: 600;
   color: var(--c-text-3);
   letter-spacing: 0.01em;
-  background: #fafafa;
-  border-bottom: 1px solid var(--c-border-strong);
+  background: #f0f1f5;
+  border-bottom: 0.5px solid var(--c-border-strong);
   white-space: nowrap;
   user-select: none;
 }
@@ -535,7 +538,7 @@ const handleImgError = (e: Event) => {
 }
 
 .table__tr:not(:last-child) .table__td {
-  border-bottom: 1px solid var(--c-border);
+  border-bottom: 1px solid var(--c-border-strong);
 }
 
 @media (hover: hover) {

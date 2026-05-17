@@ -320,9 +320,9 @@ onBeforeUnmount(() => {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(0,0,0,0.20);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -331,12 +331,14 @@ onBeforeUnmount(() => {
 }
 
 .modal-container {
-  background: #fff;
-  border-radius: 16px;
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(40px) saturate(2);
+  -webkit-backdrop-filter: blur(40px) saturate(2);
+  border: 1px solid rgba(255,255,255,0.75);
+  border-radius: 20px;
   width: 100%;
   max-width: 720px;
   max-height: 88vh;
-  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.14), 0 12px 32px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -344,7 +346,6 @@ onBeforeUnmount(() => {
 
 .modal-container.is-mobile {
   max-width: 94vw;
-  border-radius: 20px;
 }
 
 .modal-header {
@@ -358,7 +359,7 @@ onBeforeUnmount(() => {
 .modal-title {
   font-size: 15px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   margin: 0;
 }
 
@@ -368,7 +369,7 @@ onBeforeUnmount(() => {
   border-radius: 7px;
   border: none;
   background: transparent;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   font-size: 18px;
   line-height: 1;
   display: flex;
@@ -379,14 +380,15 @@ onBeforeUnmount(() => {
 }
 
 .modal-close:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  background: rgba(60,60,67,.12);
+  color: #1c1c1e;
 }
 
 .modal-body {
   flex: 1;
   padding: 0 20px 20px;
   overflow-y: auto;
+  min-height: 0;
 }
 
 .modal-footer {
@@ -399,8 +401,8 @@ onBeforeUnmount(() => {
 
 .btn {
   padding: 8px 18px;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 10px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -408,12 +410,15 @@ onBeforeUnmount(() => {
 }
 
 .btn-secondary {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(255,255,255,0.75);
+  color: #1c1c1e;
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
 }
 
 .btn-secondary:hover {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(255,255,255,0.72);
 }
 
 .detail-content {
@@ -431,7 +436,7 @@ onBeforeUnmount(() => {
 .main-image {
   width: 100%;
   height: 300px;
-  background: #f5f5f7;
+  background: rgba(0,0,0,0.03);
   border-radius: 12px;
   overflow: hidden;
   display: flex;
@@ -463,7 +468,7 @@ onBeforeUnmount(() => {
 }
 
 .thumbnail.active {
-  border-color: #007aff;
+  border-color: #0A84FF;
 }
 
 .thumbnail :deep(.el-image) {
@@ -487,14 +492,14 @@ onBeforeUnmount(() => {
 .goods-title {
   font-size: 16px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   margin: 0;
   line-height: 1.4;
 }
 
 .goods-id {
   font-size: 12px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   font-family: 'SF Mono', Menlo, monospace;
 }
 
@@ -507,7 +512,7 @@ onBeforeUnmount(() => {
 .price {
   font-size: 20px;
   font-weight: 700;
-  color: #ff3b30;
+  color: #FF453A;
 }
 
 .description {
@@ -519,16 +524,19 @@ onBeforeUnmount(() => {
 .description-title {
   font-size: 13px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
 }
 
 .description-content {
   font-size: 13px;
-  color: #6e6e73;
+  color: rgba(28,28,30,.55);
   line-height: 1.6;
-  background: #f5f5f7;
+  background: rgba(255,255,255,0.38);
   padding: 10px 12px;
   border-radius: 8px;
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  border: 1px solid rgba(255,255,255,0.35);
 }
 
 .config-section {
@@ -545,7 +553,7 @@ onBeforeUnmount(() => {
 
 .config-label {
   font-size: 13px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   min-width: 70px;
 }
 
@@ -562,18 +570,18 @@ onBeforeUnmount(() => {
 }
 
 .detail-mode-tag--delivery {
-  background: rgba(52, 199, 89, 0.1);
-  color: #34c759;
+  background: rgba(48,209,88,.2);
+  color: #30D158;
 }
 
 .detail-mode-tag--reply {
-  background: rgba(88, 86, 214, 0.1);
-  color: #5856d6;
+  background: rgba(191,90,242,.15);
+  color: #BF5AF2;
 }
 
 .detail-mode-tag--off {
-  background: rgba(0, 0, 0, 0.05);
-  color: #86868b;
+  background: rgba(120,120,128,.12);
+  color: rgba(28,28,30,.55);
 }
 
 .action-buttons {

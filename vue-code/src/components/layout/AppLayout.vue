@@ -232,7 +232,7 @@ onUnmounted(() => {
 <style scoped>
 .app-layout {
   height: 100vh;
-  background: #e8e8e8;
+  background: var(--bg-gradient);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -245,15 +245,16 @@ onUnmounted(() => {
 
 /* ========== 桌面端: 固定侧边栏 ========== */
 .sidebar {
-  background: #f8f8f8;
-  border-right: 1px solid #d4d4d4;
-  box-shadow: none;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border-right: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
   transition: width 0.3s ease;
   overflow-y: auto;
   overflow-x: hidden;
-  /* 隐藏滚动条 */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .sidebar::-webkit-scrollbar {
@@ -271,7 +272,9 @@ onUnmounted(() => {
 .logo-icon {
   width: 32px;
   height: 32px;
-  background: #2a2a2a;
+  background: rgba(10,132,255,0.85);
+  border: 1px solid rgba(255,255,255,0.35);
+  box-shadow: 0 4px 16px rgba(10,132,255,0.35);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -285,7 +288,7 @@ onUnmounted(() => {
 .logo-text {
   font-size: 16px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--apple-text);
 }
 
 .logo-text-wrap {
@@ -296,7 +299,7 @@ onUnmounted(() => {
 
 .version-tag {
   font-size: 11px;
-  color: #999;
+  color: var(--apple-text2);
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -304,7 +307,7 @@ onUnmounted(() => {
 }
 
 .version-tag.has-update {
-  color: #409eff;
+  color: var(--ab);
 }
 
 .update-dot {
@@ -323,29 +326,34 @@ onUnmounted(() => {
 
 :deep(.el-menu-item) {
   margin: 2px 16px;
-  border-radius: 8px;
-  color: #666666;
+  border-radius: 10px;
+  color: var(--apple-text2);
   transition: all 0.2s;
 }
 
 :deep(.el-menu-item:hover) {
-  background: #ececec !important;
-  color: #1a1a1a;
+  background: var(--glass-bg-deep) !important;
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  backdrop-filter: var(--glass-blur-sm);
+  color: var(--apple-text);
 }
 
 :deep(.el-menu-item.is-active) {
-  background: #1a1a1a !important;
-  color: white;
+  background: rgba(10,132,255,0.15) !important;
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  color: var(--ab);
+  box-shadow: inset 0 0 0 1px rgba(10,132,255,0.25);
+  font-weight: 600;
 }
 
 .el-main {
   padding: 32px 40px;
   overflow: auto;
-  background: #e8e8e8;
+  background: transparent;
   height: 100%;
-  /* 隐藏滚动条 */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .el-main::-webkit-scrollbar {
@@ -370,8 +378,11 @@ onUnmounted(() => {
   justify-content: flex-start;
   align-items: center;
   padding: 14px 20px;
-  background: #f8f8f8;
-  border-bottom: 1px solid #d4d4d4;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
   z-index: 100;
   gap: 16px;
   height: 64px;
@@ -382,7 +393,7 @@ onUnmounted(() => {
 .tablet-page-title {
   font-size: 18px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--apple-text);
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
@@ -403,7 +414,7 @@ onUnmounted(() => {
 .header-page-icon {
   width: 24px;
   height: 24px;
-  color: #1a1a1a;
+  color: var(--apple-text);
   flex-shrink: 1;
   min-width: 0;
   overflow: hidden;
@@ -422,8 +433,11 @@ onUnmounted(() => {
   justify-content: flex-start;
   align-items: center;
   padding: 12px 16px;
-  background: #f8f8f8;
-  border-bottom: 1px solid #d4d4d4;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
   z-index: 100;
   gap: 12px;
   height: 56px;
@@ -434,7 +448,7 @@ onUnmounted(() => {
 .mobile-page-title {
   font-size: 17px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--apple-text);
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
@@ -452,8 +466,9 @@ onUnmounted(() => {
 .menu-toggle-btn {
   width: 44px;
   height: 44px;
-  background: #2a2a2a !important;
-  border-color: #2a2a2a !important;
+  background: rgba(10,132,255,0.85) !important;
+  border: 1px solid rgba(255,255,255,0.35) !important;
+  box-shadow: 0 4px 16px rgba(10,132,255,0.35) !important;
   color: white !important;
   font-size: 22px;
   display: flex;
@@ -466,8 +481,8 @@ onUnmounted(() => {
 .menu-toggle-btn:hover,
 .menu-toggle-btn:active,
 .menu-toggle-btn:focus {
-  background: #1a1a1a !important;
-  border-color: #1a1a1a !important;
+  background: rgba(10,132,255,0.95) !important;
+  border-color: rgba(255,255,255,0.35) !important;
 }
 
 .menu-icon {
@@ -483,7 +498,9 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0,0,0,0.30);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   z-index: 1000;
   display: flex;
   align-items: stretch;
@@ -492,8 +509,11 @@ onUnmounted(() => {
 .drawer-menu {
   width: 280px;
   max-width: 80vw;
-  background: #f8f8f8;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+  background: var(--glass-bg-float);
+  -webkit-backdrop-filter: blur(40px) saturate(2);
+  backdrop-filter: blur(40px) saturate(2);
+  border-right: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-float);
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -505,9 +525,9 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 0.5px solid var(--apple-sep);
   flex-shrink: 0;
-  background: #f8f8f8;
+  background: transparent;
 }
 
 .drawer-header .logo {
@@ -518,9 +538,11 @@ onUnmounted(() => {
 .drawer-close-btn {
   width: 32px;
   height: 32px;
-  background: transparent !important;
-  border: 1px solid #d4d4d4 !important;
-  color: #666 !important;
+  background: var(--glass-bg-deep) !important;
+  border: 1px solid var(--glass-border-in) !important;
+  color: var(--apple-text2) !important;
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  backdrop-filter: var(--glass-blur-sm);
   font-size: 18px;
   display: flex;
   align-items: center;
@@ -532,9 +554,9 @@ onUnmounted(() => {
 
 .drawer-close-btn:hover,
 .drawer-close-btn:active {
-  background: #ececec !important;
-  border-color: #999 !important;
-  color: #1a1a1a !important;
+  background: var(--glass-bg) !important;
+  border-color: var(--glass-border) !important;
+  color: var(--apple-text) !important;
 }
 
 .close-icon {

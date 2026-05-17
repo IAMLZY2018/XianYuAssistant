@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, defineComponent, h, onMounted } from 'vue'
+import { inject, defineComponent, h, onMounted, ref } from 'vue'
 import { useAutoReply } from './useAutoReply'
 import './auto-reply.css'
 import '@/styles/header-selectors.css'
@@ -18,6 +18,8 @@ import IconSearch from '@/components/icons/IconSearch.vue'
 
 import GoodsDetailDialog from '../goods/components/GoodsDetailDialog.vue'
 import ImageUploader from '@/components/ImageUploader.vue'
+
+const goodsPanelCollapsed = ref(true)
 
 const {
   // State
@@ -174,88 +176,112 @@ onMounted(() => {
       <!-- Goods Panel (Left) -->
       <div
         class="ar__goods-panel"
-        :class="{ 'ar__goods-panel--hidden': isMobile && mobileView === 'config' }"
+        :class="{ 'ar__goods-panel--hidden': isMobile && mobileView === 'config', 'ar__goods-panel--collapsed': goodsPanelCollapsed }"
       >
-        <div class="ar__goods-toolbar">
-          <span class="ar__goods-toolbar-title">商品列表</span>
-          <span v-if="goodsTotal > 0" class="ar__goods-toolbar-count">共 {{ goodsTotal }} 件</span>
-          <button class="ar__only-on-sale-btn" :class="{ 'ar__only-on-sale-btn--active': onlyOnSale }" @click="toggleOnlyOnSale">
-            {{ onlyOnSale ? '在售' : '全部' }}
-          </button>
-        </div>
-
-        <div
-          class="ar__goods-list"
-          ref="goodsListRef"
-          @scroll="handleGoodsScroll"
-        >
-          <!-- Loading first page -->
-          <div v-if="goodsLoading && goodsList.length === 0" class="ar__loading">
-            <div class="ar__spinner"></div>
-            <span>加载中...</span>
+        <template v-if="!goodsPanelCollapsed">
+          <div class="ar__goods-toolbar">
+            <span class="ar__goods-toolbar-title">商品列表</span>
+            <span v-if="goodsTotal > 0" class="ar__goods-toolbar-count">共 {{ goodsTotal }} 件</span>
+            <button class="ar__only-on-sale-btn" :class="{ 'ar__only-on-sale-btn--active': onlyOnSale }" @click="toggleOnlyOnSale">
+              {{ onlyOnSale ? '在售' : '全部' }}
+            </button>
           </div>
 
-          <!-- Goods items -->
           <div
-            v-for="goods in goodsList"
-            :key="goods.item.xyGoodId"
-            class="ar__goods-item"
-            :class="{ 'ar__goods-item--active': selectedGoods?.item.xyGoodId === goods.item.xyGoodId, 'ar__goods-item--offline': goods.item.status !== 0 }"
-            @click="selectGoods(goods)"
+            class="ar__goods-list"
+            ref="goodsListRef"
+            @scroll="handleGoodsScroll"
           >
-            <img
-              :src="goods.item.coverPic"
-              :alt="goods.item.title"
-              class="ar__goods-cover"
-            />
-            <div class="ar__goods-info">
-              <div class="ar__goods-title">{{ goods.item.title }}</div>
-              <div class="ar__goods-meta">
-                <span class="ar__goods-price">{{ formatPrice(goods.item.soldPrice) }}</span>
-                <span
-                  class="ar__goods-status"
-                  :class="`ar__goods-status--${getStatusClass(goods.item.status)}`"
-                >
-                  {{ getStatusText(goods.item.status) }}
-                </span>
-                <span
-                  v-if="goods.xianyuAutoReplyOn === 1"
-                  class="ar__goods-auto-badge ar__goods-auto-badge--on"
-                >
-                  <IconSparkle />
-                  AI
-                </span>
-                <span
-                  v-if="goods.xianyuKeywordReplyOn === 1"
-                  class="ar__goods-auto-badge ar__goods-auto-badge--kw"
-                >
-                  <IconChat />
-                  关键词
-                </span>
+            <!-- Loading first page -->
+            <div v-if="goodsLoading && goodsList.length === 0" class="ar__loading">
+              <div class="ar__spinner"></div>
+              <span>加载中...</span>
+            </div>
+
+            <!-- Goods items -->
+            <div
+              v-for="goods in goodsList"
+              :key="goods.item.xyGoodId"
+              class="ar__goods-item"
+              :class="{ 'ar__goods-item--active': selectedGoods?.item.xyGoodId === goods.item.xyGoodId, 'ar__goods-item--offline': goods.item.status !== 0 }"
+              @click="selectGoods(goods)"
+            >
+              <img
+                :src="goods.item.coverPic"
+                :alt="goods.item.title"
+                class="ar__goods-cover"
+              />
+              <div class="ar__goods-info">
+                <div class="ar__goods-title">{{ goods.item.title }}</div>
+                <div class="ar__goods-meta">
+                  <span class="ar__goods-price">{{ formatPrice(goods.item.soldPrice) }}</span>
+                  <span
+                    class="ar__goods-status"
+                    :class="`ar__goods-status--${getStatusClass(goods.item.status)}`"
+                  >
+                    {{ getStatusText(goods.item.status) }}
+                  </span>
+                  <span
+                    v-if="goods.xianyuAutoReplyOn === 1"
+                    class="ar__goods-auto-badge ar__goods-auto-badge--on"
+                  >
+                    <IconSparkle />
+                    AI
+                  </span>
+                  <span
+                    v-if="goods.xianyuKeywordReplyOn === 1"
+                    class="ar__goods-auto-badge ar__goods-auto-badge--kw"
+                  >
+                    <IconChat />
+                    关键词
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Loading more -->
-          <div v-if="goodsLoading && goodsList.length > 0" class="ar__loading">
-            <div class="ar__spinner"></div>
-            <span>加载中...</span>
-          </div>
+            <!-- Loading more -->
+            <div v-if="goodsLoading && goodsList.length > 0" class="ar__loading">
+              <div class="ar__spinner"></div>
+              <span>加载中...</span>
+            </div>
 
-          <!-- No more data -->
-          <div
-            v-if="!goodsLoading && goodsList.length > 0 && goodsList.length >= goodsTotal"
-            class="ar__no-more"
-          >
-            已加载全部
-          </div>
+            <!-- No more data -->
+            <div
+              v-if="!goodsLoading && goodsList.length > 0 && goodsList.length >= goodsTotal"
+              class="ar__no-more"
+            >
+              已加载全部
+            </div>
 
-          <!-- Empty -->
-          <div v-if="!goodsLoading && goodsList.length === 0" class="ar__empty">
-            <IconPackage />
-            <span class="ar__empty-text">暂无商品</span>
+            <!-- Empty -->
+            <div v-if="!goodsLoading && goodsList.length === 0" class="ar__empty">
+              <IconPackage />
+              <span class="ar__empty-text">暂无商品</span>
+            </div>
           </div>
-        </div>
+        </template>
+        <template v-else>
+          <div class="ar__goods-icons">
+            <div
+              v-for="goods in goodsList"
+              :key="goods.item.xyGoodId"
+              class="ar__goods-icon-item"
+              :class="{ 'ar__goods-icon-item--active': selectedGoods?.item.xyGoodId === goods.item.xyGoodId }"
+              :title="goods.item.title"
+              @click="selectGoods(goods)"
+            >
+              <img :src="goods.item.coverPic" class="ar__goods-icon-img" />
+            </div>
+          </div>
+        </template>
+        <button
+          class="ar__goods-toggle"
+          :title="goodsPanelCollapsed ? '展开商品列表' : '折叠商品列表'"
+          @click="goodsPanelCollapsed = !goodsPanelCollapsed"
+        >
+          <svg v-if="goodsPanelCollapsed" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
       </div>
 
       <!-- Config Panel (Right) -->

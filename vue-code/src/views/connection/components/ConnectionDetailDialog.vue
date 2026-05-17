@@ -610,7 +610,7 @@ onBeforeUnmount(() => {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0,0,0,0.20);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   display: flex;
@@ -621,8 +621,8 @@ onBeforeUnmount(() => {
 }
 
 .modal-container {
-  background: #fff;
-  border-radius: 16px;
+  background: rgba(255,255,255,0.72);
+  border-radius: 20px;
   width: 100%;
   max-width: 680px;
   max-height: 88vh;
@@ -648,7 +648,7 @@ onBeforeUnmount(() => {
 .modal-title {
   font-size: 15px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   margin: 0;
 }
 
@@ -658,7 +658,7 @@ onBeforeUnmount(() => {
   border-radius: 7px;
   border: none;
   background: transparent;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   font-size: 18px;
   line-height: 1;
   display: flex;
@@ -669,8 +669,8 @@ onBeforeUnmount(() => {
 }
 
 .modal-close:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  background: rgba(60,60,67,.12);
+  color: #1c1c1e;
 }
 
 .modal-body {

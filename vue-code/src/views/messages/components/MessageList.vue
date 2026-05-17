@@ -2,11 +2,8 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import type { ChatMessage } from '@/api/message'
 import IconEmpty from '@/components/icons/IconEmpty.vue'
-import IconSend from '@/components/icons/IconSend.vue'
 import IconMessage from '@/components/icons/IconMessage.vue'
 import IconUser from '@/components/icons/IconUser.vue'
-import IconClock from '@/components/icons/IconClock.vue'
-import IconShoppingBag from '@/components/icons/IconShoppingBag.vue'
 import ContextDialog from './ContextDialog.vue'
 
 interface Props {
@@ -17,12 +14,7 @@ interface Props {
   currentAccountUnb?: string
 }
 
-interface Emits {
-  (e: 'reply', message: ChatMessage): void
-}
-
 const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
 
 const isMobile = ref(false)
 const checkScreenSize = () => {
@@ -59,19 +51,19 @@ const showContext = (msg: ChatMessage) => {
 // These will be injected from parent via provide/inject or props
 // For simplicity, we define them here and accept as part of the interface
 const getContentTypeColor = (contentType: number, isUser: boolean) => {
-  if (contentType === 999 || contentType === 997) return '#5856d6'
-  if (contentType === 888 || contentType === 887) return '#af52de'
-  if (!isUser) return '#007aff'
-  if (contentType === 1) return '#34c759'
-  return '#ff9500'
+  if (contentType === 999 || contentType === 997) return '#BF5AF2'
+  if (contentType === 888 || contentType === 887) return '#BF5AF2'
+  if (!isUser) return '#0A84FF'
+  if (contentType === 1) return '#30D158'
+  return '#FF9F0A'
 }
 
 const getContentTypeBg = (contentType: number, isUser: boolean) => {
-  if (contentType === 999 || contentType === 997) return 'rgba(88, 86, 214, 0.1)'
-  if (contentType === 888 || contentType === 887) return 'rgba(175, 82, 222, 0.1)'
-  if (!isUser) return 'rgba(0, 122, 255, 0.1)'
-  if (contentType === 1) return 'rgba(52, 199, 89, 0.1)'
-  return 'rgba(255, 149, 0, 0.1)'
+  if (contentType === 999 || contentType === 997) return 'rgba(191,90,242,.15)'
+  if (contentType === 888 || contentType === 887) return 'rgba(191,90,242,.15)'
+  if (!isUser) return 'rgba(10,132,255,.15)'
+  if (contentType === 1) return 'rgba(48,209,88,.2)'
+  return 'rgba(255,159,10,.18)'
 }
 
 const getContentTypeText = (contentType: number, isUser: boolean) => {
@@ -133,25 +125,18 @@ const formatMessageTime = (timestamp: string | number) => {
 
       <div class="msg-card__content">{{ msg.msgContent }}</div>
 
-      <div class="msg-card__footer">
-        <span class="msg-card__id">ID: {{ msg.id }}</span>
-        <div class="msg-card__actions">
-          <button
-            class="msg-card__btn msg-card__btn--context"
-            @click="showContext(msg)"
-          >
-            <IconMessage />
-            <span>上下文</span>
-          </button>
-          <button
-            class="msg-card__btn msg-card__btn--reply"
-            @click="emit('reply', msg)"
-          >
-            <IconSend />
-            <span>回复</span>
-          </button>
-        </div>
-      </div>
+       <div class="msg-card__footer">
+         <span class="msg-card__id">ID: {{ msg.id }}</span>
+         <div class="msg-card__actions">
+           <button
+             class="msg-card__btn msg-card__btn--reply"
+             @click="showContext(msg)"
+           >
+             <IconMessage />
+             <span>回复消息</span>
+           </button>
+         </div>
+       </div>
     </div>
 
     <div v-if="!loading && messageList.length === 0" class="empty-state">
@@ -204,13 +189,9 @@ const formatMessageTime = (timestamp: string | number) => {
           </td>
           <td class="table__td table__td--actions">
             <div class="table__actions">
-              <button class="table__action table__action--context" @click="showContext(msg)">
+              <button class="table__action table__action--reply" @click="showContext(msg)">
                 <IconMessage />
-                <span>上下文</span>
-              </button>
-              <button class="table__action table__action--reply" @click="emit('reply', msg)">
-                <IconSend />
-                <span>回复</span>
+                <span>回复消息</span>
               </button>
             </div>
           </td>
@@ -238,15 +219,18 @@ const formatMessageTime = (timestamp: string | number) => {
 <style scoped>
 .card-list,
 .table-container {
-  --c-border: rgba(0, 0, 0, 0.06);
-  --c-border-strong: rgba(0, 0, 0, 0.1);
-  --c-text-1: #1d1d1f;
-  --c-text-2: #6e6e73;
-  --c-text-3: #86868b;
-  --c-accent: #007aff;
-  --c-success: #34c759;
-  --c-r-sm: 8px;
-  --c-r-md: 12px;
+  --c-bg: transparent;
+  --c-surface: rgba(255,255,255,0.55);
+  --c-border: rgba(60,60,67,.12);
+  --c-border-strong: rgba(60,60,67,.12);
+  --c-text-1: #1c1c1e;
+  --c-text-2: rgba(28,28,30,.55);
+  --c-text-3: rgba(28,28,30,.55);
+  --c-accent: #0A84FF;
+  --c-danger: #FF453A;
+  --c-success: #30D158;
+  --c-r-sm: 10px;
+  --c-r-md: 14px;
   --c-ease: 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
@@ -260,10 +244,12 @@ const formatMessageTime = (timestamp: string | number) => {
 }
 
 .msg-card {
-  background: #fff;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255,255,255,0.55);
+  border-bottom: 0.5px solid var(--c-border-strong);
   transition: background 0.15s ease;
   overflow: hidden;
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
 }
 
 .msg-card--new {
@@ -284,11 +270,11 @@ const formatMessageTime = (timestamp: string | number) => {
 }
 
 .msg-card:nth-child(even) {
-  background: rgba(0, 0, 0, 0.016);
+  background: rgba(255,255,255,0.45);
 }
 
 .msg-card:active {
-  background: rgba(0, 122, 255, 0.04);
+  background: rgba(10,132,255,0.06);
 }
 
 .msg-card__header {
@@ -385,12 +371,6 @@ const formatMessageTime = (timestamp: string | number) => {
   height: 12px;
 }
 
-.msg-card__btn--context {
-  color: #5856d6;
-  border: 1px solid rgba(88, 86, 214, 0.2);
-  background: rgba(88, 86, 214, 0.05);
-}
-
 .msg-card__btn--reply {
   color: var(--c-accent);
   border: 1px solid rgba(0, 122, 255, 0.2);
@@ -398,15 +378,12 @@ const formatMessageTime = (timestamp: string | number) => {
 }
 
 @media (hover: hover) {
-  .msg-card__btn--context:hover {
-    background: rgba(88, 86, 214, 0.1);
-  }
   .msg-card__btn--reply:hover {
     background: rgba(0, 122, 255, 0.1);
   }
 }
 
-/* Desktop Table */
+/* Desktop Table — same as AccountTable.vue */
 .table-container {
   min-height: 100%;
 }
@@ -430,14 +407,15 @@ const formatMessageTime = (timestamp: string | number) => {
   font-size: 12px;
   font-weight: 600;
   color: var(--c-text-3);
-  background: #fafafa;
-  border-bottom: 1px solid var(--c-border-strong);
+  letter-spacing: 0.01em;
+  background: #f0f1f5;
+  border-bottom: 0.5px solid var(--c-border);
   white-space: nowrap;
   user-select: none;
 }
 
 .table__th--center { text-align: center; }
-.table__th--actions { text-align: center; }
+.table__th--actions { width: 120px; text-align: center; }
 
 .table__tr {
   transition: background var(--c-ease);
@@ -462,15 +440,10 @@ const formatMessageTime = (timestamp: string | number) => {
   border-bottom: 1px solid var(--c-border);
 }
 
-@media (hover: hover) {
-  .table__tr:hover .table__td {
-    background: rgba(0, 0, 0, 0.02);
-  }
-}
-
 .table__td {
-  padding: 10px 16px;
+  padding: 12px 16px;
   color: var(--c-text-1);
+  white-space: nowrap;
   background: transparent;
   transition: background var(--c-ease);
   line-height: 1.5;
@@ -478,6 +451,12 @@ const formatMessageTime = (timestamp: string | number) => {
 
 .table__td--center { text-align: center; }
 .table__td--actions { text-align: center; }
+
+@media (hover: hover) {
+  .table__tr:hover .table__td {
+    background: rgba(0, 0, 0, 0.02);
+  }
+}
 
 .msg-idx {
   font-size: 12px;
@@ -488,12 +467,11 @@ const formatMessageTime = (timestamp: string | number) => {
 .type-tag {
   display: inline-flex;
   align-items: center;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 10px;
-  line-height: 1.4;
-  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 20px;
+  line-height: 1;
 }
 
 .sender-text {
@@ -536,44 +514,35 @@ const formatMessageTime = (timestamp: string | number) => {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  height: 28px;
-  padding: 0 8px;
+  height: 30px;
+  padding: 0 10px;
   font-size: 12px;
   font-weight: 500;
-  background: transparent;
   border-radius: 6px;
+  border: none;
   cursor: pointer;
   transition: all var(--c-ease);
   -webkit-tap-highlight-color: transparent;
-  white-space: nowrap;
+  background: transparent;
 }
 
 .table__action svg {
-  width: 12px;
-  height: 12px;
-}
-
-.table__action--context {
-  color: #5856d6;
-  border: 1px solid rgba(88, 86, 214, 0.15);
+  width: 14px;
+  height: 14px;
 }
 
 .table__action--reply {
   color: var(--c-accent);
-  border: 1px solid rgba(0, 122, 255, 0.15);
 }
 
 @media (hover: hover) {
-  .table__action--context:hover {
-    background: rgba(88, 86, 214, 0.06);
-  }
   .table__action--reply:hover {
-    background: rgba(0, 122, 255, 0.06);
+    background: rgba(0, 122, 255, 0.08);
   }
 }
 
 .table__action:active {
-  transform: scale(0.96);
+  transform: scale(0.95);
 }
 
 /* Empty State */
@@ -605,6 +574,4 @@ const formatMessageTime = (timestamp: string | number) => {
   font-size: 14px;
   color: var(--c-text-3);
 }
-
-/* Loading - 不再整体半透明闪烁，由调用方控制加载状态 */
 </style>

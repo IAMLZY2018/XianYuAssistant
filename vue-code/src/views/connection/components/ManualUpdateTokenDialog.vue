@@ -97,7 +97,7 @@ const handleClose = () => {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0,0,0,0.20);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   display: flex;
@@ -108,8 +108,8 @@ const handleClose = () => {
 }
 
 .modal-container {
-  background: #fff;
-  border-radius: 16px;
+  background: rgba(255,255,255,0.72);
+  border-radius: 20px;
   width: 100%;
   max-width: 420px;
   max-height: 88vh;
@@ -134,7 +134,7 @@ const handleClose = () => {
 .modal-title {
   font-size: 15px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   margin: 0;
 }
 
@@ -144,7 +144,7 @@ const handleClose = () => {
   border-radius: 7px;
   border: none;
   background: transparent;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   font-size: 18px;
   line-height: 1;
   display: flex;
@@ -155,8 +155,8 @@ const handleClose = () => {
 }
 
 .modal-close:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  background: rgba(60,60,67,.12);
+  color: #1c1c1e;
 }
 
 .modal-body {
@@ -196,7 +196,7 @@ const handleClose = () => {
 
 .form-label {
   font-size: 13px;
-  color: #1d1d1f;
+  color: #1c1c1e;
   font-weight: 500;
 }
 
@@ -206,7 +206,7 @@ const handleClose = () => {
   border-radius: 8px;
   font-size: 13px;
   background: #f5f5f7;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
 }
 
 .form-textarea {
@@ -217,8 +217,8 @@ const handleClose = () => {
   font-size: 13px;
   line-height: 1.5;
   resize: none;
-  background: #fff;
-  color: #1d1d1f;
+  background: rgba(255,255,255,0.55);
+  color: #1c1c1e;
   min-height: 80px;
   font-family: inherit;
 }
@@ -230,12 +230,12 @@ const handleClose = () => {
 
 .form-textarea:disabled {
   background: #f5f5f7;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
 }
 
 .form-hint {
   font-size: 12px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   margin: 0;
 }
 
@@ -250,8 +250,8 @@ const handleClose = () => {
 }
 
 .btn-secondary {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  background: rgba(60,60,67,.12);
+  color: #1c1c1e;
 }
 
 .btn-secondary:hover {
@@ -260,7 +260,7 @@ const handleClose = () => {
 
 .btn-primary {
   background: #0071e3;
-  color: #fff;
+  color: rgba(255,255,255,0.55);
 }
 
 .btn-primary:hover:not(:disabled) {

@@ -34,10 +34,10 @@ const emit = defineEmits<Emits>()
 const h5Token = computed(() => props.connectionStatus?.mH5Tk || props.connectionStatus?.mh5Tk)
 
 const getCookieStatusColor = (status?: number) => {
-  if (status === 1) return '#34c759'
-  if (status === 2) return '#ff9500'
-  if (status === 3) return '#ff3b30'
-  return '#86868b'
+  if (status === 1) return '#30D158'
+  if (status === 2) return '#FF9F0A'
+  if (status === 3) return '#FF453A'
+  return 'rgba(28,28,30,.55)'
 }
 
 const getCookieStatusText = (status?: number) => {
@@ -53,8 +53,8 @@ const getTokenStatusText = (timestamp?: number) => {
 }
 
 const getTokenStatusColor = (timestamp?: number) => {
-  if (!timestamp) return '#86868b'
-  return Date.now() > timestamp ? '#ff3b30' : '#34c759'
+  if (!timestamp) return 'rgba(28,28,30,.55)'
+  return Date.now() > timestamp ? '#FF453A' : '#30D158'
 }
 
 const getMH5TkStatusText = (token?: string) => {
@@ -63,8 +63,8 @@ const getMH5TkStatusText = (token?: string) => {
 }
 
 const getMH5TkStatusColor = (token?: string) => {
-  if (!token) return '#86868b'
-  return '#34c759'
+  if (!token) return 'rgba(28,28,30,.55)'
+  return '#30D158'
 }
 
 const formatTimestamp = (timestamp?: number) => {
@@ -190,9 +190,9 @@ const handleManualUpdate = () => {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(0,0,0,0.20);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -210,7 +210,7 @@ const handleManualUpdate = () => {
 }
 
 .modal-container {
-  background: #ffffff;
+  background: rgba(255,255,255,0.72);
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
@@ -236,17 +236,17 @@ const handleManualUpdate = () => {
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 0.5px solid rgba(60,60,67,.12);
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
   flex-shrink: 0;
 }
 
 .modal-title {
   font-size: 18px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   margin: 0;
   letter-spacing: -0.01em;
 }
@@ -259,7 +259,7 @@ const handleManualUpdate = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   cursor: pointer;
   border-radius: 8px;
   transition: all 0.2s;
@@ -267,8 +267,8 @@ const handleManualUpdate = () => {
 }
 
 .modal-close:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  background: rgba(60,60,67,.12);
+  color: #1c1c1e;
 }
 
 .modal-close svg {
@@ -316,7 +316,7 @@ const handleManualUpdate = () => {
 }
 
 .btn--primary {
-  background: #007aff;
+  background: #0A84FF;
   color: white;
   box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
 }
@@ -331,8 +331,8 @@ const handleManualUpdate = () => {
 }
 
 .btn--secondary {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  background: rgba(60,60,67,.12);
+  color: #1c1c1e;
   box-shadow: none;
 }
 
@@ -352,10 +352,10 @@ const handleManualUpdate = () => {
 
 .credential-item {
   background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
   border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 16px;
   transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
@@ -372,7 +372,7 @@ const handleManualUpdate = () => {
   gap: 8px;
   margin-bottom: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 0.5px solid rgba(60,60,67,.12);
 }
 
 .credential-item__left {
@@ -400,23 +400,23 @@ const handleManualUpdate = () => {
 
 .credential-item__icon--cookie {
   background: rgba(255, 149, 0, 0.15);
-  color: #ff9500;
+  color: #FF9F0A;
 }
 
 .credential-item__icon--token {
   background: rgba(52, 199, 89, 0.15);
-  color: #34c759;
+  color: #30D158;
 }
 
 .credential-item__icon--h5 {
   background: rgba(0, 122, 255, 0.15);
-  color: #007aff;
+  color: #0A84FF;
 }
 
 .credential-item__name {
   font-size: 15px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   letter-spacing: -0.01em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -428,32 +428,32 @@ const handleManualUpdate = () => {
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.06);
+  background: rgba(60,60,67,.12);
   flex-shrink: 0;
 }
 
 .credential-item__value {
   font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
   font-size: 12px;
-  color: #6e6e73;
+  color: rgba(28,28,30,.55);
   word-break: break-all;
   line-height: 1.6;
   padding: 10px;
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(255,255,255,0.38);
   border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(60,60,67,.12);
 }
 
 .credential-item__value--empty {
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   font-style: italic;
-  background: rgba(0, 0, 0, 0.02);
+  background: rgba(255,255,255,0.15);
 }
 
 .credential-item__meta {
   display: inline-block;
   margin-left: 8px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   font-size: 11px;
   font-weight: 500;
 }
@@ -461,9 +461,9 @@ const handleManualUpdate = () => {
 .credential-item__expire {
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  border-top: 0.5px solid rgba(60,60,67,.12);
   font-size: 12px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
 }
 
 /* 手机端适配 */
@@ -471,7 +471,7 @@ const handleManualUpdate = () => {
   .modal-container {
     width: 90%;
     max-height: 90vh;
-    border-radius: 16px;
+    border-radius: 20px;
   }
 
   .modal-header {

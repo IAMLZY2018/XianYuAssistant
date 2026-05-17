@@ -613,7 +613,7 @@ onMounted(async () => {
                 <el-table-column prop="orderId" label="订单ID" width="160" show-overflow-tooltip />
                 <el-table-column prop="usedTime" label="使用时间" width="170" />
                 <el-table-column prop="createTime" label="添加时间" width="170" />
-                <el-table-column label="操作" width="160" fixed="right">
+                <el-table-column label="操作" width="160">
                   <template #default="{ row }">
                     <el-button
                       v-if="row.status === 1"
@@ -684,7 +684,7 @@ onMounted(async () => {
               <button class="modal-close" @click="showImportDialog = false">×</button>
             </div>
             <div class="modal-body">
-              <p class="form-hint">每行一条卡密，重复卡密将自动跳过</p>
+              <p class="form-hint">每行一条卡密，重复卡密不会跳过</p>
               <textarea v-model="importContent" class="form-textarea" :rows="10" placeholder="卡密1&#10;卡密2&#10;卡密3"></textarea>
             </div>
             <div class="modal-footer">
@@ -779,7 +779,7 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   padding: 16px;
-  background: #fff;
+  background: rgba(255,255,255,0.55);
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -795,7 +795,7 @@ onMounted(async () => {
 .kami-page__title {
   font-size: 20px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   margin: 0;
 }
 .kami-page__actions {
@@ -817,7 +817,7 @@ onMounted(async () => {
   width: 260px;
   flex-shrink: 0;
   overflow-y: auto;
-  border-right: 1px solid rgba(0,0,0,0.06);
+  border-right: 1px solid rgba(60,60,67,.12);
   padding-right: 12px;
 }
 .kami-page__main {
@@ -829,14 +829,14 @@ onMounted(async () => {
 }
 .kami-page__empty,
 .kami-page__empty-main {
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   font-size: 14px;
   text-align: center;
   padding: 40px 0;
 }
 .config-card {
   padding: 12px;
-  border: 1px solid rgba(0,0,0,0.06);
+  border: 1px solid rgba(60,60,67,.12);
   border-radius: 8px;
   margin-bottom: 8px;
   cursor: pointer;
@@ -847,25 +847,25 @@ onMounted(async () => {
   border-color: rgba(0,122,255,0.3);
 }
 .config-card--active {
-  border-color: #007aff;
-  background: rgba(0,122,255,0.04);
+  border-color: #0A84FF;
+  background: rgba(10,132,255,0.06);
 }
 .config-card__name {
   font-size: 14px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   margin-bottom: 6px;
 }
 .config-card__stats {
   display: flex;
   gap: 8px;
   font-size: 12px;
-  color: #6e6e73;
+  color: rgba(28,28,30,.55);
   margin-bottom: 4px;
   flex-wrap: wrap;
 }
-.config-card__stat.used { color: #ff9500; }
-.config-card__stat.avail { color: #34c759; }
+.config-card__stat.used { color: #FF9F0A; }
+.config-card__stat.avail { color: #30D158; }
 .config-card__del {
   position: absolute;
   top: 8px;
@@ -881,7 +881,7 @@ onMounted(async () => {
 .kami-detail__header h2 {
   font-size: 16px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   margin: 0;
 }
 .kami-detail__actions {
@@ -911,7 +911,7 @@ onMounted(async () => {
 .kami-mobile__header {
   flex-shrink: 0;
   padding: 0 0 12px;
-  border-bottom: 1px solid rgba(0,0,0,0.06);
+  border-bottom: 1px solid rgba(60,60,67,.12);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -930,7 +930,7 @@ onMounted(async () => {
 .kami-mobile__back {
   background: none;
   border: none;
-  color: #007aff;
+  color: #0A84FF;
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
@@ -941,7 +941,7 @@ onMounted(async () => {
 .kami-mobile__config-name {
   font-size: 15px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   flex: 1;
   text-align: center;
   overflow: hidden;
@@ -961,7 +961,7 @@ onMounted(async () => {
   align-items: center;
   flex-shrink: 0;
   padding: 10px 0;
-  border-bottom: 1px solid rgba(0,0,0,0.06);
+  border-bottom: 1px solid rgba(60,60,67,.12);
 }
 
 .kami-mobile__list {
@@ -985,13 +985,13 @@ onMounted(async () => {
 /* 卡密条目卡片 */
 .kami-item-card {
   padding: 10px 12px;
-  border-bottom: 1px solid rgba(0,0,0,0.05);
+  border-bottom: 0.5px solid rgba(60,60,67,.12);
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 .kami-item-card:nth-child(even) {
-  background: rgba(0,0,0,0.016);
+  background: rgba(255,255,255,0.15);
 }
 .kami-item-card--used {
   opacity: 0.6;
@@ -999,7 +999,7 @@ onMounted(async () => {
 .kami-item-card__content {
   font-size: 13px;
   font-weight: 500;
-  color: #1d1d1f;
+  color: #1c1c1e;
   word-break: break-all;
 }
 .kami-item-card__meta {
@@ -1009,7 +1009,7 @@ onMounted(async () => {
 }
 .kami-item-card__time {
   font-size: 11px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
 }
 .kami-item-card__actions {
   display: flex;
@@ -1020,9 +1020,9 @@ onMounted(async () => {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(0,0,0,0.20);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1031,11 +1031,15 @@ onMounted(async () => {
 }
 
 .modal-container {
-  background: #fff;
-  border-radius: 16px;
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(40px) saturate(2);
+  -webkit-backdrop-filter: blur(40px) saturate(2);
+  border: 1px solid rgba(255,255,255,0.75);
+  border-radius: 20px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.14), 0 12px 32px rgba(0, 0, 0, 0.1);
+  max-height: 85vh;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1056,7 +1060,7 @@ onMounted(async () => {
 .modal-title {
   font-size: 15px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   margin: 0;
 }
 
@@ -1066,7 +1070,7 @@ onMounted(async () => {
   border-radius: 7px;
   border: none;
   background: transparent;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   font-size: 18px;
   line-height: 1;
   display: flex;
@@ -1077,8 +1081,8 @@ onMounted(async () => {
 }
 
 .modal-close:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  background: rgba(60,60,67,.12);
+  color: #1c1c1e;
 }
 
 .modal-body {
@@ -1086,6 +1090,8 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .modal-footer {
@@ -1104,7 +1110,7 @@ onMounted(async () => {
 
 .form-label {
   font-size: 13px;
-  color: #1d1d1f;
+  color: #1c1c1e;
   font-weight: 500;
   min-width: 70px;
   flex-shrink: 0;
@@ -1112,18 +1118,20 @@ onMounted(async () => {
 
 .form-input {
   flex: 1;
+  min-width: 0;
   padding: 8px 12px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(60,60,67,.12);
   border-radius: 8px;
   font-size: 13px;
-  background: #fff;
-  color: #1d1d1f;
+  background: rgba(255,255,255,0.55);
+  color: #1c1c1e;
   transition: border-color 0.15s ease;
+  box-sizing: border-box;
 }
 
 .form-input:focus {
   outline: none;
-  border-color: #0071e3;
+  border-color: #0A84FF;
 }
 
 .form-input--num {
@@ -1134,24 +1142,25 @@ onMounted(async () => {
 .form-textarea {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(60,60,67,.12);
   border-radius: 10px;
   font-size: 13px;
   line-height: 1.5;
-  resize: none;
-  background: #fff;
-  color: #1d1d1f;
+  resize: vertical;
+  background: rgba(255,255,255,0.55);
+  color: #1c1c1e;
   font-family: inherit;
+  box-sizing: border-box;
 }
 
 .form-textarea:focus {
   outline: none;
-  border-color: #0071e3;
+  border-color: #0A84FF;
 }
 
 .form-hint {
   font-size: 12px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   margin: 0;
 }
 
@@ -1161,7 +1170,7 @@ onMounted(async () => {
 
 .form-suffix {
   font-size: 12px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
 }
 
 .form-switch {
@@ -1193,14 +1202,14 @@ onMounted(async () => {
   height: 20px;
   left: 2px;
   top: 2px;
-  background: #fff;
+  background: rgba(255,255,255,0.55);
   border-radius: 50%;
   transition: transform 0.2s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .form-switch input:checked + .form-switch-track {
-  background: #34c759;
+  background: #30D158;
 }
 
 .form-switch input:checked + .form-switch-track::after {
@@ -1217,7 +1226,7 @@ onMounted(async () => {
   align-items: center;
   gap: 5px;
   font-size: 13px;
-  color: #1d1d1f;
+  color: #1c1c1e;
   cursor: pointer;
 }
 
@@ -1235,7 +1244,7 @@ onMounted(async () => {
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #1d1d1f;
+  color: #1c1c1e;
   cursor: pointer;
 }
 
@@ -1254,8 +1263,8 @@ onMounted(async () => {
 }
 
 .btn-secondary {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  background: rgba(60,60,67,.12);
+  color: #1c1c1e;
 }
 
 .btn-secondary:hover {
@@ -1263,12 +1272,12 @@ onMounted(async () => {
 }
 
 .btn-primary {
-  background: #0071e3;
+  background: rgba(10,132,255,0.85);
   color: #fff;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #0077ed;
+  background: rgba(10,132,255,0.75);
 }
 
 .btn-primary:disabled {

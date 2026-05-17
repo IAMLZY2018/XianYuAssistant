@@ -102,7 +102,7 @@ const handleClose = () => {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0,0,0,0.20);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   display: flex;
@@ -113,8 +113,8 @@ const handleClose = () => {
 }
 
 .modal-container {
-  background: #fff;
-  border-radius: 16px;
+  background: rgba(255,255,255,0.72);
+  border-radius: 20px;
   width: 100%;
   max-width: 420px;
   max-height: 88vh;
@@ -139,7 +139,7 @@ const handleClose = () => {
 .modal-title {
   font-size: 15px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   margin: 0;
 }
 
@@ -152,7 +152,7 @@ const handleClose = () => {
 .help-link {
   background: none;
   border: none;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   font-size: 12px;
   cursor: pointer;
   padding: 0;
@@ -169,7 +169,7 @@ const handleClose = () => {
   border-radius: 7px;
   border: none;
   background: transparent;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   font-size: 18px;
   line-height: 1;
   display: flex;
@@ -180,8 +180,8 @@ const handleClose = () => {
 }
 
 .modal-close:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  background: rgba(60,60,67,.12);
+  color: #1c1c1e;
 }
 
 .modal-body {
@@ -207,7 +207,7 @@ const handleClose = () => {
 
 .form-label {
   font-size: 13px;
-  color: #1d1d1f;
+  color: #1c1c1e;
   font-weight: 500;
 }
 
@@ -219,8 +219,8 @@ const handleClose = () => {
   font-size: 12px;
   line-height: 1.5;
   resize: none;
-  background: #fff;
-  color: #1d1d1f;
+  background: rgba(255,255,255,0.55);
+  color: #1c1c1e;
   font-family: 'Courier New', Consolas, monospace;
 }
 
@@ -248,18 +248,18 @@ const handleClose = () => {
 
 .alert-text {
   font-size: 12px;
-  color: #1d1d1f;
+  color: #1c1c1e;
   margin: 4px 0;
 }
 
 .alert-text .highlight {
-  color: #ff9500;
+  color: #FF9F0A;
   font-weight: 600;
 }
 
 .alert-text code {
   background: rgba(255, 59, 48, 0.1);
-  color: #ff3b30;
+  color: #FF453A;
   padding: 1px 4px;
   border-radius: 3px;
   font-family: inherit;
@@ -268,13 +268,13 @@ const handleClose = () => {
 .alert-subtitle {
   font-size: 12px;
   font-weight: 500;
-  color: #1d1d1f;
+  color: #1c1c1e;
   margin: 8px 0 4px;
 }
 
 .alert-code {
   font-size: 11px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   line-height: 1.7;
   word-break: break-all;
   margin: 0;
@@ -283,7 +283,7 @@ const handleClose = () => {
 
 .alert-code code {
   background: rgba(255, 59, 48, 0.1);
-  color: #ff3b30;
+  color: #FF453A;
   padding: 1px 3px;
   border-radius: 3px;
 }
@@ -313,8 +313,8 @@ const handleClose = () => {
 }
 
 .btn-secondary {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  background: rgba(60,60,67,.12);
+  color: #1c1c1e;
 }
 
 .btn-secondary:hover {
@@ -323,7 +323,7 @@ const handleClose = () => {
 
 .btn-primary {
   background: #0071e3;
-  color: #fff;
+  color: rgba(255,255,255,0.55);
 }
 
 .btn-primary:hover:not(:disabled) {

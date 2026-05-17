@@ -185,7 +185,7 @@ const handleClose = () => {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0,0,0,0.20);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   display: flex;
@@ -196,8 +196,8 @@ const handleClose = () => {
 }
 
 .modal-container {
-  background: #fff;
-  border-radius: 16px;
+  background: rgba(255,255,255,0.72);
+  border-radius: 20px;
   width: 100%;
   max-width: 360px;
   box-shadow: 0 32px 100px rgba(0, 0, 0, 0.14), 0 12px 32px rgba(0, 0, 0, 0.1);
@@ -217,7 +217,7 @@ const handleClose = () => {
 .modal-title {
   font-size: 15px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   margin: 0;
 }
 
@@ -227,7 +227,7 @@ const handleClose = () => {
   border-radius: 7px;
   border: none;
   background: transparent;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   font-size: 18px;
   line-height: 1;
   display: flex;
@@ -238,8 +238,8 @@ const handleClose = () => {
 }
 
 .modal-close:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  background: rgba(60,60,67,.12);
+  color: #1c1c1e;
 }
 
 .modal-body {
@@ -266,8 +266,8 @@ const handleClose = () => {
 }
 
 .btn-secondary {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  background: rgba(60,60,67,.12);
+  color: #1c1c1e;
 }
 
 .btn-secondary:hover {
@@ -310,7 +310,7 @@ const handleClose = () => {
 
 .qr-tip {
   margin: 8px 0;
-  color: #1d1d1f;
+  color: #1c1c1e;
   font-size: 14px;
 }
 
@@ -327,19 +327,19 @@ const handleClose = () => {
   border-radius: 6px;
   font-size: 12px;
   font-weight: 500;
-  background: rgba(0, 0, 0, 0.05);
-  color: #86868b;
+  background: rgba(255,255,255,0.38);
+  color: rgba(28,28,30,.55);
 }
 
 .status-tag.is-success {
   background: rgba(52, 199, 89, 0.1);
-  color: #34c759;
+  color: #30D158;
 }
 
 .session-id {
   margin: 8px 0;
   font-size: 11px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
 }
 
 .modal-enter-active,

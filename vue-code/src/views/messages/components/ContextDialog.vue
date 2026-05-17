@@ -336,33 +336,33 @@ const handleSend = async () => {
 
           <!-- Footer -->
           <div class="modal-footer">
-            <div class="input-left">
+            <div v-if="showImageUploader && xianyuAccountId" class="input-uploader-row">
               <MultiImageUploader
-                v-if="showImageUploader && xianyuAccountId"
                 :account-id="xianyuAccountId"
                 v-model="inputImageUrls"
                 class="input-uploader"
               />
+            </div>
+            <div class="input-row">
               <textarea
                 v-model="inputText"
                 class="input-textarea"
-                :rows="2"
-                placeholder="输入消息内容，Ctrl+Enter发送"
+                :rows="1"
+                placeholder="输入消息..."
                 @keydown.enter.ctrl="handleSend"
               ></textarea>
-            </div>
-            <div class="input-actions">
-              <button
-                class="img-btn"
-                :class="{ 'img-btn--active': showImageUploader || inputImageUrls }"
-                @click="showImageUploader = !showImageUploader"
-              >
-                <IconImage />
-              </button>
-              <button class="send-btn" :class="{ 'is-loading': sending }" :disabled="sending" @click="handleSend">
-                <IconSend />
-                <span>发送</span>
-              </button>
+              <div class="input-btns">
+                <button
+                  class="img-btn"
+                  :class="{ 'img-btn--active': showImageUploader || inputImageUrls }"
+                  @click="showImageUploader = !showImageUploader"
+                >
+                  <IconImage />
+                </button>
+                <button class="send-btn" :class="{ 'is-loading': sending }" :disabled="sending || (!inputText.trim() && !inputImageUrls)" @click="handleSend">
+                  <IconSend />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -375,7 +375,7 @@ const handleSend = async () => {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0,0,0,0.20);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   display: flex;
@@ -386,13 +386,16 @@ const handleSend = async () => {
 }
 
 .modal-container {
-  background: #ffffff;
-  border-radius: 16px;
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(40px) saturate(2);
+  -webkit-backdrop-filter: blur(40px) saturate(2);
+  border: 1px solid rgba(255,255,255,0.75);
+  border-radius: 20px;
   width: 100%;
   max-width: 720px;
   height: 80vh;
   max-height: 700px;
-  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.14), 0 12px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -422,12 +425,12 @@ const handleSend = async () => {
 .modal-title {
   font-size: 15px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
 }
 
 .modal-goods {
   font-size: 12px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -442,7 +445,7 @@ const handleSend = async () => {
 
 .modal-count {
   font-size: 12px;
-  color: #ff3b30;
+  color: #FF453A;
   font-weight: 500;
 }
 
@@ -452,7 +455,7 @@ const handleSend = async () => {
   border-radius: 7px;
   border: none;
   background: transparent;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -462,7 +465,7 @@ const handleSend = async () => {
 
 .modal-close:hover {
   background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  color: #1c1c1e;
 }
 
 .modal-close svg {
@@ -481,7 +484,7 @@ const handleSend = async () => {
   height: 100%;
   overflow-y: auto;
   padding: 14px;
-  background: #f5f5f7;
+  background: rgba(255,255,255,0.38);
   border-radius: 12px;
 }
 
@@ -505,15 +508,15 @@ const handleSend = async () => {
   justify-content: center;
   gap: 10px;
   height: 100%;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   font-size: 13px;
 }
 
 .loading-spinner {
   width: 24px;
   height: 24px;
-  border: 2px solid #e5e5e5;
-  border-top-color: #0071e3;
+  border: 2px solid rgba(60,60,67,.12);
+  border-top-color: #0A84FF;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -525,7 +528,7 @@ const handleSend = async () => {
 .loading-more {
   text-align: center;
   padding: 8px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   font-size: 12px;
 }
 
@@ -565,7 +568,7 @@ const handleSend = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #34c759;
+  background: #30D158;
   color: #fff;
 }
 
@@ -575,7 +578,7 @@ const handleSend = async () => {
 }
 
 .avatar--user {
-  background: #007aff;
+  background: #0A84FF;
 }
 
 .message-body {
@@ -594,43 +597,43 @@ const handleSend = async () => {
 
 .message-sender {
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
 }
 
 .message-type {
   padding: 2px 7px;
   border-radius: 10px;
-  background: rgba(88, 86, 214, 0.1);
-  color: #5856d6;
+  background: rgba(191,90,242,.15);
+  color: #BF5AF2;
   font-size: 10px;
   font-weight: 500;
 }
 
 .message-time {
-  color: #86868b;
+  color: rgba(28,28,30,.55);
 }
 
 .message-text {
   padding: 9px 12px;
-  background: #fff;
+  background: rgba(255,255,255,0.72);
   border-radius: 16px;
   font-size: 13px;
   line-height: 1.5;
-  color: #1d1d1f;
+  color: #1c1c1e;
   word-break: break-word;
 }
 
 .message-item--mine .message-text {
-  background: #d1f4e0;
-  color: #1d1d1f;
+  background: rgba(48,209,88,.15);
+  color: #1c1c1e;
 }
 
 .system-text {
   font-size: 11px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   text-align: center;
   padding: 4px 10px;
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(255,255,255,0.38);
   border-radius: 10px;
 }
 
@@ -650,7 +653,7 @@ const handleSend = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   opacity: 0.3;
 }
 
@@ -661,118 +664,130 @@ const handleSend = async () => {
 
 .empty-text {
   font-size: 13px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
 }
 
 /* Footer */
 .modal-footer {
   display: flex;
-  gap: 10px;
-  align-items: flex-end;
-  padding: 14px 20px;
+  flex-direction: column;
+  padding: 10px 16px;
   flex-shrink: 0;
+  gap: 8px;
+  border-top: 0.5px solid rgba(255,255,255,0.35);
 }
 
-.input-left {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
+.input-uploader-row {
+  width: 100%;
 }
 
 .input-uploader {
   width: 100%;
 }
 
+.input-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
 .input-textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  flex: 1;
+  min-height: 56px;
+  max-height: 100px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,0.35);
   border-radius: 10px;
   font-size: 13px;
   line-height: 1.5;
   resize: none;
-  background: #fff;
-  color: #1d1d1f;
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  color: #1c1c1e;
   transition: border-color 0.15s ease;
   font-family: inherit;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.input-textarea::-webkit-scrollbar {
+  display: none;
 }
 
 .input-textarea:focus {
   outline: none;
-  border-color: #0071e3;
+  border-color: rgba(10,132,255,0.5);
 }
 
 .input-textarea::placeholder {
-  color: #86868b;
+  color: rgba(28,28,30,.45);
 }
 
-.input-actions {
+.input-btns {
   display: flex;
-  gap: 8px;
-  align-items: flex-end;
+  flex-direction: column;
+  gap: 4px;
   flex-shrink: 0;
+  width: 36px;
 }
 
 .img-btn {
-  width: 36px;
-  height: 36px;
+  width: 100%;
+  flex: 1;
   border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background: #fff;
+  border: none;
+  background: rgba(255,255,255,0.38);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.15s ease;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
 }
 
 .img-btn:hover {
-  border-color: #1d1d1f;
-  color: #1d1d1f;
+  background: rgba(255,255,255,0.55);
+  color: #0A84FF;
 }
 
 .img-btn--active {
-  border-color: #34c759;
-  color: #34c759;
-  background: rgba(52, 199, 89, 0.06);
+  color: #0A84FF;
+  background: rgba(10,132,255,0.1);
 }
 
 .img-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 
 .send-btn {
-  height: 36px;
-  padding: 0 16px;
+  width: 100%;
+  flex: 1;
   border-radius: 8px;
   border: none;
-  background: #0071e3;
+  background: rgba(10,132,255,0.85);
   color: #fff;
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 13px;
-  font-weight: 500;
+  justify-content: center;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .send-btn:hover:not(:disabled) {
-  background: #0077ed;
+  background: rgba(10,132,255,0.95);
 }
 
 .send-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.4;
   cursor: not-allowed;
+  background: rgba(120,120,128,.24);
 }
 
 .send-btn svg {
-  width: 13px;
-  height: 13px;
+  width: 16px;
+  height: 16px;
 }
 
 /* Transitions */
@@ -847,14 +862,9 @@ const handleSend = async () => {
     padding: 8px 10px;
     font-size: 14px;
   }
-  
-  .img-btn,
-  .send-btn {
-    height: 34px;
-  }
-  
-  .send-btn {
-    padding: 0 14px;
+
+  .input-btns {
+    width: 32px;
   }
 }
 </style>

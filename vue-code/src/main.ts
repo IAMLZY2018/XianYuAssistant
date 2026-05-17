@@ -8,7 +8,6 @@ import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import App from './App.vue'
 import router from './router'
 
-// 导入自定义主题样式
 import './assets/theme.css'
 
 const app = createApp(App)

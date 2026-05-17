@@ -89,7 +89,7 @@ onUnmounted(() => {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0,0,0,0.20);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   display: flex;
@@ -100,8 +100,8 @@ onUnmounted(() => {
 }
 
 .modal-container {
-  background: #fff;
-  border-radius: 16px;
+  background: rgba(255,255,255,0.72);
+  border-radius: 20px;
   width: 100%;
   max-width: 420px;
   box-shadow: 0 32px 100px rgba(0, 0, 0, 0.14), 0 12px 32px rgba(0, 0, 0, 0.1);
@@ -125,7 +125,7 @@ onUnmounted(() => {
 .modal-title {
   font-size: 15px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   margin: 0;
 }
 
@@ -135,7 +135,7 @@ onUnmounted(() => {
   border-radius: 7px;
   border: none;
   background: transparent;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   font-size: 18px;
   line-height: 1;
   display: flex;
@@ -146,8 +146,8 @@ onUnmounted(() => {
 }
 
 .modal-close:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  background: rgba(60,60,67,.12);
+  color: #1c1c1e;
 }
 
 .modal-body {
@@ -170,7 +170,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
-  background: #fff3cd;
+  background: rgba(255,255,255,0.55)3cd;
   border-radius: 10px;
 }
 
@@ -206,7 +206,7 @@ onUnmounted(() => {
   height: 22px;
   border-radius: 50%;
   background: #0071e3;
-  color: #fff;
+  color: rgba(255,255,255,0.55);
   font-size: 12px;
   font-weight: 600;
   display: flex;
@@ -217,7 +217,7 @@ onUnmounted(() => {
 
 .step-text {
   font-size: 13px;
-  color: #1d1d1f;
+  color: #1c1c1e;
 }
 
 .captcha-tip {
@@ -236,7 +236,7 @@ onUnmounted(() => {
 
 .tip-text {
   font-size: 12px;
-  color: #1d1d1f;
+  color: #1c1c1e;
   line-height: 1.5;
 }
 
@@ -251,8 +251,8 @@ onUnmounted(() => {
 }
 
 .btn-secondary {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  background: rgba(60,60,67,.12);
+  color: #1c1c1e;
 }
 
 .btn-secondary:hover {
@@ -261,7 +261,7 @@ onUnmounted(() => {
 
 .btn-primary {
   background: #0071e3;
-  color: #fff;
+  color: rgba(255,255,255,0.55);
 }
 
 .btn-primary:hover {

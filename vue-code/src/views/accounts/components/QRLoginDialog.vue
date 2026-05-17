@@ -222,7 +222,7 @@ const handleClose = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0,0,0,0.20);
   z-index: 999;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
@@ -235,14 +235,17 @@ const handleClose = () => {
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 1000;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16);
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(40px) saturate(2);
+  -webkit-backdrop-filter: blur(40px) saturate(2);
+  border: 1px solid rgba(255,255,255,0.75);
+  border-radius: 20px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
   display: flex;
   flex-direction: column;
   max-height: 85vh;
+  width: 340px;
   max-width: 90vw;
-  width: 100%;
   overflow: hidden;
 }
 
@@ -252,7 +255,7 @@ const handleClose = () => {
   flex-direction: column;
   align-items: center;
   padding: 16px 16px 12px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 0.5px solid rgba(60,60,67,.12);
   position: relative;
 }
 
@@ -263,7 +266,7 @@ const handleClose = () => {
 .ios-sheet-title {
   font-size: 17px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   text-align: center;
 }
 
@@ -277,7 +280,7 @@ const handleClose = () => {
   background: rgba(0, 0, 0, 0.06);
   border-radius: 50%;
   font-size: 18px;
-  color: #1d1d1f;
+  color: #1c1c1e;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -342,7 +345,7 @@ const handleClose = () => {
 
 .qr-tip {
   margin: 16px 0 12px;
-  color: #6e6e73;
+  color: rgba(28,28,30,.55);
   font-size: 14px;
   text-align: center;
   line-height: 1.5;
@@ -365,32 +368,32 @@ const handleClose = () => {
 
 .status-pending,
 .status-scanned {
-  background: rgba(0, 122, 255, 0.1);
-  color: #007aff;
+  background: rgba(10,132,255,.15);
+  color: #0A84FF;
 }
 
 .status-confirmed {
-  background: rgba(52, 199, 89, 0.1);
-  color: #34c759;
+  background: rgba(48,209,88,.2);
+  color: #30D158;
 }
 
 .status-expired {
-  background: rgba(255, 59, 48, 0.1);
-  color: #ff3b30;
+  background: rgba(255,69,58,.15);
+  color: #FF453A;
 }
 
 .session-id {
   margin: 12px 0;
   font-size: 12px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   text-align: center;
 }
 
 /* iOS Sheet 底部 */
 .ios-sheet-footer {
   padding: 12px 16px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  background: #fff;
+  border-top: 0.5px solid rgba(60,60,67,.12);
+  background: transparent;
 }
 
 .ios-sheet-btn {
@@ -406,17 +409,19 @@ const handleClose = () => {
 }
 
 .ios-sheet-btn--cancel {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
+  background: rgba(255,255,255,0.38);
+  border: 1px solid rgba(255,255,255,0.35);
+  color: #1c1c1e;
 }
 
 .ios-sheet-btn--cancel:active {
-  background: rgba(0, 0, 0, 0.12);
+  background: rgba(255,255,255,0.55);
 }
 
 /* 手机端适配 */
 @media screen and (max-width: 768px) {
   .ios-sheet {
+    width: 320px;
     max-height: 85vh;
     max-width: 95vw;
   }
@@ -475,6 +480,7 @@ const handleClose = () => {
 
 @media screen and (max-width: 480px) {
   .ios-sheet {
+    width: 300px;
     max-height: 80vh;
     max-width: 92vw;
   }

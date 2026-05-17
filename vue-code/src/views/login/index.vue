@@ -226,10 +226,27 @@ function handleKeydown(e: KeyboardEvent) {
 .login-card {
   width: 100%;
   max-width: 400px;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(40px) saturate(2);
+  -webkit-backdrop-filter: blur(40px) saturate(2);
+  border: 1px solid rgba(255,255,255,0.75);
+  border-radius: 20px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
   padding: 40px 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9) 30%, rgba(255,255,255,0.9) 70%, transparent);
+  border-radius: 1px;
+  pointer-events: none;
 }
 
 /* Logo */
@@ -244,7 +261,7 @@ function handleKeydown(e: KeyboardEvent) {
 .login-logo-icon {
   width: 40px;
   height: 40px;
-  background: #2a2a2a;
+  background: rgba(10,132,255,0.75);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -257,7 +274,7 @@ function handleKeydown(e: KeyboardEvent) {
 .login-logo-text {
   font-size: 20px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #1c1c1e;
 }
 
 /* Loading */
@@ -272,7 +289,7 @@ function handleKeydown(e: KeyboardEvent) {
   width: 24px;
   height: 24px;
   border: 2px solid #d4d4d4;
-  border-top-color: #1a1a1a;
+  border-top-color: #1c1c1e;
   border-radius: 50%;
   animation: login-spin 0.6s linear infinite;
 }
@@ -291,14 +308,14 @@ function handleKeydown(e: KeyboardEvent) {
 .login-title {
   font-size: 22px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #1c1c1e;
   margin: 0;
   text-align: center;
 }
 
 .login-subtitle {
   font-size: 14px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   margin: -12px 0 0;
   text-align: center;
 }
@@ -312,7 +329,7 @@ function handleKeydown(e: KeyboardEvent) {
 .login-label {
   font-size: 13px;
   font-weight: 500;
-  color: #1a1a1a;
+  color: #1c1c1e;
 }
 
 .login-input-wrap {
@@ -326,8 +343,8 @@ function handleKeydown(e: KeyboardEvent) {
   height: 44px;
   padding: 0 14px;
   font-size: 15px;
-  color: #1a1a1a;
-  background: #f5f5f7;
+  color: #1c1c1e;
+  background: rgba(255,255,255,0.15);
   border: 1px solid transparent;
   border-radius: 10px;
   outline: none;
@@ -336,12 +353,12 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 .login-input:focus {
-  border-color: #1a1a1a;
-  background: #fff;
+  border-color: #1c1c1e;
+  background: rgba(255,255,255,0.55);
 }
 
 .login-input::placeholder {
-  color: #86868b;
+  color: rgba(28,28,30,.55);
 }
 
 .login-input:disabled {
@@ -354,7 +371,7 @@ function handleKeydown(e: KeyboardEvent) {
   background: none;
   border: none;
   font-size: 12px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   cursor: pointer;
   padding: 4px 6px;
   border-radius: 4px;
@@ -362,14 +379,14 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 .login-eye-btn:hover {
-  color: #1a1a1a;
+  color: #1c1c1e;
 }
 
 /* Submit Button */
 .login-btn {
   width: 100%;
   height: 48px;
-  background: #1a1a1a;
+  background: rgba(10,132,255,0.85);
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -385,7 +402,7 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 .login-btn:hover {
-  background: #2a2a2a;
+  background: rgba(10,132,255,0.75);
 }
 
 .login-btn:active {

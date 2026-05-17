@@ -170,10 +170,10 @@ const getCookieStatusText = (status?: number) => {
 }
 
 const getCookieStatusColor = (status?: number) => {
-  if (status === 1) return '#34c759'
-  if (status === 2) return '#ff9500'
-  if (status === 3) return '#ff3b30'
-  return '#86868b'
+  if (status === 1) return '#30D158'
+  if (status === 2) return '#FF9F0A'
+  if (status === 3) return '#FF453A'
+  return 'rgba(28,28,30,.55)'
 }
 
 const formatTimestamp = (timestamp?: number | string) => {
@@ -196,8 +196,8 @@ const getTokenStatusText = (timestamp?: number) => {
 }
 
 const getTokenStatusColor = (timestamp?: number) => {
-  if (!timestamp) return '#86868b'
-  return isTokenExpired(timestamp) ? '#ff3b30' : '#34c759'
+  if (!timestamp) return 'rgba(28,28,30,.55)'
+  return isTokenExpired(timestamp) ? '#FF453A' : '#30D158'
 }
 
 const h5Token = computed(() => connectionStatus.value?.mH5Tk || connectionStatus.value?.mh5Tk)
@@ -208,8 +208,8 @@ const getMH5TkStatusText = (mH5Tk?: string) => {
 }
 
 const getMH5TkStatusColor = (mH5Tk?: string) => {
-  if (!mH5Tk) return '#86868b'
-  return '#34c759'
+  if (!mH5Tk) return 'rgba(28,28,30,.55)'
+  return '#30D158'
 }
 
 const getOperationStatusText = (status: number) => {
@@ -218,10 +218,10 @@ const getOperationStatusText = (status: number) => {
 }
 
 const getOperationStatusColor = (status: number) => {
-  if (status === 1) return '#34c759'
-  if (status === 2) return '#ff3b30'
-  if (status === 3) return '#ff9500'
-  return '#86868b'
+  if (status === 1) return '#30D158'
+  if (status === 2) return '#FF453A'
+  if (status === 3) return '#FF9F0A'
+  return 'rgba(28,28,30,.55)'
 }
 
 const canSyncGoods = computed(() => connectionStatus.value?.cookieStatus === 1)
@@ -482,7 +482,7 @@ onBeforeUnmount(() => {
   gap: 4px;
   font-size: 16px;
   font-weight: 500;
-  color: #007aff;
+  color: #0A84FF;
   cursor: pointer;
   background: none;
   border: none;
@@ -496,7 +496,7 @@ onBeforeUnmount(() => {
   flex: 1;
   font-size: 17px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   margin: 0;
   letter-spacing: -0.01em;
 }
@@ -510,7 +510,7 @@ onBeforeUnmount(() => {
   background: rgba(0, 0, 0, 0.05);
   border: none;
   border-radius: 10px;
-  color: #007aff;
+  color: #0A84FF;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
@@ -541,7 +541,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   font-size: 14px;
 }
 
@@ -577,12 +577,12 @@ onBeforeUnmount(() => {
 
 .status-hero--on .status-hero__icon {
   background: rgba(52, 199, 89, 0.15);
-  color: #34c759;
+  color: #30D158;
 }
 
 .status-hero--off .status-hero__icon {
   background: rgba(255, 59, 48, 0.15);
-  color: #ff3b30;
+  color: #FF453A;
 }
 
 .status-hero__icon svg { width: 22px; height: 22px; }
@@ -598,12 +598,12 @@ onBeforeUnmount(() => {
 .status-hero__title {
   font-size: 17px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
 }
 
 .status-hero__sub {
   font-size: 12px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
 }
 
 .status-hero__badge {
@@ -612,7 +612,7 @@ onBeforeUnmount(() => {
   padding: 4px 10px;
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.05);
-  color: #6e6e73;
+  color: rgba(28,28,30,.55);
   flex-shrink: 0;
 }
 
@@ -649,8 +649,8 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
-.cap-card--ok .cap-card__dot { background: #34c759; }
-.cap-card--err .cap-card__dot { background: #ff3b30; }
+.cap-card--ok .cap-card__dot { background: #30D158; }
+.cap-card--err .cap-card__dot { background: #FF453A; }
 
 .cap-card__text {
   flex: 1;
@@ -663,15 +663,15 @@ onBeforeUnmount(() => {
 .cap-card__label {
   font-size: 15px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
 }
 
-.cap-card--ok .cap-card__label { color: #34c759; }
-.cap-card--err .cap-card__label { color: #ff3b30; }
+.cap-card--ok .cap-card__label { color: #30D158; }
+.cap-card--err .cap-card__label { color: #FF453A; }
 
 .cap-card__desc {
   font-size: 12px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   line-height: 1.3;
 }
 
@@ -705,20 +705,20 @@ onBeforeUnmount(() => {
 .act-btn svg { width: 16px; height: 16px; }
 
 .act-btn--success {
-  background: #34c759;
+  background: #30D158;
   color: white;
   box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
 }
 
 .act-btn--danger {
-  background: #ff3b30;
+  background: #FF453A;
   color: white;
   box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3);
 }
 
 .act-btn--outline {
   background: rgba(0, 122, 255, 0.08);
-  color: #007aff;
+  color: #0A84FF;
   border: 1px solid rgba(0, 122, 255, 0.2);
 }
 
@@ -727,7 +727,7 @@ onBeforeUnmount(() => {
   font-size: 13px;
   font-weight: 500;
   background: rgba(0, 122, 255, 0.08);
-  color: #007aff;
+  color: #0A84FF;
   border-radius: 8px;
   flex: 0;
 }
@@ -744,7 +744,7 @@ onBeforeUnmount(() => {
 .cred-block {
   background: white;
   border-radius: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(60,60,67,.12);
   overflow: hidden;
 }
 
@@ -776,23 +776,23 @@ onBeforeUnmount(() => {
 
 .cred-block__icon--cookie {
   background: rgba(255, 149, 0, 0.12);
-  color: #ff9500;
+  color: #FF9F0A;
 }
 
 .cred-block__icon--token {
   background: rgba(52, 199, 89, 0.12);
-  color: #34c759;
+  color: #30D158;
 }
 
 .cred-block__icon--h5 {
   background: rgba(0, 122, 255, 0.12);
-  color: #007aff;
+  color: #0A84FF;
 }
 
 .cred-block__name {
   font-size: 15px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
 }
 
 .cred-block__status {
@@ -810,7 +810,7 @@ onBeforeUnmount(() => {
 .cred-block__code {
   font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
   font-size: 11px;
-  color: #6e6e73;
+  color: rgba(28,28,30,.55);
   line-height: 1.5;
   word-break: break-all;
   background: rgba(0, 0, 0, 0.03);
@@ -829,7 +829,7 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   margin-top: 8px;
   font-size: 11px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
 }
 
 .cred-block__copy {
@@ -841,7 +841,7 @@ onBeforeUnmount(() => {
   background: rgba(0, 122, 255, 0.08);
   border: none;
   border-radius: 8px;
-  color: #007aff;
+  color: #0A84FF;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
@@ -851,7 +851,7 @@ onBeforeUnmount(() => {
 .cred-block__empty {
   padding: 14px 16px;
   font-size: 13px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
   font-style: italic;
 }
 
@@ -864,7 +864,7 @@ onBeforeUnmount(() => {
 
 .cred-block__expire {
   font-size: 12px;
-  color: #86868b;
+  color: rgba(28,28,30,.55);
 }
 
 /* Log Section */
@@ -882,13 +882,13 @@ onBeforeUnmount(() => {
   gap: 6px;
   font-size: 15px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
 }
 
-.log-section__title svg { width: 16px; height: 16px; color: #86868b; }
+.log-section__title svg { width: 16px; height: 16px; color: rgba(28,28,30,.55); }
 
 .log-container {
-  background: #1d1d1f;
+  background: #1c1c1e;
   border-radius: 12px;
   padding: 12px;
   font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
@@ -910,7 +910,7 @@ onBeforeUnmount(() => {
 .log-entry:last-child { margin-bottom: 0; }
 
 .log-entry__time {
-  color: #6e6e73;
+  color: rgba(28,28,30,.55);
   font-size: 11px;
   flex-shrink: 0;
 }
@@ -929,7 +929,7 @@ onBeforeUnmount(() => {
 
 .log-empty {
   text-align: center;
-  color: #6e6e73;
+  color: rgba(28,28,30,.55);
   padding: 16px;
   font-size: 12px;
 }

@@ -108,11 +108,11 @@ onUnmounted(() => {
 })
 
 const getStatusColor = (state: number) => {
-  return state === 1 ? '#34c759' : '#ff3b30'
+  return state === 1 ? '#30D158' : '#FF453A'
 }
 
 const getStatusBg = (state: number) => {
-  return state === 1 ? 'rgba(52, 199, 89, 0.1)' : 'rgba(255, 59, 48, 0.1)'
+  return state === 1 ? 'rgba(48,209,88,.2)' : 'rgba(255,69,58,.15)'
 }
 
 const getStatusText = (state: number) => {
@@ -126,15 +126,15 @@ const getDeliveryText = (state: number) => {
 }
 
 const getDeliveryColor = (state: number) => {
-  if (state === 1) return '#34c759'
-  if (state === 0) return '#ff9500'
-  return '#ff3b30'
+  if (state === 1) return '#30D158'
+  if (state === 0) return '#FF9F0A'
+  return '#FF453A'
 }
 
 const getDeliveryBg = (state: number) => {
-  if (state === 1) return 'rgba(52, 199, 89, 0.1)'
-  if (state === 0) return 'rgba(255, 149, 0, 0.1)'
-  return 'rgba(255, 59, 48, 0.1)'
+  if (state === 1) return 'rgba(48,209,88,.2)'
+  if (state === 0) return 'rgba(255,159,10,.18)'
+  return 'rgba(255,69,58,.15)'
 }
 
 const getConfirmText = (state: number) => {
@@ -142,11 +142,11 @@ const getConfirmText = (state: number) => {
 }
 
 const getConfirmColor = (state: number) => {
-  return state === 1 ? '#34c759' : '#86868b'
+  return state === 1 ? '#30D158' : 'rgba(28,28,30,.55)'
 }
 
 const getConfirmBg = (state: number) => {
-  return state === 1 ? 'rgba(52, 199, 89, 0.1)' : 'rgba(134, 134, 139, 0.1)'
+  return state === 1 ? 'rgba(48,209,88,.2)' : 'rgba(120,120,128,.12)'
 }
 </script>
 
@@ -467,17 +467,18 @@ const getConfirmBg = (state: number) => {
 .card-list,
 .table-container {
   --c-bg: transparent;
-  --c-surface: #ffffff;
-  --c-border: rgba(0, 0, 0, 0.06);
-  --c-border-strong: rgba(0, 0, 0, 0.1);
-  --c-text-1: #1d1d1f;
-  --c-text-2: #6e6e73;
-  --c-text-3: #86868b;
-  --c-accent: #007aff;
-  --c-danger: #ff3b30;
-  --c-success: #34c759;
-  --c-r-sm: 8px;
-  --c-r-md: 12px;
+  --c-surface: rgba(255,255,255,0.55);
+  --c-surface-hover: rgba(255,255,255,0.72);
+  --c-border: rgba(255,255,255,0.75);
+  --c-border-strong: rgba(60,60,67,.12);
+  --c-text-1: #1c1c1e;
+  --c-text-2: rgba(28,28,30,.55);
+  --c-text-3: rgba(28,28,30,.55);
+  --c-accent: #0A84FF;
+  --c-danger: #FF453A;
+  --c-success: #30D158;
+  --c-r-sm: 10px;
+  --c-r-md: 14px;
   --c-ease: 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
@@ -492,11 +493,13 @@ const getConfirmBg = (state: number) => {
 
 .order-card {
   background: var(--c-surface);
-  border: 1px solid var(--c-border-strong);
+  border: 1px solid var(--c-border);
   border-radius: var(--c-r-md);
   overflow: hidden;
   transition: all var(--c-ease);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10), 0 1.5px 4px rgba(0,0,0,0.06);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
 }
 
 .order-card__header {
@@ -504,7 +507,7 @@ const getConfirmBg = (state: number) => {
   justify-content: space-between;
   align-items: center;
   padding: 10px 12px;
-  border-bottom: 1px solid var(--c-border);
+  border-bottom: 0.5px solid var(--c-border-strong);
 }
 
 .order-card__id {
@@ -573,7 +576,7 @@ const getConfirmBg = (state: number) => {
   display: flex;
   gap: 8px;
   padding: 8px 12px;
-  border-top: 1px solid var(--c-border);
+  border-top: 0.5px solid var(--c-border-strong);
 }
 
 .order-card__action {
@@ -653,8 +656,8 @@ const getConfirmBg = (state: number) => {
   font-weight: 600;
   color: var(--c-text-3);
   letter-spacing: 0.01em;
-  background: #fafafa;
-  border-bottom: 1px solid var(--c-border-strong);
+  background: transparent;
+  border-bottom: 0.5px solid var(--c-border-strong);
   white-space: nowrap;
   user-select: none;
 }
@@ -673,12 +676,12 @@ const getConfirmBg = (state: number) => {
 }
 
 .table__tr:not(:last-child) .table__td {
-  border-bottom: 1px solid var(--c-border);
+  border-bottom: 0.5px solid var(--c-border-strong);
 }
 
 @media (hover: hover) {
   .table__tr:hover .table__td {
-    background: rgba(0, 0, 0, 0.02);
+    background: rgba(255,255,255,0.15);
   }
 }
 
@@ -929,11 +932,8 @@ const getConfirmBg = (state: number) => {
 /* Detail Dialog */
 .detail-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.20);
   z-index: 950;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
@@ -947,9 +947,12 @@ const getConfirmBg = (state: number) => {
   width: 100%;
   max-width: 480px;
   max-height: 80vh;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(40px) saturate(2);
+  -webkit-backdrop-filter: blur(40px) saturate(2);
+  border: 1px solid rgba(255,255,255,0.75);
+  border-radius: 20px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -960,13 +963,13 @@ const getConfirmBg = (state: number) => {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 0.5px solid var(--c-border-strong);
 }
 
 .detail-dialog__title {
   font-size: 16px;
   font-weight: 600;
-  color: #1d1d1f;
+  color: #1c1c1e;
   margin: 0;
 }
 

@@ -52,8 +52,8 @@ const getConnectionColor = (info?: ConnectionInfo) => {
 }
 
 const getConnectionBg = (info?: ConnectionInfo) => {
-  if (!info) return 'rgba(134, 134, 139, 0.1)'
-  return info.connected ? 'rgba(52, 199, 89, 0.1)' : 'rgba(255, 59, 48, 0.1)'
+  if (!info) return 'rgba(120,120,128,.12)'
+  return info.connected ? 'rgba(48,209,88,.2)' : 'rgba(255,69,58,.15)'
 }
 
 const getConnectionText = (info?: ConnectionInfo) => {
@@ -69,10 +69,10 @@ const getCookieColor = (status?: number) => {
 }
 
 const getCookieBg = (status?: number) => {
-  if (status === 1) return 'rgba(52, 199, 89, 0.1)'
-  if (status === 2) return 'rgba(255, 149, 0, 0.1)'
-  if (status === 3) return 'rgba(255, 59, 48, 0.1)'
-  return 'rgba(134, 134, 139, 0.1)'
+  if (status === 1) return 'rgba(48,209,88,.2)'
+  if (status === 2) return 'rgba(255,159,10,.18)'
+  if (status === 3) return 'rgba(255,69,58,.15)'
+  return 'rgba(120,120,128,.12)'
 }
 
 const getCookieText = (status?: number) => {
@@ -202,19 +202,20 @@ const getCookieText = (status?: number) => {
 .card-list,
 .grid-list {
   --c-bg: transparent;
-  --c-surface: #ffffff;
-  --c-border: rgba(0, 0, 0, 0.06);
-  --c-border-strong: rgba(0, 0, 0, 0.1);
-  --c-text-1: #1d1d1f;
-  --c-text-2: #6e6e73;
-  --c-text-3: #86868b;
-  --c-accent: #007aff;
-  --c-danger: #ff3b30;
-  --c-success: #34c759;
-  --c-warning: #ff9500;
-  --c-r-sm: 8px;
-  --c-r-md: 12px;
-  --c-r-lg: 16px;
+  --c-surface: rgba(255,255,255,0.55);
+  --c-surface-hover: rgba(255,255,255,0.72);
+  --c-border: rgba(255,255,255,0.75);
+  --c-border-strong: rgba(60,60,67,.12);
+  --c-text-1: #1c1c1e;
+  --c-text-2: rgba(28,28,30,.55);
+  --c-text-3: rgba(28,28,30,.55);
+  --c-accent: #0A84FF;
+  --c-danger: #FF453A;
+  --c-success: #30D158;
+  --c-warning: #FF9F0A;
+  --c-r-sm: 10px;
+  --c-r-md: 14px;
+  --c-r-lg: 22px;
   --c-ease: 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
@@ -233,8 +234,8 @@ const getCookieText = (status?: number) => {
 
 .conn-card {
   background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
   border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 16px;
   padding: 16px;
@@ -268,14 +269,14 @@ const getCookieText = (status?: number) => {
   gap: 12px;
   margin-bottom: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 0.5px solid rgba(60,60,67,.12);
 }
 
 .conn-card__avatar {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
+  background: linear-gradient(135deg, #0A84FF 0%, #0051d5 100%);
   color: white;
   display: flex;
   align-items: center;
@@ -386,7 +387,7 @@ const getCookieText = (status?: number) => {
   display: flex;
   justify-content: flex-end;
   padding-top: 12px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  border-top: 0.5px solid rgba(60,60,67,.12);
 }
 
 .conn-card__action {
@@ -418,11 +419,13 @@ const getCookieText = (status?: number) => {
 
 .grid-card {
   background: var(--c-surface);
-  border: 1px solid var(--c-border-strong);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  border: 1px solid var(--c-border);
   border-radius: var(--c-r-md);
   padding: 16px;
   transition: all var(--c-ease);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10), 0 1.5px 4px rgba(0,0,0,0.06);
   cursor: pointer;
   position: relative;
   overflow: hidden;
@@ -436,17 +439,30 @@ const getCookieText = (status?: number) => {
   right: 0;
   height: 3px;
   border-radius: 3px 3px 0 0;
+  z-index: 1;
+}
+
+.grid-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9) 30%, rgba(255,255,255,0.9) 70%, transparent);
+  border-radius: 1px;
+  pointer-events: none;
 }
 
 .grid-card--active {
-  border-color: var(--c-accent);
-  box-shadow: 0 0 0 1px var(--c-accent), 0 4px 12px rgba(0, 122, 255, 0.12);
+  border-color: rgba(10,132,255,0.4);
+  box-shadow: 0 0 0 1px rgba(10,132,255,0.4), 0 12px 40px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08);
 }
 
 @media (hover: hover) {
   .grid-card:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border-color: rgba(0, 0, 0, 0.15);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08);
+    border-color: rgba(255,255,255,0.85);
   }
 }
 
@@ -465,13 +481,14 @@ const getCookieText = (status?: number) => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.05);
-  color: var(--c-text-1);
+  background: linear-gradient(135deg, #0A84FF 0%, #0051d5 100%);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
   font-weight: 600;
+  box-shadow: 0 4px 12px rgba(10,132,255,0.3);
 }
 
 .grid-card__status {

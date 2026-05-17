@@ -183,17 +183,17 @@ const getStatusBg = (status: number) => {
 .card-list,
 .table-container {
   --c-bg: transparent;
-  --c-surface: #ffffff;
-  --c-border: rgba(0, 0, 0, 0.06);
-  --c-border-strong: rgba(0, 0, 0, 0.1);
-  --c-text-1: #1d1d1f;
-  --c-text-2: #6e6e73;
-  --c-text-3: #86868b;
-  --c-accent: #007aff;
-  --c-danger: #ff3b30;
-  --c-success: #34c759;
-  --c-r-sm: 8px;
-  --c-r-md: 12px;
+  --c-surface: rgba(255,255,255,0.55);
+  --c-border: rgba(60,60,67,.12);
+  --c-border-strong: rgba(60,60,67,.12);
+  --c-text-1: #1c1c1e;
+  --c-text-2: rgba(28,28,30,.55);
+  --c-text-3: rgba(28,28,30,.55);
+  --c-accent: #0A84FF;
+  --c-danger: #FF453A;
+  --c-success: #30D158;
+  --c-r-sm: 10px;
+  --c-r-md: 14px;
   --c-ease: 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
@@ -211,25 +211,38 @@ const getStatusBg = (status: number) => {
 }
 
 .account-card {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 16px;
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  border: 1px solid rgba(255,255,255,0.75);
+  border-radius: 22px;
   padding: 16px;
   transition: all var(--c-ease);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10), 0 1.5px 4px rgba(0,0,0,0.06);
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow: hidden;
+}
+
+.account-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9) 30%, rgba(255,255,255,0.9) 70%, transparent);
+  border-radius: 1px;
+  pointer-events: none;
 }
 
 @media (hover: hover) {
   .account-card:hover {
-    background: rgba(255, 255, 255, 0.8);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
-    border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(255,255,255,0.72);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
+    border-color: rgba(255,255,255,0.85);
   }
 }
 
@@ -243,14 +256,15 @@ const getStatusBg = (status: number) => {
   gap: 12px;
   margin-bottom: 0;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 0.5px solid rgba(60,60,67,.12);
 }
 
 .account-card__avatar {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
+  background: rgba(10,132,255,0.85);
+  border: 1px solid rgba(255,255,255,0.35);
   color: white;
   display: flex;
   align-items: center;
@@ -258,7 +272,7 @@ const getStatusBg = (status: number) => {
   font-size: 18px;
   font-weight: 600;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+  box-shadow: 0 4px 16px rgba(10,132,255,0.35);
 }
 
 .account-card__info {
@@ -315,8 +329,8 @@ const getStatusBg = (status: number) => {
   grid-template-columns: 1fr 1fr;
   gap: 12px 16px;
   padding: 12px 0;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-top: 0.5px solid rgba(60,60,67,.12);
+  border-bottom: 0.5px solid rgba(60,60,67,.12);
 }
 
 .account-card__row {
@@ -391,23 +405,27 @@ const getStatusBg = (status: number) => {
 
 .account-card__btn--edit {
   color: white;
-  background: var(--c-accent);
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+  background: rgba(10,132,255,0.85);
+  border: 1px solid rgba(255,255,255,0.35);
+  box-shadow: 0 4px 16px rgba(10,132,255,0.35);
 }
 
 .account-card__btn--edit:active {
-  background: #0051d5;
+  background: rgba(10,132,255,0.95);
   transform: scale(0.97);
 }
 
 .account-card__btn--delete {
-  color: white;
-  background: var(--c-danger);
-  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3);
+  color: #FF453A;
+  background: rgba(255,69,58,.15);
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  border: 1px solid rgba(255,69,58,.25);
+  box-shadow: none;
 }
 
 .account-card__btn--delete:active {
-  background: #e63c2e;
+  background: rgba(255,69,58,.25);
   transform: scale(0.97);
 }
 
@@ -439,8 +457,8 @@ const getStatusBg = (status: number) => {
   font-weight: 600;
   color: var(--c-text-3);
   letter-spacing: 0.01em;
-  background: #fafafa;
-  border-bottom: 1px solid var(--c-border-strong);
+  background: transparent;
+  border-bottom: 0.5px solid var(--c-border);
   white-space: nowrap;
   user-select: none;
 }
