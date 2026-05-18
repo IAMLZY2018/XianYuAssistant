@@ -178,13 +178,16 @@ const getStatusBg = (status: number) => {
 
 <style scoped>
 /* ============================================================
-   Shared Tokens
+   Shared Tokens (Liquid Glass Design System)
    ============================================================ */
 .card-list,
 .table-container {
   --c-bg: transparent;
   --c-surface: rgba(255,255,255,0.55);
-  --c-border: rgba(60,60,67,.12);
+  --c-surface-hover: rgba(255,255,255,0.72);
+  --c-surface-float: rgba(255,255,255,0.85);
+  --c-border: rgba(255,255,255,0.75);
+  --c-border-in: rgba(255,255,255,0.45);
   --c-border-strong: rgba(60,60,67,.12);
   --c-text-1: #1c1c1e;
   --c-text-2: rgba(28,28,30,.55);
@@ -194,7 +197,11 @@ const getStatusBg = (status: number) => {
   --c-success: #30D158;
   --c-r-sm: 10px;
   --c-r-md: 14px;
+  --c-r-lg: 22px;
   --c-ease: 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+  --c-blur: blur(28px) saturate(1.8);
+  --c-shadow-sm: 0 8px 32px rgba(0,0,0,0.10), 0 1.5px 4px rgba(0,0,0,0.06);
+  --c-shadow-md: 0 16px 48px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
 }
 
 /* ============================================================
@@ -211,14 +218,13 @@ const getStatusBg = (status: number) => {
 }
 
 .account-card {
-  background: rgba(255,255,255,0.55);
-  backdrop-filter: blur(28px) saturate(1.8);
-  -webkit-backdrop-filter: blur(28px) saturate(1.8);
-  border: 1px solid rgba(255,255,255,0.75);
-  border-radius: 22px;
+  background: var(--c-surface);
+  -webkit-backdrop-filter: var(--c-blur);
+  backdrop-filter: var(--c-blur);
+  border: 1px solid var(--c-border);
+  border-radius: var(--c-r-lg);
   padding: 16px;
   transition: all var(--c-ease);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.10), 0 1.5px 4px rgba(0,0,0,0.06);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -240,8 +246,8 @@ const getStatusBg = (status: number) => {
 
 @media (hover: hover) {
   .account-card:hover {
-    background: rgba(255,255,255,0.72);
-    box-shadow: 0 16px 48px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
+    background: var(--c-surface-hover);
+    box-shadow: var(--c-shadow-md);
     border-color: rgba(255,255,255,0.85);
   }
 }
@@ -312,10 +318,9 @@ const getStatusBg = (status: number) => {
   padding: 6px 12px;
   border-radius: 20px;
   line-height: 1;
-  background: rgba(0, 122, 255, 0.15);
-  color: var(--c-accent);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.3);
 }
 
 .account-card__status svg {
@@ -391,7 +396,7 @@ const getStatusBg = (status: number) => {
   font-size: 14px;
   font-weight: 500;
   border-radius: 10px;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
   transition: all var(--c-ease);
   -webkit-tap-highlight-color: transparent;
@@ -410,36 +415,48 @@ const getStatusBg = (status: number) => {
   box-shadow: 0 4px 16px rgba(10,132,255,0.35);
 }
 
+@media (hover: hover) {
+  .account-card__btn--edit:hover {
+    background: rgba(10,132,255,0.95);
+    box-shadow: 0 6px 20px rgba(10,132,255,0.45);
+  }
+}
+
 .account-card__btn--edit:active {
-  background: rgba(10,132,255,0.95);
   transform: scale(0.97);
 }
 
 .account-card__btn--delete {
-  color: #FF453A;
+  color: var(--c-danger);
   background: rgba(255,69,58,.15);
-  backdrop-filter: blur(16px) saturate(1.6);
-  -webkit-backdrop-filter: blur(16px) saturate(1.6);
   border: 1px solid rgba(255,69,58,.25);
-  box-shadow: none;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+@media (hover: hover) {
+  .account-card__btn--delete:hover {
+    background: rgba(255,69,58,.22);
+    border-color: rgba(255,69,58,.35);
+  }
 }
 
 .account-card__btn--delete:active {
-  background: rgba(255,69,58,.25);
   transform: scale(0.97);
 }
 
 /* ============================================================
-   Desktop Table View
+   Desktop Table View (Liquid Glass)
    ============================================================ */
 .table-container {
   min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse;
   font-size: 13px;
 }
 
@@ -447,20 +464,22 @@ const getStatusBg = (status: number) => {
 .table__head {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 10;
 }
 
 .table__th {
   text-align: left;
-  padding: 10px 16px;
+  padding: 12px 16px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--c-text-3);
-  letter-spacing: 0.01em;
-  background: transparent;
-  border-bottom: 0.5px solid var(--c-border);
+  color: #1c1c1e;
+  letter-spacing: .4px;
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
   white-space: nowrap;
   user-select: none;
+  border-bottom: 1px solid rgba(60,60,67,.12);
 }
 
 .table__th--id { width: 64px; }
@@ -469,17 +488,18 @@ const getStatusBg = (status: number) => {
 .table__th--actions { width: 140px; text-align: center; }
 
 /* Table Body */
+
 .table__tr {
-  transition: background var(--c-ease);
+  transition: background .12s;
 }
 
 .table__tr:not(:last-child) .table__td {
-  border-bottom: 1px solid var(--c-border);
+  border-bottom: 0.5px solid rgba(60,60,67,.12);
 }
 
 @media (hover: hover) {
   .table__tr:hover .table__td {
-    background: rgba(0, 0, 0, 0.02);
+    background: rgba(255,255,255,.08);
   }
 }
 
@@ -514,9 +534,12 @@ const getStatusBg = (status: number) => {
   align-items: center;
   font-size: 12px;
   font-weight: 500;
-  padding: 3px 10px;
+  padding: 4px 12px;
   border-radius: 20px;
   line-height: 1;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.3);
 }
 
 /* Action Buttons in Table */
@@ -525,16 +548,19 @@ const getStatusBg = (status: number) => {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  height: 30px;
-  padding: 0 10px;
+  height: 32px;
+  padding: 0 12px;
   font-size: 12px;
   font-weight: 500;
-  border-radius: 6px;
-  border: none;
+  border-radius: 8px;
+  border: 1px solid var(--c-border-in);
   cursor: pointer;
   transition: all var(--c-ease);
   -webkit-tap-highlight-color: transparent;
-  background: transparent;
+  background: var(--c-surface);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  color: var(--c-text-2);
 }
 
 .table__action svg {
@@ -544,21 +570,27 @@ const getStatusBg = (status: number) => {
 
 .table__action--edit {
   color: var(--c-accent);
+  border-color: rgba(10,132,255,.25);
+  background: rgba(10,132,255,.12);
 }
 
 @media (hover: hover) {
   .table__action--edit:hover {
-    background: rgba(0, 122, 255, 0.08);
+    background: rgba(10,132,255,.18);
+    border-color: rgba(10,132,255,.35);
   }
 }
 
 .table__action--delete {
   color: var(--c-danger);
+  border-color: rgba(255,69,58,.25);
+  background: rgba(255,69,58,.12);
 }
 
 @media (hover: hover) {
   .table__action--delete:hover {
-    background: rgba(255, 59, 48, 0.08);
+    background: rgba(255,69,58,.18);
+    border-color: rgba(255,69,58,.35);
   }
 }
 

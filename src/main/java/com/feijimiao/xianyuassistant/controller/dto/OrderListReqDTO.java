@@ -18,6 +18,11 @@ public class OrderListReqDTO {
      */
     private Integer orderStatus;
 
+    /**
+     * 模糊搜索关键词，匹配商品名称、规格、买家、发货内容
+     */
+    private String keyword;
+
     private Integer pageNum = 1;
 
     private Integer pageSize = 20;

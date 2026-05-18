@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onBeforeUnmount } from 'vue'
-import { ElMessageBox } from 'element-plus'
+import { showConfirm } from '@/utils/confirm'
+import { toast } from '@/utils/toast'
 import { getConnectionStatus, startConnection, stopConnection } from '@/api/websocket'
 import { queryOperationLogs, type OperationLog } from '@/api/operation-log'
 import { showSuccess, showError, showInfo } from '@/utils'
@@ -91,11 +92,7 @@ const handleStartConnection = async () => {
     const response = await startConnection(props.accountId)
     if (response.code === 0 || response.code === 200) {
       await loadConnectionStatus()
-      ElMessageBox.alert(
-        '1、请勿使用闲鱼网页版进行消息回复，不然容易触发风控；<br><br>2、刚开始使用会掉线且无法自动刷新的情况，属于正常，多挂几天就好了；<br><br>3、有问题可以在"系统设置"->"关于"加入交流群；',
-        '连接已经建立',
-        { confirmButtonText: '我知道了', type: 'success', dangerouslyUseHTMLString: true }
-      )
+      toast.info('1、请勿使用闲鱼网页版进行消息回复，不然容易触发风控；2、刚开始使用会掉线且无法自动刷新的情况，属于正常，多挂几天就好了；3、有问题可以在"系统设置"->"关于"加入交流群；')
     } else if (response.code === 1001 && response.data?.needCaptcha) {
       showCaptchaGuideDialog.value = true
     } else {
@@ -113,10 +110,9 @@ const handleStartConnection = async () => {
 const handleStopConnection = async () => {
   if (!props.accountId) return
   try {
-    await ElMessageBox.confirm(
+    await showConfirm(
       '断开连接后将无法接收消息和执行自动化流程，确定要断开连接吗？',
-      '确认断开连接',
-      { confirmButtonText: '确定断开', cancelButtonText: '取消', type: 'warning' }
+      '确认断开连接'
     )
   } catch { return }
 

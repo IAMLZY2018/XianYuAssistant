@@ -6,7 +6,7 @@ import { chatWithAI, chatTestWithAI, putNewDataToRAG, queryRAGData, deleteRAGDat
 import type { RAGDataItem } from '@/api/ai'
 import type { AutoReplyRecord } from '@/api/goods'
 import { showSuccess, showError, showInfo } from '@/utils'
-import { ElMessage } from 'element-plus'
+import { toast } from '@/utils/toast'
 import type { Account } from '@/types'
 import type { GoodsItemWithConfig } from '@/api/goods'
 import { getKeywordReplyRules, addKeywordRule, deleteKeywordRule, updateKeyword, addKeywordContent, deleteKeywordContent, updateKeywordContent, updateKeywordRuleMatchMode, ensureFallbackRule } from '@/api/keywordReply'
@@ -26,12 +26,7 @@ export function useAutoReply() {
   const router = useRouter()
 
   const showAiConfigTip = () => {
-    ElMessage({
-      type: 'warning',
-      duration: 5000,
-      dangerouslyUseHTMLString: true,
-      message: '请完成AI配置再上传资料，<a href="#/settings" style="color:#34c759;text-decoration:underline;font-weight:600;" onclick="event.preventDefault();window.__gotoSettings&&window.__gotoSettings()">点击前往</a>'
-    })
+    toast.warning('请完成AI配置再上传资料，点击前往系统设置')
   }
   ;(window as any).__gotoSettings = () => router.push('/settings')
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { uploadImage } from '@/api/image'
-import { ElMessage } from 'element-plus'
+import { toast } from '@/utils/toast'
 import IconImage from '@/components/icons/IconImage.vue'
 import IconClose from '@/components/icons/IconClose.vue'
 
@@ -35,14 +35,14 @@ const handleFileSelect = async (event: Event) => {
   
   // 检查文件类型
   if (!file.type.startsWith('image/')) {
-    ElMessage.error('只能上传图片文件')
+    toast.error('只能上传图片文件')
     return
   }
   
   // 检查文件大小
   const maxSize = props.maxFileSize * 1024 * 1024
   if (file.size > maxSize) {
-    ElMessage.error(`图片大小不能超过${props.maxFileSize}MB`)
+    toast.error(`图片大小不能超过${props.maxFileSize}MB`)
     return
   }
   
@@ -71,13 +71,13 @@ const doUpload = async (file: File) => {
       const cdnUrl = res.data
       emit('update:modelValue', cdnUrl)
       emit('success', cdnUrl)
-      ElMessage.success('图片上传成功')
+      toast.success('图片上传成功')
     } else {
       throw new Error(res?.msg || '上传失败')
     }
   } catch (error: any) {
     emit('error', error.message || '上传失败')
-    ElMessage.error(error.message || '图片上传失败')
+    toast.error(error.message || '图片上传失败')
   } finally {
     setTimeout(() => {
       uploading.value = false
@@ -92,13 +92,13 @@ const handleDrop = async (event: DragEvent) => {
   if (!file) return
   
   if (!file.type.startsWith('image/')) {
-    ElMessage.error('只能上传图片文件')
+    toast.error('只能上传图片文件')
     return
   }
   
   const maxSize = props.maxFileSize * 1024 * 1024
   if (file.size > maxSize) {
-    ElMessage.error(`图片大小不能超过${props.maxFileSize}MB`)
+    toast.error(`图片大小不能超过${props.maxFileSize}MB`)
     return
   }
   

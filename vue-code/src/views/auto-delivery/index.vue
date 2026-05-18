@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, defineComponent, h, onMounted, ref } from 'vue'
+import { inject, defineComponent, h, onMounted, ref, computed } from 'vue'
 import { useAutoDelivery } from './useAutoDelivery'
 import './auto-delivery.css'
 import '@/styles/header-selectors.css'
@@ -23,6 +23,7 @@ import GoodsDetail from '../goods/components/GoodsDetail.vue'
 import MultiImageUploader from '@/components/MultiImageUploader.vue'
 
 const goodsPanelCollapsed = ref(true)
+const isDesktopCollapsed = computed(() => !isMobile.value && goodsPanelCollapsed.value)
 
 const {
   saving,
@@ -159,9 +160,9 @@ onMounted(() => {
       <!-- Goods Panel -->
       <div
         class="ad__goods-panel"
-        :class="{ 'ad__goods-panel--hidden': isMobile && mobileView === 'config', 'ad__goods-panel--collapsed': goodsPanelCollapsed }"
+        :class="{ 'ad__goods-panel--hidden': isMobile && mobileView === 'config', 'ad__goods-panel--collapsed': isDesktopCollapsed }"
       >
-        <template v-if="!goodsPanelCollapsed">
+        <template v-if="!isDesktopCollapsed">
           <div class="ad__goods-toolbar">
             <span class="ad__goods-toolbar-title">商品列表</span>
             <span v-if="goodsTotal > 0" class="ad__goods-toolbar-count">共 {{ goodsTotal }} 件</span>
@@ -286,13 +287,13 @@ onMounted(() => {
             <IconImage />
             <span class="mobile-hidden">详情</span>
           </button>
-          <button class="btn btn--ghost btn--sm" @click="goToAutoReply">
-            <IconChat />
-            <span class="mobile-hidden">回复</span>
-          </button>
           <button class="btn btn--ghost btn--sm ad__custom-delivery-btn" @click="showCustomDelivery = !showCustomDelivery">
             <IconRobot />
             <span class="mobile-hidden">自定义发货</span>
+          </button>
+          <button class="btn btn--ghost btn--sm" @click="goToAutoReply">
+            <IconChat />
+            <span class="mobile-hidden">配置回复</span>
           </button>
         </div>
 
@@ -311,13 +312,13 @@ onMounted(() => {
             <IconImage />
             <span class="mobile-hidden">详情</span>
           </button>
-          <button class="btn btn--ghost btn--sm" @click="goToAutoReply">
-            <IconChat />
-            <span class="mobile-hidden">回复</span>
-          </button>
           <button class="btn btn--ghost btn--sm ad__custom-delivery-btn" @click="showCustomDelivery = !showCustomDelivery">
             <IconRobot />
             <span class="mobile-hidden">自定义发货</span>
+          </button>
+          <button class="btn btn--ghost btn--sm" @click="goToAutoReply">
+            <IconChat />
+            <span class="mobile-hidden">配置回复</span>
           </button>
         </div>
 
@@ -448,29 +449,20 @@ onMounted(() => {
             <div class="ad__config-section">
               <div class="ad__config-section-title">卡密配置绑定</div>
               <div style="margin-bottom: 12px;">
-                <el-select
+                <select
                   v-model="selectedKamiConfigId"
-                  placeholder="请选择卡密配置"
-                  clearable
+                  class="native-select"
                   style="width: 280px; max-width: 100%;"
-                  popper-class="kami-config-select-popper"
                 >
-                  <el-option
+                  <option value="" disabled>请选择卡密配置</option>
+                  <option
                     v-for="opt in kamiConfigOptions"
                     :key="opt.id"
-                    :label="opt.aliasName || `配置#${opt.id}`"
                     :value="String(opt.id)"
                   >
-                    <div class="kami-option">
-                      <span class="kami-option__name">{{ opt.aliasName || `配置#${opt.id}` }}</span>
-                      <span class="kami-option__stats">
-                        <span class="kami-option__avail">可用{{ opt.availableCount }}</span>
-                        <span class="kami-option__divider">/</span>
-                        <span class="kami-option__total">总{{ opt.totalCount }}</span>
-                      </span>
-                    </div>
-                  </el-option>
-                </el-select>
+                    {{ opt.aliasName || `配置#${opt.id}` }}
+                  </option>
+                </select>
                 <div v-if="kamiConfigOptions.length === 0" style="color: rgba(28,28,30,.55); font-size: 13px; margin-top: 8px;">
                   暂无卡密配置，请先在「卡密配置」页面创建
                 </div>
@@ -479,14 +471,14 @@ onMounted(() => {
               <div style="margin-bottom: 12px;">
                 <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
                   <span style="font-size: 13px; color: rgba(28,28,30,.55);">发货文案</span>
-                  <el-tag size="small" type="info" effect="plain" style="font-size: 11px;">占位符 {kmKey}</el-tag>
+                  <span class="tag tag--info" style="font-size: 11px;">占位符 {kmKey}</span>
                 </div>
-                <el-input
+                <textarea
                   v-model="configForm.kamiDeliveryTemplate"
-                  type="textarea"
+                  class="native-input"
                   :rows="3"
                   placeholder="可选，填写后发货时将用卡密替换{kmKey}发送，不填则直接发送卡密内容。例：您的卡密为：{kmKey}，请妥善保管"
-                />
+                ></textarea>
               </div>
 
               <div class="ad__image-section">
@@ -515,153 +507,6 @@ onMounted(() => {
               </div>
             </div>
           </template>
-
-          <!-- Records Section (shared) -->
-          <div class="ad__records">
-            <div class="ad__records-header">
-              <div class="ad__records-title-row">
-                <IconClock style="width:16px;height:16px;color:var(--d-text-tertiary)" />
-                <span class="ad__records-title">发货记录</span>
-                <span v-if="recordsTotal > 0" class="ad__records-count">共 {{ recordsTotal }} 条</span>
-              </div>
-            </div>
-
-            <!-- Records Loading -->
-            <div v-if="recordsLoading" class="ad__loading">
-              <div class="ad__spinner"></div>
-              <span>加载中...</span>
-            </div>
-
-            <!-- Desktop Table -->
-            <table v-if="!isMobile && !recordsLoading && deliveryRecords.length > 0" class="ad__records-table">
-              <thead>
-                <tr>
-                  <th>订单ID</th>
-                  <th>买家</th>
-                  <th>发货内容</th>
-                  <th>状态</th>
-                  <th>时间</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="record in deliveryRecords" :key="record.id">
-                  <td>
-                    <span class="ad__record-order-id">{{ record.orderId || '-' }}</span>
-                  </td>
-                  <td>{{ record.buyerUserName || '-' }}</td>
-                  <td>
-                    <span class="ad__record-content" :title="record.content">{{ record.content || '-' }}</span>
-                  </td>
-                  <td>
-                    <span
-                      class="ad__record-status"
-                      :class="`ad__record-status--${getRecordStatusClass(record.state)}`"
-                    >
-                      {{ getRecordStatusText(record.state) }}
-                    </span>
-                    <span v-if="record.state === -1 && record.failReason" class="ad__record-fail-reason" :title="record.failReason">{{ record.failReason }}</span>
-                  </td>
-                  <td>
-                    <span class="ad__record-time">{{ formatTime(record.createTime) }}</span>
-                  </td>
-                  <td>
-                    <button
-                      class="ad__record-action-btn"
-                      @click="handleTriggerDelivery(record)"
-                    >
-                      重新发货
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-            <!-- Mobile Record Cards -->
-            <div v-if="isMobile && !recordsLoading && deliveryRecords.length > 0">
-              <div
-                v-for="record in deliveryRecords"
-                :key="record.id"
-                class="ad__record-card"
-              >
-                <div class="ad__record-card-header">
-                  <span
-                    class="ad__record-status"
-                    :class="`ad__record-status--${getRecordStatusClass(record.state)}`"
-                  >
-                    {{ getRecordStatusText(record.state) }}
-                  </span>
-                  <span v-if="record.state === -1 && record.failReason" class="ad__record-fail-reason">{{ record.failReason }}</span>
-                  <span class="ad__record-time">{{ formatTime(record.createTime) }}</span>
-                </div>
-                <div class="ad__record-card-row">
-                  <span class="ad__record-card-label">订单：</span>
-                  <span class="ad__record-card-value">{{ record.orderId || '-' }}</span>
-                </div>
-                <div class="ad__record-card-row">
-                  <span class="ad__record-card-label">买家：</span>
-                  <span class="ad__record-card-value">{{ record.buyerUserName || '-' }}</span>
-                </div>
-                <div class="ad__record-card-row">
-                  <span class="ad__record-card-label">内容：</span>
-                  <span class="ad__record-card-value ad__record-card-value--content" :title="record.content">{{ record.content || '-' }}</span>
-                </div>
-                <div class="ad__record-card-footer">
-                  <button
-                    class="ad__record-action-btn"
-                    @click="handleTriggerDelivery(record)"
-                  >
-                    重新发货
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Records Empty -->
-            <div v-if="!recordsLoading && deliveryRecords.length === 0" class="ad__empty">
-              <IconSend />
-              <span class="ad__empty-text">暂无发货记录</span>
-            </div>
-
-            <!-- Records Pagination -->
-            <div v-if="recordsTotalPages > 1" class="ad__pagination">
-              <button
-                class="ad__page-btn"
-                :class="{ 'ad__page-btn--disabled': recordsPageNum <= 1 }"
-                @click="handleRecordsPageChange(recordsPageNum - 1)"
-              >
-                <IconChevronLeft />
-              </button>
-
-              <template v-for="page in (() => {
-                const btns: number[] = []
-                const max = 5
-                let start = Math.max(1, recordsPageNum - Math.floor(max / 2))
-                const end = Math.min(recordsTotalPages, start + max - 1)
-                start = Math.max(1, end - max + 1)
-                for (let i = start; i <= end; i++) btns.push(i)
-                return btns
-              })()" :key="page">
-                <button
-                  class="ad__page-btn"
-                  :class="{ 'ad__page-btn--active': page === recordsPageNum }"
-                  @click="handleRecordsPageChange(page)"
-                >
-                  {{ page }}
-                </button>
-              </template>
-
-              <button
-                class="ad__page-btn"
-                :class="{ 'ad__page-btn--disabled': recordsPageNum >= recordsTotalPages }"
-                @click="handleRecordsPageChange(recordsPageNum + 1)"
-              >
-                <IconChevronRight />
-              </button>
-
-              <span class="ad__page-info">{{ recordsPageNum }} / {{ recordsTotalPages }}</span>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -902,5 +747,22 @@ onMounted(() => {
 .ad__manual-btn--cancel { background: rgba(60,60,67,.12); color: rgba(28,28,30,.55); }
 .ad__manual-btn--confirm { background: #0A84FF; color: rgba(255,255,255,0.55); }
 .ad__manual-btn--confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-glass { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; border-radius: 100px; font-size: 13px; font-weight: 590; cursor: pointer; transition: opacity .15s, transform .12s; border: none; font-family: inherit; user-select: none; white-space: nowrap; }
+.btn-glass:active { opacity: .80; transform: scale(.96); }
+.btn-glass--primary { background: rgba(10,132,255,0.85); color: #fff; border: 1px solid rgba(255,255,255,0.35); box-shadow: 0 4px 16px rgba(10,132,255,0.35), 0 8px 32px rgba(0,0,0,0.08); }
+.btn-glass--default { background: rgba(255,255,255,0.70); color: #0A84FF; border: 1px solid rgba(255,255,255,0.85); box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
+.btn-glass--success { background: rgba(48,209,88,0.85); color: #fff; border: 1px solid rgba(255,255,255,0.35); }
+.btn-glass--warning { background: rgba(255,159,10,0.85); color: #fff; border: 1px solid rgba(255,255,255,0.35); }
+.btn-glass--danger { color: #FF453A; background: rgba(255,69,58,0.15); border: 1px solid rgba(255,69,58,0.2); }
+.tag { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 100px; font-size: 12px; font-weight: 500; }
+.tag--success { background: rgba(48,209,88,0.12); color: #30D158; }
+.tag--warning { background: rgba(255,159,10,0.12); color: #FF9F0A; }
+.tag--info { background: rgba(120,120,128,0.12); color: rgba(28,28,30,.55); }
+.tag--danger { background: rgba(255,69,58,0.12); color: #FF453A; }
+.native-select { padding: 8px 12px; border: 1px solid rgba(60,60,67,.12); border-radius: 8px; background: rgba(255,255,255,0.55); color: #1c1c1e; font-size: 13px; outline: none; cursor: pointer; font-family: inherit; }
+.native-select:focus { border-color: #0A84FF; }
+.native-input { padding: 8px 12px; border: 1px solid rgba(60,60,67,.12); border-radius: 8px; background: rgba(255,255,255,0.55); color: #1c1c1e; font-size: 13px; outline: none; font-family: inherit; box-sizing: border-box; width: 100%; resize: vertical; line-height: 1.5; }
+.native-input:focus { border-color: #0A84FF; }
 
 </style>

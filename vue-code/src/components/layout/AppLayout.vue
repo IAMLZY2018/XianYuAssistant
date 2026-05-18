@@ -19,16 +19,17 @@ import IconShield from '@/components/icons/IconShield.vue'
 
 const route = useRoute()
 
-const currentVersion = ref('')
+declare const __APP_VERSION__: string
+
+const currentVersion = ref(__APP_VERSION__ || '2.0.0')
 const hasNewVersion = ref(false)
 const updateDialog = ref<InstanceType<typeof UpdateDialog> | null>(null)
 
 const loadVersion = async () => {
   try {
-    const res = await getVersion()
-    currentVersion.value = res.data || ''
     const updateRes = await checkUpdate()
-    hasNewVersion.value = updateRes.data?.hasUpdate || false
+    const latest = updateRes.data?.latestVersion || ''
+    hasNewVersion.value = latest > currentVersion.value
   } catch {
     // ignore
   }
@@ -136,9 +137,9 @@ onUnmounted(() => {
   <div class="app-layout">
     <!-- 手机端: 顶部导航栏 -->
     <div v-if="isMobile" class="mobile-header">
-      <el-button class="menu-toggle-btn" @click="toggleDrawer" circle>
+      <button class="menu-toggle-btn" @click="toggleDrawer">
         <span class="menu-icon">☰</span>
-      </el-button>
+      </button>
       <div class="header-title-section">
         <component v-if="currentPageIcon" :is="currentPageIcon" class="header-page-icon" />
         <div class="mobile-page-title">{{ currentPageTitle }}</div>
@@ -150,9 +151,9 @@ onUnmounted(() => {
 
     <!-- 平板端: 顶部导航栏（带抽屉按钮） -->
     <div v-if="isTablet" class="tablet-header">
-      <el-button class="menu-toggle-btn" @click="toggleDrawer" circle>
+      <button class="menu-toggle-btn" @click="toggleDrawer">
         <span class="menu-icon">☰</span>
-      </el-button>
+      </button>
       <div class="header-title-section">
         <component v-if="currentPageIcon" :is="currentPageIcon" class="header-page-icon" />
         <div class="tablet-page-title">{{ currentPageTitle }}</div>
@@ -177,9 +178,9 @@ onUnmounted(() => {
                 </div>
               </div>
             </div>
-            <el-button class="drawer-close-btn" @click="closeDrawer" circle size="small">
+            <button class="drawer-close-btn" @click="closeDrawer">
               <span class="close-icon">✕</span>
-            </el-button>
+            </button>
           </div>
           <div class="drawer-content">
             <NavMenu @select="closeDrawer" />
@@ -189,8 +190,8 @@ onUnmounted(() => {
     </transition>
 
     <!-- 桌面端: 固定侧边栏 -->
-    <el-container v-if="isDesktop" class="layout-container">
-      <el-aside width="240px" class="sidebar">
+    <div v-if="isDesktop" class="layout-container">
+      <aside class="sidebar">
         <div class="logo" @click="openUpdateDialog" style="cursor: pointer">
           <div class="logo-icon">X</div>
           <div class="logo-text-wrap">
@@ -202,28 +203,28 @@ onUnmounted(() => {
           </div>
         </div>
         <NavMenu />
-      </el-aside>
+      </aside>
 
-      <el-container>
-        <el-main>
+      <div class="el-container">
+        <main>
           <RouterView />
-        </el-main>
-      </el-container>
-    </el-container>
+        </main>
+      </div>
+    </div>
 
     <!-- 平板端: 主内容区 -->
-    <el-container v-if="isTablet" class="layout-container">
-      <el-main>
+    <div v-if="isTablet" class="el-container">
+      <main>
         <RouterView />
-      </el-main>
-    </el-container>
+      </main>
+    </div>
 
     <!-- 手机端: 主内容区 -->
-    <el-container v-if="isMobile" class="layout-container">
-      <el-main>
+    <div v-if="isMobile" class="el-container">
+      <main>
         <RouterView />
-      </el-main>
-    </el-container>
+      </main>
+    </div>
 
     <UpdateDialog ref="updateDialog" />
   </div>
@@ -241,6 +242,15 @@ onUnmounted(() => {
 .layout-container {
   flex: 1;
   overflow: hidden;
+  display: flex;
+  flex-direction: row;
+}
+
+.el-container {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ========== 桌面端: 固定侧边栏 ========== */
@@ -324,53 +334,22 @@ onUnmounted(() => {
   50% { opacity: 0.4; }
 }
 
-:deep(.el-menu-item) {
-  margin: 2px 16px;
-  border-radius: 10px;
-  color: var(--apple-text2);
-  transition: all 0.2s;
-}
 
-:deep(.el-menu-item:hover) {
-  background: var(--glass-bg-deep) !important;
-  -webkit-backdrop-filter: var(--glass-blur-sm);
-  backdrop-filter: var(--glass-blur-sm);
-  color: var(--apple-text);
-}
 
-:deep(.el-menu-item.is-active) {
-  background: rgba(10,132,255,0.15) !important;
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  color: var(--ab);
-  box-shadow: inset 0 0 0 1px rgba(10,132,255,0.25);
-  font-weight: 600;
-}
-
-.el-main {
+main {
   padding: 32px 40px;
   overflow: auto;
   background: transparent;
   height: 100%;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  flex: 1;
 }
 
-.el-main::-webkit-scrollbar {
+main::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Opera */
 }
 
-:deep(.el-divider__text) {
-  font-size: 12px;
-  color: #999999;
-  text-transform: uppercase;
-  font-weight: 600;
-}
-
-:deep(.el-divider) {
-  margin: 24px 0 8px;
-  border-color: transparent;
-}
 
 /* ========== 平板端: 顶部导航栏 ========== */
 .tablet-header {
@@ -466,23 +445,26 @@ onUnmounted(() => {
 .menu-toggle-btn {
   width: 44px;
   height: 44px;
-  background: rgba(10,132,255,0.85) !important;
-  border: 1px solid rgba(255,255,255,0.35) !important;
-  box-shadow: 0 4px 16px rgba(10,132,255,0.35) !important;
-  color: white !important;
+  background: rgba(10,132,255,0.85);
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 50%;
+  box-shadow: 0 4px 16px rgba(10,132,255,0.35);
+  color: white;
   font-size: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   padding: 0;
+  cursor: pointer;
 }
 
 .menu-toggle-btn:hover,
 .menu-toggle-btn:active,
 .menu-toggle-btn:focus {
-  background: rgba(10,132,255,0.95) !important;
-  border-color: rgba(255,255,255,0.35) !important;
+  background: rgba(10,132,255,0.95);
+  border-color: rgba(255,255,255,0.35);
+  outline: none;
 }
 
 .menu-icon {
@@ -538,9 +520,10 @@ onUnmounted(() => {
 .drawer-close-btn {
   width: 32px;
   height: 32px;
-  background: var(--glass-bg-deep) !important;
-  border: 1px solid var(--glass-border-in) !important;
-  color: var(--apple-text2) !important;
+  background: var(--glass-bg-deep);
+  border: 1px solid var(--glass-border-in);
+  border-radius: 50%;
+  color: var(--apple-text2);
   -webkit-backdrop-filter: var(--glass-blur-sm);
   backdrop-filter: var(--glass-blur-sm);
   font-size: 18px;
@@ -550,13 +533,15 @@ onUnmounted(() => {
   flex-shrink: 0;
   padding: 0;
   margin-left: 12px;
+  cursor: pointer;
 }
 
 .drawer-close-btn:hover,
 .drawer-close-btn:active {
-  background: var(--glass-bg) !important;
-  border-color: var(--glass-border) !important;
-  color: var(--apple-text) !important;
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+  color: var(--apple-text);
+  outline: none;
 }
 
 .close-icon {
@@ -626,7 +611,7 @@ onUnmounted(() => {
     font-size: 20px;
   }
 
-  .el-main {
+  main {
     padding: 24px 28px;
   }
 
@@ -638,10 +623,7 @@ onUnmounted(() => {
     padding: 14px 18px;
   }
 
-  :deep(.el-menu-item) {
-    margin: 2px 14px;
-    font-size: 15px;
-  }
+
 }
 
 /* 手机模式 (< 768px) */
@@ -665,7 +647,7 @@ onUnmounted(() => {
     font-size: 20px;
   }
 
-  .el-main {
+  main {
     padding: 16px 20px;
     overflow: hidden;
   }
@@ -688,11 +670,7 @@ onUnmounted(() => {
     font-size: 16px;
   }
 
-  :deep(.el-menu-item) {
-    margin: 2px 12px;
-    font-size: 15px;
-    padding: 12px 16px;
-  }
+
 }
 
 /* 小屏手机模式 (< 480px) */
@@ -716,7 +694,7 @@ onUnmounted(() => {
     font-size: 18px;
   }
 
-  .el-main {
+  main {
     padding: 12px 16px;
     overflow: hidden;
   }
@@ -749,10 +727,6 @@ onUnmounted(() => {
     font-size: 14px;
   }
 
-  :deep(.el-menu-item) {
-    margin: 2px 10px;
-    font-size: 14px;
-    padding: 10px 14px;
-  }
+
 }
 </style>

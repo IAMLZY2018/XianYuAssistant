@@ -2,70 +2,30 @@
 
 a {
   text-decoration: none;
-  color: #409eff;
+  color: #0A84FF;
   transition: 0.3s;
 }
 
 a:hover {
-  color: #66b1ff;
+  color: #0070E0;
 }
 
-/* ========== 弹窗响应式适配 ========== */
-@media (max-width: 768px) {
-  /* 弹窗宽度适配 */
-  .el-dialog {
-    width: 90% !important;
-    max-width: 90% !important;
-    margin-top: 5vh !important;
-  }
-
-  /* 弹窗内容滚动 */
-  .el-dialog__body {
-    max-height: 60vh;
-    overflow-y: auto;
-    padding: 15px !important;
-  }
-
-  /* 表单项适配 */
-  .el-form-item {
-    margin-bottom: 16px !important;
-  }
-
-  .el-form-item__label {
-    float: none !important;
-    display: block !important;
-    text-align: left !important;
-    padding-bottom: 8px !important;
-  }
-
-  .el-form-item__content {
-    margin-left: 0 !important;
-  }
-
-  /* 按钮适配 */
-  .el-dialog__footer {
-    padding: 10px 15px !important;
-  }
-
-  .el-dialog__footer .el-button {
-    padding: 8px 16px !important;
-  }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-12px) scale(0.92); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-@media (max-width: 480px) {
-  .el-dialog {
-    width: 95% !important;
-    max-width: 95% !important;
-    margin-top: 2vh !important;
-  }
+@keyframes toast-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-8px) scale(0.95); }
+}
 
-  .el-dialog__body {
-    max-height: 70vh;
-    padding: 12px !important;
-  }
+@keyframes confirm-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 
-  .el-dialog__footer .el-button {
-    padding: 6px 12px !important;
-    font-size: 13px !important;
-  }
+@keyframes confirm-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }

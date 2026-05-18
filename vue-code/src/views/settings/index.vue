@@ -6,7 +6,8 @@ import { logout } from '@/api/auth'
 import { getSetting, saveSetting, testEmail } from '@/api/setting'
 import { getAIStatus } from '@/api/ai'
 import { getBackupModules, exportBackup, importBackup, getLogDates, downloadLog, type BackupModule } from '@/api/backup'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { toast } from '@/utils/toast'
+import { showConfirm } from '@/utils/confirm'
 import { clearAuthToken } from '@/utils/request'
 
 const router = useRouter()
@@ -219,15 +220,15 @@ async function loadAIStatus() {
 
 async function handleChangePassword() {
   if (!oldPassword.value) {
-    ElMessage.warning('请输入原密码')
+    toast.warning('请输入原密码')
     return
   }
   if (!newPassword.value || newPassword.value.length < 6) {
-    ElMessage.warning('新密码长度需在6-50之间')
+    toast.warning('新密码长度需在6-50之间')
     return
   }
   if (newPassword.value !== confirmPassword.value) {
-    ElMessage.warning('两次密码不一致')
+    toast.warning('两次密码不一致')
     return
   }
   changingPassword.value = true
@@ -238,7 +239,7 @@ async function handleChangePassword() {
       confirmPassword: confirmPassword.value
     })
     if (res.code === 200) {
-      ElMessage.success('密码修改成功')
+      toast.success('密码修改成功')
       showPasswordForm.value = false
       oldPassword.value = ''
       newPassword.value = ''
@@ -251,21 +252,16 @@ async function handleChangePassword() {
 
 async function handleLogout() {
   try {
-    await ElMessageBox.confirm(
+    await showConfirm(
       '确定要退出登录吗？',
-      '退出确认',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
+      '退出确认'
     )
 
     loggingOut.value = true
     try {
       await logout()
       clearAuthToken()
-      ElMessage.success('已退出登录')
+      toast.success('已退出登录')
       router.push('/login')
     } catch (e) {
       console.error('退出登录失败:', e)
@@ -282,7 +278,7 @@ async function handleLogout() {
 
 async function handleSaveSysPrompt() {
   if (!sysPromptValue.value.trim()) {
-    ElMessage.warning('系统提示词不能为空')
+    toast.warning('系统提示词不能为空')
     return
   }
   sysPromptSaving.value = true
@@ -293,7 +289,7 @@ async function handleSaveSysPrompt() {
       settingDesc: 'AI智能回复的系统提示词'
     })
     if (res.code === 200) {
-      ElMessage.success('系统提示词保存成功')
+      toast.success('系统提示词保存成功')
       sysPromptLoaded.value = true
     }
   } finally {
@@ -307,7 +303,7 @@ function handleResetSysPrompt() {
 
 async function handleSaveSimilarityThreshold() {
   if (similarityThreshold.value < 0 || similarityThreshold.value > 1) {
-    ElMessage.warning('相似度阈值必须在 0 到 1 之间')
+    toast.warning('相似度阈值必须在 0 到 1 之间')
     return
   }
   similarityThresholdSaving.value = true
@@ -318,11 +314,11 @@ async function handleSaveSimilarityThreshold() {
       settingDesc: 'RAG向量搜索的相似度阈值（0-1之间，值越小匹配越宽松）'
     })
     if (res.code === 200) {
-      ElMessage.success('相似度阈值保存成功')
+      toast.success('相似度阈值保存成功')
     }
   } catch (e) {
     console.error('保存相似度阈值失败:', e)
-    ElMessage.error('保存相似度阈值失败')
+    toast.error('保存相似度阈值失败')
   } finally {
     similarityThresholdSaving.value = false
   }
@@ -334,15 +330,15 @@ function handleResetSimilarityThreshold() {
 
 async function handleSaveAIConfig() {
   if (!aiApiKey.value.trim()) {
-    ElMessage.warning('API Key 不能为空')
+    toast.warning('API Key 不能为空')
     return
   }
   if (!aiBaseUrl.value.trim()) {
-    ElMessage.warning('API Base URL 不能为空')
+    toast.warning('API Base URL 不能为空')
     return
   }
   if (!aiModel.value.trim()) {
-    ElMessage.warning('模型名称不能为空')
+    toast.warning('模型名称不能为空')
     return
   }
 
@@ -368,13 +364,13 @@ async function handleSaveAIConfig() {
     ])
 
     if (keyRes.code === 200 && urlRes.code === 200 && modelRes.code === 200) {
-      ElMessage.success('AI 配置保存成功，已立即生效')
+      toast.success('AI 配置保存成功，已立即生效')
       // 刷新 AI 状态
       await loadAIStatus()
     }
   } catch (e) {
     console.error('保存AI配置失败:', e)
-    ElMessage.error('保存AI配置失败')
+    toast.error('保存AI配置失败')
   } finally {
     aiApiKeySaving.value = false
   }
@@ -409,11 +405,11 @@ async function handleSaveEmbeddingConfig() {
     ])
 
     if (keyRes.code === 200 && urlRes.code === 200 && modelRes.code === 200) {
-      ElMessage.success('Embedding 配置保存成功，重启服务后生效')
+      toast.success('Embedding 配置保存成功，重启服务后生效')
     }
   } catch (e) {
     console.error('保存Embedding配置失败:', e)
-    ElMessage.error('保存Embedding配置失败')
+    toast.error('保存Embedding配置失败')
   } finally {
     embeddingSaving.value = false
   }
@@ -475,13 +471,13 @@ async function handleSaveEmailConfig() {
     ])
 
     if (hostRes.code === 200 && portRes.code === 200 && userRes.code === 200 && passRes.code === 200 && fromRes.code === 200 && sslRes.code === 200) {
-      ElMessage.success('邮箱配置保存成功')
+      toast.success('邮箱配置保存成功')
       emailConfigured.value = !!(emailSmtpHost.value && emailSmtpPort.value && emailSmtpUsername.value && emailSmtpPassword.value && emailSmtpFrom.value)
       emailConfigExpanded.value = !emailConfigured.value
     }
   } catch (e) {
     console.error('保存邮箱配置失败:', e)
-    ElMessage.error('保存邮箱配置失败')
+    toast.error('保存邮箱配置失败')
   } finally {
     emailSaving.value = false
   }
@@ -495,11 +491,11 @@ async function handleSaveWsDisconnectNotify() {
       settingDesc: 'WebSocket断开且无法重连时邮箱通知开关（1启用，0关闭）'
     })
     if (res.code === 200) {
-      ElMessage.success(`闲鱼账号消息监听掉线通知已${wsDisconnectNotifyEnabled.value ? '开启' : '关闭'}`)
+      toast.success(`闲鱼账号消息监听掉线通知已${wsDisconnectNotifyEnabled.value ? '开启' : '关闭'}`)
     }
   } catch (e) {
     console.error('保存通知开关失败:', e)
-    ElMessage.error('保存失败')
+    toast.error('保存失败')
   }
 }
 
@@ -511,11 +507,11 @@ async function handleSaveCookieExpireNotify() {
       settingDesc: 'Cookie过期且无法续期时邮箱通知开关（1启用，0关闭）'
     })
     if (res.code === 200) {
-      ElMessage.success(`Cookie过期通知已${cookieExpireNotifyEnabled.value ? '开启' : '关闭'}`)
+      toast.success(`Cookie过期通知已${cookieExpireNotifyEnabled.value ? '开启' : '关闭'}`)
     }
   } catch (e) {
     console.error('保存通知开关失败:', e)
-    ElMessage.error('保存失败')
+    toast.error('保存失败')
   }
 }
 
@@ -524,13 +520,13 @@ async function handleTestEmail() {
   try {
     const res = await testEmail()
     if (res.code === 200) {
-      ElMessage.success('测试邮件发送成功，请检查收件箱')
+      toast.success('测试邮件发送成功，请检查收件箱')
     } else {
-      ElMessage.error(res.msg || '测试邮件发送失败')
+      toast.error(res.msg || '测试邮件发送失败')
     }
   } catch (e: any) {
     console.error('测试邮箱失败:', e)
-    ElMessage.error(e.message || '测试邮箱失败')
+    toast.error(e.message || '测试邮箱失败')
   } finally {
     emailTesting.value = false
   }
@@ -594,7 +590,7 @@ async function handleDownloadLog() {
     URL.revokeObjectURL(url)
   } catch (e) {
     console.error('下载日志失败:', e)
-    ElMessage.error('下载日志失败')
+    toast.error('下载日志失败')
   } finally {
     setTimeout(() => { logDownloading.value = false }, 2000)
   }
@@ -619,7 +615,7 @@ function toggleAllBackupModules() {
 
 async function handleExportBackup() {
   if (backupSelectedModules.value.length === 0) {
-    ElMessage.warning('请至少选择一个模块')
+    toast.warning('请至少选择一个模块')
     return
   }
   backupExporting.value = true
@@ -646,13 +642,13 @@ async function handleExportBackup() {
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
-      ElMessage.success('备份导出成功')
+      toast.success('备份导出成功')
     } else {
-      ElMessage.error(res.msg || '导出失败')
+      toast.error(res.msg || '导出失败')
     }
   } catch (e: any) {
     console.error('导出备份失败:', e)
-    ElMessage.error(e.message || '导出失败')
+    toast.error(e.message || '导出失败')
   } finally {
     backupExporting.value = false
     backupExportProgress.value = 0
@@ -681,19 +677,18 @@ function handleImportFileChange(e: Event) {
 
 async function handleImportBackup() {
   if (!importJsonData.value) {
-    ElMessage.warning('请先选择备份文件')
+    toast.warning('请先选择备份文件')
     return
   }
   if (backupSelectedModules.value.length === 0) {
-    ElMessage.warning('请至少选择一个模块')
+    toast.warning('请至少选择一个模块')
     return
   }
 
   try {
-    await ElMessageBox.confirm(
+    await showConfirm(
       '导入数据将覆盖当前选中模块的已有数据，是否继续？',
-      '确认导入',
-      { confirmButtonText: '确认', cancelButtonText: '取消', type: 'warning' }
+      '确认导入'
     )
   } catch {
     return
@@ -713,19 +708,19 @@ async function handleImportBackup() {
       backupImportProgress.value = 100
       const result = res.data
       if (result.failedModules && result.failedModules.length > 0) {
-        ElMessage.warning(`导入完成：${result.successCount}/${result.totalCount} 成功，失败模块：${result.failedModules.join(', ')}`)
+        toast.warning(`导入完成：${result.successCount}/${result.totalCount} 成功，失败模块：${result.failedModules.join(', ')}`)
       } else {
-        ElMessage.success(`导入成功：${result.successCount} 个模块`)
+        toast.success(`导入成功：${result.successCount} 个模块`)
       }
       importJsonData.value = ''
       importFileName.value = ''
       if (importFileInput.value) importFileInput.value.value = ''
     } else {
-      ElMessage.error(res.msg || '导入失败')
+      toast.error(res.msg || '导入失败')
     }
   } catch (e: any) {
     console.error('导入备份失败:', e)
-    ElMessage.error(e.message || '导入失败')
+    toast.error(e.message || '导入失败')
   } finally {
     backupImporting.value = false
     backupImportProgress.value = 0
@@ -1595,19 +1590,23 @@ function handleBackupMenuEnter() {
   height: 28px;
   padding: 0 12px;
   font-size: 12px;
-  font-weight: 500;
-  color: #1c1c1e;
-  background: rgba(255,255,255,0.38);
-  border: 1px solid rgba(60,60,67,.12);
-  border-radius: 6px;
+  font-weight: 590;
+  color: #0A84FF;
+  background: rgba(255,255,255,0.70);
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  border: 1px solid rgba(255,255,255,0.85);
+  border-radius: 100px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: opacity .15s, transform .12s, box-shadow .15s;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08), 0 1.5px 4px rgba(0,0,0,0.04);
 }
 
 .settings__toggle-btn:hover {
-  background: rgba(60,60,67,.12);
-  border-color: rgba(60,60,67,.15);
+  background: rgba(255,255,255,0.80);
 }
+
+.settings__toggle-btn:active { opacity: .80; transform: scale(.96); }
 
 .settings__collapse-content {
   display: flex;
@@ -1804,38 +1803,58 @@ function handleBackupMenuEnter() {
 }
 
 .settings__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: 36px;
-  padding: 0 20px;
+  padding: 0 18px;
   font-size: 13px;
-  font-weight: 500;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
+  font-weight: 590;
+  border-radius: 100px;
   border: none;
+  cursor: pointer;
+  transition: opacity .15s, transform .12s, box-shadow .15s;
+  white-space: nowrap;
+  min-width: 40px;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+  user-select: none;
 }
 
 .settings__btn--primary {
+  color: #fff;
   background: rgba(10,132,255,0.85);
-  color: rgba(255,255,255,0.55);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  border: 1px solid rgba(255,255,255,0.35);
+  box-shadow: 0 4px 16px rgba(10,132,255,0.35), 0 8px 32px rgba(0,0,0,0.08), 0 1.5px 4px rgba(0,0,0,0.04);
 }
 
-.settings__btn--primary:hover {
-  background: rgba(10,132,255,0.75);
+@media (hover: hover) {
+  .settings__btn--primary:hover {
+    background: rgba(10,132,255,0.95);
+    box-shadow: 0 6px 20px rgba(10,132,255,0.45), 0 8px 32px rgba(0,0,0,0.08), 0 1.5px 4px rgba(0,0,0,0.04);
+  }
 }
 
-.settings__btn--primary:active {
-  transform: scale(0.97);
-}
+.settings__btn--primary:active { opacity: .80; transform: scale(.96); }
 
 .settings__btn--secondary {
-  background: rgba(255,255,255,0.38);
-  color: #1c1c1e;
-  border: 1px solid rgba(60,60,67,.12);
+  color: #0A84FF;
+  background: rgba(255,255,255,0.70);
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  border: 1px solid rgba(255,255,255,0.85);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08), 0 1.5px 4px rgba(0,0,0,0.04);
 }
 
-.settings__btn--secondary:hover {
-  background: rgba(60,60,67,.12);
+@media (hover: hover) {
+  .settings__btn--secondary:hover {
+    background: rgba(255,255,255,0.80);
+  }
 }
+
+.settings__btn--secondary:active { opacity: .80; transform: scale(.96); }
 
 .settings__btn:disabled {
   opacity: 0.5;
@@ -1843,17 +1862,22 @@ function handleBackupMenuEnter() {
 }
 
 .settings__btn--danger {
-  background: #ff4d4f;
-  color: rgba(255,255,255,0.55);
+  color: #FF453A;
+  background: rgba(255,69,58,0.15);
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  border: 1px solid rgba(255,69,58,0.2);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08), 0 1.5px 4px rgba(0,0,0,0.04);
 }
 
-.settings__btn--danger:hover {
-  background: #ff7875;
+@media (hover: hover) {
+  .settings__btn--danger:hover {
+    background: rgba(255,69,58,0.22);
+    border-color: rgba(255,69,58,0.35);
+  }
 }
 
-.settings__btn--danger:active {
-  transform: scale(0.97);
-}
+.settings__btn--danger:active { opacity: .80; transform: scale(.96); }
 
 /* AI Status */
 .settings__ai-status {
@@ -2140,10 +2164,13 @@ function handleBackupMenuEnter() {
 }
 
 .settings__switch-track {
-  width: 40px;
-  height: 22px;
-  background: #e5e5ea;
-  border-radius: 11px;
+  width: 51px;
+  height: 31px;
+  background: rgba(120,120,128,.24);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 100px;
   transition: background 0.2s;
   flex-shrink: 0;
 }
@@ -2151,22 +2178,23 @@ function handleBackupMenuEnter() {
 .settings__switch-thumb {
   position: absolute;
   left: 2px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
-  background: white;
+  top: 2px;
+  width: 27px;
+  height: 27px;
+  background: linear-gradient(160deg, rgba(255,255,255,1) 0%, rgba(240,240,242,1) 100%);
   border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-  transition: left 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.8);
+  transition: transform .22s cubic-bezier(.34,1.56,.64,1);
+  pointer-events: none;
 }
 
 .settings__switch input:checked + .settings__switch-track {
-  background: #0A84FF;
+  background: rgba(48,209,88,0.85);
+  border-color: rgba(255,255,255,.4);
 }
 
 .settings__switch input:checked + .settings__switch-track + .settings__switch-thumb {
-  left: 20px;
+  transform: translateX(20px);
 }
 
 .settings__switch input:disabled + .settings__switch-track {

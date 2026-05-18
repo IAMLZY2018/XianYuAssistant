@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue';
-import { ElMessageBox } from 'element-plus';
-import { Loading } from '@element-plus/icons-vue';
+import { showConfirm } from '@/utils/confirm';
+import { toast } from '@/utils/toast';
+
 import { getConnectionStatus, startConnection, stopConnection } from '@/api/websocket';
 import { showSuccess, showError, showInfo } from '@/utils';
 import ManualUpdateCookieDialog from './ManualUpdateCookieDialog.vue';
@@ -117,14 +118,9 @@ const handleStopConnection = async () => {
   if (!props.accountId) return;
   
   try {
-    await ElMessageBox.confirm(
+    await showConfirm(
       '断开连接后将无法接收消息和执行自动化流程，确定要断开连接吗？',
-      '确认断开连接',
-      {
-        confirmButtonText: '确定断开',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
+      '确认断开连接'
     );
   } catch {
     return;
@@ -222,82 +218,12 @@ const getTokenStatusType = (timestamp?: number) => {
 
 // 显示Cookie获取帮助
 const showCookieHelp = () => {
-  ElMessageBox({
-    title: '如何获取Cookie',
-    message: `
-      <div style="text-align: left;">
-        <p style="margin-bottom: 12px;">请按照以下步骤获取Cookie：</p>
-        <ol style="margin-left: 20px; line-height: 1.8;">
-          <li>打开浏览器，访问闲鱼网站并登录</li>
-          <li>按F12打开开发者工具</li>
-          <li>切换到"网络"(Network)标签</li>
-          <li>刷新页面</li>
-          <li>在请求列表中找到任意请求</li>
-          <li>在请求头中找到Cookie字段</li>
-          <li>复制完整的Cookie值</li>
-        </ol>
-        <div style="margin-top: 16px; text-align: center;">
-          <img 
-            src="/cookieGet.png" 
-            class="cookie-help-image"
-            alt="Cookie获取示例" 
-            onerror="this.style.display='none'"
-            onclick="window.open('/cookieGet.png', '_blank')"
-            title="点击查看大图"
-          />
-        </div>
-        <p style="margin-top: 12px; color: #909399; font-size: 12px; text-align: center;">
-          💡 点击图片可查看大图
-        </p>
-        <p style="margin-top: 8px; color: #f56c6c; font-size: 12px; text-align: center;">
-          ⚠️ Cookie包含敏感信息，请勿泄露给他人
-        </p>
-      </div>
-    `,
-    dangerouslyUseHTMLString: true,
-    confirmButtonText: '知道了',
-    customClass: 'cookie-help-dialog'
-  });
+  toast.info('请按照以下步骤获取Cookie：1.打开浏览器，访问闲鱼网站并登录 2.按F12打开开发者工具 3.切换到"网络"(Network)标签 4.刷新页面 5.在请求列表中找到任意请求 6.在请求头中找到Cookie字段 7.复制完整的Cookie值');
 };
 
 // 显示Token获取帮助
 const showTokenHelp = () => {
-  ElMessageBox({
-    title: '如何获取WebSocket Token',
-    message: `
-      <div style="text-align: left;">
-        <p style="margin-bottom: 12px;">请按照以下步骤获取WebSocket Token：</p>
-        <ol style="margin-left: 20px; line-height: 1.8;">
-          <li>打开浏览器，访问 <a href="https://www.goofish.com/im" target="_blank" style="color: #409eff;">闲鱼IM页面</a> 并登录</li>
-          <li>按F12打开开发者工具</li>
-          <li>切换到"网络"(Network)标签</li>
-          <li>在页面中进行任意操作（如点击聊天）</li>
-          <li>在请求列表中找到WebSocket连接请求</li>
-          <li>查看请求参数或响应中的Token信息</li>
-          <li>复制完整的Token值</li>
-        </ol>
-        <div style="margin-top: 16px; text-align: center;">
-          <img 
-            src="/tokenGet.png" 
-            class="token-help-image"
-            alt="Token获取示例" 
-            onerror="this.style.display='none'"
-            onclick="window.open('/tokenGet.png', '_blank')"
-            title="点击查看大图"
-          />
-        </div>
-        <p style="margin-top: 12px; color: #909399; font-size: 12px; text-align: center;">
-          💡 点击图片可查看大图
-        </p>
-        <p style="margin-top: 8px; color: #f56c6c; font-size: 12px; text-align: center;">
-          ⚠️ Token包含敏感信息，请勿泄露给他人
-        </p>
-      </div>
-    `,
-    dangerouslyUseHTMLString: true,
-    confirmButtonText: '知道了',
-    customClass: 'token-help-dialog'
-  });
+  toast.info('请按照以下步骤获取WebSocket Token：1.打开浏览器，访问闲鱼IM页面并登录 2.按F12打开开发者工具 3.切换到"网络"(Network)标签 4.在页面中进行任意操作（如点击聊天） 5.在请求列表中找到WebSocket连接请求 6.查看请求参数或响应中的Token信息 7.复制完整的Token值');
 };
 
 // Cookie手动更新成功回调
@@ -374,7 +300,7 @@ onBeforeUnmount(() => {
             <h2 class="modal-title">连接详情</h2>
             <button class="modal-close" @click="handleClose">×</button>
           </div>
-          <div class="modal-body" v-loading="statusLoading">
+          <div class="modal-body">
             <div v-if="connectionStatus" class="detail-content">
         <!-- 主标题区域 -->
         <div class="main-card-header">
@@ -391,15 +317,9 @@ onBeforeUnmount(() => {
             </div>
           </div>
           <div class="header-right">
-            <el-tag
-              :type="connectionStatus.connected ? 'success' : 'danger'"
-              size="large"
-              effect="dark"
-              round
-              class="status-tag-large"
-            >
+            <span class="tag" :class="connectionStatus.connected ? 'tag--success' : 'tag--danger'">
               {{ connectionStatus.connected ? '● 已连接' : '● 未连接' }}
-            </el-tag>
+            </span>
           </div>
         </div>
 
@@ -413,13 +333,9 @@ onBeforeUnmount(() => {
                 <h3 class="section-title">Cookie 凭证</h3>
                 <p class="section-note">用于识别账号，如果过期无法使用任何功能</p>
               </div>
-              <el-tag 
-                :type="getCookieStatusType(connectionStatus.cookieStatus)" 
-                size="small"
-                round
-              >
+              <span class="tag" :class="getCookieStatusType(connectionStatus.cookieStatus) === 'success' ? 'tag--success' : getCookieStatusType(connectionStatus.cookieStatus) === 'warning' ? 'tag--warning' : getCookieStatusType(connectionStatus.cookieStatus) === 'danger' ? 'tag--danger' : 'tag--info'">
                 {{ getCookieStatusText(connectionStatus.cookieStatus) }}
-              </el-tag>
+              </span>
             </div>
             <div class="section-body">
               <div class="info-box">
@@ -432,21 +348,18 @@ onBeforeUnmount(() => {
                 </div>
               </div>
               <div class="section-actions">
-                <el-button
-                  type="primary"
-                  size="small"
+                <button
+                  class="btn-glass btn-glass--primary"
                   @click="showManualUpdateCookieDialog = true"
-                  class="manual-update-btn"
                 >
                   ✏️ 手动更新
-                </el-button>
-                <el-button
-                  type="info"
-                  size="small"
+                </button>
+                <button
+                  class="btn-glass btn-glass--default"
                   @click="showCookieHelp"
                 >
                   ❓ 如何获取？
-                </el-button>
+                </button>
               </div>
             </div>
           </div>
@@ -459,13 +372,9 @@ onBeforeUnmount(() => {
                 <h3 class="section-title">WebSocket Token</h3>
                 <p class="section-note">这个是收取消息的凭证，如果异常，可能是账号被锁人机验证，需要隔段时间再试一试</p>
               </div>
-              <el-tag 
-                :type="getTokenStatusType(connectionStatus.tokenExpireTime)" 
-                size="small"
-                round
-              >
+              <span class="tag" :class="getTokenStatusType(connectionStatus.tokenExpireTime) === 'success' ? 'tag--success' : getTokenStatusType(connectionStatus.tokenExpireTime) === 'danger' ? 'tag--danger' : 'tag--info'">
                 {{ getTokenStatusText(connectionStatus.tokenExpireTime) }}
-              </el-tag>
+              </span>
             </div>
             <div class="section-body">
               <div class="info-box">
@@ -484,21 +393,18 @@ onBeforeUnmount(() => {
                 </div>
               </div>
               <div class="section-actions">
-                <el-button
-                  type="primary"
-                  size="small"
+                <button
+                  class="btn-glass btn-glass--primary"
                   @click="showManualUpdateTokenDialog = true"
-                  class="manual-update-btn"
                 >
                   ✏️ 手动更新
-                </el-button>
-                <el-button
-                  type="info"
-                  size="small"
+                </button>
+                <button
+                  class="btn-glass btn-glass--default"
                   @click="showTokenHelp"
                 >
                   ❓ 如何获取？
-                </el-button>
+                </button>
               </div>
             </div>
           </div>
@@ -508,32 +414,26 @@ onBeforeUnmount(() => {
         <div class="main-actions">
           <div class="action-wrapper">
             <div class="action-buttons">
-              <el-button
+              <button
                 v-if="connectionStatus.connected"
-                type="danger"
-                size="default"
+                class="btn-glass btn-glass--danger"
                 @click="handleStopConnection"
-                class="main-action-btn"
               >
                 ⏸ 断开连接
-              </el-button>
-              <el-button
+              </button>
+              <button
                 v-else
-                type="success"
-                size="default"
+                class="btn-glass btn-glass--success"
                 @click="handleStartConnection"
-                class="main-action-btn start-connection-btn"
               >
                 ▶ 启动连接
-              </el-button>
-              <el-button
-                type="primary"
-                size="default"
+              </button>
+              <button
+                class="btn-glass btn-glass--primary"
                 @click="showQRUpdateDialog = true"
-                class="main-action-btn qr-update-btn"
               >
                 📱 扫码更新
-              </el-button>
+              </button>
             </div>
             <div class="action-tip">
               ⚠️ 请勿频繁启用连接和断开连接，否则容易触发滑动窗口人机校验，导致账号暂时不可用
@@ -566,8 +466,8 @@ onBeforeUnmount(() => {
     </div>
 
     <template #footer>
-      <el-button @click="handleClose">关闭</el-button>
-      <el-button type="primary" @click="handleRefresh" :loading="statusLoading">刷新状态</el-button>
+      <button class="btn-glass btn-glass--default" @click="handleClose">关闭</button>
+      <button class="btn-glass btn-glass--primary" @click="handleRefresh">刷新状态</button>
     </template>
 
     <!-- 手动更新Cookie对话框 -->
@@ -927,9 +827,6 @@ onBeforeUnmount(() => {
   margin-top: 2px;
 }
 
-.section-actions .el-button {
-  flex: 1;
-}
 
 .manual-update-btn {
   color: white !important;
@@ -1145,6 +1042,17 @@ onBeforeUnmount(() => {
     gap: 8px;
   }
 }
-</style>
 
+.btn-glass { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; border-radius: 100px; font-size: 13px; font-weight: 590; cursor: pointer; transition: opacity .15s, transform .12s; border: none; font-family: inherit; user-select: none; white-space: nowrap; }
+.btn-glass:active { opacity: .80; transform: scale(.96); }
+.btn-glass--primary { background: rgba(10,132,255,0.85); color: #fff; border: 1px solid rgba(255,255,255,0.35); box-shadow: 0 4px 16px rgba(10,132,255,0.35), 0 8px 32px rgba(0,0,0,0.08); }
+.btn-glass--default { background: rgba(255,255,255,0.70); color: #0A84FF; border: 1px solid rgba(255,255,255,0.85); box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
+.btn-glass--success { background: rgba(48,209,88,0.85); color: #fff; border: 1px solid rgba(255,255,255,0.35); }
+.btn-glass--warning { background: rgba(255,159,10,0.85); color: #fff; border: 1px solid rgba(255,255,255,0.35); }
+.btn-glass--danger { color: #FF453A; background: rgba(255,69,58,0.15); border: 1px solid rgba(255,69,58,0.2); }
+.tag { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 100px; font-size: 12px; font-weight: 500; }
+.tag--success { background: rgba(48,209,88,0.12); color: #30D158; }
+.tag--warning { background: rgba(255,159,10,0.12); color: #FF9F0A; }
+.tag--info { background: rgba(120,120,128,0.12); color: rgba(28,28,30,.55); }
+.tag--danger { background: rgba(255,69,58,0.12); color: #FF453A; }
 </style>

@@ -4,7 +4,8 @@ import { generateQRCode, getQRCodeStatus, getQRCodeCookies } from '@/api/qrlogin
 import { updateCookie } from '@/api/websocket'
 import { showSuccess, showError, showWarning } from '@/utils'
 import type { QRLoginSession } from '@/types'
-import { ElMessageBox } from 'element-plus'
+import { showConfirm } from '@/utils/confirm'
+import { toast } from '@/utils/toast'
 
 interface Props {
   modelValue: boolean
@@ -127,14 +128,7 @@ const handleLoginSuccess = async () => {
       handleClose()
     } else {
       // 不匹配，弹窗提示
-      await ElMessageBox.alert(
-        `扫码登录账号(${scannedUnb})与当前账号(${props.currentUnb})不匹配，已刷新或新增账号`,
-        '账号不匹配',
-        {
-          confirmButtonText: '确定',
-          type: 'warning'
-        }
-      )
+      toast.info(`扫码登录账号(${scannedUnb})与当前账号(${props.currentUnb})不匹配，已刷新或新增账号`)
       handleClose()
       emit('success')
     }

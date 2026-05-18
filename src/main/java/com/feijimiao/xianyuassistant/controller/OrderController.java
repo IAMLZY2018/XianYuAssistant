@@ -43,10 +43,10 @@ public class OrderController {
 
             int offset = (pageNum - 1) * pageSize;
             long total = orderMapper.countByCondition(
-                    reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId(), reqDTO.getOrderStatus());
+                    reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId(), reqDTO.getOrderStatus(), reqDTO.getKeyword());
 
             List<XianyuGoodsOrder> orders = orderMapper.selectByConditionWithPage(
-                    reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId(), reqDTO.getOrderStatus(),
+                    reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId(), reqDTO.getOrderStatus(), reqDTO.getKeyword(),
                     pageSize, offset);
 
             OrderListRespDTO respDTO = new OrderListRespDTO();

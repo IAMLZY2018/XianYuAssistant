@@ -4,7 +4,7 @@ import { getContextMessages } from '@/api/message'
 import type { ChatMessage } from '@/api/message'
 import { sendMessage as sendMessageApi } from '@/api/message'
 import { sendImageMessage as sendImageMessageApi } from '@/api/image'
-import { ElMessage } from 'element-plus'
+import { toast } from '@/utils/toast'
 import IconUser from '@/components/icons/IconUser.vue'
 import IconEmpty from '@/components/icons/IconEmpty.vue'
 import IconSend from '@/components/icons/IconSend.vue'
@@ -210,12 +210,12 @@ const getMessageType = (msg: ChatMessage) => {
 const handleSend = async () => {
   const hasImages = inputImageUrls.value.trim() && inputImageUrls.value.split(',').some((s: string) => s.trim())
   if (!inputText.value.trim() && !hasImages) {
-    ElMessage.warning('请输入消息内容或上传图片')
+    toast.warning('请输入消息内容或上传图片')
     return
   }
   
   if (!props.xianyuAccountId || !props.senderUserId) {
-    ElMessage.error('缺少必要参数，无法发送')
+    toast.error('缺少必要参数，无法发送')
     return
   }
   
@@ -249,13 +249,13 @@ const handleSend = async () => {
       })
     }
     
-    ElMessage.success('发送成功')
+    toast.success('发送成功')
     inputText.value = ''
     inputImageUrls.value = ''
     showImageUploader.value = false
     await loadContext()
   } catch (error: any) {
-    ElMessage.error(error.message || '发送失败')
+    toast.error(error.message || '发送失败')
   } finally {
     sending.value = false
   }

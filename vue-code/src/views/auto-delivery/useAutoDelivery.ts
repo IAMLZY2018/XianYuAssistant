@@ -23,7 +23,7 @@ import {
 } from '@/api/auto-delivery-record'
 import { showSuccess, showError, showInfo } from '@/utils'
 import { getConnectionStatus } from '@/api/websocket'
-import { ElMessage } from 'element-plus'
+import { toast } from '@/utils/toast'
 import {
   getKamiConfigsByAccountId,
   type KamiConfig
@@ -627,12 +627,7 @@ export function useAutoDelivery() {
   }
 
   const showWsDisconnectedTip = () => {
-    ElMessage({
-      type: 'warning',
-      duration: 5000,
-      dangerouslyUseHTMLString: true,
-      message: '请先连接服务器，<a href="#/connection" style="color:#34c759;text-decoration:underline;font-weight:600;" onclick="event.preventDefault();window.__gotoConnection&&window.__gotoConnection()">点击跳转</a>'
-    })
+    toast.warning('请先连接服务器，点击跳转到连接管理页面')
   }
 
   const handleTriggerDelivery = async (record: any) => {

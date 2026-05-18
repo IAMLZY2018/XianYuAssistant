@@ -43,13 +43,6 @@ loadAccounts();
           <IconPlus />
           <span>手动添加</span>
         </button>
-      </div>
-    </header>
-
-    <!-- Content Card -->
-    <section class="accounts__content">
-      <div class="accounts__toolbar">
-        <span class="accounts__list-title">账号列表</span>
         <button
           class="btn btn--ghost"
           :class="{ 'btn--loading': loading }"
@@ -60,7 +53,10 @@ loadAccounts();
           <span>刷新</span>
         </button>
       </div>
+    </header>
 
+    <!-- Content Card -->
+    <section class="accounts__content">
       <div class="accounts__table-wrap">
         <AccountTable
           :accounts="accounts"

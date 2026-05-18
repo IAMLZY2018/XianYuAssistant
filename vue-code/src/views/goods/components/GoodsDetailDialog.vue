@@ -237,18 +237,16 @@ onBeforeUnmount(() => {
           </div>
 
           <!-- Body -->
-          <div class="modal-body" v-loading="loading">
+          <div class="modal-body">
             <div v-if="goodsDetail" class="detail-content">
               <div class="detail-left">
                 <div class="main-image">
-                  <el-image
+                  <img
                     v-if="images.length > 0"
                     :src="images[currentImageIndex]"
-                    fit="contain"
-                    :preview-src-list="images"
-                    :initial-index="currentImageIndex"
+                    class="native-image"
                   />
-                  <el-empty v-else description="暂无图片" :image-size="100" />
+                  <div v-else class="native-empty"><span>暂无图片</span></div>
                 </div>
                 <div v-if="images.length > 1" class="thumbnails">
                   <div
@@ -258,7 +256,7 @@ onBeforeUnmount(() => {
                     :class="{ active: currentImageIndex === index }"
                     @click="selectImage(index)"
                   >
-                    <el-image :src="img" fit="cover" />
+                    <img :src="img" class="native-image" />
                   </div>
                 </div>
               </div>
@@ -271,9 +269,9 @@ onBeforeUnmount(() => {
 
                 <div class="price-section">
                   <span class="price">{{ formatPrice(goodsDetail.item.soldPrice) }}</span>
-                  <el-tag :type="getStatusType(goodsDetail.item.status)" size="large">
+                  <span class="tag" :class="getStatusType(goodsDetail.item.status) === 'success' ? 'tag--success' : getStatusType(goodsDetail.item.status) === 'warning' ? 'tag--warning' : 'tag--info'">
                     {{ getStatusText(goodsDetail.item.status) }}
-                  </el-tag>
+                  </span>
                 </div>
 
                 <div v-if="goodsDetail.item.detailInfo" class="description">
@@ -299,8 +297,8 @@ onBeforeUnmount(() => {
                 </div>
 
                 <div class="action-buttons">
-                  <el-button type="success" @click="handleConfigAutoDelivery">配置自动发货</el-button>
-                  <el-button type="danger" @click="handleDelete">删除商品</el-button>
+                  <button class="btn-glass btn-glass--success" @click="handleConfigAutoDelivery">配置自动发货</button>
+                  <button class="btn-glass btn-glass--danger" @click="handleDelete">删除商品</button>
                 </div>
               </div>
             </div>
@@ -444,9 +442,10 @@ onBeforeUnmount(() => {
   justify-content: center;
 }
 
-.main-image :deep(.el-image) {
+.main-image .native-image {
   width: 100%;
   height: 100%;
+  object-fit: contain;
 }
 
 .thumbnails {
@@ -471,9 +470,10 @@ onBeforeUnmount(() => {
   border-color: #0A84FF;
 }
 
-.thumbnail :deep(.el-image) {
+.thumbnail .native-image {
   width: 100%;
   height: 100%;
+  object-fit: cover;
 }
 
 .detail-right {
@@ -631,4 +631,19 @@ onBeforeUnmount(() => {
     height: 250px;
   }
 }
+
+.btn-glass { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; border-radius: 100px; font-size: 13px; font-weight: 590; cursor: pointer; transition: opacity .15s, transform .12s; border: none; font-family: inherit; user-select: none; white-space: nowrap; }
+.btn-glass:active { opacity: .80; transform: scale(.96); }
+.btn-glass--primary { background: rgba(10,132,255,0.85); color: #fff; border: 1px solid rgba(255,255,255,0.35); box-shadow: 0 4px 16px rgba(10,132,255,0.35), 0 8px 32px rgba(0,0,0,0.08); }
+.btn-glass--default { background: rgba(255,255,255,0.70); color: #0A84FF; border: 1px solid rgba(255,255,255,0.85); box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
+.btn-glass--success { background: rgba(48,209,88,0.85); color: #fff; border: 1px solid rgba(255,255,255,0.35); }
+.btn-glass--warning { background: rgba(255,159,10,0.85); color: #fff; border: 1px solid rgba(255,255,255,0.35); }
+.btn-glass--danger { color: #FF453A; background: rgba(255,69,58,0.15); border: 1px solid rgba(255,69,58,0.2); }
+.tag { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 100px; font-size: 12px; font-weight: 500; }
+.tag--success { background: rgba(48,209,88,0.12); color: #30D158; }
+.tag--warning { background: rgba(255,159,10,0.12); color: #FF9F0A; }
+.tag--info { background: rgba(120,120,128,0.12); color: rgba(28,28,30,.55); }
+.tag--danger { background: rgba(255,69,58,0.12); color: #FF453A; }
+.native-image { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+.native-empty { display: flex; align-items: center; justify-content: center; color: rgba(28,28,30,.55); font-size: 13px; padding: 20px; }
 </style>

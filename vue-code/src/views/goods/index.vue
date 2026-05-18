@@ -207,6 +207,40 @@ const getPageButtons = () => {
       </div>
 
       <div class="goods__actions">
+        <template v-if="!isMobile">
+          <div class="goods__select-wrap">
+            <select
+              v-model="selectedAccountId"
+              class="goods__select"
+              @change="handleAccountChange"
+            >
+              <option :value="null" disabled>选择账号</option>
+              <option v-for="acc in accounts" :key="acc.id" :value="acc.id">
+                {{ acc.accountNote || acc.unb }}
+              </option>
+            </select>
+            <span class="goods__select-icon">
+              <IconChevronDown />
+            </span>
+          </div>
+
+          <div class="goods__select-wrap">
+            <select
+              v-model="statusFilter"
+              class="goods__select"
+              @change="handleStatusFilter"
+            >
+              <option value="">全部状态</option>
+              <option value="0">在售</option>
+              <option value="1">已下架</option>
+              <option value="2">已售出</option>
+            </select>
+            <span class="goods__select-icon">
+              <IconChevronDown />
+            </span>
+          </div>
+        </template>
+
         <button
           class="btn btn--primary desktop-only"
           :class="{ 'btn--loading': refreshing || syncing }"
@@ -216,6 +250,11 @@ const getPageButtons = () => {
           <IconRefresh />
           <span class="mobile-hidden">同步闲鱼商品</span>
         </button>
+
+        <span v-if="total > 0 && !isMobile" class="goods__count">
+          共 {{ total }} 件
+        </span>
+
         <div v-if="syncing && syncProgress" class="goods__sync-progress">
           <span class="goods__sync-text">
             详情同步: {{ syncProgress.completedCount }}/{{ syncProgress.totalCount }}
@@ -230,58 +269,8 @@ const getPageButtons = () => {
       </div>
     </div>
 
-    <!-- Filter Bar (Desktop Only) -->
-    <div class="goods__filter-bar desktop-only">
-      <!-- Account Select -->
-      <div class="goods__select-wrap">
-        <select
-          v-model="selectedAccountId"
-          class="goods__select"
-          @change="handleAccountChange"
-        >
-          <option :value="null" disabled>选择账号</option>
-          <option v-for="acc in accounts" :key="acc.id" :value="acc.id">
-            {{ acc.accountNote || acc.unb }}
-          </option>
-        </select>
-        <span class="goods__select-icon">
-          <IconChevronDown />
-        </span>
-      </div>
-
-      <!-- Status Filter -->
-      <div class="goods__select-wrap">
-        <select
-          v-model="statusFilter"
-          class="goods__select"
-          @change="handleStatusFilter"
-        >
-          <option value="">全部状态</option>
-          <option value="0">在售</option>
-          <option value="1">已下架</option>
-          <option value="2">已售出</option>
-        </select>
-        <span class="goods__select-icon">
-          <IconChevronDown />
-        </span>
-      </div>
-
-      <!-- Count -->
-      <span v-if="total > 0" class="goods__count">
-        共 {{ total }} 件
-      </span>
-    </div>
-
     <!-- Content Card -->
     <div class="goods__content">
-      <!-- Toolbar -->
-      <div class="goods__toolbar">
-        <span class="goods__list-title">商品列表</span>
-        <span v-if="goodsList.length > 0" class="goods__count">
-          {{ (currentPage - 1) * pageSize + 1 }}-{{ Math.min(currentPage * pageSize, total) }} / {{ total }}
-        </span>
-      </div>
-
       <!-- Pull Refresh Indicator (Mobile Only) -->
       <div 
         v-if="isMobile && pullDistance > 0"

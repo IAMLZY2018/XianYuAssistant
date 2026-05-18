@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { uploadImage } from '@/api/image'
-import { ElMessage } from 'element-plus'
+import { toast } from '@/utils/toast'
 import IconPlus from '@/components/icons/IconPlus.vue'
 import IconClose from '@/components/icons/IconClose.vue'
 
@@ -43,13 +43,13 @@ const handleFileChange = async (index: number, event: Event) => {
   if (!file) return
 
   if (!file.type.startsWith('image/')) {
-    ElMessage.error('只能上传图片文件')
+    toast.error('只能上传图片文件')
     return
   }
 
   const maxSize = props.maxFileSize * 1024 * 1024
   if (file.size > maxSize) {
-    ElMessage.error(`图片大小不能超过${props.maxFileSize}MB`)
+    toast.error(`图片大小不能超过${props.maxFileSize}MB`)
     return
   }
 
@@ -74,12 +74,12 @@ const handleFileChange = async (index: number, event: Event) => {
         list.push(res.data)
       }
       emit('update:modelValue', list.join(','))
-      ElMessage.success('图片上传成功')
+      toast.success('图片上传成功')
     } else {
       throw new Error(res?.msg || '上传失败')
     }
   } catch (error: any) {
-    ElMessage.error(error.message || '图片上传失败')
+    toast.error(error.message || '图片上传失败')
   } finally {
     setTimeout(() => {
       uploadingIndex.value = -1

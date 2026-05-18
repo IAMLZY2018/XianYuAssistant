@@ -1,5 +1,5 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
-import { ElMessage } from 'element-plus'
+import { toast } from './toast'
 import type { ApiResponse } from '@/types'
 
 // Token存储key
@@ -70,7 +70,7 @@ service.interceptors.response.use(
       clearAuthToken()
       // 避免在登录页重复跳转
       if (!window.location.pathname.includes('/login')) {
-        ElMessage.error(res.msg || '登录已过期，请重新登录')
+        toast.error(res.msg || '登录已过期，请重新登录')
         window.location.href = '/login'
       }
       return Promise.reject(new Error(res.msg || '未登录'))
@@ -84,7 +84,7 @@ service.interceptors.response.use(
     // 如果响应码不是 0 或 200，认为是错误
     if (res.code !== 0 && res.code !== 200) {
       const errorMsg = res.msg || res.message || '请求失败'
-      ElMessage.error(errorMsg)
+      toast.error(errorMsg)
       const error = new Error(errorMsg)
       // 标记这个错误已经显示过消息，避免重复提示
       ;(error as any).messageShown = true
@@ -97,7 +97,7 @@ service.interceptors.response.use(
     console.error('响应错误:', error)
     // 只有在错误消息未显示过时才弹出提示
     if (!(error as any).messageShown) {
-      ElMessage.error(error.message || '网络请求失败')
+      toast.error(error.message || '网络请求失败')
     }
     return Promise.reject(error)
   }

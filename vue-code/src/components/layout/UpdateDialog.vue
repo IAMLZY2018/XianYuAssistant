@@ -5,6 +5,10 @@ import IconClose from '@/components/icons/IconClose.vue'
 import IconCheck from '@/components/icons/IconCheck.vue'
 import IconSparkle from '@/components/icons/IconSparkle.vue'
 
+declare const __APP_VERSION__: string
+
+const appVersion = __APP_VERSION__ || '2.0.0'
+
 const visible = ref(false)
 const loading = ref(false)
 const updateInfo = ref<{
@@ -21,6 +25,11 @@ const isMobile = ref(false)
 const checkMobile = () => {
   isMobile.value = window.innerWidth < 768
 }
+
+const isUpdateAvailable = computed(() => {
+  if (!updateInfo.value?.latestVersion) return false
+  return updateInfo.value.latestVersion > appVersion
+})
 
 const formattedDate = computed(() => {
   if (!updateInfo.value?.publishedAt) return ''
@@ -85,11 +94,11 @@ defineExpose({ open })
             <div class="version-row">
               <div class="version-item">
                 <span class="version-label">当前版本</span>
-                <span class="version-value">v{{ updateInfo.currentVersion }}</span>
+                <span class="version-value">v{{ appVersion }}</span>
               </div>
               <div class="version-item">
                 <span class="version-label">最新版本</span>
-                <span class="version-value" :class="{ 'is-new': updateInfo.hasUpdate }">v{{ updateInfo.latestVersion }}</span>
+                <span class="version-value" :class="{ 'is-new': isUpdateAvailable }">v{{ updateInfo.latestVersion }}</span>
               </div>
               <div v-if="formattedDate" class="version-item">
                 <span class="version-label">发布时间</span>
@@ -98,9 +107,9 @@ defineExpose({ open })
             </div>
 
             <!-- Status Badge -->
-            <div class="status-badge" :class="{ 'is-updated': !updateInfo.hasUpdate }">
-              <IconCheck v-if="!updateInfo.hasUpdate" />
-              <span>{{ updateInfo.hasUpdate ? '发现新版本' : '已是最新版本' }}</span>
+            <div class="status-badge" :class="{ 'is-updated': !isUpdateAvailable }">
+              <IconCheck v-if="!isUpdateAvailable" />
+              <span>{{ isUpdateAvailable ? '发现新版本' : '已是最新版本' }}</span>
             </div>
 
             <!-- Changelog -->
@@ -118,7 +127,7 @@ defineExpose({ open })
           <!-- Footer -->
           <div v-if="!loading && updateInfo" class="modal-footer">
             <button class="btn btn-secondary" @click="close">关闭</button>
-            <button v-if="updateInfo.hasUpdate" class="btn btn-primary" @click="openDownload">
+            <button v-if="isUpdateAvailable" class="btn btn-primary" @click="openDownload">
               查看更新
             </button>
           </div>

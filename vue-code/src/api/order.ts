@@ -4,6 +4,7 @@ import type { ApiResponse } from '@/types'
 export interface DeliveryRecordQueryReq {
   xianyuAccountId?: number
   xyGoodsId?: string
+  keyword?: string
   pageNum?: number
   pageSize?: number
 }

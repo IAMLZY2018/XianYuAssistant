@@ -31,6 +31,9 @@ public interface XianyuGoodsOrderMapper {
             "<if test='xyGoodsId != null and xyGoodsId != \"\"'>" +
             "AND r.xy_goods_id = #{xyGoodsId} " +
             "</if>" +
+            "<if test='keyword != null and keyword != \"\"'>" +
+            "AND (g.title LIKE '%' || #{keyword} || '%' OR r.sku_name LIKE '%' || #{keyword} || '%' OR r.buyer_user_name LIKE '%' || #{keyword} || '%' OR r.content LIKE '%' || #{keyword} || '%') " +
+            "</if>" +
             "ORDER BY r.create_time DESC " +
             "LIMIT #{limit} OFFSET #{offset}" +
             "</script>")
@@ -60,17 +63,22 @@ public interface XianyuGoodsOrderMapper {
     List<XianyuGoodsOrder> selectByAccountIdWithPage(
             @Param("accountId") Long accountId,
             @Param("xyGoodsId") String xyGoodsId,
+            @Param("keyword") String keyword,
             @Param("limit") int limit,
             @Param("offset") int offset);
     
     @Select("<script>" +
-            "SELECT COUNT(*) FROM xianyu_goods_order " +
-            "WHERE xianyu_account_id = #{accountId} " +
+            "SELECT COUNT(*) FROM xianyu_goods_order r " +
+            "LEFT JOIN xianyu_goods g ON r.xy_goods_id = g.xy_good_id " +
+            "WHERE r.xianyu_account_id = #{accountId} " +
             "<if test='xyGoodsId != null and xyGoodsId != \"\"'>" +
-            "AND xy_goods_id = #{xyGoodsId} " +
+            "AND r.xy_goods_id = #{xyGoodsId} " +
+            "</if>" +
+            "<if test='keyword != null and keyword != \"\"'>" +
+            "AND (g.title LIKE '%' || #{keyword} || '%' OR r.sku_name LIKE '%' || #{keyword} || '%' OR r.buyer_user_name LIKE '%' || #{keyword} || '%' OR r.content LIKE '%' || #{keyword} || '%') " +
             "</if>" +
             "</script>")
-    long countByAccountId(@Param("accountId") Long accountId, @Param("xyGoodsId") String xyGoodsId);
+    long countByAccountId(@Param("accountId") Long accountId, @Param("xyGoodsId") String xyGoodsId, @Param("keyword") String keyword);
     
     @Update("UPDATE xianyu_goods_order SET state = #{state} WHERE id = #{id}")
     int updateState(@Param("id") Long id, @Param("state") Integer state);
@@ -122,6 +130,9 @@ public interface XianyuGoodsOrderMapper {
             "<if test='orderStatus != null'>" +
             "AND r.state = #{orderStatus} " +
             "</if>" +
+            "<if test='keyword != null and keyword != \"\"'>" +
+            "AND (g.title LIKE '%' || #{keyword} || '%' OR r.sku_name LIKE '%' || #{keyword} || '%' OR r.buyer_user_name LIKE '%' || #{keyword} || '%' OR r.content LIKE '%' || #{keyword} || '%') " +
+            "</if>" +
             "ORDER BY r.create_time DESC " +
             "LIMIT #{limit} OFFSET #{offset}" +
             "</script>")
@@ -152,23 +163,28 @@ public interface XianyuGoodsOrderMapper {
             @Param("accountId") Long accountId,
             @Param("xyGoodsId") String xyGoodsId,
             @Param("orderStatus") Integer orderStatus,
+            @Param("keyword") String keyword,
             @Param("limit") int limit,
             @Param("offset") int offset);
 
     @Select("<script>" +
-            "SELECT COUNT(*) FROM xianyu_goods_order " +
+            "SELECT COUNT(*) FROM xianyu_goods_order r " +
+            "LEFT JOIN xianyu_goods g ON r.xy_goods_id = g.xy_good_id " +
             "WHERE 1=1 " +
             "<if test='accountId != null'>" +
-            "AND xianyu_account_id = #{accountId} " +
+            "AND r.xianyu_account_id = #{accountId} " +
             "</if>" +
             "<if test='xyGoodsId != null and xyGoodsId != \"\"'>" +
-            "AND xy_goods_id = #{xyGoodsId} " +
+            "AND r.xy_goods_id = #{xyGoodsId} " +
             "</if>" +
             "<if test='orderStatus != null'>" +
-            "AND state = #{orderStatus} " +
+            "AND r.state = #{orderStatus} " +
+            "</if>" +
+            "<if test='keyword != null and keyword != \"\"'>" +
+            "AND (g.title LIKE '%' || #{keyword} || '%' OR r.sku_name LIKE '%' || #{keyword} || '%' OR r.buyer_user_name LIKE '%' || #{keyword} || '%' OR r.content LIKE '%' || #{keyword} || '%') " +
             "</if>" +
             "</script>")
-    long countByCondition(@Param("accountId") Long accountId, @Param("xyGoodsId") String xyGoodsId, @Param("orderStatus") Integer orderStatus);
+    long countByCondition(@Param("accountId") Long accountId, @Param("xyGoodsId") String xyGoodsId, @Param("orderStatus") Integer orderStatus, @Param("keyword") String keyword);
 
     @Select("SELECT COUNT(*) FROM xianyu_goods_order WHERE state = 1 AND date(create_time) = #{date}")
     int countDeliverySuccessByDate(@Param("date") String date);

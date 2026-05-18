@@ -1,9 +1,10 @@
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { queryDeliveryRecordList, confirmShipment } from '@/api/order'
 import { getAccountList } from '@/api/account'
+import { getGoodsList, type GoodsItemWithConfig } from '@/api/goods'
 import type { DeliveryRecordVO, DeliveryRecordQueryReq } from '@/api/order'
 import type { Account } from '@/types'
-import { showSuccess, showError, showConfirm } from '@/utils'
+import { showSuccess, showError, showConfirm, showInfo } from '@/utils'
 import { formatTime } from '@/utils'
 
 export interface DeliveryRecordItem extends DeliveryRecordVO {
@@ -15,6 +16,14 @@ export function useOrderManager() {
   const orderList = ref<DeliveryRecordItem[]>([])
   const total = ref(0)
   const accounts = ref<Account[]>([])
+
+  const goodsList = ref<GoodsItemWithConfig[]>([])
+  const goodsTotal = ref(0)
+  const goodsLoading = ref(false)
+  const goodsListRef = ref<HTMLElement | null>(null)
+  const goodsCurrentPage = ref(1)
+  const onlyOnSale = ref(true)
+  const selectedGoodsId = ref<string | null>(null)
 
   const queryParams = reactive<DeliveryRecordQueryReq>({
     pageNum: 1,
@@ -46,7 +55,94 @@ export function useOrderManager() {
 
   const handleAccountChange = () => {
     queryParams.pageNum = 1
+    queryParams.keyword = undefined
+    selectedGoodsId.value = null
+    goodsCurrentPage.value = 1
+    goodsList.value = []
+    loadGoods()
     loadOrders()
+  }
+
+  const loadGoods = async () => {
+    if (!queryParams.xianyuAccountId) {
+      return
+    }
+
+    goodsLoading.value = true
+    try {
+      const params = {
+        xianyuAccountId: queryParams.xianyuAccountId,
+        onlyOnSale: onlyOnSale.value,
+        pageNum: goodsCurrentPage.value,
+        pageSize: 20
+      }
+
+      const response = await getGoodsList(params)
+      if (response.code === 0 || response.code === 200) {
+        if (goodsCurrentPage.value === 1) {
+          goodsList.value = response.data?.itemsWithConfig || []
+        } else {
+          goodsList.value.push(...(response.data?.itemsWithConfig || []))
+        }
+        goodsTotal.value = response.data?.totalCount || 0
+        checkAndLoadMore()
+      } else {
+        throw new Error(response.msg || '获取商品列表失败')
+      }
+    } catch (error: any) {
+      console.error('加载商品列表失败:', error)
+      goodsList.value = []
+    } finally {
+      goodsLoading.value = false
+    }
+  }
+
+  const checkAndLoadMore = () => {
+    nextTick(() => {
+      if (!goodsListRef.value) return
+      const { scrollHeight, clientHeight } = goodsListRef.value
+      if (scrollHeight <= clientHeight && goodsList.value.length < goodsTotal.value) {
+        goodsCurrentPage.value++
+        loadGoods()
+      }
+    })
+  }
+
+  const handleGoodsScroll = () => {
+    if (!goodsListRef.value || goodsLoading.value) return
+    const { scrollTop, scrollHeight, clientHeight } = goodsListRef.value
+    if (scrollTop + clientHeight >= scrollHeight - 50) {
+      if (goodsList.value.length < goodsTotal.value) {
+        goodsCurrentPage.value++
+        loadGoods()
+      }
+    }
+  }
+
+  const selectGoods = (goods: GoodsItemWithConfig) => {
+    if (selectedGoodsId.value === goods.item.xyGoodId) {
+      clearGoodsFilter()
+      return
+    }
+    selectedGoodsId.value = goods.item.xyGoodId
+    queryParams.xyGoodsId = goods.item.xyGoodId
+    queryParams.pageNum = 1
+    loadOrders()
+  }
+
+  const clearGoodsFilter = () => {
+    selectedGoodsId.value = null
+    queryParams.xyGoodsId = undefined
+    queryParams.pageNum = 1
+    loadOrders()
+  }
+
+  const toggleOnlyOnSale = () => {
+    onlyOnSale.value = !onlyOnSale.value
+    goodsCurrentPage.value = 1
+    selectedGoodsId.value = null
+    queryParams.xyGoodsId = undefined
+    loadGoods()
   }
 
   const getStatusColor = (state: number) => {
@@ -83,9 +179,8 @@ export function useOrderManager() {
   }
 
   const handleReset = () => {
+    queryParams.keyword = undefined
     queryParams.pageNum = 1
-    queryParams.xyGoodsId = undefined
-    queryParams.xianyuAccountId = undefined
     loadOrders()
   }
 
@@ -143,18 +238,30 @@ export function useOrderManager() {
     orderList,
     total,
     accounts,
+    goodsList,
+    goodsTotal,
+    goodsLoading,
+    goodsListRef,
+    goodsCurrentPage,
+    onlyOnSale,
+    selectedGoodsId,
     queryParams,
     dialogs,
     confirmTarget,
     totalPages,
     loadAccounts,
     loadOrders,
+    loadGoods,
     handleAccountChange,
     handleReset,
     handlePageChange,
     handleSizeChange,
     copySId,
     handleConfirmShipment,
+    handleGoodsScroll,
+    selectGoods,
+    clearGoodsFilter,
+    toggleOnlyOnSale,
     getStatusColor,
     getStatusBg,
     getStatusText,

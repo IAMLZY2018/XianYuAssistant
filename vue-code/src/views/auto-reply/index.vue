@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, defineComponent, h, onMounted, ref } from 'vue'
+import { inject, defineComponent, h, onMounted, ref, computed } from 'vue'
 import { useAutoReply } from './useAutoReply'
 import './auto-reply.css'
 import '@/styles/header-selectors.css'
@@ -20,6 +20,7 @@ import GoodsDetailDialog from '../goods/components/GoodsDetailDialog.vue'
 import ImageUploader from '@/components/ImageUploader.vue'
 
 const goodsPanelCollapsed = ref(true)
+const isDesktopCollapsed = computed(() => !isMobile.value && goodsPanelCollapsed.value)
 
 const {
   // State
@@ -176,9 +177,9 @@ onMounted(() => {
       <!-- Goods Panel (Left) -->
       <div
         class="ar__goods-panel"
-        :class="{ 'ar__goods-panel--hidden': isMobile && mobileView === 'config', 'ar__goods-panel--collapsed': goodsPanelCollapsed }"
+        :class="{ 'ar__goods-panel--hidden': isMobile && mobileView === 'config', 'ar__goods-panel--collapsed': isDesktopCollapsed }"
       >
-        <template v-if="!goodsPanelCollapsed">
+        <template v-if="!isDesktopCollapsed">
           <div class="ar__goods-toolbar">
             <span class="ar__goods-toolbar-title">商品列表</span>
             <span v-if="goodsTotal > 0" class="ar__goods-toolbar-count">共 {{ goodsTotal }} 件</span>
@@ -324,7 +325,7 @@ onMounted(() => {
           </button>
           <button class="btn btn--ghost btn--sm" @click="goToAutoDelivery">
             <IconPackage />
-            <span class="mobile-hidden">发货</span>
+            <span class="mobile-hidden">配置发货</span>
           </button>
         </div>
 

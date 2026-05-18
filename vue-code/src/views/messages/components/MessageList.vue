@@ -398,18 +398,20 @@ const formatMessageTime = (timestamp: string | number) => {
 .table__head {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 10;
 }
 
 .table__th {
   text-align: left;
-  padding: 10px 16px;
+  padding: 12px 16px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--c-text-3);
-  letter-spacing: 0.01em;
-  background: #f0f1f5;
-  border-bottom: 0.5px solid var(--c-border);
+  color: #1c1c1e;
+  letter-spacing: .4px;
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  border-bottom: 1px solid rgba(60,60,67,.12);
   white-space: nowrap;
   user-select: none;
 }

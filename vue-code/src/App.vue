@@ -23,24 +23,11 @@ const isLoginPage = computed(() => route.path === '/login')
 </template>
 
 <style>
-/* 全局样式：防止弹窗打开时滚动条导致的页面抖动 */
 html {
   overflow-y: scroll;
 }
 
 body {
   overflow-x: hidden;
-}
-
-/* Element Plus 弹窗遮罩层样式优化 */
-.el-overlay {
-  overflow-y: scroll !important;
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
-}
-
-.el-overlay::-webkit-scrollbar {
-  width: 0 !important;
-  height: 0 !important;
 }
 </style>

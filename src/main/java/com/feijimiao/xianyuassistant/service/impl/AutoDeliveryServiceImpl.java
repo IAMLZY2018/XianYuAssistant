@@ -216,15 +216,16 @@ public class AutoDeliveryServiceImpl implements AutoDeliveryService {
         
         Long accountId = reqDTO.getXianyuAccountId();
         String xyGoodsId = reqDTO.getXyGoodsId();
+        String keyword = reqDTO.getKeyword();
         int pageNum = reqDTO.getPageNum() != null ? reqDTO.getPageNum() : 1;
         int pageSize = reqDTO.getPageSize() != null ? reqDTO.getPageSize() : 20;
         
         int offset = (pageNum - 1) * pageSize;
         
         List<XianyuGoodsOrder> records = orderMapper.selectByAccountIdWithPage(
-                accountId, xyGoodsId, pageSize, offset);
+                accountId, xyGoodsId, keyword, pageSize, offset);
         
-        long total = orderMapper.countByAccountId(accountId, xyGoodsId);
+        long total = orderMapper.countByAccountId(accountId, xyGoodsId, keyword);
         
         List<com.feijimiao.xianyuassistant.controller.dto.AutoDeliveryRecordDTO> recordDTOs = new ArrayList<>();
         for (XianyuGoodsOrder record : records) {

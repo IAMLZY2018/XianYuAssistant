@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { ElMessageBox } from 'element-plus'
+import { showConfirm } from '@/utils/confirm'
 import { getAccountList } from '@/api/account'
 import { getConnectionStatus, startConnection, stopConnection } from '@/api/websocket'
 import { showSuccess, showError, showInfo } from '@/utils'
@@ -147,7 +147,7 @@ export function useConnectionManager() {
         await loadConnectionStatus(selectedAccountId.value)
       } else if (response.code === 1001 && response.data?.needCaptcha) {
         addLog('检测到需要滑块验证', true)
-        await ElMessageBox.confirm(
+        await showConfirm(
           `检测到账号需要完成滑块验证。\n\n` +
           `操作步骤：\n\n` +
           `1. 点击"访问闲鱼IM"按钮，打开闲鱼消息页面\n\n` +
@@ -155,14 +155,7 @@ export function useConnectionManager() {
           `3. 使用帮助按钮获取 Cookie 和 Token\n\n` +
           `4. 手动更新后点击"启动连接"，会自动更新WebSocket Token\n\n` +
           `💡 滑块校验生效会延迟，稍等片刻会自动连接闲鱼服务器`,
-          '需要滑块验证',
-          {
-            confirmButtonText: '访问闲鱼IM',
-            cancelButtonText: '取消',
-            type: 'warning',
-            distinguishCancelAndClose: true,
-            customClass: 'captcha-guide-dialog'
-          }
+          '需要滑块验证'
         )
         window.open('https://www.goofish.com/im', '_blank')
         addLog('已打开闲鱼IM页面')
@@ -183,14 +176,9 @@ export function useConnectionManager() {
   const handleStopConnection = async () => {
     if (!selectedAccountId.value) return
     try {
-      await ElMessageBox.confirm(
+      await showConfirm(
         '断开连接后将无法接收消息和执行自动化流程，确定要断开连接吗？',
-        '确认断开连接',
-        {
-          confirmButtonText: '确定断开',
-          cancelButtonText: '取消',
-          type: 'warning',
-        }
+        '确认断开连接'
       )
     } catch {
       return

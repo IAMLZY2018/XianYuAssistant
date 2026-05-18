@@ -269,12 +269,6 @@ const checkScreenSize = () => {
 
         <!-- Message Main -->
         <div class="messages__main">
-          <div class="messages__main-header">
-            <span class="messages__main-title">消息列表</span>
-            <span v-if="total > 0" class="messages__main-count">
-              共 {{ total }} 条
-            </span>
-          </div>
 
           <div
             ref="goodsListRef"

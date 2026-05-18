@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, inject, defineComponent, h } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { toast } from '@/utils/toast'
+import { showConfirm } from '@/utils/confirm'
 import '@/styles/header-selectors.css'
 import {
   getKamiConfigsByAccountId,
@@ -166,7 +167,7 @@ const selectConfig = (config: KamiConfig) => {
 
 const handleCreate = async () => {
   if (!selectedAccountId.value) {
-    ElMessage.warning('请先选择账号')
+    toast.warning('请先选择账号')
     return
   }
   createLoading.value = true
@@ -176,7 +177,7 @@ const handleCreate = async () => {
       aliasName: createForm.value.aliasName || '未命名'
     })
     if (res.code === 200) {
-      ElMessage.success('创建成功')
+      toast.success('创建成功')
       showCreateDialog.value = false
       createForm.value = { aliasName: '' }
       await loadKamiConfigs()
@@ -185,10 +186,10 @@ const handleCreate = async () => {
         loadKamiItems()
       }
     } else {
-      ElMessage.error(res.msg || '创建失败')
+      toast.error(res.msg || '创建失败')
     }
   } catch (e) {
-    ElMessage.error('创建失败')
+    toast.error('创建失败')
   } finally {
     createLoading.value = false
   }
@@ -196,28 +197,27 @@ const handleCreate = async () => {
 
 const handleDeleteConfig = async (config: KamiConfig) => {
   try {
-    await ElMessageBox.confirm(
+    await showConfirm(
       `确定删除卡密配置「${config.aliasName || config.id}」及其所有卡密？`,
-      '删除确认',
-      { type: 'warning' }
+      '删除确认'
     )
     const res = await deleteKamiConfig(config.id)
     if (res.code === 200) {
-      ElMessage.success('删除成功')
+      toast.success('删除成功')
       if (selectedConfigId.value === config.id) {
         selectedConfigId.value = null
         kamiItems.value = []
       }
       loadKamiConfigs()
     } else {
-      ElMessage.error(res.msg || '删除失败')
+      toast.error(res.msg || '删除失败')
     }
   } catch {}
 }
 
 const handleAddKami = async () => {
   if (!addContent.value.trim()) {
-    ElMessage.warning('请输入卡密内容')
+    toast.warning('请输入卡密内容')
     return
   }
   addLoading.value = true
@@ -227,16 +227,16 @@ const handleAddKami = async () => {
       kamiContent: addContent.value.trim()
     })
     if (res.code === 200) {
-      ElMessage.success('添加成功')
+      toast.success('添加成功')
       showAddDialog.value = false
       addContent.value = ''
       loadKamiItems()
       loadKamiConfigs()
     } else {
-      ElMessage.error(res.msg || '添加失败')
+      toast.error(res.msg || '添加失败')
     }
   } catch (e) {
-    ElMessage.error('添加失败')
+    toast.error('添加失败')
   } finally {
     addLoading.value = false
   }
@@ -244,7 +244,7 @@ const handleAddKami = async () => {
 
 const handleBatchImport = async () => {
   if (!importContent.value.trim()) {
-    ElMessage.warning('请输入卡密内容')
+    toast.warning('请输入卡密内容')
     return
   }
   importLoading.value = true
@@ -254,16 +254,16 @@ const handleBatchImport = async () => {
       kamiContents: importContent.value
     })
     if (res.code === 200) {
-      ElMessage.success(res.msg || '导入成功')
+      toast.success(res.msg || '导入成功')
       showImportDialog.value = false
       importContent.value = ''
       loadKamiItems()
       loadKamiConfigs()
     } else {
-      ElMessage.error(res.msg || '导入失败')
+      toast.error(res.msg || '导入失败')
     }
   } catch (e) {
-    ElMessage.error('导入失败')
+    toast.error('导入失败')
   } finally {
     importLoading.value = false
   }
@@ -271,28 +271,28 @@ const handleBatchImport = async () => {
 
 const handleDeleteItem = async (item: KamiItem) => {
   try {
-    await ElMessageBox.confirm('确定删除该卡密？', '删除确认', { type: 'warning' })
+    await showConfirm('确定删除该卡密？', '删除确认')
     const res = await deleteKamiItem(item.id)
     if (res.code === 200) {
-      ElMessage.success('删除成功')
+      toast.success('删除成功')
       loadKamiItems()
       loadKamiConfigs()
     } else {
-      ElMessage.error(res.msg || '删除失败')
+      toast.error(res.msg || '删除失败')
     }
   } catch {}
 }
 
 const handleResetItem = async (item: KamiItem) => {
   try {
-    await ElMessageBox.confirm('确定重置该卡密为未使用状态？', '重置确认', { type: 'warning' })
+    await showConfirm('确定重置该卡密为未使用状态？', '重置确认')
     const res = await resetKamiItem(item.id)
     if (res.code === 200) {
-      ElMessage.success('重置成功')
+      toast.success('重置成功')
       loadKamiItems()
       loadKamiConfigs()
     } else {
-      ElMessage.error(res.msg || '重置失败')
+      toast.error(res.msg || '重置失败')
     }
   } catch {}
 }
@@ -326,14 +326,14 @@ const handleSaveAlert = async () => {
       alertEmail: alertForm.value.alertEmail
     })
     if (res.code === 200) {
-      ElMessage.success('设置保存成功')
+      toast.success('设置保存成功')
       showAlertDialog.value = false
       loadKamiConfigs()
     } else {
-      ElMessage.error(res.msg || '保存失败')
+      toast.error(res.msg || '保存失败')
     }
   } catch (e) {
-    ElMessage.error('保存失败')
+    toast.error('保存失败')
   } finally {
     alertLoading.value = false
   }
@@ -347,7 +347,7 @@ const openExportDialog = () => {
 const handleExport = async () => {
   if (!selectedConfigId.value) return
   if (!exportStatus.value.unused && !exportStatus.value.used) {
-    ElMessage.warning('请至少选择一种状态')
+    toast.warning('请至少选择一种状态')
     return
   }
 
@@ -360,7 +360,7 @@ const handleExport = async () => {
     const allItems = res.data || []
 
     if (allItems.length === 0) {
-      ElMessage.warning('没有可导出的数据')
+      toast.warning('没有可导出的数据')
       return
     }
 
@@ -379,10 +379,10 @@ const handleExport = async () => {
     a.download = `${configName}_${timestamp}.txt`
     a.click()
     URL.revokeObjectURL(url)
-    ElMessage.success(`已导出 ${allItems.length} 条数据`)
+    toast.success(`已导出 ${allItems.length} 条数据`)
     showExportDialog.value = false
   } catch (e) {
-    ElMessage.error('导出失败')
+    toast.error('导出失败')
   }
 }
 
@@ -412,10 +412,10 @@ onMounted(async () => {
       <div v-if="!selectedConfigId" class="kami-mobile">
         <header class="kami-mobile__header">
           <div class="kami-mobile__header-top">
-            <h1 class="kami-page__title">🔑 卡密仓库</h1>
-            <el-button type="primary" size="small" @click="showCreateDialog = true" :disabled="!selectedAccountId">
+            <h1 class="kami-page__title">卡密仓库</h1>
+            <button class="btn-primary btn-sm" @click="showCreateDialog = true" :disabled="!selectedAccountId">
               新建
-            </el-button>
+            </button>
           </div>
         </header>
 
@@ -433,15 +433,12 @@ onMounted(async () => {
               <span class="config-card__stat">总量 {{ config.totalCount }}</span>
               <span class="config-card__stat used">已用 {{ config.usedCount }}</span>
               <span class="config-card__stat avail">可用 {{ config.availableCount }}</span>
-              <el-tag v-if="config.alertEnabled === 1" type="warning" size="small" style="margin-left: 4px;">预警</el-tag>
+              <span v-if="config.alertEnabled === 1" class="tag tag--warning" style="margin-left: 4px;">预警</span>
             </div>
-            <el-button
-              class="config-card__del"
-              type="danger"
-              text
-              size="small"
+            <button
+              class="config-card__del btn-danger btn-text btn-sm"
               @click.stop="handleDeleteConfig(config)"
-            >删除</el-button>
+            >删除</button>
           </div>
         </div>
       </div>
@@ -456,33 +453,32 @@ onMounted(async () => {
             <span class="kami-mobile__config-name">{{ selectedConfig?.aliasName || `配置#${selectedConfigId}` }}</span>
           </div>
           <div class="kami-mobile__detail-actions">
-            <el-button size="small" @click="showAddDialog = true">添加</el-button>
-            <el-button size="small" type="primary" @click="showImportDialog = true">批量导入</el-button>
-            <el-button size="small" type="success" @click="openExportDialog">导出</el-button>
-            <el-button size="small" type="warning" @click="openAlertDialog">预警</el-button>
+            <button class="btn-default btn-sm" @click="showAddDialog = true">添加</button>
+            <button class="btn-primary btn-sm" @click="showImportDialog = true">批量导入</button>
+            <button class="btn-success btn-sm" @click="openExportDialog">导出</button>
+            <button class="btn-warning btn-sm" @click="openAlertDialog">预警</button>
           </div>
         </header>
 
         <div class="kami-mobile__filters">
-          <el-select
+          <select
             v-model="filterStatus"
-            placeholder="全部状态"
-            clearable
+            class="native-select"
             style="flex: 1;"
             @change="handleFilterChange"
           >
-            <el-option :value="0" label="未使用" />
-            <el-option :value="1" label="已使用" />
-          </el-select>
-          <el-input
+            <option :value="undefined">全部状态</option>
+            <option :value="0">未使用</option>
+            <option :value="1">已使用</option>
+          </select>
+          <input
             v-model="filterKeyword"
+            class="native-input"
             placeholder="搜索卡密"
-            clearable
             style="flex: 2;"
             @keyup.enter="handleFilterChange"
-            @clear="handleFilterChange"
           />
-          <el-button @click="handleFilterChange">搜索</el-button>
+          <button class="btn-default" @click="handleFilterChange">搜索</button>
         </div>
 
         <div class="kami-mobile__items">
@@ -496,14 +492,14 @@ onMounted(async () => {
           >
             <div class="kami-item-card__content">{{ item.kamiContent }}</div>
             <div class="kami-item-card__meta">
-              <el-tag :type="item.status === 0 ? 'success' : 'info'" size="small">
+              <span :class="item.status === 0 ? 'tag tag--success' : 'tag tag--info'">
                 {{ item.status === 0 ? '未使用' : '已使用' }}
-              </el-tag>
+              </span>
               <span v-if="item.usedTime" class="kami-item-card__time">{{ item.usedTime }}</span>
             </div>
             <div class="kami-item-card__actions">
-              <el-button v-if="item.status === 1" type="warning" text size="small" @click="handleResetItem(item)">重置</el-button>
-              <el-button type="danger" text size="small" @click="handleDeleteItem(item)">删除</el-button>
+              <button v-if="item.status === 1" class="btn-warning btn-text btn-sm" @click="handleResetItem(item)">重置</button>
+              <button class="btn-danger btn-text btn-sm" @click="handleDeleteItem(item)">删除</button>
             </div>
           </div>
         </div>
@@ -514,24 +510,23 @@ onMounted(async () => {
     <!-- ===== 桌面端 ===== -->
     <template v-else>
       <header class="kami-page__header">
-        <h1 class="kami-page__title">🔑 卡密仓库</h1>
+        <h1 class="kami-page__title">卡密仓库</h1>
         <div class="kami-page__actions">
-          <el-select
+          <select
             v-model="selectedAccountId"
-            placeholder="选择账号"
-            class="account-select"
+            class="account-select native-select"
             @change="handleAccountChange"
           >
-            <el-option
+            <option value="" disabled>选择账号</option>
+            <option
               v-for="acc in accounts"
               :key="acc.id"
-              :label="acc.accountNote || `账号${acc.id}`"
               :value="acc.id"
-            />
-          </el-select>
-          <el-button type="primary" @click="showCreateDialog = true" :disabled="!selectedAccountId">
+            >{{ acc.accountNote || `账号${acc.id}` }}</option>
+          </select>
+          <button class="btn-primary" @click="showCreateDialog = true" :disabled="!selectedAccountId">
             新建密钥仓库
-          </el-button>
+          </button>
         </div>
       </header>
 
@@ -551,15 +546,12 @@ onMounted(async () => {
               <span class="config-card__stat">总量 {{ config.totalCount }}</span>
               <span class="config-card__stat used">已用 {{ config.usedCount }}</span>
               <span class="config-card__stat avail">可用 {{ config.availableCount }}</span>
-              <el-tag v-if="config.alertEnabled === 1" type="warning" size="small" style="margin-left: 4px;">预警</el-tag>
+              <span v-if="config.alertEnabled === 1" class="tag tag--warning" style="margin-left: 4px;">预警</span>
             </div>
-            <el-button
-              class="config-card__del"
-              type="danger"
-              text
-              size="small"
+            <button
+              class="config-card__del btn-danger btn-text btn-sm"
               @click.stop="handleDeleteConfig(config)"
-            >删除</el-button>
+            >删除</button>
           </div>
         </div>
 
@@ -569,63 +561,72 @@ onMounted(async () => {
             <div class="kami-detail__header">
               <h2>{{ selectedConfig.aliasName || `配置#${selectedConfig.id}` }}</h2>
               <div class="kami-detail__actions">
-                <el-button @click="showAddDialog = true">添加卡密</el-button>
-                <el-button type="primary" @click="showImportDialog = true">批量导入</el-button>
-                <el-button type="success" @click="openExportDialog">导出</el-button>
-                <el-button type="warning" @click="openAlertDialog">预警配置</el-button>
+                <button class="btn-default" @click="showAddDialog = true">添加卡密</button>
+                <button class="btn-primary" @click="showImportDialog = true">批量导入</button>
+                <button class="btn-success" @click="openExportDialog">导出</button>
+                <button class="btn-warning" @click="openAlertDialog">预警配置</button>
               </div>
             </div>
 
             <div class="kami-detail__filters">
-              <el-select
+              <select
                 v-model="filterStatus"
-                placeholder="全部状态"
-                clearable
+                class="native-select"
                 style="width: 120px; margin-right: 8px;"
                 @change="handleFilterChange"
               >
-                <el-option :value="0" label="未使用" />
-                <el-option :value="1" label="已使用" />
-              </el-select>
-              <el-input
+                <option :value="undefined">全部状态</option>
+                <option :value="0">未使用</option>
+                <option :value="1">已使用</option>
+              </select>
+              <input
                 v-model="filterKeyword"
+                class="native-input"
                 placeholder="搜索卡密内容"
-                clearable
                 style="width: 200px; margin-right: 8px;"
                 @keyup.enter="handleFilterChange"
-                @clear="handleFilterChange"
               />
-              <el-button @click="handleFilterChange">搜索</el-button>
+              <button class="btn-default" @click="handleFilterChange">搜索</button>
             </div>
 
             <div class="kami-detail__table">
               <div v-if="itemsLoading" class="kami-page__empty">加载中...</div>
-              <el-table v-else :data="kamiItems" stripe style="width: 100%" max-height="500">
-                <el-table-column prop="sortOrder" label="序号" width="70" />
-                <el-table-column prop="kamiContent" label="卡密内容" min-width="200" show-overflow-tooltip />
-                <el-table-column label="状态" width="100">
-                  <template #default="{ row }">
-                    <el-tag :type="row.status === 0 ? 'success' : 'info'" size="small">
-                      {{ row.status === 0 ? '未使用' : '已使用' }}
-                    </el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="orderId" label="订单ID" width="160" show-overflow-tooltip />
-                <el-table-column prop="usedTime" label="使用时间" width="170" />
-                <el-table-column prop="createTime" label="添加时间" width="170" />
-                <el-table-column label="操作" width="160">
-                  <template #default="{ row }">
-                    <el-button
-                      v-if="row.status === 1"
-                      type="warning"
-                      text
-                      size="small"
-                      @click="handleResetItem(row)"
-                    >重置</el-button>
-                    <el-button type="danger" text size="small" @click="handleDeleteItem(row)">删除</el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
+              <template v-else>
+                <div v-if="kamiItems.length === 0" class="kami-page__empty">暂无卡密</div>
+                <table v-else class="kami-table">
+                  <thead>
+                    <tr>
+                      <th>序号</th>
+                      <th>卡密内容</th>
+                      <th>状态</th>
+                      <th>订单ID</th>
+                      <th>使用时间</th>
+                      <th>添加时间</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="item in kamiItems" :key="item.id" :class="{ 'kami-table__row--used': item.status === 1 }">
+                      <td class="kami-table__cell--num">{{ item.sortOrder }}</td>
+                      <td class="kami-table__cell--content">{{ item.kamiContent }}</td>
+                      <td>
+                        <span class="kami-table__status" :class="item.status === 0 ? 'kami-table__status--unused' : 'kami-table__status--used'">
+                          {{ item.status === 0 ? '未使用' : '已使用' }}
+                        </span>
+                      </td>
+                      <td class="kami-table__cell--id">{{ item.orderId || '-' }}</td>
+                      <td class="kami-table__cell--time">{{ item.usedTime || '-' }}</td>
+                      <td class="kami-table__cell--time">{{ item.createTime }}</td>
+                      <td>
+                        <div class="kami-table__actions">
+                          <button v-if="item.status === 1" class="kami-table__action-btn kami-table__action-btn--reset" @click="handleResetItem(item)">重置</button>
+                          <button class="kami-table__action-btn kami-table__action-btn--delete" @click="handleDeleteItem(item)">删除</button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </template>
             </div>
           </template>
         </div>
@@ -898,6 +899,119 @@ onMounted(async () => {
   flex: 1;
   min-height: 0;
   overflow: auto;
+}
+
+.kami-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.kami-table th {
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1c1c1e;
+  letter-spacing: .4px;
+  text-align: left;
+  border-bottom: 1px solid rgba(60,60,67,.12);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.kami-table td {
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #1c1c1e;
+  border-bottom: 1px solid rgba(60,60,67,.08);
+}
+
+.kami-table tbody tr:hover {
+  background: rgba(255,255,255,0.38);
+}
+
+.kami-table__row--used {
+  opacity: .6;
+}
+
+.kami-table__cell--num {
+  font-size: 12px;
+  color: rgba(28,28,30,.55);
+}
+
+.kami-table__cell--content {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.kami-table__cell--id {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 12px;
+}
+
+.kami-table__cell--time {
+  white-space: nowrap;
+  font-size: 12px;
+  color: rgba(28,28,30,.55);
+}
+
+.kami-table__status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.kami-table__status--unused {
+  background: rgba(48,209,88,0.12);
+  color: #30D158;
+}
+
+.kami-table__status--used {
+  background: rgba(120,120,128,0.12);
+  color: rgba(28,28,30,.55);
+}
+
+.kami-table__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.kami-table__action-btn {
+  padding: 4px 12px;
+  border: none;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 590;
+  cursor: pointer;
+  transition: opacity .15s, transform .12s;
+  font-family: inherit;
+}
+
+.kami-table__action-btn:active { opacity: .80; transform: scale(.96); }
+
+.kami-table__action-btn--reset {
+  color: #FF9F0A;
+  background: rgba(255,159,10,0.12);
+}
+
+.kami-table__action-btn--delete {
+  color: #FF453A;
+  background: rgba(255,69,58,0.12);
 }
 
 /* ===== 手机端 ===== */
@@ -1253,31 +1367,53 @@ onMounted(async () => {
 }
 
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   padding: 8px 18px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 590;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: opacity .15s, transform .12s, box-shadow .15s;
   border: none;
+  font-family: inherit;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
+
+.btn:active { opacity: .80; transform: scale(.96); }
 
 .btn-secondary {
-  background: rgba(60,60,67,.12);
-  color: #1c1c1e;
+  color: #0A84FF;
+  background: rgba(255,255,255,0.70);
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  border: 1px solid rgba(255,255,255,0.85);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08), 0 1.5px 4px rgba(0,0,0,0.04);
 }
 
-.btn-secondary:hover {
-  background: rgba(0, 0, 0, 0.1);
+@media (hover: hover) {
+  .btn-secondary:hover {
+    background: rgba(255,255,255,0.80);
+  }
 }
 
 .btn-primary {
   background: rgba(10,132,255,0.85);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
   color: #fff;
+  border: 1px solid rgba(255,255,255,0.35);
+  box-shadow: 0 4px 16px rgba(10,132,255,0.35), 0 8px 32px rgba(0,0,0,0.08), 0 1.5px 4px rgba(0,0,0,0.04);
 }
 
-.btn-primary:hover:not(:disabled) {
-  background: rgba(10,132,255,0.75);
+@media (hover: hover) {
+  .btn-primary:hover:not(:disabled) {
+    background: rgba(10,132,255,0.95);
+    box-shadow: 0 6px 20px rgba(10,132,255,0.45), 0 8px 32px rgba(0,0,0,0.08), 0 1.5px 4px rgba(0,0,0,0.04);
+  }
 }
 
 .btn-primary:disabled {
@@ -1311,4 +1447,61 @@ onMounted(async () => {
   transform: scale(0.92) translateY(8px);
   opacity: 0;
 }
+
+.btn-primary, .btn-default, .btn-success, .btn-warning, .btn-danger, .btn-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 590;
+  cursor: pointer;
+  transition: opacity .15s, transform .12s;
+  border: none;
+  font-family: inherit;
+  user-select: none;
+  white-space: nowrap;
+}
+.btn-primary:active, .btn-default:active, .btn-success:active, .btn-warning:active, .btn-danger:active { opacity: .80; transform: scale(.96); }
+.btn-primary { background: rgba(10,132,255,0.85); color: #fff; border: 1px solid rgba(255,255,255,0.35); box-shadow: 0 4px 16px rgba(10,132,255,0.35), 0 8px 32px rgba(0,0,0,0.08); }
+.btn-default { background: rgba(255,255,255,0.70); color: #0A84FF; border: 1px solid rgba(255,255,255,0.85); box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
+.btn-success { background: rgba(48,209,88,0.85); color: #fff; border: 1px solid rgba(255,255,255,0.35); }
+.btn-warning { background: rgba(255,159,10,0.85); color: #fff; border: 1px solid rgba(255,255,255,0.35); }
+.btn-danger { color: #FF453A; background: rgba(255,69,58,0.15); border: 1px solid rgba(255,69,58,0.2); }
+.btn-text { background: transparent; color: #0A84FF; padding: 4px 8px; }
+.btn-sm { padding: 4px 12px; font-size: 12px; }
+.btn-primary:disabled, .btn-default:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.tag { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 100px; font-size: 12px; font-weight: 500; }
+.tag--success { background: rgba(48,209,88,0.12); color: #30D158; }
+.tag--warning { background: rgba(255,159,10,0.12); color: #FF9F0A; }
+.tag--info { background: rgba(120,120,128,0.12); color: rgba(28,28,30,.55); }
+
+.native-select {
+  padding: 8px 12px;
+  border: 1px solid rgba(60,60,67,.12);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.55);
+  color: #1c1c1e;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.native-select:focus { border-color: #0A84FF; }
+
+.native-input {
+  padding: 8px 12px;
+  border: 1px solid rgba(60,60,67,.12);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.55);
+  color: #1c1c1e;
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.native-input:focus { border-color: #0A84FF; }
 </style>

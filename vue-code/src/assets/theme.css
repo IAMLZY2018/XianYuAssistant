@@ -3,7 +3,6 @@
    ============================================================ */
 
 :root {
-  /* Apple system colors */
   --ab: #0A84FF;
   --ar: #FF453A;
   --ag: #30D158;
@@ -11,18 +10,16 @@
   --ap: #BF5AF2;
   --apple-gray: rgba(120,120,128,.65);
 
-  /* Liquid Glass core */
-  --glass-bg: rgba(255,255,255,0.55);
-  --glass-bg-deep: rgba(255,255,255,0.38);
+  --glass-bg: rgba(255,255,255,0.70);
+  --glass-bg-deep: rgba(255,255,255,0.50);
   --glass-bg-float: rgba(255,255,255,0.72);
-  --glass-border: rgba(255,255,255,0.75);
-  --glass-border-in: rgba(255,255,255,0.35);
-  --glass-shadow: 0 8px 32px rgba(0,0,0,0.10), 0 1.5px 4px rgba(0,0,0,0.06);
+  --glass-border: rgba(255,255,255,0.85);
+  --glass-border-in: rgba(255,255,255,0.45);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.08), 0 1.5px 4px rgba(0,0,0,0.04);
   --glass-shadow-float: 0 16px 48px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
   --glass-blur: blur(28px) saturate(1.8);
   --glass-blur-sm: blur(16px) saturate(1.6);
 
-  /* Background */
   --bg-gradient: linear-gradient(145deg, #e8f4fd 0%, #e0eafc 25%, #ead5f7 55%, #fde8f0 80%, #fef3e2 100%);
   --apple-text: #1c1c1e;
   --apple-text2: rgba(28,28,30,.55);
@@ -33,7 +30,6 @@
   --r-pill: 100px;
   --r-lg: 22px;
 
-  /* Semantic colors */
   --color-background: #e8e8e8;
   --color-background-soft: var(--glass-bg);
   --color-background-mute: var(--glass-bg-deep);
@@ -48,27 +44,6 @@
   --color-danger: var(--ar);
   --color-info: var(--ab);
 
-  /* Element Plus overrides */
-  --el-color-primary: #0A84FF;
-  --el-color-primary-light-3: #3a9dff;
-  --el-color-primary-light-5: #6ab8ff;
-  --el-color-primary-light-7: #9ad0ff;
-  --el-color-primary-light-8: #b0dbff;
-  --el-color-primary-light-9: #d0ebff;
-  --el-border-radius-base: 10px;
-  --el-border-radius-small: 8px;
-  --el-bg-color: rgba(255,255,255,0.55);
-  --el-bg-color-overlay: rgba(255,255,255,0.72);
-  --el-bg-color-page: transparent;
-  --el-border-color: rgba(60,60,67,.12);
-  --el-border-color-light: rgba(60,60,67,.08);
-  --el-text-color-primary: #1c1c1e;
-  --el-text-color-regular: #1c1c1e;
-  --el-text-color-secondary: rgba(28,28,30,.55);
-  --el-text-color-placeholder: rgba(120,120,128,.65);
-  --el-fill-color-light: rgba(255,255,255,0.38);
-  --el-fill-color-lighter: rgba(255,255,255,0.25);
-
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -78,243 +53,35 @@ body {
   color: var(--apple-text);
 }
 
-/* ══════════════════════════
-   Element Plus — Glass
-══════════════════════════ */
-
-/* Card */
-.el-card {
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--glass-shadow);
-  overflow: hidden;
-}
-
-.el-card__header {
-  background: transparent;
-  border-bottom: 0.5px solid var(--apple-sep);
-}
-
-/* Button */
-.el-button {
-  border-radius: var(--r-pill);
-  font-weight: 590;
-  transition: opacity .15s, transform .12s, box-shadow .15s;
-}
-
-.el-button:active { opacity: .80; transform: scale(.96); }
-
-.el-button--primary {
-  background: rgba(10,132,255,0.85);
-  -webkit-backdrop-filter: blur(20px) saturate(1.8);
-  backdrop-filter: blur(20px) saturate(1.8);
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.35);
-  box-shadow: 0 4px 16px rgba(10,132,255,0.35);
-}
-
-.el-button--primary:hover,
-.el-button--primary:focus {
-  background: rgba(10,132,255,0.95);
-  box-shadow: 0 6px 20px rgba(10,132,255,0.45);
-}
-
-.el-button--default {
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--glass-blur-sm);
-  backdrop-filter: var(--glass-blur-sm);
-  color: var(--ab);
-  border: 1px solid var(--glass-border);
-}
-
-.el-button--default:hover,
-.el-button--default:focus {
-  background: var(--glass-bg-float);
-  border-color: rgba(10,132,255,0.4);
-  color: var(--ab);
-}
-
-/* Table */
-.el-table {
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  border-radius: var(--r-lg);
-}
-
-.el-table th.el-table__cell {
-  background: transparent;
-  color: var(--apple-text2);
-  border-bottom: 0.5px solid var(--apple-sep);
-}
-
-.el-table tr:hover > td {
-  background: rgba(255,255,255,0.15) !important;
-}
-
-.el-table td.el-table__cell {
-  border-bottom: 0.5px solid var(--apple-sep);
-}
-
-/* Input */
-.el-input__wrapper {
-  background: var(--glass-bg-deep);
-  -webkit-backdrop-filter: var(--glass-blur-sm);
-  backdrop-filter: var(--glass-blur-sm);
-  border: 1px solid var(--glass-border-in);
-  box-shadow: none;
-  border-radius: var(--r-sm);
-}
-
-.el-input__wrapper:hover {
-  border-color: rgba(10,132,255,0.4);
-}
-
-.el-input__wrapper.is-focus {
-  border-color: rgba(10,132,255,0.5);
-  box-shadow: 0 0 0 3.5px rgba(10,132,255,0.30);
-}
-
-/* Tag */
-.el-tag {
-  border-radius: var(--r-pill);
-  border: none;
+/* Table action button */
+.table-action-btn {
+  padding: 4px 10px;
+  font-size: 12px;
   font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  background: rgba(10,132,255,.12);
+  color: #0A84FF;
+  min-height: 28px;
 }
 
-.el-tag--success {
-  background: rgba(48,209,88,.2);
-  color: var(--ag);
-  border: 1px solid rgba(48,209,88,.3);
+.table-action-btn:hover {
+  background: rgba(10,132,255,.2);
 }
 
-.el-tag--danger {
-  background: rgba(255,69,58,.15);
-  color: var(--ar);
-  border: 1px solid rgba(255,69,58,.25);
+.table-action-btn-danger {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255,69,58,.12);
+  color: #FF453A;
+  min-height: 28px;
 }
 
-.el-tag--warning {
-  background: rgba(255,159,10,.18);
-  color: var(--ao);
-  border: 1px solid rgba(255,159,10,.25);
-}
-
-.el-tag--info {
-  background: rgba(10,132,255,.15);
-  color: var(--ab);
-  border: 1px solid rgba(10,132,255,.25);
-}
-
-/* Dialog */
-.el-dialog {
-  background: var(--glass-bg-float);
-  -webkit-backdrop-filter: blur(40px) saturate(2);
-  backdrop-filter: blur(40px) saturate(2);
-  border: 1px solid var(--glass-border);
-  border-radius: 20px;
-  box-shadow: var(--glass-shadow-float);
-}
-
-.el-dialog__header {
-  border-bottom: 0.5px solid var(--apple-sep);
-  background: transparent;
-}
-
-.el-dialog__body {
-  background: transparent;
-}
-
-.el-dialog__footer {
-  border-top: 0.5px solid var(--apple-sep);
-  background: transparent;
-}
-
-/* Switch */
-.el-switch.is-checked .el-switch__core {
-  background-color: rgba(48,209,88,.85);
-  border-color: rgba(255,255,255,.4);
-}
-
-/* Pagination */
-.el-pagination { font-weight: 500; }
-
-.el-pager li {
-  background: var(--glass-bg-deep);
-  border: 1px solid var(--glass-border-in);
-  border-radius: var(--r-pill);
-  margin: 0 4px;
-}
-
-.el-pager li.is-active {
-  background: rgba(10,132,255,0.85);
-  border-color: rgba(255,255,255,0.35);
-  color: #fff;
-}
-
-/* Message */
-.el-message {
-  background: var(--glass-bg-float);
-  -webkit-backdrop-filter: blur(32px) saturate(1.8);
-  backdrop-filter: blur(32px) saturate(1.8);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--glass-shadow-float);
-}
-
-/* MessageBox */
-.el-message-box {
-  background: var(--glass-bg-float);
-  -webkit-backdrop-filter: blur(40px) saturate(2);
-  backdrop-filter: blur(40px) saturate(2);
-  border: 1px solid var(--glass-border);
-  border-radius: 20px;
-  box-shadow: var(--glass-shadow-float);
-}
-
-/* Overlay */
-.el-overlay {
-  background-color: rgba(0,0,0,0.20);
-}
-
-/* Select dropdown */
-.el-select-dropdown {
-  background: var(--glass-bg-float);
-  -webkit-backdrop-filter: blur(40px) saturate(2);
-  backdrop-filter: blur(40px) saturate(2);
-  border: 1px solid var(--glass-border);
-  border-radius: 14px;
-  box-shadow: var(--glass-shadow-float);
-}
-
-/* Popover */
-.el-popover.el-popper {
-  background: var(--glass-bg-float);
-  -webkit-backdrop-filter: blur(40px) saturate(2);
-  backdrop-filter: blur(40px) saturate(2);
-  border: 1px solid var(--glass-border);
-  border-radius: 14px;
-  box-shadow: var(--glass-shadow-float);
-}
-
-/* Loading */
-.el-loading-mask {
-  background-color: rgba(255,255,255,0.4);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-}
-
-/* Divider */
-.el-divider {
-  border-color: var(--apple-sep);
-}
-
-.el-divider__text {
-  color: var(--apple-text2);
-  background: transparent;
+.table-action-btn-danger:hover {
+  background: rgba(255,69,58,.2);
 }
 
 /* Scrollbar */

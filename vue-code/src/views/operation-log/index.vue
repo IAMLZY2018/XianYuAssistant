@@ -10,7 +10,6 @@ import IconChevronLeft from '@/components/icons/IconChevronLeft.vue'
 import IconChevronRight from '@/components/icons/IconChevronRight.vue'
 import IconClock from '@/components/icons/IconClock.vue'
 import IconRefresh from '@/components/icons/IconRefresh.vue'
-import IconFilter from '@/components/icons/IconFilter.vue'
 import IconEmpty from '@/components/icons/IconEmpty.vue'
 import IconInfo from '@/components/icons/IconInfo.vue'
 
@@ -23,20 +22,12 @@ const {
   page,
   pageSize,
   totalPages,
-  filterType,
-  filterModule,
-  filterStatus,
   isMobile,
   mobileView,
   selectedAccountForMobile,
   detailDialogVisible,
   detailLog,
-  operationTypes,
-  operationModules,
-  operationStatuses,
   selectAccount,
-  handleFilter,
-  handleResetFilter,
   handlePageChange,
   handleRefresh,
   viewDetail,
@@ -205,62 +196,6 @@ onMounted(() => {
         </template>
 
         <template v-if="selectedAccountId">
-          <!-- Filter Bar -->
-          <div class="ol__filter-bar">
-            <div class="ol__select-wrap">
-              <select v-model="filterType" class="ol__select">
-                <option
-                  v-for="item in operationTypes"
-                  :key="item.value"
-                  :value="item.value"
-                >
-                  {{ item.label }}
-                </option>
-              </select>
-              <span class="ol__select-icon">
-                <IconChevronDown />
-              </span>
-            </div>
-
-            <div class="ol__select-wrap mobile-hidden">
-              <select v-model="filterModule" class="ol__select">
-                <option
-                  v-for="item in operationModules"
-                  :key="item.value"
-                  :value="item.value"
-                >
-                  {{ item.label }}
-                </option>
-              </select>
-              <span class="ol__select-icon">
-                <IconChevronDown />
-              </span>
-            </div>
-
-            <div class="ol__select-wrap">
-              <select v-model="filterStatus" class="ol__select" style="min-width:100px;">
-                <option
-                  v-for="item in operationStatuses"
-                  :key="item.value"
-                  :value="item.value"
-                >
-                  {{ item.label }}
-                </option>
-              </select>
-              <span class="ol__select-icon">
-                <IconChevronDown />
-              </span>
-            </div>
-
-            <button class="btn btn--primary btn--sm" @click="handleFilter">
-              <IconFilter />
-              筛选
-            </button>
-            <button class="btn btn--secondary btn--sm" @click="handleResetFilter">
-              重置
-            </button>
-          </div>
-
           <!-- Desktop Logs Table -->
           <div v-if="!isMobile" class="ol__logs-content">
             <!-- Loading -->
@@ -275,10 +210,8 @@ onMounted(() => {
                 <tr>
                   <th>ID</th>
                   <th>操作类型</th>
-                  <th class="mobile-hidden">模块</th>
                   <th>操作描述</th>
                   <th>状态</th>
-                  <th class="mobile-hidden">耗时</th>
                   <th>时间</th>
                   <th>操作</th>
                 </tr>
@@ -291,7 +224,6 @@ onMounted(() => {
                       {{ getOperationTypeText(log.operationType) }}
                     </span>
                   </td>
-                  <td class="mobile-hidden">{{ log.operationModule || '-' }}</td>
                   <td>
                     <span class="ol__log-desc" :title="log.operationDesc">{{ log.operationDesc || '-' }}</span>
                   </td>
@@ -299,9 +231,6 @@ onMounted(() => {
                     <span class="ol__log-status" :class="`ol__log-status--${getStatusClass(log.operationStatus)}`">
                       {{ getStatusText(log.operationStatus) }}
                     </span>
-                  </td>
-                  <td class="mobile-hidden">
-                    <span class="ol__log-duration">{{ formatDuration(log.durationMs) }}</span>
                   </td>
                   <td>
                     <span class="ol__log-time">{{ formatTime(log.createTime) }}</span>
