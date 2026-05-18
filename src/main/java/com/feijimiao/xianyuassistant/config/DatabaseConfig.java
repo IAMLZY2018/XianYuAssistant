@@ -14,6 +14,8 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 数据库配置类
@@ -88,46 +90,21 @@ public class DatabaseConfig {
             try (Connection conn = dataSource.getConnection();
                  Statement stmt = conn.createStatement()) {
                 
-                // 先按$$分割（处理触发器），然后再按;分割
-                String[] triggerBlocks = sql.split("\\$\\$");
+                // 智能分割：识别触发器(CREATE TRIGGER...BEGIN...END;)作为完整语句
+                List<String> statements = splitSqlStatements(sql);
                 int executedCount = 0;
                 
-                for (String block : triggerBlocks) {
-                    block = block.trim();
-                    if (block.isEmpty()) {
-                        continue;
-                    }
+                for (String sqlStatement : statements) {
+                    String cleanSql = removeComments(sqlStatement.trim());
                     
-                    // 检查是否是触发器块（包含BEGIN...END）
-                    if (block.contains("BEGIN") && block.contains("END")) {
-                        // 这是一个完整的触发器，直接执行
-                        String cleanBlock = removeComments(block);
-                        if (!cleanBlock.isEmpty()) {
-                            try {
-                                stmt.execute(cleanBlock);
-                                executedCount++;
-                                log.debug("执行触发器成功: {}", cleanBlock.substring(0, Math.min(50, cleanBlock.length())));
-                            } catch (Exception e) {
-                                log.error("执行触发器失败: {}", cleanBlock, e);
-                                throw e;
-                            }
-                        }
-                    } else {
-                        // 普通SQL语句，按;分割
-                        String[] sqlStatements = block.split(";");
-                        for (String sqlStatement : sqlStatements) {
-                            String cleanSql = removeComments(sqlStatement.trim());
-                            
-                            if (!cleanSql.isEmpty()) {
-                                try {
-                                    stmt.execute(cleanSql);
-                                    executedCount++;
-                                    log.debug("执行SQL成功: {}", cleanSql.substring(0, Math.min(50, cleanSql.length())));
-                                } catch (Exception e) {
-                                    log.error("执行SQL失败: {}", cleanSql, e);
-                                    throw e;
-                                }
-                            }
+                    if (!cleanSql.isEmpty()) {
+                        try {
+                            stmt.execute(cleanSql);
+                            executedCount++;
+                            log.debug("执行SQL成功: {}", cleanSql.substring(0, Math.min(50, cleanSql.length())));
+                        } catch (Exception e) {
+                            log.error("执行SQL失败: {}", cleanSql, e);
+                            throw e;
                         }
                     }
                 }
@@ -146,6 +123,56 @@ public class DatabaseConfig {
             log.error("初始化数据库失败", e);
             throw new RuntimeException("初始化数据库失败: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * 智能分割SQL语句
+     * 识别CREATE TRIGGER...BEGIN...END;作为完整语句，其他按;分割
+     */
+    private List<String> splitSqlStatements(String sql) {
+        List<String> statements = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        boolean inTrigger = false;
+        
+        for (String line : sql.split("\n")) {
+            String trimmed = line.trim();
+            
+            // 跳过注释行
+            if (trimmed.startsWith("--")) {
+                continue;
+            }
+            
+            // 检测触发器开始
+            if (trimmed.toUpperCase().startsWith("CREATE TRIGGER")) {
+                inTrigger = true;
+                current = new StringBuilder();
+            }
+            
+            current.append(line).append("\n");
+            
+            if (inTrigger) {
+                // 触发器以END;结束
+                if (trimmed.toUpperCase().equals("END;") || trimmed.equals("END;")) {
+                    statements.add(current.toString().trim());
+                    current = new StringBuilder();
+                    inTrigger = false;
+                }
+            } else {
+                // 普通语句以;结束
+                if (trimmed.endsWith(";")) {
+                    statements.add(current.toString().trim());
+                    current = new StringBuilder();
+                }
+            }
+        }
+        
+        // 处理最后可能剩余的内容
+        String remaining = current.toString().trim();
+        if (!remaining.isEmpty()) {
+            statements.add(remaining);
+        }
+        
+        return statements;
     }
 
     /**

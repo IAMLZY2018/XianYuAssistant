@@ -5,6 +5,7 @@ import com.feijimiao.xianyuassistant.entity.XianyuAccount;
 import com.feijimiao.xianyuassistant.entity.XianyuChatMessage;
 import com.feijimiao.xianyuassistant.mapper.XianyuAccountMapper;
 import com.feijimiao.xianyuassistant.mapper.XianyuChatMessageMapper;
+import com.feijimiao.xianyuassistant.controller.dto.MsgContextReqDTO;
 import com.feijimiao.xianyuassistant.controller.dto.MsgDTO;
 import com.feijimiao.xianyuassistant.controller.dto.MsgListReqDTO;
 import com.feijimiao.xianyuassistant.controller.dto.MsgListRespDTO;
@@ -121,6 +122,43 @@ public class ChatMessageServiceImpl implements ChatMessageService {
             log.error("查询消息列表失败: accountId={}, xyGoodsId={}, filterCurrentAccount={}",
                     reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId(), reqDTO.getFilterCurrentAccount(), e);
             return ResultObject.failed("查询消息列表失败: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    public ResultObject<?> getContextMessages(MsgContextReqDTO reqDTO) {
+        try {
+            if (reqDTO.getSid() == null || reqDTO.getSid().isEmpty()) {
+                return ResultObject.validateFailed("sid不能为空");
+            }
+            
+            int limit = reqDTO.getLimit() != null && reqDTO.getLimit() > 0 ? reqDTO.getLimit() : 20;
+            int offset = reqDTO.getOffset() != null && reqDTO.getOffset() >= 0 ? reqDTO.getOffset() : 0;
+            
+            List<XianyuChatMessage> messages = chatMessageMapper.findRecentBySId(reqDTO.getSid(), limit, offset);
+            
+            List<MsgDTO> msgDTOList = new ArrayList<>();
+            if (messages != null) {
+                for (XianyuChatMessage message : messages) {
+                    MsgDTO msgDTO = new MsgDTO();
+                    msgDTO.setId(message.getId());
+                    msgDTO.setSId(message.getSId());
+                    msgDTO.setContentType(message.getContentType());
+                    msgDTO.setMsgContent(message.getMsgContent());
+                    msgDTO.setXyGoodsId(message.getXyGoodsId());
+                    msgDTO.setReminderUrl(message.getReminderUrl());
+                    msgDTO.setSenderUserName(message.getSenderUserName());
+                    msgDTO.setSenderUserId(message.getSenderUserId());
+                    msgDTO.setMessageTime(message.getMessageTime());
+                    msgDTOList.add(msgDTO);
+                }
+            }
+            
+            return ResultObject.success(msgDTOList);
+            
+        } catch (Exception e) {
+            log.error("查询上下文消息失败: sid={}", reqDTO.getSid(), e);
+            return ResultObject.failed("查询上下文消息失败: " + e.getMessage());
         }
     }
 }

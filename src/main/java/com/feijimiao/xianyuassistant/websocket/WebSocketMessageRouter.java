@@ -1,8 +1,11 @@
 package com.feijimiao.xianyuassistant.websocket;
 
+import com.feijimiao.xianyuassistant.service.WebSocketService;
 import com.feijimiao.xianyuassistant.websocket.handler.*;
+import com.feijimiao.xianyuassistant.service.AccountService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -27,6 +30,13 @@ public class WebSocketMessageRouter {
     // 自动注入所有处理器
     @Autowired(required = false)
     private List<AbstractLwpHandler> handlers;
+
+    @Autowired
+    private AccountService accountService;
+
+    @Lazy
+    @Autowired
+    private WebSocketService webSocketService;
     
     /**
      * 延迟初始化处理器
@@ -130,6 +140,24 @@ public class WebSocketMessageRouter {
         
         log.debug("【账号{}】处理响应消息: code={}", accountId, code);
         
+        // 完成等待中的sendMessage Future
+        try {
+            Long accountIdLong = Long.parseLong(accountId);
+            Object headersObj = messageData.get("headers");
+            if (headersObj instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> headers = (Map<String, Object>) headersObj;
+                Object mid = headers.get("mid");
+                if (mid != null) {
+                    int codeValue = Integer.parseInt(code.toString());
+                    ((com.feijimiao.xianyuassistant.service.impl.WebSocketServiceImpl) webSocketService)
+                        .completePendingResponse(accountIdLong, mid.toString(), codeValue);
+                }
+            }
+        } catch (Exception e) {
+            log.debug("完成pendingResponse失败: {}", e.getMessage());
+        }
+        
         try {
             int codeValue = Integer.parseInt(code.toString());
             
@@ -154,8 +182,10 @@ public class WebSocketMessageRouter {
                 log.debug("【账号{}】收到成功响应(200)", accountId);
             } else if (codeValue == 401) {
                 log.error("【账号{}】Token失效(401)，需要重新获取Token", accountId);
+                updateCookieStatusIfPresent(accountId, 2);
             } else if (codeValue == 500) {
                 log.error("【账号{}】服务器错误(500)", accountId);
+                updateCookieStatusIfPresent(accountId, 2);
             } else {
                 log.warn("【账号{}】未知响应码: {}", accountId, code);
             }
@@ -170,7 +200,6 @@ public class WebSocketMessageRouter {
     private void handleUnknownMessage(String accountId, Map<String, Object> messageData) {
         log.debug("【账号{}】收到未知类型消息", accountId);
         
-        // 尝试提取一些有用的信息
         Object type = messageData.get("type");
         Object lwp = messageData.get("lwp");
         
@@ -179,6 +208,15 @@ public class WebSocketMessageRouter {
         }
         if (type != null) {
             log.debug("【账号{}】消息类型: {}", accountId, type);
+        }
+    }
+
+    private void updateCookieStatusIfPresent(String accountId, int status) {
+        try {
+            Long id = Long.parseLong(accountId);
+            accountService.updateCookieStatus(id, status);
+        } catch (NumberFormatException e) {
+            log.warn("无法解析accountId: {}", accountId);
         }
     }
     

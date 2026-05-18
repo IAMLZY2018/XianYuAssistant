@@ -1,1 +1,0 @@
-import{d as o,c as t,i as s,o as a,_ as n}from"./index-7CieyMQU.js";const r={class:"records-page"},_=o({__name:"index",setup(c){return(d,e)=>(a(),t("div",r,[...e[0]||(e[0]=[s("h1",null,"操作记录",-1),s("p",null,"操作记录功能开发中...",-1)])]))}}),l=n(_,[["__scopeId","data-v-22ebba2d"]]);export{l as default};

@@ -52,6 +52,10 @@ public class OperationLogController {
                     reqDTO.getPageSize()
             );
             
+            // 添加调试日志
+            log.info("查询结果: total={}, logs={}", result.get("total"), 
+                    result.get("logs") != null ? ((java.util.List<?>) result.get("logs")).size() : 0);
+            
             return ResultObject.success(result);
             
         } catch (Exception e) {

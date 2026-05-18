@@ -39,6 +39,26 @@ public class XianyuGoodsConfig {
     private Integer xianyuAutoReplyOn;
     
     /**
+     * 携带上下文开关：1-开启，0-关闭，默认开启，跟随自动回复开关
+     */
+    private Integer xianyuAutoReplyContextOn;
+    
+    private Integer xianyuKeywordReplyOn;
+
+    /**
+     * 人工干预开关：1-开启，0-关闭，默认关闭
+     * 开启后延时任务到期时若卖家已人工回复则取消自动回复
+     */
+    private Integer humanInterventionOn;
+
+    private Integer humanInterventionMinutes;
+    
+    /**
+     * 固定资料（用于AI自动回复）
+     */
+    private String fixedMaterial;
+    
+    /**
      * 创建时间
      */
     private String createTime;

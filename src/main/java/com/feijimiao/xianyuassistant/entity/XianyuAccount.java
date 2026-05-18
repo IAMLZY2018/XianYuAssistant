@@ -31,6 +31,13 @@ public class XianyuAccount {
     private String unb;
     
     /**
+     * 设备ID（UUID格式-用户ID，用于WebSocket连接）
+     * 格式: XXXXXXXX-XXXX-4XXX-XXXX-XXXXXXXXXXXX-用户ID
+     * 例如: ED4CBA2C-5DA0-4154-A902-BF5CB52409E2-3888777108
+     */
+    private String deviceId;
+    
+    /**
      * 账号状态 1:正常 -1:需要手机号验证
      */
     private Integer status;

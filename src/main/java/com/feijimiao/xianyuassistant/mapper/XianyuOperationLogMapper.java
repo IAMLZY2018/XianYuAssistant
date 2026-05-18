@@ -2,6 +2,7 @@ package com.feijimiao.xianyuassistant.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.feijimiao.xianyuassistant.entity.XianyuOperationLog;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -67,6 +68,6 @@ public interface XianyuOperationLogMapper extends BaseMapper<XianyuOperationLog>
     /**
      * 根据账号ID删除操作记录
      */
-    @Select("DELETE FROM xianyu_operation_log WHERE xianyu_account_id = #{accountId}")
+    @Delete("DELETE FROM xianyu_operation_log WHERE xianyu_account_id = #{accountId}")
     int deleteByAccountId(@Param("accountId") Long accountId);
 }

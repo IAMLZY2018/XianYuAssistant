@@ -54,6 +54,7 @@ export interface SendMessageRequest {
   cid: string;  // 会话ID (即 sid)
   toId: string;  // 接收方ID (即 senderUserId)
   text: string;  // 消息内容（注意：后端接收的参数名是 text，不是 content）
+  xyGoodsId?: string;  // 闲鱼商品ID
 }
 
 // 发送消息

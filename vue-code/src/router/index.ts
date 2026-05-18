@@ -1,8 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { isLoggedIn } from '@/utils/request'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    {
+      path: '/login',
+      name: 'login',
+      component: () => import('@/views/login/index.vue'),
+      meta: { title: '登录', public: true }
+    },
     {
       path: '/',
       redirect: '/dashboard'
@@ -11,7 +18,7 @@ const router = createRouter({
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('@/views/dashboard/index.vue'),
-      meta: { title: '仪表板', icon: '📊' }
+      meta: { title: '面板', icon: '📊' }
     },
     {
       path: '/accounts',
@@ -26,6 +33,12 @@ const router = createRouter({
       meta: { title: '连接管理', icon: '🔗' }
     },
     {
+      path: '/connection/:id',
+      name: 'connection-detail',
+      component: () => import('@/views/connection/ConnectionDetail.vue'),
+      meta: { title: '连接详情', icon: '🔗' }
+    },
+    {
       path: '/goods',
       name: 'goods',
       component: () => import('@/views/goods/index.vue'),
@@ -35,7 +48,7 @@ const router = createRouter({
       path: '/orders',
       name: 'orders',
       component: () => import('@/views/orders/index.vue'),
-      meta: { title: '订单管理', icon: '📋' }
+      meta: { title: '发货记录', icon: '📋' }
     },
     {
       path: '/messages',
@@ -50,16 +63,16 @@ const router = createRouter({
       meta: { title: '自动发货', icon: '🤖' }
     },
     {
+      path: '/kami-config',
+      name: 'kami-config',
+      component: () => import('@/views/kami-config/index.vue'),
+      meta: { title: '卡密配置', icon: '🔑' }
+    },
+    {
       path: '/auto-reply',
       name: 'auto-reply',
       component: () => import('@/views/auto-reply/index.vue'),
       meta: { title: '自动回复', icon: '💭' }
-    },
-    {
-      path: '/records',
-      name: 'records',
-      component: () => import('@/views/records/index.vue'),
-      meta: { title: '操作记录', icon: '📝' }
     },
     {
       path: '/operation-log',
@@ -68,12 +81,27 @@ const router = createRouter({
       meta: { title: '操作记录', icon: '📜' }
     },
     {
+      path: '/settings',
+      name: 'settings',
+      component: () => import('@/views/settings/index.vue'),
+      meta: { title: '系统设置', icon: '⚙️' }
+    },
+    {
       path: '/qrlogin',
       name: 'qrlogin',
       component: () => import('@/views/qrlogin/index.vue'),
       meta: { title: '扫码登录', icon: '📱' }
     }
   ]
+})
+
+// 路由守卫：未登录跳转登录页
+router.beforeEach((to, _from, next) => {
+  if (to.meta.public || isLoggedIn()) {
+    next()
+  } else {
+    next('/login')
+  }
 })
 
 export default router
