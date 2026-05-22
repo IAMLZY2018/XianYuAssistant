@@ -96,7 +96,7 @@ function handleKeydown(e: KeyboardEvent) {
       <!-- Logo -->
       <div class="login-logo">
         <div class="login-logo-icon">闲</div>
-        <div class="login-logo-text">自动化管理</div>
+        <div class="login-logo-text">XianYuAssistant</div>
       </div>
 
       <!-- Loading -->

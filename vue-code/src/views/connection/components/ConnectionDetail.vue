@@ -10,8 +10,6 @@ import ManualUpdateCookieModal from './ManualUpdateCookieModal.vue'
 import QRUpdateDialog from './QRUpdateDialog.vue'
 import CaptchaGuideDialog from './CaptchaGuideDialog.vue'
 
-import IconWifi from '@/components/icons/IconWifi.vue'
-import IconWifiOff from '@/components/icons/IconWifiOff.vue'
 import IconKey from '@/components/icons/IconKey.vue'
 import IconPlay from '@/components/icons/IconPlay.vue'
 import IconStop from '@/components/icons/IconStop.vue'
@@ -249,25 +247,6 @@ onBeforeUnmount(() => {
 
     <div v-else class="detail-scroll" :class="{ 'detail-scroll--loading': statusLoading }">
       <div v-if="connectionStatus" class="detail-body">
-        <div class="status-header">
-          <div class="status-header__left">
-            <div class="status-icon" :class="connectionStatus.connected ? 'status-icon--on' : 'status-icon--off'">
-              <component :is="connectionStatus.connected ? IconWifi : IconWifiOff" />
-            </div>
-            <div class="status-header__info">
-              <span class="status-header__title">连接状态</span>
-              <span v-if="connectionStatus.cookieStatus !== 1" class="status-header__sub status-header__sub--warning">
-                Cookie已过期，请点击<span class="status-header__link">凭证详情</span>按钮更新Cookie
-              </span>
-              <span v-else class="status-header__sub">账号 ID: {{ connectionStatus.xianyuAccountId }}</span>
-            </div>
-          </div>
-          <span class="status-badge" :class="connectionStatus.connected ? 'status-badge--on' : 'status-badge--off'">
-            <component :is="connectionStatus.connected ? IconCheck : IconAlert" />
-            {{ connectionStatus.connected ? '已连接' : '未连接' }}
-          </span>
-        </div>
-
         <div class="status-cards">
           <div class="status-card" :class="canSyncGoods ? 'status-card--success' : 'status-card--danger'">
             <div class="status-card__icon">
@@ -433,107 +412,6 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 20px;
   padding: 20px 16px;
-}
-
-.status-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(28px) saturate(1.8);
-  -webkit-backdrop-filter: blur(28px) saturate(1.8);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-}
-
-.status-header__left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
-}
-
-.status-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.status-icon svg { width: 24px; height: 24px; }
-
-.status-icon--on {
-  background: rgba(52, 199, 89, 0.15);
-  color: var(--c-success);
-}
-
-.status-icon--off {
-  background: rgba(255, 59, 48, 0.15);
-  color: var(--c-danger);
-}
-
-.status-header__info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-  min-width: 0;
-}
-
-.status-header__title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--c-text-1);
-  letter-spacing: -0.01em;
-}
-
-.status-header__sub {
-  font-size: 12px;
-  color: var(--c-text-3);
-  line-height: 1.4;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.status-header__sub--warning {
-  color: var(--c-warning);
-  font-weight: 500;
-}
-
-.status-header__link {
-  color: var(--c-danger);
-  font-weight: 600;
-}
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 20px;
-  flex-shrink: 0;
-  letter-spacing: -0.01em;
-}
-
-.status-badge svg { width: 14px; height: 14px; }
-
-.status-badge--on {
-  color: var(--c-success);
-  background: rgba(52, 199, 89, 0.12);
-}
-
-.status-badge--off {
-  color: var(--c-danger);
-  background: rgba(255, 59, 48, 0.12);
 }
 
 .status-cards {

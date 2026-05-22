@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, markRaw } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCurrentUser, changePassword } from '@/api/system'
 import { logout } from '@/api/auth'
@@ -9,6 +9,12 @@ import { getBackupModules, exportBackup, importBackup, getLogDates, downloadLog,
 import { toast } from '@/utils/toast'
 import { showConfirm } from '@/utils/confirm'
 import { clearAuthToken } from '@/utils/request'
+import IconUser from '@/components/icons/IconUser.vue'
+import IconRobot from '@/components/icons/IconRobot.vue'
+import IconChat from '@/components/icons/IconChat.vue'
+import IconMail from '@/components/icons/IconMail.vue'
+import IconBackup from '@/components/icons/IconBackup.vue'
+import IconInfo from '@/components/icons/IconInfo.vue'
 
 const router = useRouter()
 
@@ -109,12 +115,12 @@ const aiStatus = ref({
 
 // 菜单配置
 const menuItems = [
-  { key: 'account', label: '系统账号', icon: '👤' },
-  { key: 'ai', label: 'AI 服务配置', icon: '🤖' },
-  { key: 'prompt', label: 'AI客服配置', icon: '💬' },
-  { key: 'email', label: '邮箱通知', icon: '📧' },
-  { key: 'backup', label: '备份与恢复', icon: '💾' },
-  { key: 'about', label: '关于', icon: 'ℹ️' }
+  { key: 'account', label: '系统账号', icon: markRaw(IconUser) },
+  { key: 'ai', label: 'AI 服务配置', icon: markRaw(IconRobot) },
+  { key: 'prompt', label: 'AI客服配置', icon: markRaw(IconChat) },
+  { key: 'email', label: '邮箱通知', icon: markRaw(IconMail) },
+  { key: 'backup', label: '备份与恢复', icon: markRaw(IconBackup) },
+  { key: 'about', label: '关于', icon: markRaw(IconInfo) }
 ]
 
 onMounted(async () => {
@@ -746,7 +752,7 @@ function handleBackupMenuEnter() {
           :class="{ 'settings__menu-item--active': activeMenu === item.key }"
           @click="activeMenu = item.key; item.key === 'backup' && handleBackupMenuEnter()"
         >
-          <span class="settings__menu-icon">{{ item.icon }}</span>
+          <span class="settings__menu-icon"><component :is="item.icon" /></span>
           <span class="settings__menu-label">{{ item.label }}</span>
         </div>
       </div>
@@ -1520,7 +1526,17 @@ function handleBackupMenuEnter() {
 }
 
 .settings__menu-icon {
-  font-size: 16px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.settings__menu-icon svg {
+  width: 18px;
+  height: 18px;
 }
 
 .settings__menu-label {

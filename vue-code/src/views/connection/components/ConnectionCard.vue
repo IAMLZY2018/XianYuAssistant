@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import type { Account } from '@/types'
-import { getAccountStatusText } from '@/utils'
 
-import IconWifi from '@/components/icons/IconWifi.vue'
-import IconWifiOff from '@/components/icons/IconWifiOff.vue'
 import IconClock from '@/components/icons/IconClock.vue'
 import IconArrowRight from '@/components/icons/IconArrowRight.vue'
-import IconCheck from '@/components/icons/IconCheck.vue'
-import IconAlert from '@/components/icons/IconAlert.vue'
 import IconEmpty from '@/components/icons/IconEmpty.vue'
+import IconCookie from '@/components/icons/IconCookie.vue'
+import IconWs from '@/components/icons/IconWs.vue'
 
 interface ConnectionInfo {
   connected?: boolean
@@ -46,21 +43,6 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkScreenSize)
 })
 
-const getConnectionColor = (info?: ConnectionInfo) => {
-  if (!info) return 'var(--c-text-3)'
-  return info.connected ? 'var(--c-success)' : 'var(--c-danger)'
-}
-
-const getConnectionBg = (info?: ConnectionInfo) => {
-  if (!info) return 'rgba(120,120,128,.12)'
-  return info.connected ? 'rgba(48,209,88,.2)' : 'rgba(255,69,58,.15)'
-}
-
-const getConnectionText = (info?: ConnectionInfo) => {
-  if (!info) return '未检测'
-  return info.connected ? '已连接' : '未连接'
-}
-
 const getCookieColor = (status?: number) => {
   if (status === 1) return 'var(--c-success)'
   if (status === 2) return 'var(--c-warning)'
@@ -80,6 +62,21 @@ const getCookieText = (status?: number) => {
   if (status === 2) return '过期'
   if (status === 3) return '失效'
   return '未知'
+}
+
+const getWsColor = (info?: ConnectionInfo) => {
+  if (!info) return 'var(--c-text-3)'
+  return info.connected ? 'var(--c-success)' : 'var(--c-danger)'
+}
+
+const getWsBg = (info?: ConnectionInfo) => {
+  if (!info) return 'rgba(120,120,128,.12)'
+  return info.connected ? 'rgba(48,209,88,.2)' : 'rgba(255,69,58,.15)'
+}
+
+const getWsText = (info?: ConnectionInfo) => {
+  if (!info) return '未检测'
+  return info.connected ? '已连接' : '未连接'
 }
 </script>
 
@@ -101,20 +98,11 @@ const getCookieText = (status?: number) => {
           <span class="conn-card__name">{{ account.accountNote || '未命名账号' }}</span>
           <span class="conn-card__unb">UNB: {{ account.unb }}</span>
         </div>
-        <span
-          class="conn-card__status"
-          :style="{
-            color: getConnectionColor(connections.get(account.id)),
-            background: getConnectionBg(connections.get(account.id))
-          }"
-        >
-          <component :is="connections.get(account.id)?.connected ? IconCheck : IconAlert" />
-          {{ getConnectionText(connections.get(account.id)) }}
-        </span>
       </div>
 
       <div class="conn-card__body">
         <div class="conn-card__row">
+          <div class="conn-card__status-icon"><IconCookie /></div>
           <span class="conn-card__label">Cookie</span>
           <span
             class="conn-card__badge"
@@ -124,6 +112,19 @@ const getCookieText = (status?: number) => {
             }"
           >
             {{ getCookieText(connections.get(account.id)?.cookieStatus) }}
+          </span>
+        </div>
+        <div class="conn-card__row">
+          <div class="conn-card__status-icon"><IconWs /></div>
+          <span class="conn-card__label">WebSocket</span>
+          <span
+            class="conn-card__badge"
+            :style="{
+              color: getWsColor(connections.get(account.id)),
+              background: getWsBg(connections.get(account.id))
+            }"
+          >
+            {{ getWsText(connections.get(account.id)) }}
           </span>
         </div>
         <div class="conn-card__row">
@@ -157,32 +158,33 @@ const getCookieText = (status?: number) => {
       :class="{ 'grid-card--active': selectedId === account.id }"
       @click="emit('select', account)"
     >
-      <div class="grid-card__indicator" :style="{ background: getConnectionColor(connections.get(account.id)) }" />
       <div class="grid-card__top">
         <div class="grid-card__avatar">
           {{ (account.accountNote || account.unb || '未').charAt(0) }}
         </div>
-        <span
-          class="grid-card__status"
-          :style="{
-            color: getConnectionColor(connections.get(account.id)),
-            background: getConnectionBg(connections.get(account.id))
-          }"
-        >
-          <component :is="connections.get(account.id)?.connected ? IconWifi : IconWifiOff" />
-        </span>
       </div>
       <div class="grid-card__name">{{ account.accountNote || '未命名账号' }}</div>
       <div class="grid-card__id">ID: {{ account.id }}</div>
       <div class="grid-card__tags">
         <span
-          class="grid-card__cookie-tag"
+          class="grid-card__tag"
           :style="{
             color: getCookieColor(connections.get(account.id)?.cookieStatus),
             background: getCookieBg(connections.get(account.id)?.cookieStatus)
           }"
         >
-          Cookie: {{ getCookieText(connections.get(account.id)?.cookieStatus) }}
+          <IconCookie />
+          {{ getCookieText(connections.get(account.id)?.cookieStatus) }}
+        </span>
+        <span
+          class="grid-card__tag"
+          :style="{
+            color: getWsColor(connections.get(account.id)),
+            background: getWsBg(connections.get(account.id))
+          }"
+        >
+          <IconWs />
+          {{ getWsText(connections.get(account.id)) }}
         </span>
       </div>
     </div>
@@ -311,25 +313,19 @@ const getCookieText = (status?: number) => {
   line-height: 1.3;
 }
 
-.conn-card__status {
-  flex-shrink: 0;
-  display: inline-flex;
+.conn-card__status-icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 6px 12px;
-  border-radius: 20px;
-  line-height: 1;
-  background: rgba(0, 122, 255, 0.15);
-  color: var(--c-accent);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--c-text-3);
 }
 
-.conn-card__status svg {
-  width: 12px;
-  height: 12px;
+.conn-card__status-icon svg {
+  width: 14px;
+  height: 14px;
 }
 
 .conn-card__body {
@@ -432,31 +428,26 @@ const getCookieText = (status?: number) => {
   -webkit-tap-highlight-color: transparent;
 }
 
-.grid-card__indicator {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  border-radius: 3px 3px 0 0;
-  z-index: 1;
+.grid-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
-.grid-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 10%;
-  right: 10%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9) 30%, rgba(255,255,255,0.9) 70%, transparent);
-  border-radius: 1px;
-  pointer-events: none;
+.grid-card__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 10px;
+  line-height: 1;
 }
 
-.grid-card--active {
-  border-color: rgba(10,132,255,0.4);
-  box-shadow: 0 0 0 1px rgba(10,132,255,0.4), 0 12px 40px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08);
+.grid-card__tag svg {
+  width: 12px;
+  height: 12px;
 }
 
 @media (hover: hover) {
@@ -477,6 +468,11 @@ const getCookieText = (status?: number) => {
   margin-bottom: 12px;
 }
 
+.grid-card--active {
+  border-color: rgba(10,132,255,0.4);
+  box-shadow: 0 0 0 1px rgba(10,132,255,0.4), 0 12px 40px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08);
+}
+
 .grid-card__avatar {
   width: 36px;
   height: 36px;
@@ -489,20 +485,6 @@ const getCookieText = (status?: number) => {
   font-size: 14px;
   font-weight: 600;
   box-shadow: 0 4px 12px rgba(10,132,255,0.3);
-}
-
-.grid-card__status {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-}
-
-.grid-card__status svg {
-  width: 14px;
-  height: 14px;
 }
 
 .grid-card__name {

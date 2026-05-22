@@ -2,14 +2,12 @@ package com.feijimiao.xianyuassistant.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
-import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
-import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.options.Cookie;
 import com.microsoft.playwright.options.WaitUntilState;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.feijimiao.xianyuassistant.config.PlaywrightManager;
 import com.feijimiao.xianyuassistant.constants.OperationConstants;
 import com.feijimiao.xianyuassistant.entity.XianyuAccount;
 import com.feijimiao.xianyuassistant.entity.XianyuCookie;
@@ -55,15 +53,18 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
     @Autowired
     private OperationLogService operationLogService;
 
+    @Autowired
+    private PlaywrightManager playwrightManager;
+
     @Autowired(required = false)
     private com.feijimiao.xianyuassistant.service.EmailNotifyService emailNotifyService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    /**
-     * 每个账号的刷新锁，防止并发刷新
-     */
     private final Map<Long, Object> refreshLocks = new ConcurrentHashMap<>();
+
+    private static final long BROWSER_REFRESH_COOLDOWN_MS = 30 * 60 * 1000L;
+    private final Map<Long, Long> lastBrowserRefreshTime = new ConcurrentHashMap<>();
 
     public CookieRefreshServiceImpl() {
     }
@@ -406,6 +407,13 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
     }
 
     private boolean refreshCookieWithBrowser(Long accountId) {
+        Long lastTime = lastBrowserRefreshTime.get(accountId);
+        if (lastTime != null && (System.currentTimeMillis() - lastTime) < BROWSER_REFRESH_COOLDOWN_MS) {
+            long remainingMinutes = (BROWSER_REFRESH_COOLDOWN_MS - (System.currentTimeMillis() - lastTime)) / 60000;
+            log.warn("【账号{}】浏览器兜底刷新冷却中，剩余{}分钟，跳过本次", accountId, remainingMinutes);
+            return false;
+        }
+
         XianyuCookie cookie = cookieMapper.selectOne(
                 new LambdaQueryWrapper<XianyuCookie>()
                         .eq(XianyuCookie::getXianyuAccountId, accountId)
@@ -450,65 +458,60 @@ public class CookieRefreshServiceImpl implements CookieRefreshService {
                 String.valueOf(accountId),
                 null, null, null, null);
 
-        try (Playwright playwright = Playwright.create()) {
-            BrowserType.LaunchOptions launchOptions = new BrowserType.LaunchOptions().setHeadless(true);
-            try (Browser browser = playwright.chromium().launch(launchOptions)) {
-                Browser.NewContextOptions contextOptions = new Browser.NewContextOptions()
-                        .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-                try (BrowserContext context = browser.newContext(contextOptions)) {
-                    List<Cookie> browserCookies = buildBrowserCookies(existingCookies);
-                    context.addCookies(browserCookies);
+        lastBrowserRefreshTime.put(accountId, System.currentTimeMillis());
 
-                    Page page = context.newPage();
-                    log.info("【账号{}】浏览器兜底刷新Cookie，开始访问 {}", accountId, GOOFISH_IM_URL);
-                    page.navigate(GOOFISH_IM_URL,
-                            new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
-                    page.reload(new Page.ReloadOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
+        try (BrowserContext context = playwrightManager.createContext()) {
+            List<Cookie> browserCookies = buildBrowserCookies(existingCookies);
+            context.addCookies(browserCookies);
 
-                    List<Cookie> refreshedCookies = context.cookies(List.of(
-                            GOOFISH_IM_URL,
-                            "https://passport.goofish.com",
-                            "https://h5api.m.goofish.com",
-                            "https://www.taobao.com"
-                    ));
-                    String refreshedCookieText = buildCookieText(refreshedCookies);
-                    if (refreshedCookieText.isBlank()) {
-                        log.warn("【账号{}】浏览器兜底刷新未获取到新的Cookie", accountId);
-                        markAccountAsCookieRefreshAbnormal(accountId, "浏览器兜底刷新失败：浏览器未返回Cookie");
-                        operationLogService.log(accountId,
-                                OperationConstants.Type.REFRESH,
-                                OperationConstants.Module.COOKIE,
-                                "浏览器兜底刷新Cookie失败，账号已标记为异常待处理",
-                                OperationConstants.Status.FAIL,
-                                OperationConstants.TargetType.COOKIE,
-                                String.valueOf(accountId),
-                                null, null, "浏览器未返回Cookie", null);
-                        return false;
-                    }
+            Page page = context.newPage();
+            log.info("【账号{}】浏览器兜底刷新Cookie，开始访问 {}", accountId, GOOFISH_IM_URL);
+            page.navigate(GOOFISH_IM_URL,
+                    new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
+            page.reload(new Page.ReloadOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
 
-                    Map<String, String> refreshedCookieMap = XianyuSignUtils.parseCookies(refreshedCookieText);
-                    String newMh5Tk = refreshedCookieMap.get("_m_h5_tk");
-
-                    cookieMapper.update(null,
-                            new LambdaUpdateWrapper<XianyuCookie>()
-                                    .eq(XianyuCookie::getXianyuAccountId, accountId)
-                                    .set(XianyuCookie::getCookieText, refreshedCookieText)
-                                    .set(XianyuCookie::getCookieStatus, 1)
-                                    .set(newMh5Tk != null && !newMh5Tk.isBlank(), XianyuCookie::getMH5Tk, newMh5Tk)
-                    );
-
-                    log.info("【账号{}】浏览器兜底刷新Cookie成功，Cookie长度: {}", accountId, refreshedCookieText.length());
-                    operationLogService.log(accountId,
-                            OperationConstants.Type.REFRESH,
-                            OperationConstants.Module.COOKIE,
-                            "浏览器兜底刷新Cookie成功",
-                            OperationConstants.Status.SUCCESS,
-                            OperationConstants.TargetType.COOKIE,
-                            String.valueOf(accountId),
-                            null, null, null, null);
-                    return true;
-                }
+            List<Cookie> refreshedCookies = context.cookies(List.of(
+                    GOOFISH_IM_URL,
+                    "https://passport.goofish.com",
+                    "https://h5api.m.goofish.com",
+                    "https://www.taobao.com"
+            ));
+            String refreshedCookieText = buildCookieText(refreshedCookies);
+            if (refreshedCookieText.isBlank()) {
+                log.warn("【账号{}】浏览器兜底刷新未获取到新的Cookie", accountId);
+                markAccountAsCookieRefreshAbnormal(accountId, "浏览器兜底刷新失败：浏览器未返回Cookie");
+                operationLogService.log(accountId,
+                        OperationConstants.Type.REFRESH,
+                        OperationConstants.Module.COOKIE,
+                        "浏览器兜底刷新Cookie失败，账号已标记为异常待处理",
+                        OperationConstants.Status.FAIL,
+                        OperationConstants.TargetType.COOKIE,
+                        String.valueOf(accountId),
+                        null, null, "浏览器未返回Cookie", null);
+                return false;
             }
+
+            Map<String, String> refreshedCookieMap = XianyuSignUtils.parseCookies(refreshedCookieText);
+            String newMh5Tk = refreshedCookieMap.get("_m_h5_tk");
+
+            cookieMapper.update(null,
+                    new LambdaUpdateWrapper<XianyuCookie>()
+                            .eq(XianyuCookie::getXianyuAccountId, accountId)
+                            .set(XianyuCookie::getCookieText, refreshedCookieText)
+                            .set(XianyuCookie::getCookieStatus, 1)
+                            .set(newMh5Tk != null && !newMh5Tk.isBlank(), XianyuCookie::getMH5Tk, newMh5Tk)
+            );
+
+            log.info("【账号{}】浏览器兜底刷新Cookie成功，Cookie长度: {}", accountId, refreshedCookieText.length());
+            operationLogService.log(accountId,
+                    OperationConstants.Type.REFRESH,
+                    OperationConstants.Module.COOKIE,
+                    "浏览器兜底刷新Cookie成功",
+                    OperationConstants.Status.SUCCESS,
+                    OperationConstants.TargetType.COOKIE,
+                    String.valueOf(accountId),
+                    null, null, null, null);
+            return true;
         } catch (Exception e) {
             log.error("【账号{}】浏览器兜底刷新Cookie失败", accountId, e);
             markAccountAsCookieRefreshAbnormal(accountId, "浏览器兜底刷新异常: " + e.getMessage());

@@ -1,5 +1,6 @@
 package com.feijimiao.xianyuassistant.service.impl;
 
+import com.feijimiao.xianyuassistant.config.PlaywrightManager;
 import com.feijimiao.xianyuassistant.config.WebSocketConfig;
 import com.feijimiao.xianyuassistant.entity.XianyuAccount;
 import com.feijimiao.xianyuassistant.entity.XianyuCookie;
@@ -68,6 +69,9 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
 
     @Autowired
     private WebSocketConfig webSocketConfig;
+
+    @Autowired
+    private PlaywrightManager playwrightManager;
 
     @Autowired(required = false)
     private com.feijimiao.xianyuassistant.service.EmailNotifyService emailNotifyService;
@@ -575,6 +579,15 @@ public class TokenRefreshServiceImpl implements TokenRefreshService {
             emailNotifyService.sendCookieExpireNotifyEmail(accountId, accountNote);
         } catch (Exception e) {
             log.warn("触发Cookie过期邮件通知异常: {}", e.getMessage());
+        }
+    }
+
+    @Scheduled(fixedDelay = 60 * ONE_MINUTE_MS, initialDelay = 5 * ONE_MINUTE_MS)
+    public void scheduledCleanPlaywrightTempFiles() {
+        try {
+            playwrightManager.cleanTempFiles();
+        } catch (Exception e) {
+            log.warn("清理Playwright临时文件异常: {}", e.getMessage());
         }
     }
 }

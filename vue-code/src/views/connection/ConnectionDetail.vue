@@ -11,8 +11,6 @@ import ManualUpdateCookieModal from './components/ManualUpdateCookieModal.vue'
 import QRUpdateDialog from './components/QRUpdateDialog.vue'
 import CaptchaGuideDialog from './components/CaptchaGuideDialog.vue'
 
-import IconWifi from '@/components/icons/IconWifi.vue'
-import IconWifiOff from '@/components/icons/IconWifiOff.vue'
 import IconCookie from '@/components/icons/IconCookie.vue'
 import IconKey from '@/components/icons/IconKey.vue'
 import IconPlay from '@/components/icons/IconPlay.vue'
@@ -277,17 +275,6 @@ onBeforeUnmount(() => {
 
     <div class="page__scroll" :class="{ 'page__scroll--loading': statusLoading }">
       <div v-if="connectionStatus" class="page__body">
-        <div class="status-hero" :class="connectionStatus.connected ? 'status-hero--on' : 'status-hero--off'">
-          <div class="status-hero__icon">
-            <component :is="connectionStatus.connected ? IconWifi : IconWifiOff" />
-          </div>
-          <div class="status-hero__info">
-            <span class="status-hero__title">{{ connectionStatus.connected ? '已连接' : '未连接' }}</span>
-            <span class="status-hero__sub">账号 ID: {{ connectionStatus.xianyuAccountId }}</span>
-          </div>
-          <span class="status-hero__badge">{{ connectionStatus.status }}</span>
-        </div>
-
         <div class="cap-section">
           <div class="cap-card" :class="canSyncGoods ? 'cap-card--ok' : 'cap-card--err'">
             <div class="cap-card__dot"></div>
@@ -540,77 +527,6 @@ onBeforeUnmount(() => {
   justify-content: center;
   color: rgba(28,28,30,.55);
   font-size: 14px;
-}
-
-/* Status Hero */
-.status-hero {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 18px 16px;
-  border-radius: 16px;
-  border: 1px solid;
-}
-
-.status-hero--on {
-  background: rgba(52, 199, 89, 0.08);
-  border-color: rgba(52, 199, 89, 0.2);
-}
-
-.status-hero--off {
-  background: rgba(255, 59, 48, 0.08);
-  border-color: rgba(255, 59, 48, 0.2);
-}
-
-.status-hero__icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.status-hero--on .status-hero__icon {
-  background: rgba(52, 199, 89, 0.15);
-  color: #30D158;
-}
-
-.status-hero--off .status-hero__icon {
-  background: rgba(255, 59, 48, 0.15);
-  color: #FF453A;
-}
-
-.status-hero__icon svg { width: 22px; height: 22px; }
-
-.status-hero__info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.status-hero__title {
-  font-size: 17px;
-  font-weight: 600;
-  color: #1c1c1e;
-}
-
-.status-hero__sub {
-  font-size: 12px;
-  color: rgba(28,28,30,.55);
-}
-
-.status-hero__badge {
-  font-size: 11px;
-  font-weight: 500;
-  padding: 4px 10px;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.05);
-  color: rgba(28,28,30,.55);
-  flex-shrink: 0;
 }
 
 /* Capability Cards */
@@ -950,7 +866,6 @@ onBeforeUnmount(() => {
     gap: 12px;
   }
 
-  .status-hero { padding: 14px 12px; }
   .cap-card { padding: 12px; }
   .act-btn { padding: 10px 14px; font-size: 14px; }
 }
