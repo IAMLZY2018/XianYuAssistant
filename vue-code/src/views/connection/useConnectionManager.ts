@@ -47,13 +47,11 @@ export function useConnectionManager() {
       const response = await getAccountList()
       if (response.code === 0 || response.code === 200) {
         accounts.value = response.data?.accounts || []
-        // 加载账号列表后，自动查询所有账号的连接状态
         loadAllConnectionStatuses()
       } else {
         throw new Error(response.msg || '获取账号列表失败')
       }
     } catch (error: any) {
-      // 只有在错误消息未显示过时才弹出提示（避免重复显示）
       if (!error.messageShown) {
         showError('加载账号列表失败: ' + error.message)
       }
@@ -63,18 +61,17 @@ export function useConnectionManager() {
     }
   }
 
-  // 加载所有账号的连接状态（用于列表显示）
   const loadAllConnectionStatuses = async () => {
     const newMap = new Map<number, ConnectionStatus>()
     for (const account of accounts.value) {
       try {
-        const response = await getConnectionStatus(account.id)
+        const accountId = Number(account.id)
+        const response = await getConnectionStatus(accountId)
         if (response.code === 0 || response.code === 200) {
           const status = response.data as ConnectionStatus
-          newMap.set(account.id, status)
+          newMap.set(accountId, status)
         }
       } catch {
-        // 单个账号查询失败不影响其他账号
       }
     }
     allConnectionStatuses.value = newMap

@@ -33,6 +33,7 @@ interface ConnectionStatus {
 
 interface Props {
   accountId: number | null
+  accountName?: string
 }
 
 const props = defineProps<Props>()
@@ -247,15 +248,19 @@ onBeforeUnmount(() => {
 
     <div v-else class="detail-scroll" :class="{ 'detail-scroll--loading': statusLoading }">
       <div v-if="connectionStatus" class="detail-body">
+        <div v-if="accountName" class="detail-account-name">{{ accountName }}</div>
         <div class="status-cards">
           <div class="status-card" :class="canSyncGoods ? 'status-card--success' : 'status-card--danger'">
             <div class="status-card__icon">
               <component :is="canSyncGoods ? IconCheck : IconAlert" />
             </div>
             <div class="status-card__content">
-              <span class="status-card__title">同步商品信息</span>
+              <span class="status-card__title">Cookie 状态</span>
               <span class="status-card__desc">{{ canSyncGoods ? '可正常同步商品信息' : 'Cookie无效，无法同步商品信息' }}</span>
             </div>
+            <button class="btn btn--ghost btn--small" @click="showCredentialDialog = true">
+              <IconKey /><span>凭证详情</span>
+            </button>
           </div>
 
           <div class="status-card" :class="canAutoReply ? 'status-card--success' : 'status-card--danger'">
@@ -263,30 +268,27 @@ onBeforeUnmount(() => {
               <component :is="canAutoReply ? IconCheck : IconAlert" />
             </div>
             <div class="status-card__content">
-              <span class="status-card__title">自动发货与回复</span>
+              <span class="status-card__title">Websocket 状态</span>
               <span class="status-card__desc">{{ canAutoReply ? '可正常自动发货与回复' : '未连接，无法自动发货与回复' }}</span>
             </div>
+            <button
+              v-if="connectionStatus.connected === true"
+              class="btn btn--stop btn--small"
+              @click="handleStopConnection"
+            >
+              <IconStop /><span>断开连接</span>
+            </button>
+            <button
+              v-else
+              class="btn btn--start btn--small"
+              @click="handleStartConnection"
+            >
+              <IconPlay /><span>开始连接</span>
+            </button>
           </div>
         </div>
 
         <div class="action-bar">
-          <button
-            v-if="connectionStatus.connected === true"
-            class="btn btn--stop"
-            @click="handleStopConnection"
-          >
-            <IconStop /><span>断开连接</span>
-          </button>
-          <button
-            v-else
-            class="btn btn--start"
-            @click="handleStartConnection"
-          >
-            <IconPlay /><span>开始连接</span>
-          </button>
-          <button class="btn btn--ghost btn--small" @click="showCredentialDialog = true">
-            <IconKey /><span>凭证详情</span>
-          </button>
           <button class="btn btn--ghost btn--small" @click="handleRefresh" :disabled="statusLoading">
             <IconRefresh /><span>刷新状态</span>
           </button>
@@ -416,6 +418,7 @@ onBeforeUnmount(() => {
 
 .status-cards {
   display: flex;
+  flex-direction: column;
   gap: 12px;
   width: 100%;
 }
@@ -432,7 +435,6 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(28px) saturate(1.8);
   -webkit-backdrop-filter: blur(28px) saturate(1.8);
   transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
-  flex: 1;
 }
 
 .status-card--success {
@@ -499,8 +501,19 @@ onBeforeUnmount(() => {
   line-height: 1.4;
 }
 
+.detail-account-name {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--c-text-1);
+  margin-bottom: -8px;
+}
+
 .status-card--success .status-card__title { color: var(--c-success); }
 .status-card--danger .status-card__title { color: var(--c-danger); }
+
+.status-card .btn {
+  flex-shrink: 0;
+}
 
 .action-bar {
   display: flex;

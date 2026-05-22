@@ -6,7 +6,6 @@ import ConnectionCard from './components/ConnectionCard.vue'
 import ConnectionDetail from './components/ConnectionDetail.vue'
 
 import IconLink from '@/components/icons/IconLink.vue'
-import IconSync from '@/components/icons/IconSync.vue'
 
 const router = useRouter()
 
@@ -56,12 +55,19 @@ const connectionMap = computed(() => {
   return map
 })
 
+const selectedAccountName = computed(() => {
+  if (!selectedAccountId.value) return ''
+  const acc = accounts.value.find(a => Number(a.id) === selectedAccountId.value)
+  return acc?.accountNote || acc?.unb || ''
+})
+
 // Handle account select
 const handleSelectAccount = (account: any) => {
+  const id = Number(account.id)
   if (isMobile.value) {
-    router.push(`/connection/${account.id}`)
+    router.push(`/connection/${id}`)
   } else {
-    selectAccount(account.id)
+    selectAccount(id)
   }
 }
 
@@ -91,15 +97,6 @@ onUnmounted(() => {
           账号列表
           <span v-if="accounts.length" class="connection__count">{{ accounts.length }}</span>
         </span>
-        <button
-          class="btn btn--secondary"
-          :class="{ 'btn--loading': loading }"
-          @click="loadAccounts"
-          :disabled="loading"
-        >
-          <IconSync />
-          <span>刷新</span>
-        </button>
       </div>
 
       <!-- Desktop: Split layout -->
@@ -116,6 +113,7 @@ onUnmounted(() => {
         <div class="connection__detail">
           <ConnectionDetail
             :account-id="selectedAccountId"
+            :account-name="selectedAccountName"
           />
         </div>
       </div>

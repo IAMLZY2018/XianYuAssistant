@@ -87,7 +87,7 @@ const getWsText = (info?: ConnectionInfo) => {
       v-for="account in accounts"
       :key="account.id"
       class="conn-card"
-      :class="{ 'conn-card--active': selectedId === account.id }"
+      :class="{ 'conn-card--active': selectedId === Number(account.id) }"
       @click="emit('select', account)"
     >
       <div class="conn-card__header">
@@ -107,11 +107,11 @@ const getWsText = (info?: ConnectionInfo) => {
           <span
             class="conn-card__badge"
             :style="{
-              color: getCookieColor(connections.get(account.id)?.cookieStatus),
-              background: getCookieBg(connections.get(account.id)?.cookieStatus)
+              color: getCookieColor(connections.get(Number(account.id))?.cookieStatus),
+              background: getCookieBg(connections.get(Number(account.id))?.cookieStatus)
             }"
           >
-            {{ getCookieText(connections.get(account.id)?.cookieStatus) }}
+            {{ getCookieText(connections.get(Number(account.id))?.cookieStatus) }}
           </span>
         </div>
         <div class="conn-card__row">
@@ -120,11 +120,11 @@ const getWsText = (info?: ConnectionInfo) => {
           <span
             class="conn-card__badge"
             :style="{
-              color: getWsColor(connections.get(account.id)),
-              background: getWsBg(connections.get(account.id))
+              color: getWsColor(connections.get(Number(account.id))),
+              background: getWsBg(connections.get(Number(account.id)))
             }"
           >
-            {{ getWsText(connections.get(account.id)) }}
+            {{ getWsText(connections.get(Number(account.id))) }}
           </span>
         </div>
         <div class="conn-card__row">
@@ -155,7 +155,7 @@ const getWsText = (info?: ConnectionInfo) => {
       v-for="account in accounts"
       :key="account.id"
       class="grid-card"
-      :class="{ 'grid-card--active': selectedId === account.id }"
+      :class="{ 'grid-card--active': selectedId === Number(account.id) }"
       @click="emit('select', account)"
     >
       <div class="grid-card__top">
@@ -169,22 +169,22 @@ const getWsText = (info?: ConnectionInfo) => {
         <span
           class="grid-card__tag"
           :style="{
-            color: getCookieColor(connections.get(account.id)?.cookieStatus),
-            background: getCookieBg(connections.get(account.id)?.cookieStatus)
+            color: getCookieColor(connections.get(Number(account.id))?.cookieStatus),
+            background: getCookieBg(connections.get(Number(account.id))?.cookieStatus)
           }"
         >
           <IconCookie />
-          {{ getCookieText(connections.get(account.id)?.cookieStatus) }}
+          {{ getCookieText(connections.get(Number(account.id))?.cookieStatus) }}
         </span>
         <span
           class="grid-card__tag"
           :style="{
-            color: getWsColor(connections.get(account.id)),
-            background: getWsBg(connections.get(account.id))
+            color: getWsColor(connections.get(Number(account.id))),
+            background: getWsBg(connections.get(Number(account.id)))
           }"
         >
           <IconWs />
-          {{ getWsText(connections.get(account.id)) }}
+          {{ getWsText(connections.get(Number(account.id))) }}
         </span>
       </div>
     </div>

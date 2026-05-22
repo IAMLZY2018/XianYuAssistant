@@ -3,6 +3,7 @@ import { ref, watch, computed, onMounted, onUnmounted, onBeforeUnmount } from 'v
 import { useRoute, useRouter } from 'vue-router'
 import { getConnectionStatus, startConnection, stopConnection } from '@/api/websocket'
 import { queryOperationLogs, type OperationLog } from '@/api/operation-log'
+import { getAccountList } from '@/api/account'
 import { showSuccess, showError, showInfo } from '@/utils'
 import { showConfirm } from '@/utils/confirm'
 import { toast } from '@/utils/toast'
@@ -39,6 +40,20 @@ interface ConnectionStatus {
 const route = useRoute()
 const router = useRouter()
 const accountId = computed(() => Number(route.params.id) || null)
+
+const accountName = ref('')
+const loadAccountName = async () => {
+  if (!accountId.value) return
+  try {
+    const res = await getAccountList()
+    if (res.code === 200 && res.data) {
+      const acc = res.data.find((a: any) => a.id === accountId.value)
+      accountName.value = acc?.accountNote || acc?.unb || ''
+    }
+  } catch (e) {
+    accountName.value = ''
+  }
+}
 
 const isMobile = ref(false)
 const checkScreenSize = () => { isMobile.value = window.innerWidth < 768 }
@@ -232,6 +247,7 @@ const copyToClipboard = (text: string) => {
 
 watch(accountId, (newId) => {
   if (newId) {
+    loadAccountName()
     loadConnectionStatus()
     loadOperationLogs()
     if (statusInterval) clearInterval(statusInterval)
@@ -275,44 +291,42 @@ onBeforeUnmount(() => {
 
     <div class="page__scroll" :class="{ 'page__scroll--loading': statusLoading }">
       <div v-if="connectionStatus" class="page__body">
+        <div v-if="accountName" class="page__account-name">{{ accountName }}</div>
         <div class="cap-section">
           <div class="cap-card" :class="canSyncGoods ? 'cap-card--ok' : 'cap-card--err'">
             <div class="cap-card__dot"></div>
             <div class="cap-card__text">
-              <span class="cap-card__label">同步商品信息</span>
+              <span class="cap-card__label">Cookie 状态</span>
               <span class="cap-card__desc">{{ canSyncGoods ? '可正常同步商品信息' : 'Cookie无效，无法同步' }}</span>
             </div>
+            <button class="act-btn act-btn--outline act-btn--card" @click="showCredentialSection = !showCredentialSection">
+              <IconKey /><span>{{ showCredentialSection ? '收起凭证' : '凭证详情' }}</span>
+            </button>
           </div>
           <div class="cap-card" :class="canAutoReply ? 'cap-card--ok' : 'cap-card--err'">
             <div class="cap-card__dot"></div>
             <div class="cap-card__text">
-              <span class="cap-card__label">自动发货与回复</span>
+              <span class="cap-card__label">Websocket 状态</span>
               <span class="cap-card__desc">{{ canAutoReply ? '可正常自动发货与回复' : '未连接，无法工作' }}</span>
             </div>
+            <button
+              v-if="connectionStatus.connected === true"
+              class="act-btn act-btn--danger act-btn--card"
+              @click="handleStopConnection"
+            >
+              <IconStop /><span>断开连接</span>
+            </button>
+            <button
+              v-else
+              class="act-btn act-btn--success act-btn--card"
+              @click="handleStartConnection"
+            >
+              <IconPlay /><span>开始连接</span>
+            </button>
           </div>
         </div>
 
-        <div class="action-row">
-          <button
-            v-if="connectionStatus.connected === true"
-            class="act-btn act-btn--danger"
-            @click="handleStopConnection"
-          >
-            <IconStop /><span>断开连接</span>
-          </button>
-          <button
-            v-else
-            class="act-btn act-btn--success"
-            @click="handleStartConnection"
-          >
-            <IconPlay /><span>开始连接</span>
-          </button>
-        </div>
-
         <div class="action-row action-row--sub">
-          <button class="act-btn act-btn--outline" @click="showCredentialSection = !showCredentialSection">
-            <IconKey /><span>{{ showCredentialSection ? '收起凭证' : '凭证详情' }}</span>
-          </button>
           <button class="act-btn act-btn--outline" @click="showQRUpdateDialog = true">
             <IconQrCode /><span>扫码更新</span>
           </button>
@@ -586,6 +600,20 @@ onBeforeUnmount(() => {
   font-size: 12px;
   color: rgba(28,28,30,.55);
   line-height: 1.3;
+}
+
+.page__account-name {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1c1c1e;
+  margin-bottom: -4px;
+}
+
+.act-btn--card {
+  flex-shrink: 0;
+  flex: 0;
+  padding: 8px 12px;
+  font-size: 13px;
 }
 
 /* Action Buttons */
