@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { checkUserExists, login, register } from '@/api/auth'
 import { setAuthToken, isLoggedIn } from '@/utils/request'
+import {toast} from "@/utils/toast.ts";
 
 // 'checking' -> 'login' -> 'register'
 const mode = ref<'checking' | 'login' | 'register'>('checking')
@@ -57,11 +58,27 @@ async function handleLogin() {
 }
 
 async function handleRegister() {
-  if (!username.value.trim()) return
-  if (!password.value) return
-  if (password.value !== confirmPassword.value) return
-  if (username.value.trim().length < 3) return
-  if (password.value.length < 6) return
+  if (!username.value.trim()) {
+    toast.warning('请输入账号')
+    return
+  }
+  if (!password.value) {
+    toast.warning('请输入密码')
+    return
+  }
+  if (password.value !== confirmPassword.value) {
+    toast.warning('两次输入的密码不一致')
+    return
+  }
+  if (username.value.trim().length < 3) {
+    toast.warning('账号长度不能少于3位')
+    return
+  }
+  if (password.value.length < 6) {
+    toast.warning('密码长度不能少于6位')
+    return
+  }
+
   loading.value = true
   try {
     const res = await register({
