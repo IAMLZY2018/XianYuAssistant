@@ -9,10 +9,11 @@ import lombok.Data;
 public class ItemListFromDbReqDTO {
     
     /**
-     * 商品状态（0=在售, 1=已下架, 2=已售出）
-     * 默认0
+     * 只显示在售商品
+     * true=只显示在售(status=0), false/null=显示全部
+     * 默认true
      */
-    private Integer status = 0;
+    private Boolean onlyOnSale = true;
     
     /**
      * 闲鱼账号ID（可选）

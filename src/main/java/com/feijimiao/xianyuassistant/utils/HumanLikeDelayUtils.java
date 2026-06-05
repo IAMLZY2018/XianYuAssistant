@@ -39,7 +39,7 @@ public class HumanLikeDelayUtils {
     
     /**
      * 自定义范围延迟
-     * 
+     *
      * @param minMs 最小延迟毫秒数
      * @param maxMs 最大延迟毫秒数
      */
@@ -48,11 +48,11 @@ public class HumanLikeDelayUtils {
             log.warn("延迟参数无效: minMs={}, maxMs={}", minMs, maxMs);
             return;
         }
-        
+
         int delayMs = minMs + random.nextInt(maxMs - minMs + 1);
-        
+
         try {
-            log.debug("模拟人工操作延迟: {}ms", delayMs);
+            log.info("⏱️ 模拟人工操作延迟: {}秒 ({}毫秒)", String.format("%.1f", delayMs / 1000.0), delayMs);
             Thread.sleep(delayMs);
         } catch (InterruptedException e) {
             log.warn("延迟被中断", e);

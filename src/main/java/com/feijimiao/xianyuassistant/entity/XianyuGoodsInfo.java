@@ -58,9 +58,8 @@ public class XianyuGoodsInfo {
      */
     private String soldPrice;
     
-    /**
-     * 商品状态 0:在售 1:已下架 2:已售出
-     */
+    private Integer skuCount;
+    
     private Integer status;
     
     /**

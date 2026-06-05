@@ -16,7 +16,7 @@ export interface OperationLog {
   ipAddress?: string;
   userAgent?: string;
   durationMs?: number;
-  createTime: number;
+  createTime: string | number;
 }
 
 // 查询操作记录请求

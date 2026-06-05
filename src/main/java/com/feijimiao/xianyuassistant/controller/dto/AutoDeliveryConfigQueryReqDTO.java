@@ -20,4 +20,6 @@ public class AutoDeliveryConfigQueryReqDTO {
      * 闲鱼的商品ID（可选）
      */
     private String xyGoodsId;
+
+    private String skuId;
 }

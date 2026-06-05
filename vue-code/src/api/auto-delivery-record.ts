@@ -1,19 +1,17 @@
 import { request } from '@/utils/request';
 import type { ApiResponse } from '@/types';
 
-// 自动发货记录
+// 自动发货记录 (简化版)
 export interface AutoDeliveryRecord {
   id: number;
-  xianyuAccountId: number;
-  xianyuGoodsId?: number;
+  xianyuAccountId?: number;
   xyGoodsId: string;
   goodsTitle?: string;
-  buyerUserId?: string;
   buyerUserName?: string;
   content?: string;
-  state: number; // 1-成功，0-失败
-  orderId?: string; // 订单ID
-  orderState?: number; // 确认发货状态：0-未确认发货，1-已确认发货
+  state: number; // 1-成功，-1-失败，0-待发货
+  failReason?: string;
+  orderId?: string;
   createTime: string;
 }
 
@@ -52,6 +50,22 @@ export interface ConfirmShipmentReq {
 export function confirmShipment(data: ConfirmShipmentReq) {
   return request<string>({
     url: '/order/confirmShipment',
+    method: 'POST',
+    data
+  });
+}
+
+// 触发自动发货请求
+export interface TriggerAutoDeliveryReq {
+  xianyuAccountId: number;
+  xyGoodsId: string;
+  orderId: string;
+}
+
+// 触发自动发货
+export function triggerAutoDelivery(data: TriggerAutoDeliveryReq) {
+  return request<string>({
+    url: '/autoDelivery/trigger',
     method: 'POST',
     data
   });

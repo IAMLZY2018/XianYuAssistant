@@ -19,7 +19,7 @@ export function getQRCodeStatus(sessionId: string) {
 
 // 获取 Cookie
 export function getQRCodeCookies(sessionId: string) {
-  return request<{ cookies: Record<string, string> }>({
+  return request<{ cookies: string; unb: string }>({
     url: `/qrlogin/cookies/${sessionId}`,
     method: 'POST'
   })

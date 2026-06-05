@@ -7,7 +7,7 @@ export interface ChatMessage {
   xianyuAccountId: number;
   lwp: string;
   pnmId: string;
-  sid: string;  // 注意：后端返回的是全小写的 sid
+  sid: string;
   contentType: number;
   msgContent: string;
   senderUserName: string;
@@ -17,8 +17,9 @@ export interface ChatMessage {
   reminderUrl: string;
   xyGoodsId: string;
   completeMsg: string;
-  messageTime: number;
+  messageTime: string | number;
   createTime: string;
+  isNew?: boolean;
 }
 
 // 消息列表响应
@@ -40,6 +41,34 @@ export function getMessageList(data: {
 }) {
   return request<MessageListResponse>({
     url: '/msg/list',
+    method: 'POST',
+    data
+  });
+}
+
+// 根据会话ID获取上下文消息
+export function getContextMessages(data: {
+  sid: string;
+  limit?: number;
+  offset?: number;
+}) {
+  return request<ChatMessage[]>({
+    url: '/msg/context',
+    method: 'POST',
+    data: { sid: data.sid, limit: data.limit || 20, offset: data.offset || 0 }
+  });
+}
+
+// 发送消息
+export function sendMessage(data: {
+  xianyuAccountId: number;
+  cid: string;
+  toId: string;
+  text: string;
+  xyGoodsId?: string;
+}) {
+  return request<string>({
+    url: '/websocket/sendMessage',
     method: 'POST',
     data
   });

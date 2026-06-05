@@ -1,1 +1,0 @@
-import{r as e}from"./request-DTdiWb_T.js";function o(r){return e({url:"/items/autoDeliveryRecords",method:"POST",data:r})}function i(r){return e({url:"/order/confirmShipment",method:"POST",data:r})}export{i as c,o as g};

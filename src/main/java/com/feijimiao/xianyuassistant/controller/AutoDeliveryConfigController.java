@@ -12,9 +12,6 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.List;
 
-/**
- * 自动发货配置控制器
- */
 @Slf4j
 @RestController
 @RequestMapping("/api/auto-delivery-config")
@@ -24,17 +21,11 @@ public class AutoDeliveryConfigController {
     @Autowired
     private AutoDeliveryConfigService autoDeliveryConfigService;
 
-    /**
-     * 保存或更新自动发货配置
-     *
-     * @param reqDTO 配置请求DTO
-     * @return 配置信息
-     */
     @PostMapping("/save")
     public ResultObject<AutoDeliveryConfigRespDTO> saveOrUpdateConfig(@Valid @RequestBody AutoDeliveryConfigReqDTO reqDTO) {
         try {
-            log.info("保存自动发货配置请求: xianyuAccountId={}, xyGoodsId={}, type={}", 
-                    reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId(), reqDTO.getType());
+            log.info("保存自动发货配置请求: xianyuAccountId={}, xyGoodsId={}, skuId={}, deliveryMode={}", 
+                    reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId(), reqDTO.getSkuId(), reqDTO.getDeliveryMode());
             return autoDeliveryConfigService.saveOrUpdateConfig(reqDTO);
         } catch (Exception e) {
             log.error("保存自动发货配置失败", e);
@@ -42,17 +33,11 @@ public class AutoDeliveryConfigController {
         }
     }
 
-    /**
-     * 查询自动发货配置
-     *
-     * @param reqDTO 查询请求DTO
-     * @return 配置信息
-     */
     @PostMapping("/get")
     public ResultObject<AutoDeliveryConfigRespDTO> getConfig(@Valid @RequestBody AutoDeliveryConfigQueryReqDTO reqDTO) {
         try {
-            log.info("查询自动发货配置请求: xianyuAccountId={}, xyGoodsId={}", 
-                    reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId());
+            log.info("查询自动发货配置请求: xianyuAccountId={}, xyGoodsId={}, skuId={}", 
+                    reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId(), reqDTO.getSkuId());
             return autoDeliveryConfigService.getConfig(reqDTO);
         } catch (Exception e) {
             log.error("查询自动发货配置失败", e);
@@ -60,12 +45,18 @@ public class AutoDeliveryConfigController {
         }
     }
 
-    /**
-     * 根据账号ID查询所有配置
-     *
-     * @param xianyuAccountId 闲鱼账号ID
-     * @return 配置列表
-     */
+    @PostMapping("/listByGoods")
+    public ResultObject<List<AutoDeliveryConfigRespDTO>> getConfigsByGoodsId(@RequestBody AutoDeliveryConfigQueryReqDTO reqDTO) {
+        try {
+            log.info("查询商品自动发货配置列表请求: xianyuAccountId={}, xyGoodsId={}", 
+                    reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId());
+            return autoDeliveryConfigService.getConfigsByGoodsId(reqDTO.getXianyuAccountId(), reqDTO.getXyGoodsId());
+        } catch (Exception e) {
+            log.error("查询商品自动发货配置列表失败", e);
+            return ResultObject.failed("查询商品自动发货配置列表失败: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/list")
     public ResultObject<List<AutoDeliveryConfigRespDTO>> getConfigsByAccountId(@RequestParam("xianyuAccountId") Long xianyuAccountId) {
         try {
@@ -77,16 +68,9 @@ public class AutoDeliveryConfigController {
         }
     }
 
-    /**
-     * 删除自动发货配置
-     *
-     * @param xianyuAccountId 闲鱼账号ID
-     * @param xyGoodsId 闲鱼商品ID
-     * @return 操作结果
-     */
     @PostMapping("/delete")
     public ResultObject<Void> deleteConfig(@RequestParam("xianyuAccountId") Long xianyuAccountId,
-                                          @RequestParam("xyGoodsId") String xyGoodsId) {
+                                           @RequestParam("xyGoodsId") String xyGoodsId) {
         try {
             log.info("删除自动发货配置请求: xianyuAccountId={}, xyGoodsId={}", xianyuAccountId, xyGoodsId);
             return autoDeliveryConfigService.deleteConfig(xianyuAccountId, xyGoodsId);

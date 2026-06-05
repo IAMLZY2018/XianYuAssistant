@@ -1,0 +1,1058 @@
+<script setup lang="ts">
+import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue';
+import { showConfirm } from '@/utils/confirm';
+import { toast } from '@/utils/toast';
+
+import { getConnectionStatus, startConnection, stopConnection } from '@/api/websocket';
+import { showSuccess, showError, showInfo } from '@/utils';
+import ManualUpdateCookieDialog from './ManualUpdateCookieDialog.vue';
+import ManualUpdateTokenDialog from './ManualUpdateTokenDialog.vue';
+import QRUpdateDialog from './QRUpdateDialog.vue';
+import CaptchaGuideDialog from './CaptchaGuideDialog.vue';
+
+interface ConnectionStatus {
+  xianyuAccountId: number;
+  connected: boolean;
+  status: string;
+  cookieStatus?: number;
+  cookieText?: string;
+  websocketToken?: string;
+  tokenExpireTime?: number;
+}
+
+interface Props {
+  modelValue: boolean;
+  accountId: number | null;
+}
+
+interface Emits {
+  (e: 'update:modelValue', value: boolean): void;
+  (e: 'refresh'): void;
+}
+
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
+
+const connectionStatus = ref<ConnectionStatus | null>(null);
+const statusLoading = ref(false);
+const logs = ref<Array<{ time: string; message: string; isError?: boolean }>>([]);
+let statusInterval: number | null = null;
+
+// 手动更新Cookie对话框
+const showManualUpdateCookieDialog = ref(false);
+// 手动更新Token对话框
+const showManualUpdateTokenDialog = ref(false);
+// 扫码更新对话框
+const showQRUpdateDialog = ref(false);
+// 滑块验证引导对话框
+const showCaptchaGuideDialog = ref(false);
+
+// 响应式检测
+const isMobile = ref(false);
+const checkScreenSize = () => {
+  isMobile.value = window.innerWidth < 768;
+};
+
+// 计算对话框宽度
+const dialogWidth = computed(() => {
+  return isMobile.value ? '95%' : '750px';
+});
+
+// 加载连接状态
+const loadConnectionStatus = async (silent = false) => {
+  if (!props.accountId) return;
+  
+  if (!silent) {
+    statusLoading.value = true;
+  }
+  try {
+    const response = await getConnectionStatus(props.accountId);
+    if (response.code === 0 || response.code === 200) {
+      connectionStatus.value = response.data as ConnectionStatus;
+      if (!silent) {
+        addLog('状态已更新');
+      }
+    } else {
+      throw new Error(response.msg || '获取连接状态失败');
+    }
+  } catch (error: any) {
+    if (!silent) {
+      console.error('加载连接状态失败:', error);
+      addLog('加载状态失败: ' + error.message, true);
+    }
+  } finally {
+    statusLoading.value = false;
+  }
+};
+
+// 启动连接
+const handleStartConnection = async () => {
+  if (!props.accountId) return;
+  
+  statusLoading.value = true;
+  addLog('正在启动连接...');
+  try {
+    const response = await startConnection(props.accountId);
+    if (response.code === 0 || response.code === 200) {
+      showSuccess('连接启动成功');
+      addLog('连接启动成功');
+      await loadConnectionStatus();
+    } else if (response.code === 1001 && response.data?.needCaptcha) {
+      addLog('⚠️ 检测到需要滑块验证', true);
+      showCaptchaGuideDialog.value = true;
+    } else {
+      throw new Error(response.msg || '启动连接失败');
+    }
+  } catch (error: any) {
+    if (error !== 'cancel' && error !== 'close') {
+      console.error('启动连接失败:', error);
+      addLog('启动连接失败: ' + error.message, true);
+    }
+  } finally {
+    statusLoading.value = false;
+  }
+};
+
+// 停止连接
+const handleStopConnection = async () => {
+  if (!props.accountId) return;
+  
+  try {
+    await showConfirm(
+      '断开连接后将无法接收消息和执行自动化流程，确定要断开连接吗？',
+      '确认断开连接'
+    );
+  } catch {
+    return;
+  }
+  
+  statusLoading.value = true;
+  addLog('正在断开连接...');
+  try {
+    const response = await stopConnection(props.accountId);
+    if (response.code === 0 || response.code === 200) {
+      showSuccess('连接已断开');
+      addLog('连接已断开');
+      await loadConnectionStatus();
+    } else {
+      throw new Error(response.msg || '断开连接失败');
+    }
+  } catch (error: any) {
+    console.error('断开连接失败:', error);
+    addLog('断开连接失败: ' + error.message, true);
+  } finally {
+    statusLoading.value = false;
+  }
+};
+
+// 刷新状态
+const handleRefresh = () => {
+  loadConnectionStatus();
+  showInfo('状态已刷新');
+};
+
+// 添加日志
+const addLog = (message: string, isError = false) => {
+  const now = new Date();
+  const time = now.toLocaleTimeString();
+  logs.value.push({ time, message, isError });
+  
+  if (logs.value.length > 50) {
+    logs.value.shift();
+  }
+};
+
+// 获取Cookie状态文本
+const getCookieStatusText = (status?: number) => {
+  if (status === undefined || status === null) return '未知';
+  const statusMap: Record<number, string> = {
+    1: '有效',
+    2: '过期',
+    3: '失效'
+  };
+  return statusMap[status] || '未知';
+};
+
+// 获取Cookie状态标签类型
+const getCookieStatusType = (status?: number) => {
+  if (status === undefined || status === null) return 'info';
+  const typeMap: Record<number, string> = {
+    1: 'success',
+    2: 'warning',
+    3: 'danger'
+  };
+  return typeMap[status] || 'info';
+};
+
+// 格式化时间戳
+const formatTimestamp = (timestamp?: number) => {
+  if (!timestamp) return '未设置';
+  const date = new Date(timestamp);
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+};
+
+// 判断Token是否过期
+const isTokenExpired = (timestamp?: number) => {
+  if (!timestamp) return false;
+  return Date.now() > timestamp;
+};
+
+// 获取Token状态文本
+const getTokenStatusText = (timestamp?: number) => {
+  if (!timestamp) return '未设置';
+  return isTokenExpired(timestamp) ? '已过期' : '有效';
+};
+
+// 获取Token状态类型
+const getTokenStatusType = (timestamp?: number) => {
+  if (!timestamp) return 'info';
+  return isTokenExpired(timestamp) ? 'danger' : 'success';
+};
+
+// 显示Cookie获取帮助
+const showCookieHelp = () => {
+  toast.info('请按照以下步骤获取Cookie：1.打开浏览器，访问闲鱼网站并登录 2.按F12打开开发者工具 3.切换到"网络"(Network)标签 4.刷新页面 5.在请求列表中找到任意请求 6.在请求头中找到Cookie字段 7.复制完整的Cookie值');
+};
+
+// 显示Token获取帮助
+const showTokenHelp = () => {
+  toast.info('请按照以下步骤获取WebSocket Token：1.打开浏览器，访问闲鱼IM页面并登录 2.按F12打开开发者工具 3.切换到"网络"(Network)标签 4.在页面中进行任意操作（如点击聊天） 5.在请求列表中找到WebSocket连接请求 6.查看请求参数或响应中的Token信息 7.复制完整的Token值');
+};
+
+// Cookie手动更新成功回调
+const handleManualUpdateCookieSuccess = async () => {
+  addLog('Cookie已手动更新');
+  await loadConnectionStatus();
+};
+
+// Token手动更新成功回调
+const handleManualUpdateTokenSuccess = async () => {
+  addLog('Token已手动更新');
+  await loadConnectionStatus();
+};
+
+// 扫码更新成功回调
+const handleQRUpdateSuccess = async () => {
+  addLog('Cookie和Token已通过扫码更新');
+  await loadConnectionStatus();
+};
+
+// 滑块验证确认回调
+const handleCaptchaConfirm = () => {
+  window.open('https://www.goofish.com/im', '_blank');
+  addLog('✅ 已打开闲鱼IM页面');
+  addLog('📌 完成验证后，请点击"❓ 如何获取？"按钮查看教程');
+  showInfo('请在闲鱼IM页面完成验证，然后使用帮助按钮获取Cookie和Token');
+};
+
+// 关闭对话框
+const handleClose = () => {
+  emit('update:modelValue', false);
+  if (statusInterval) {
+    clearInterval(statusInterval);
+    statusInterval = null;
+  }
+};
+
+// 监听对话框打开
+watch(() => props.modelValue, (val) => {
+  if (val) {
+    loadConnectionStatus();
+    
+    // 启动定时刷新
+    statusInterval = window.setInterval(() => {
+      loadConnectionStatus(true);
+    }, 5000);
+  } else {
+    if (statusInterval) {
+      clearInterval(statusInterval);
+      statusInterval = null;
+    }
+  }
+});
+
+onMounted(() => {
+  checkScreenSize();
+  window.addEventListener('resize', checkScreenSize);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', checkScreenSize);
+  if (statusInterval) {
+    clearInterval(statusInterval);
+  }
+});
+</script>
+
+<template>
+  <Teleport to="body">
+    <Transition name="modal">
+      <div v-if="modelValue" class="modal-overlay" @click.self="handleClose">
+        <div class="modal-container" :class="{ 'is-mobile': isMobile }">
+          <div class="modal-header">
+            <h2 class="modal-title">连接详情</h2>
+            <button class="modal-close" @click="handleClose">×</button>
+          </div>
+          <div class="modal-body">
+            <div v-if="connectionStatus" class="detail-content">
+        <!-- 主标题区域 -->
+        <div class="main-card-header">
+          <div class="header-left">
+            <div class="icon-wrapper-large" :class="connectionStatus.connected ? 'icon-success' : 'icon-danger'">
+              <span class="icon-large">{{ connectionStatus.connected ? '✓' : '✕' }}</span>
+            </div>
+            <div class="header-info">
+              <h2 class="main-title">连接状态</h2>
+              <p class="main-subtitle">账号 ID: {{ connectionStatus.xianyuAccountId }} · {{ connectionStatus.status }}</p>
+              <p class="main-note" :class="connectionStatus.connected ? 'note-success' : 'note-danger'">
+                {{ connectionStatus.connected ? '已连接到闲鱼服务器' : '当前未连接到闲鱼服务器，无法监听消息以及执行自动化流程' }}
+              </p>
+            </div>
+          </div>
+          <div class="header-right">
+            <span class="tag" :class="connectionStatus.connected ? 'tag--success' : 'tag--danger'">
+              {{ connectionStatus.connected ? '● 已连接' : '● 未连接' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- 详细信息区域 -->
+        <div class="details-grid">
+          <!-- Cookie 详情 -->
+          <div class="detail-section cookie-section">
+            <div class="section-header">
+              <div class="section-icon">🍪</div>
+              <div class="section-title-group">
+                <h3 class="section-title">Cookie 凭证</h3>
+                <p class="section-note">用于识别账号，如果过期无法使用任何功能</p>
+              </div>
+              <span class="tag" :class="getCookieStatusType(connectionStatus.cookieStatus) === 'success' ? 'tag--success' : getCookieStatusType(connectionStatus.cookieStatus) === 'warning' ? 'tag--warning' : getCookieStatusType(connectionStatus.cookieStatus) === 'danger' ? 'tag--danger' : 'tag--info'">
+                {{ getCookieStatusText(connectionStatus.cookieStatus) }}
+              </span>
+            </div>
+            <div class="section-body">
+              <div class="info-box">
+                <div class="info-box-label">Cookie 内容</div>
+                <div class="info-box-value cookie-value">
+                  {{ connectionStatus.cookieText || '未获取到Cookie' }}
+                </div>
+                <div class="info-box-meta" v-if="connectionStatus.cookieText">
+                  长度: {{ connectionStatus.cookieText.length }} 字符
+                </div>
+              </div>
+              <div class="section-actions">
+                <button
+                  class="btn-glass btn-glass--primary"
+                  @click="showManualUpdateCookieDialog = true"
+                >
+                  ✏️ 手动更新
+                </button>
+                <button
+                  class="btn-glass btn-glass--default"
+                  @click="showCookieHelp"
+                >
+                  ❓ 如何获取？
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Token 详情 -->
+          <div class="detail-section token-section">
+            <div class="section-header">
+              <div class="section-icon">🔑</div>
+              <div class="section-title-group">
+                <h3 class="section-title">WebSocket Token</h3>
+                <p class="section-note">这个是收取消息的凭证，如果异常，可能是账号被锁人机验证，需要隔段时间再试一试</p>
+              </div>
+              <span class="tag" :class="getTokenStatusType(connectionStatus.tokenExpireTime) === 'success' ? 'tag--success' : getTokenStatusType(connectionStatus.tokenExpireTime) === 'danger' ? 'tag--danger' : 'tag--info'">
+                {{ getTokenStatusText(connectionStatus.tokenExpireTime) }}
+              </span>
+            </div>
+            <div class="section-body">
+              <div class="info-box">
+                <div class="info-box-label">⏰ 过期时间</div>
+                <div class="info-box-value time-value">
+                  {{ formatTimestamp(connectionStatus.tokenExpireTime) }}
+                </div>
+              </div>
+              <div class="info-box">
+                <div class="info-box-label">Token 内容</div>
+                <div class="info-box-value token-value">
+                  {{ connectionStatus.websocketToken || '未获取到Token' }}
+                </div>
+                <div class="info-box-meta" v-if="connectionStatus.websocketToken">
+                  长度: {{ connectionStatus.websocketToken.length }} 字符
+                </div>
+              </div>
+              <div class="section-actions">
+                <button
+                  class="btn-glass btn-glass--primary"
+                  @click="showManualUpdateTokenDialog = true"
+                >
+                  ✏️ 手动更新
+                </button>
+                <button
+                  class="btn-glass btn-glass--default"
+                  @click="showTokenHelp"
+                >
+                  ❓ 如何获取？
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 操作区域 -->
+        <div class="main-actions">
+          <div class="action-wrapper">
+            <div class="action-buttons">
+              <button
+                v-if="connectionStatus.connected"
+                class="btn-glass btn-glass--danger"
+                @click="handleStopConnection"
+              >
+                ⏸ 断开连接
+              </button>
+              <button
+                v-else
+                class="btn-glass btn-glass--success"
+                @click="handleStartConnection"
+              >
+                ▶ 启动连接
+              </button>
+              <button
+                class="btn-glass btn-glass--primary"
+                @click="showQRUpdateDialog = true"
+              >
+                📱 扫码更新
+              </button>
+            </div>
+            <div class="action-tip">
+              ⚠️ 请勿频繁启用连接和断开连接，否则容易触发滑动窗口人机校验，导致账号暂时不可用
+            </div>
+            <div class="action-tip qr-update-tip">
+              💡 扫码更新：通过扫码登录完成更新Cookie与Token
+            </div>
+          </div>
+        </div>
+
+        <!-- 操作日志 -->
+        <div class="logs-section">
+          <div class="logs-header">操作日志</div>
+          <div class="logs-container">
+            <div
+              v-for="(log, index) in logs"
+              :key="index"
+              class="log-entry"
+              :class="{ 'log-error': log.isError }"
+            >
+              <span class="log-time">[{{ log.time }}]</span>
+              <span class="log-message">{{ log.message }}</span>
+            </div>
+            <div v-if="logs.length === 0" class="log-empty">
+              暂无日志记录
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <template #footer>
+      <button class="btn-glass btn-glass--default" @click="handleClose">关闭</button>
+      <button class="btn-glass btn-glass--primary" @click="handleRefresh">刷新状态</button>
+    </template>
+
+    <!-- 手动更新Cookie对话框 -->
+    <ManualUpdateCookieDialog
+      v-if="connectionStatus"
+      v-model="showManualUpdateCookieDialog"
+      :account-id="accountId || 0"
+      :current-cookie="connectionStatus.cookieText || ''"
+      @success="handleManualUpdateCookieSuccess"
+    />
+
+    <!-- 手动更新Token对话框 -->
+    <ManualUpdateTokenDialog
+      v-if="connectionStatus"
+      v-model="showManualUpdateTokenDialog"
+      :account-id="accountId || 0"
+      :current-token="connectionStatus.websocketToken || ''"
+      @success="handleManualUpdateTokenSuccess"
+    />
+
+    <!-- 扫码更新对话框 -->
+    <QRUpdateDialog
+      v-model="showQRUpdateDialog"
+      :account-id="accountId || 0"
+      @success="handleQRUpdateSuccess"
+    />
+
+    <!-- 滑块验证引导对话框 -->
+    <CaptchaGuideDialog
+      v-model="showCaptchaGuideDialog"
+      @confirm="handleCaptchaConfirm"
+    />
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+</template>
+
+<style scoped>
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.20);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 24px;
+}
+
+.modal-container {
+  background: rgba(255,255,255,0.72);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 88vh;
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.14), 0 12px 32px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-container.is-mobile {
+  max-width: 94vw;
+  border-radius: 20px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1c1c1e;
+  margin: 0;
+}
+
+.modal-close {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: rgba(28,28,30,.55);
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modal-close:hover {
+  background: rgba(60,60,67,.12);
+  color: #1c1c1e;
+}
+
+.modal-body {
+  flex: 1;
+  padding: 0 20px 20px;
+  overflow-y: auto;
+}
+
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.modal-enter-active .modal-container,
+.modal-leave-active .modal-container {
+  transition: transform 0.3s cubic-bezier(0.32, 0.94, 0.6, 1), opacity 0.2s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-from .modal-container,
+.modal-leave-to .modal-container {
+  transform: scale(0.92) translateY(8px);
+  opacity: 0;
+}
+
+.connection-detail {
+  min-height: 400px;
+}
+
+.detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 主标题区域 */
+.main-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #ecf5ff 0%, #ffffff 100%);
+  border-radius: 12px;
+  border: 2px solid #d9ecff;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+}
+
+.icon-wrapper-large {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.icon-success {
+  background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%);
+}
+
+.icon-danger {
+  background: linear-gradient(135deg, #f56c6c 0%, #f78989 100%);
+}
+
+.icon-large {
+  font-size: 28px;
+  font-weight: bold;
+  color: white;
+}
+
+.header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.main-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #303133;
+  margin: 0 0 6px 0;
+  letter-spacing: 0.3px;
+}
+
+.main-subtitle {
+  font-size: 13px;
+  color: #909399;
+  margin: 0 0 4px 0;
+  font-weight: 500;
+}
+
+.main-note {
+  font-size: 12px;
+  margin: 0;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+.note-danger {
+  color: #f56c6c;
+  background: #fef0f0;
+  border: 1px solid #fde2e2;
+}
+
+.note-success {
+  color: #67c23a;
+  background: #f0f9ff;
+  border: 1px solid #c6f6d5;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.status-tag-large {
+  font-size: 14px;
+  padding: 8px 16px;
+  font-weight: 600;
+}
+
+/* 详细信息网格 */
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.detail-section {
+  background: white;
+  border-radius: 10px;
+  border: 2px solid #e4e7ed;
+  padding: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.detail-section:hover {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.cookie-section {
+  border-color: #e6a23c;
+}
+
+.token-section {
+  border-color: #67c23a;
+}
+
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f5f7fa;
+}
+
+.section-icon {
+  font-size: 26px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.section-title-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #303133;
+  margin: 0 0 6px 0;
+}
+
+.section-note {
+  font-size: 12px;
+  color: #909399;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.info-box {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #e4e7ed;
+}
+
+.info-box-label {
+  font-size: 11px;
+  color: #606266;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.info-box-value {
+  font-family: 'Courier New', Consolas, monospace;
+  font-size: 10px;
+  color: #303133;
+  line-height: 1.6;
+  word-break: break-all;
+  background: white;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #dcdfe6;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.cookie-value,
+.token-value {
+  font-size: 10px;
+}
+
+.time-value {
+  font-size: 11px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.info-box-meta {
+  font-size: 10px;
+  color: #909399;
+  margin-top: 4px;
+  text-align: right;
+}
+
+.section-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+
+.manual-update-btn {
+  color: white !important;
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%) !important;
+  border-color: #409eff !important;
+  transition: all 0.3s ease !important;
+}
+
+.manual-update-btn:hover {
+  background: linear-gradient(135deg, #66b1ff 0%, #409eff 100%) !important;
+  border-color: #66b1ff !important;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.4) !important;
+  transform: translateY(-1px);
+}
+
+/* 主操作区域 */
+.main-actions {
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+  border-radius: 12px;
+  border: 1px solid #e4e7ed;
+  display: flex;
+  justify-content: center;
+}
+
+.action-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.main-action-btn {
+  flex: 1;
+  min-width: 140px;
+  max-width: 200px;
+  height: 42px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.action-tip {
+  font-size: 11px;
+  color: #909399;
+  text-align: center;
+  line-height: 1.6;
+  max-width: 90%;
+  padding: 0 8px;
+}
+
+.qr-update-tip {
+  color: #409eff;
+  font-weight: 500;
+}
+
+.start-connection-btn {
+  background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%) !important;
+  border-color: #67c23a !important;
+  box-shadow: 0 2px 8px rgba(103, 194, 58, 0.3) !important;
+}
+
+.start-connection-btn:hover {
+  background: linear-gradient(135deg, #85ce61 0%, #95d475 100%) !important;
+  box-shadow: 0 4px 12px rgba(103, 194, 58, 0.4) !important;
+  transform: translateY(-1px);
+}
+
+.qr-update-btn {
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%) !important;
+  border-color: #409eff !important;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3) !important;
+}
+
+.qr-update-btn:hover {
+  background: linear-gradient(135deg, #66b1ff 0%, #409eff 100%) !important;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4) !important;
+  transform: translateY(-1px);
+}
+
+.logs-section {
+  margin-top: 20px;
+  padding-bottom: 8px;
+}
+
+.logs-header {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 10px;
+}
+
+.logs-container {
+  background: #2c3e50;
+  color: #ecf0f1;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'Courier New', Consolas, monospace;
+  font-size: 12px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.log-entry {
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
+.log-entry:last-child {
+  margin-bottom: 0;
+}
+
+.log-time {
+  color: #95a5a6;
+  margin-right: 6px;
+  font-size: 11px;
+}
+
+.log-message {
+  color: #ecf0f1;
+}
+
+.log-entry.log-error .log-message {
+  color: #e74c3c;
+}
+
+.log-empty {
+  text-align: center;
+  color: #95a5a6;
+  padding: 16px;
+  font-size: 12px;
+}
+
+/* 隐藏滚动条但保留滚动功能 */
+.info-box-value::-webkit-scrollbar,
+.logs-container::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.info-box-value,
+.logs-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+  .main-card-header {
+    padding: 14px 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .header-left {
+    width: 100%;
+  }
+
+  .header-right {
+    width: 100%;
+  }
+
+  .details-grid {
+    gap: 12px;
+  }
+
+  .detail-section {
+    padding: 14px;
+  }
+
+  .main-actions {
+    padding: 14px 16px;
+  }
+
+  .action-buttons {
+    flex-direction: row;
+    gap: 10px;
+  }
+
+  .main-action-btn {
+    max-width: none;
+    flex: 1;
+  }
+
+  .logs-container {
+    max-height: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-card-header {
+    padding: 12px 14px;
+  }
+
+  .main-title {
+    font-size: 16px;
+  }
+
+  .section-title {
+    font-size: 14px;
+  }
+
+  .action-buttons {
+    gap: 8px;
+  }
+}
+
+.btn-glass { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; border-radius: 100px; font-size: 13px; font-weight: 590; cursor: pointer; transition: opacity .15s, transform .12s; border: none; font-family: inherit; user-select: none; white-space: nowrap; }
+.btn-glass:active { opacity: .80; transform: scale(.96); }
+.btn-glass--primary { background: rgba(10,132,255,0.85); color: #fff; border: 1px solid rgba(255,255,255,0.35); box-shadow: 0 4px 16px rgba(10,132,255,0.35), 0 8px 32px rgba(0,0,0,0.08); }
+.btn-glass--default { background: rgba(255,255,255,0.70); color: #0A84FF; border: 1px solid rgba(255,255,255,0.85); box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
+.btn-glass--success { background: rgba(48,209,88,0.85); color: #fff; border: 1px solid rgba(255,255,255,0.35); }
+.btn-glass--warning { background: rgba(255,159,10,0.85); color: #fff; border: 1px solid rgba(255,255,255,0.35); }
+.btn-glass--danger { color: #FF453A; background: rgba(255,69,58,0.15); border: 1px solid rgba(255,69,58,0.2); }
+.tag { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 100px; font-size: 12px; font-weight: 500; }
+.tag--success { background: rgba(48,209,88,0.12); color: #30D158; }
+.tag--warning { background: rgba(255,159,10,0.12); color: #FF9F0A; }
+.tag--info { background: rgba(120,120,128,0.12); color: rgba(28,28,30,.55); }
+.tag--danger { background: rgba(255,69,58,0.12); color: #FF453A; }
+</style>

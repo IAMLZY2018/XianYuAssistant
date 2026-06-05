@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { deleteAccount } from '@/api/account';
 import { showSuccess, showError } from '@/utils';
 
@@ -44,71 +44,177 @@ const handleConfirm = async () => {
 </script>
 
 <template>
-  <el-dialog
-    :model-value="modelValue"
-    title="删除账号确认"
-    width="500px"
-    @close="handleClose"
-  >
-    <div class="delete-confirm-content">
-      <p class="confirm-text">确定要删除这个账号吗？</p>
-      
-      <el-alert
-        type="error"
-        :closable="false"
-        show-icon
-      >
-        <template #title>
-          <strong>重要提醒</strong>
-        </template>
-        <p>删除账号将会同时删除该账号下的所有相关数据，包括：</p>
-        <ul>
-          <li>聊天消息记录</li>
-          <li>商品信息</li>
-          <li>自动发货配置和记录</li>
-          <li>自动回复配置和记录</li>
-          <li>Cookie信息</li>
-        </ul>
-        <p><strong>此操作不可恢复，请谨慎操作！</strong></p>
-      </el-alert>
+  <teleport to="body">
+    <div v-if="modelValue" class="modal-overlay" @click="handleClose">
+      <div class="modal" @click.stop>
+        <div class="modal-header">
+          <h2 class="modal-title">删除账号</h2>
+        </div>
+        
+        <div class="modal-body">
+          <p class="delete-title">确定要删除这个账号吗？</p>
+          <p class="delete-desc">删除后将无法恢复以下数据：</p>
+          <ul class="delete-list">
+            <li>聊天消息</li>
+            <li>商品信息</li>
+            <li>自动发货配置</li>
+            <li>自动回复配置</li>
+            <li>Cookie信息</li>
+          </ul>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="modal-btn modal-btn-cancel" @click="handleClose">取消</button>
+          <div class="modal-divider"></div>
+          <button class="modal-btn modal-btn-danger" :disabled="loading" @click="handleConfirm">
+            {{ loading ? '删除中...' : '删除' }}
+          </button>
+        </div>
+      </div>
     </div>
-    
-    <template #footer>
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="danger" :loading="loading" @click="handleConfirm">
-        确定删除
-      </el-button>
-    </template>
-  </el-dialog>
+  </teleport>
 </template>
 
 <style scoped>
-.delete-confirm-content {
-  padding: 10px 0;
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.2s ease;
 }
 
-.confirm-text {
-  margin: 0 0 20px 0;
+.modal {
+  width: 320px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  animation: scaleIn 0.2s ease;
+}
+
+.modal-header {
+  padding: 16px;
+  text-align: center;
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: #000;
+  line-height: 1.2;
+}
+
+.modal-body {
+  padding: 20px 16px;
+  text-align: center;
+}
+
+.delete-title {
+  margin: 0 0 8px 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: #000;
+  line-height: 1.2;
+}
+
+.delete-desc {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.delete-list {
+  margin: 0;
+  padding: 0 0 0 16px;
+  list-style: none;
+  text-align: left;
+  font-size: 13px;
+  color: #666;
+}
+
+.delete-list li {
+  margin: 4px 0;
+  line-height: 1.4;
+}
+
+.delete-list li::before {
+  content: "•";
+  color: #ff3b30;
+  margin-right: 8px;
+}
+
+.modal-footer {
+  display: flex;
+  height: 48px;
+  border-top: 0.5px solid rgba(0, 0, 0, 0.1);
+}
+
+.modal-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
   font-size: 16px;
-  color: #303133;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.el-alert {
-  margin-top: 20px;
+.modal-btn:active:not(:disabled) {
+  opacity: 0.5;
 }
 
-.el-alert ul {
-  margin: 10px 0;
-  padding-left: 20px;
+.modal-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.el-alert li {
-  margin: 5px 0;
-  line-height: 1.6;
+.modal-btn-cancel {
+  color: #666;
 }
 
-.el-alert p {
-  margin: 10px 0;
-  line-height: 1.6;
+.modal-btn-danger {
+  color: #ff3b30;
+  font-weight: 500;
+}
+
+.modal-divider {
+  width: 0.5px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>

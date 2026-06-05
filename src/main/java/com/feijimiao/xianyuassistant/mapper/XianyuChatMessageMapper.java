@@ -118,4 +118,18 @@ public interface XianyuChatMessageMapper {
     int countMessages(@Param("accountId") Long accountId,
                      @Param("xyGoodsId") String xyGoodsId,
                      @Param("senderUserId") String senderUserId);
+    
+    /**
+     * 根据会话ID查询最近N条消息（支持分页）
+     *
+     * @param sId 会话ID
+     * @param limit 限制条数
+     * @param offset 偏移量
+     * @return 消息列表
+     */
+    @Select("SELECT * FROM xianyu_chat_message " +
+            "WHERE s_id = #{sId} " +
+            "ORDER BY message_time DESC " +
+            "LIMIT #{limit} OFFSET #{offset}")
+    List<XianyuChatMessage> findRecentBySId(@Param("sId") String sId, @Param("limit") int limit, @Param("offset") int offset);
 }

@@ -19,6 +19,11 @@ public class AutoDeliveryRecordReqDTO {
     private String xyGoodsId;
     
     /**
+     * 模糊搜索关键词，匹配商品名称、规格、买家、发货内容
+     */
+    private String keyword;
+    
+    /**
      * 页码
      */
     private Integer pageNum = 1;

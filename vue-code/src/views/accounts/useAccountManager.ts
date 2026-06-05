@@ -29,7 +29,10 @@ export function useAccountManager() {
         throw new Error(response.msg || '获取账号列表失败');
       }
     } catch (error: any) {
-      showError('加载账号列表失败: ' + error.message);
+      // 只有在错误消息未显示过时才弹出提示（避免重复显示）
+      if (!error.messageShown) {
+        showError('加载账号列表失败: ' + error.message);
+      }
       accounts.value = [];
     } finally {
       loading.value = false;
@@ -78,7 +81,10 @@ export function useAccountManager() {
         throw new Error(response.msg || '删除失败');
       }
     } catch (error: any) {
-      showError('删除失败: ' + error.message);
+      // 只有在错误消息未显示过时才弹出提示（避免重复显示）
+      if (!error.messageShown) {
+        showError('删除失败: ' + error.message);
+      }
     }
   };
 

@@ -101,6 +101,16 @@ public interface AccountService {
     boolean updateCookieStatus(Long accountId, Integer cookieStatus);
     
     /**
+     * 更新Cookie状态（支持控制是否发送邮件通知）
+     *
+     * @param accountId 账号ID
+     * @param cookieStatus Cookie状态 1:有效 2:过期 3:失效
+     * @param sendNotify 是否发送邮件通知（仅当确认无法自动续期时才为true）
+     * @return 是否更新成功
+     */
+    boolean updateCookieStatus(Long accountId, Integer cookieStatus, boolean sendNotify);
+    
+    /**
      * 更新账号Cookie（包含UNB更新）
      *
      * @param accountId 账号ID
@@ -109,4 +119,31 @@ public interface AccountService {
      * @return 是否更新成功
      */
     boolean updateAccountCookie(Long accountId, String unb, String cookieText);
+    
+    /**
+     * 获取或生成设备ID
+     * 如果数据库中已有设备ID，直接返回；否则生成新的设备ID并保存
+     *
+     * @param accountId 账号ID
+     * @param unb UNB标识（用于生成设备ID）
+     * @return 设备ID
+     */
+    String getOrGenerateDeviceId(Long accountId, String unb);
+    
+    /**
+     * 更新设备ID
+     *
+     * @param accountId 账号ID
+     * @param deviceId 设备ID
+     * @return 是否更新成功
+     */
+    boolean updateDeviceId(Long accountId, String deviceId);
+    
+    /**
+     * 获取闲鱼用户ID（即UNB）
+     *
+     * @param accountId 账号ID
+     * @return 闲鱼用户ID（UNB），如果不存在则返回null
+     */
+    String getXianyuUserId(Long accountId);
 }

@@ -10,6 +10,8 @@ export interface WebSocketStatus {
   cookieText?: string;        // Cookie值
   websocketToken?: string;    // WebSocket Token
   tokenExpireTime?: number;   // Token过期时间戳（毫秒）
+  autoDeliveryOn?: boolean;   // 是否有商品开启了自动发货
+  autoReplyOn?: boolean;      // 是否有商品开启了自动回复
 }
 
 // 获取连接状态
@@ -54,6 +56,7 @@ export interface SendMessageRequest {
   cid: string;  // 会话ID (即 sid)
   toId: string;  // 接收方ID (即 senderUserId)
   text: string;  // 消息内容（注意：后端接收的参数名是 text，不是 content）
+  xyGoodsId?: string;  // 闲鱼商品ID
 }
 
 // 发送消息

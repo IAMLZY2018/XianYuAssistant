@@ -2,49 +2,35 @@ package com.feijimiao.xianyuassistant.config;
 
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
-import org.apache.ibatis.type.MappedJdbcTypes;
-import org.apache.ibatis.type.MappedTypes;
 
 import java.sql.*;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
-/**
- * 自定义LocalDateTime类型处理器，处理null值问题
- */
-@MappedTypes(LocalDateTime.class)
-@MappedJdbcTypes(JdbcType.TIMESTAMP)
 public class CustomLocalDateTimeTypeHandler extends BaseTypeHandler<LocalDateTime> {
+
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Override
     public void setNonNullParameter(PreparedStatement ps, int i, LocalDateTime parameter, JdbcType jdbcType) throws SQLException {
-        ps.setTimestamp(i, Timestamp.valueOf(parameter));
+        ps.setString(i, parameter.format(FORMATTER));
     }
 
     @Override
     public LocalDateTime getNullableResult(ResultSet rs, String columnName) throws SQLException {
-        Timestamp timestamp = rs.getTimestamp(columnName);
-        if (timestamp == null) {
-            return null;
-        }
-        return timestamp.toLocalDateTime();
+        String ts = rs.getString(columnName);
+        return ts == null ? null : LocalDateTime.parse(ts, FORMATTER);
     }
 
     @Override
     public LocalDateTime getNullableResult(ResultSet rs, int columnIndex) throws SQLException {
-        Timestamp timestamp = rs.getTimestamp(columnIndex);
-        if (timestamp == null) {
-            return null;
-        }
-        return timestamp.toLocalDateTime();
+        String ts = rs.getString(columnIndex);
+        return ts == null ? null : LocalDateTime.parse(ts, FORMATTER);
     }
 
     @Override
     public LocalDateTime getNullableResult(CallableStatement cs, int columnIndex) throws SQLException {
-        Timestamp timestamp = cs.getTimestamp(columnIndex);
-        if (timestamp == null) {
-            return null;
-        }
-        return timestamp.toLocalDateTime();
+        String ts = cs.getString(columnIndex);
+        return ts == null ? null : LocalDateTime.parse(ts, FORMATTER);
     }
 }
