@@ -483,4 +483,4 @@ Made with ❤️
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=IAMLZY2018/XianYuAssistant&type=Date)](https://star-history.com/#IAMLZY2018/XianYuAssistant)
+[![Star History Chart](https://star-history.dera.page/svg?repos=IAMLZY2018/XianYuAssistant&type=Date)](https://star-history.dera.page/#IAMLZY2018/XianYuAssistant&type=Date)
