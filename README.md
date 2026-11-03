@@ -97,6 +97,50 @@
 
 ## 🚀 部署方式
 
+### Windows 桌面版
+
+Windows 10/11 x64 用户可以直接安装桌面版，无需额外安装
+Java、Node.js、Maven、SQLite 或浏览器驱动。
+
+桌面版内置：
+
+- Electron 桌面运行环境
+- Java 21 JRE
+- Spring Boot 后端
+- SQLite 数据库
+- Playwright Chromium
+
+#### 系统要求
+
+- Windows 10 或 Windows 11
+- 64 位 x64 系统
+- 最低建议 4 GB 内存，推荐 8 GB
+- 建议预留 1.5 GB 以上磁盘空间
+- 闲鱼登录、同步和自动回复等功能需要联网
+
+#### 下载与使用
+
+桌面安装包请从项目
+[Releases](https://github.com/IAMLZY2018/XianYuAssistant/releases)
+页面下载。
+
+1. 下载 Windows x64 安装包。
+2. 双击 EXE 并完成安装。
+3. 从桌面快捷方式启动“闲鱼助手”。
+4. 首次启动时创建管理员账号。
+5. 后续直接双击桌面快捷方式即可。
+
+用户数据库、配置和日志保存在：
+
+```text
+%APPDATA%\XianYuAssistant
+```
+
+重新安装或升级应用不会自动删除这些数据。
+
+> 当前安装包尚未配置 Windows 代码签名，首次启动时可能出现
+> SmartScreen 或“未知发布者”提示。
+
 ### 方式一：Docker部署（推荐）
 
 #### 环境要求

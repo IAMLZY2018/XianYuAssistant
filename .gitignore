@@ -46,3 +46,11 @@ build/
 /.qoder/
 /.qoder/
 /.arts/
+
+### Electron desktop build ###
+/desktop/.cache/
+/desktop/build/icon.png
+/desktop/dist/
+/desktop/node_modules/
+/desktop/resources/backend/
+/desktop/resources/runtime/
